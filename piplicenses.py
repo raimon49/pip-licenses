@@ -43,6 +43,13 @@ __summary__ = 'Dump the license list of packages installed with pip.'
 __url__ = 'https://github.com/raimon49/pip-licenses'
 
 
+DEFAULT_OUTPUT_FIELDS = (
+    'Name',
+    'Version',
+    'License',
+)
+
+
 METADATA_KEYS = (
     'home-page',
     'author',
@@ -59,7 +66,7 @@ SYSTEM_PACKAGES = (
 )
 
 
-def get_licenses(with_authors=False, with_system=False, with_urls=False):
+def get_licenses_table(args):
     pkgs = pip.get_installed_distributions()
     table = PrettyTable()
     table.field_names = ['Name', 'Version', 'License', 'Author', 'URL', ]
@@ -68,7 +75,7 @@ def get_licenses(with_authors=False, with_system=False, with_urls=False):
     for pkg in pkgs:
         pkg_info = get_pkg_info(pkg)
 
-        if not with_system and pkg_info['name'] in SYSTEM_PACKAGES:
+        if not args.with_system and pkg_info['name'] in SYSTEM_PACKAGES:
             continue
 
         table.add_row([pkg_info['name'],
@@ -77,7 +84,13 @@ def get_licenses(with_authors=False, with_system=False, with_urls=False):
                        pkg_info['author'],
                        pkg_info['home-page'], ])
 
-    print(table.get_string(fields=['Name', 'Version', 'License', ]))
+    return table
+
+
+def get_output_field_names(args):
+    output_field_names = list(DEFAULT_OUTPUT_FIELDS)
+
+    return output_field_names
 
 
 def get_pkg_info(pkg):
@@ -132,9 +145,10 @@ def create_parser():
 def main():
     parser = create_parser()
     args = parser.parse_args()
-    get_licenses(args.with_system,
-                 args.with_authors,
-                 args.with_urls)
+
+    table = get_licenses_table(args)
+    field_names = get_output_field_names(args)
+    print(table.get_string(fields=field_names))
 
 
 if __name__ == '__main__':
