@@ -49,6 +49,14 @@ METADATA_KEYS = (
 )
 
 
+META_PACKAGES = (
+    'pip',
+    'PTable',
+    'setuptools',
+    'wheel',
+)
+
+
 def get_licenses(with_authors=False, with_meta=False, with_urls=False):
     pkgs = pip.get_installed_distributions()
     table = PrettyTable()
@@ -56,6 +64,10 @@ def get_licenses(with_authors=False, with_meta=False, with_urls=False):
     table.align = 'l'
     for pkg in pkgs:
         pkg_info = get_pkg_info(pkg)
+
+        if not with_meta and pkg_info['name'] in META_PACKAGES:
+            continue
+
         table.add_row([pkg_info['namever'],
                        pkg_info['license'],
                        pkg_info['author'],
