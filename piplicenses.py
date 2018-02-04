@@ -30,6 +30,10 @@ from __future__ import (division, print_function,
                         absolute_import, unicode_literals)
 import sys
 import argparse
+from email.parser import FeedParser
+
+import pip
+from prettytable import PrettyTable
 
 __version__ = '0.1.0'
 __author__ = 'raimon'
@@ -38,8 +42,53 @@ __summary__ = 'Dump the license list of packages installed with pip.'
 __url__ = 'https://github.com/raimon49/pip-licenses'
 
 
+METADATA_KEYS = (
+    'home-page',
+    'author',
+    'license',
+)
+
+
 def get_licenses(with_authors=False, with_meta=False, with_urls=False):
-    return []
+    pkgs = pip.get_installed_distributions()
+    table = PrettyTable()
+    table.field_names = ['Package', 'License', 'Author', 'URL', ]
+    table.align = 'l'
+    for pkg in pkgs:
+        pkg_info = get_pkg_info(pkg)
+        table.add_row([pkg_info['namever'],
+                       pkg_info['license'],
+                       pkg_info['author'],
+                       pkg_info['home-page'], ])
+
+    print(table.get_string(fields=['Package', 'License', ]))
+
+
+def get_pkg_info(pkg):
+    pkg_info = {
+        'name': pkg.project_name,
+        'version': pkg.version,
+        'namever': str(pkg),
+    }
+    metadata = None
+    if pkg.has_metadata('METADATA'):
+        metadata = pkg.get_metadata('METADATA')
+
+    if pkg.has_metadata('PKG-INFO'):
+        metadata = pkg.get_metadata('PKG-INFO')
+
+    if metadata is None:
+        for key in METADATA_KEYS:
+            pkg_info[key] = 'UNKNOWN'
+
+    feed_parser = FeedParser()
+    feed_parser.feed(metadata)
+    parsed_metadata = feed_parser.close()
+
+    for key in METADATA_KEYS:
+        pkg_info[key] = parsed_metadata.get(key, 'UNKNOWN')
+
+    return pkg_info
 
 
 def create_parser():
@@ -67,6 +116,9 @@ def create_parser():
 def main():
     parser = create_parser()
     args = parser.parse_args()
+    get_licenses(args.with_meta,
+                 args.with_authors,
+                 args.with_urls)
 
 
 if __name__ == '__main__':
