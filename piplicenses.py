@@ -43,6 +43,15 @@ __summary__ = 'Dump the license list of packages installed with pip.'
 __url__ = 'https://github.com/raimon49/pip-licenses'
 
 
+FIELD_NAMES = (
+    'Name',
+    'Version',
+    'License',
+    'Author',
+    'URL',
+)
+
+
 DEFAULT_OUTPUT_FIELDS = (
     'Name',
     'Version',
@@ -65,11 +74,13 @@ SYSTEM_PACKAGES = (
     'wheel',
 )
 
+LICENSE_UNKNOWN = 'UNKNOWN'
+
 
 def get_licenses_table(args):
     pkgs = pip.get_installed_distributions()
     table = PrettyTable()
-    table.field_names = ['Name', 'Version', 'License', 'Author', 'URL', ]
+    table.field_names = FIELD_NAMES
     table.border = False
     table.align = 'l'
     for pkg in pkgs:
@@ -87,10 +98,16 @@ def get_licenses_table(args):
     return table
 
 
-def get_output_field_names(args):
-    output_field_names = list(DEFAULT_OUTPUT_FIELDS)
+def get_output_fields(args):
+    output_fields = list(DEFAULT_OUTPUT_FIELDS)
 
-    return output_field_names
+    if args.with_authors:
+        output_fields.append('Author')
+
+    if args.with_urls:
+        output_fields.append('URL')
+
+    return output_fields
 
 
 def get_pkg_info(pkg):
@@ -108,14 +125,16 @@ def get_pkg_info(pkg):
 
     if metadata is None:
         for key in METADATA_KEYS:
-            pkg_info[key] = 'UNKNOWN'
+            pkg_info[key] = LICENSE_UNKNOWN
+
+        return pkg_info
 
     feed_parser = FeedParser()
     feed_parser.feed(metadata)
     parsed_metadata = feed_parser.close()
 
     for key in METADATA_KEYS:
-        pkg_info[key] = parsed_metadata.get(key, 'UNKNOWN')
+        pkg_info[key] = parsed_metadata.get(key, LICENSE_UNKNOWN)
 
     return pkg_info
 
@@ -147,8 +166,8 @@ def main():
     args = parser.parse_args()
 
     table = get_licenses_table(args)
-    field_names = get_output_field_names(args)
-    print(table.get_string(fields=field_names))
+    output_fields = get_output_fields(args)
+    print(table.get_string(fields=output_fields))
 
 
 if __name__ == '__main__':
