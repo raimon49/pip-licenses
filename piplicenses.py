@@ -35,6 +35,7 @@ from email.parser import FeedParser
 import pip
 from prettytable import PrettyTable
 
+__title__ = 'pip-licenses'
 __version__ = '0.1.0'
 __author__ = 'raimon'
 __license__ = 'MIT License'
@@ -50,6 +51,7 @@ METADATA_KEYS = (
 
 
 SYSTEM_PACKAGES = (
+    __title__,
     'pip',
     'PTable',
     'setuptools',
