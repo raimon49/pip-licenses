@@ -60,7 +60,8 @@ SYSTEM_PACKAGES = (
 def get_licenses(with_authors=False, with_system=False, with_urls=False):
     pkgs = pip.get_installed_distributions()
     table = PrettyTable()
-    table.field_names = ['Package', 'License', 'Author', 'URL', ]
+    table.field_names = ['Name', 'Version', 'License', 'Author', 'URL', ]
+    table.border = False
     table.align = 'l'
     for pkg in pkgs:
         pkg_info = get_pkg_info(pkg)
@@ -68,12 +69,13 @@ def get_licenses(with_authors=False, with_system=False, with_urls=False):
         if not with_system and pkg_info['name'] in SYSTEM_PACKAGES:
             continue
 
-        table.add_row([pkg_info['namever'],
+        table.add_row([pkg_info['name'],
+                       pkg_info['version'],
                        pkg_info['license'],
                        pkg_info['author'],
                        pkg_info['home-page'], ])
 
-    print(table.get_string(fields=['Package', 'License', ]))
+    print(table.get_string(fields=['Name', 'Version', 'License', ]))
 
 
 def get_pkg_info(pkg):
