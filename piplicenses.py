@@ -49,7 +49,7 @@ METADATA_KEYS = (
 )
 
 
-META_PACKAGES = (
+SYSTEM_PACKAGES = (
     'pip',
     'PTable',
     'setuptools',
@@ -57,7 +57,7 @@ META_PACKAGES = (
 )
 
 
-def get_licenses(with_authors=False, with_meta=False, with_urls=False):
+def get_licenses(with_authors=False, with_system=False, with_urls=False):
     pkgs = pip.get_installed_distributions()
     table = PrettyTable()
     table.field_names = ['Package', 'License', 'Author', 'URL', ]
@@ -65,7 +65,7 @@ def get_licenses(with_authors=False, with_meta=False, with_urls=False):
     for pkg in pkgs:
         pkg_info = get_pkg_info(pkg)
 
-        if not with_meta and pkg_info['name'] in META_PACKAGES:
+        if not with_system and pkg_info['name'] in SYSTEM_PACKAGES:
             continue
 
         table.add_row([pkg_info['namever'],
@@ -109,10 +109,10 @@ def create_parser():
     parser.add_argument('-v', '--version',
                         action='version',
                         version='%(prog)s ' + __version__)
-    parser.add_argument('-m', '--with-meta',
+    parser.add_argument('-s', '--with-system',
                         action='store_true',
                         default=False,
-                        help='dump with meta packages')
+                        help='dump with system packages')
     parser.add_argument('-a', '--with-authors',
                         action='store_true',
                         default=False,
@@ -128,7 +128,7 @@ def create_parser():
 def main():
     parser = create_parser()
     args = parser.parse_args()
-    get_licenses(args.with_meta,
+    get_licenses(args.with_system,
                  args.with_authors,
                  args.with_urls)
 
