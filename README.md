@@ -14,7 +14,7 @@ Implemented with the idea inspired by `composer licenses` command in Composer (a
 
 Install it via PyPI using `pip` command.
 
-```console
+```bash
 $ pip install pip-licenses
 ```
 
@@ -22,7 +22,7 @@ $ pip install pip-licenses
 
 Execute the command with your venv (or virtualenv) environment.
 
-```console
+```bash
 # Install your venv environment
 (venv) $ pip install Django pip-licenses
 
@@ -32,3 +32,62 @@ Execute the command with your venv (or virtualenv) environment.
  Django  2.0.2    BSD
  pytz    2017.3   MIT
 ```
+
+## Command-Line Options
+
+### --with-system
+
+By default, system packages such as pip and setuptools are ignored.
+
+If you want to output all including system package, use the `--with-system` option.
+
+```bash
+(venv) $ pip-licenses --with-system
+ Name          Version  License
+ Django        2.0.2    BSD
+ PTable        0.9.2    BSD (3 clause)
+ pip           9.0.1    MIT
+ pip-licenses  1.0.0    MIT License
+ pytz          2017.3   MIT
+ setuptools    38.5.0   UNKNOWN
+```
+
+### --with-authors
+
+When executed with the `--with-authors` option, output with the author of the package.
+
+```bash
+(venv) $ pip-licenses --with-authors
+ Name    Version  License  Author
+ Django  2.0.2    BSD      Django Software Foundation
+ pytz    2017.3   MIT      Stuart Bishop
+```
+
+### --with-urls
+
+For packages without METADATA, the license is output as `UNKNOWN`. To get more package information, use the `--with-urls` option.
+
+```bash
+(venv) $ pip-licenses --with-urls
+ Name    Version  License  URL
+ Django  2.0.2    BSD      https://www.djangoproject.com/
+ pytz    2017.3   MIT      http://pythonhosted.org/pytz
+```
+
+### --order
+
+By default, it is ordered by package name.
+
+If you give arguments to the `--order option`, you can output in other sorted order.
+
+```bash
+(venv) $ pip-licenses --order=license
+```
+
+### More Information
+
+Other, please make sure to execute the `--help` option.
+
+## License
+
+[MIT License](https://github.com/raimon49/pip-licenses/blob/master/LICENSE)
