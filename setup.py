@@ -88,7 +88,7 @@ setup(
         'Topic :: System :: Systems Administration',
         'Topic :: System :: System Shells',
     ],
-    keywords='pip license',
+    keywords='pip pypi package license check',
     py_modules=['piplicenses'],
     license=LICENSE,
     install_requires=['PTable'],
