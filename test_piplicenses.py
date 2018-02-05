@@ -3,7 +3,7 @@ from __future__ import (division, print_function,
 import unittest
 
 from piplicenses import (get_licenses_table, get_output_fields, create_parser,
-                         DEFAULT_OUTPUT_FIELDS, SYSTEM_PACKAGES,  __title__)
+                         DEFAULT_OUTPUT_FIELDS, SYSTEM_PACKAGES,  __pkgname__)
 
 
 class CommandLineTestCase(unittest.TestCase):
@@ -30,6 +30,8 @@ class TestGetLicenses(CommandLineTestCase):
 
         output_fields = get_output_fields(args)
         self.assertEquals(output_fields, list(DEFAULT_OUTPUT_FIELDS))
+        self.assertNotIn('Author', output_fields)
+        self.assertNotIn('URL', output_fields)
 
         pkg_name_columns = self._create_pkg_name_columns(table)
         for sys_pkg in SYSTEM_PACKAGES:
@@ -42,7 +44,7 @@ class TestGetLicenses(CommandLineTestCase):
 
         pkg_name_columns = self._create_pkg_name_columns(table)
         external_sys_pkgs = list(SYSTEM_PACKAGES)
-        external_sys_pkgs.remove(__title__)
+        external_sys_pkgs.remove(__pkgname__)
         for sys_pkg in external_sys_pkgs:
             self.assertIn(sys_pkg, pkg_name_columns)
 
