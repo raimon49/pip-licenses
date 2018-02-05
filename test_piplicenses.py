@@ -13,6 +13,9 @@ class CommandLineTestCase(unittest.TestCase):
 
 
 class TestGetLicenses(CommandLineTestCase):
+    def setUp(self):
+        pass
+
     def _create_pkg_name_columns(self, table):
         import copy
         # XXX: access to private API
@@ -63,3 +66,6 @@ class TestGetLicenses(CommandLineTestCase):
         output_fields = get_output_fields(args)
         self.assertNotEquals(output_fields, list(DEFAULT_OUTPUT_FIELDS))
         self.assertIn('URL', output_fields)
+
+    def tearDown(self):
+        pass

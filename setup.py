@@ -88,7 +88,7 @@ setup(
         'Topic :: System :: Systems Administration',
         'Topic :: System :: System Shells',
     ],
-    keywords='pip License',
+    keywords='pip license',
     py_modules=['piplicenses'],
     install_requires=['PTable'],
     setup_requires=[
