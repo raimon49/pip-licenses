@@ -189,5 +189,5 @@ def main():  # pragma: no cover
     print(table.get_string(fields=output_fields, sortby=sortby))
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no cover
     main()
