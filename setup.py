@@ -90,6 +90,7 @@ setup(
     ],
     keywords='pip license',
     py_modules=['piplicenses'],
+    license=LICENSE,
     install_requires=['PTable'],
     setup_requires=[
         'pytest-runner',
