@@ -78,6 +78,34 @@ LICENSE_UNKNOWN = 'UNKNOWN'
 
 
 def get_licenses_table(args):
+    def get_pkg_info(pkg):
+        pkg_info = {
+            'name': pkg.project_name,
+            'version': pkg.version,
+            'namever': str(pkg),
+        }
+        metadata = None
+        if pkg.has_metadata('METADATA'):
+            metadata = pkg.get_metadata('METADATA')
+
+        if pkg.has_metadata('PKG-INFO'):
+            metadata = pkg.get_metadata('PKG-INFO')
+
+        if metadata is None:
+            for key in METADATA_KEYS:
+                pkg_info[key] = LICENSE_UNKNOWN
+
+            return pkg_info
+
+        feed_parser = FeedParser()
+        feed_parser.feed(metadata)
+        parsed_metadata = feed_parser.close()
+
+        for key in METADATA_KEYS:
+            pkg_info[key] = parsed_metadata.get(key, LICENSE_UNKNOWN)
+
+        return pkg_info
+
     pkgs = pip.get_installed_distributions()
     table = PrettyTable()
     table.field_names = FIELD_NAMES
@@ -110,33 +138,17 @@ def get_output_fields(args):
     return output_fields
 
 
-def get_pkg_info(pkg):
-    pkg_info = {
-        'name': pkg.project_name,
-        'version': pkg.version,
-        'namever': str(pkg),
-    }
-    metadata = None
-    if pkg.has_metadata('METADATA'):
-        metadata = pkg.get_metadata('METADATA')
+def get_sortby(args):
+    if args.order == 'name':
+        return 'Name'
+    elif args.order == 'license':
+        return 'License'
+    elif args.order == 'author' and args.with_authors:
+        return 'Author'
+    elif args.order == 'url' and args.with_urls:
+        return 'URL'
 
-    if pkg.has_metadata('PKG-INFO'):
-        metadata = pkg.get_metadata('PKG-INFO')
-
-    if metadata is None:
-        for key in METADATA_KEYS:
-            pkg_info[key] = LICENSE_UNKNOWN
-
-        return pkg_info
-
-    feed_parser = FeedParser()
-    feed_parser.feed(metadata)
-    parsed_metadata = feed_parser.close()
-
-    for key in METADATA_KEYS:
-        pkg_info[key] = parsed_metadata.get(key, LICENSE_UNKNOWN)
-
-    return pkg_info
+    return 'Name'
 
 
 def create_parser():
@@ -157,6 +169,12 @@ def create_parser():
                         action='store_true',
                         default=False,
                         help='dump with package urls')
+    parser.add_argument('-o', '--order',
+                        action='store', type=str,
+                        default='name', metavar='COL',
+                        help=('order by column\n'
+                              '"name", "license", "author", "url"\n'
+                              'default: --order=name'))
 
     return parser
 
@@ -167,7 +185,8 @@ def main():
 
     table = get_licenses_table(args)
     output_fields = get_output_fields(args)
-    print(table.get_string(fields=output_fields))
+    sortby = get_sortby(args)
+    print(table.get_string(fields=output_fields, sortby=sortby))
 
 
 if __name__ == '__main__':

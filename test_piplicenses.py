@@ -2,8 +2,9 @@ from __future__ import (division, print_function,
                         absolute_import, unicode_literals)
 import unittest
 
-from piplicenses import (get_licenses_table, get_output_fields, create_parser,
-                         DEFAULT_OUTPUT_FIELDS, SYSTEM_PACKAGES,  __pkgname__)
+from piplicenses import (__pkgname__, create_parser,
+                         get_licenses_table, get_output_fields, get_sortby,
+                         DEFAULT_OUTPUT_FIELDS, SYSTEM_PACKAGES)
 
 
 class CommandLineTestCase(unittest.TestCase):
@@ -40,6 +41,9 @@ class TestGetLicenses(CommandLineTestCase):
         for sys_pkg in SYSTEM_PACKAGES:
             self.assertNotIn(sys_pkg, pkg_name_columns)
 
+        sortby = get_sortby(args)
+        self.assertEquals('Name', sortby)
+
     def test_with_system_args(self):
         with_system_args = ['--with-system']
         args = self.parser.parse_args(with_system_args)
@@ -66,6 +70,34 @@ class TestGetLicenses(CommandLineTestCase):
         output_fields = get_output_fields(args)
         self.assertNotEquals(output_fields, list(DEFAULT_OUTPUT_FIELDS))
         self.assertIn('URL', output_fields)
+
+    def test_order_name(self):
+        order_name_args = ['--order=name']
+        args = self.parser.parse_args(order_name_args)
+
+        sortby = get_sortby(args)
+        self.assertEquals('Name', sortby)
+
+    def test_order_license(self):
+        order_license_args = ['--order=license']
+        args = self.parser.parse_args(order_license_args)
+
+        sortby = get_sortby(args)
+        self.assertEquals('License', sortby)
+
+    def test_order_author(self):
+        order_author_args = ['--order=author', '--with-authors']
+        args = self.parser.parse_args(order_author_args)
+
+        sortby = get_sortby(args)
+        self.assertEquals('Author', sortby)
+
+    def test_order_url(self):
+        order_url_args = ['--order=url', '--with-urls']
+        args = self.parser.parse_args(order_url_args)
+
+        sortby = get_sortby(args)
+        self.assertEquals('URL', sortby)
 
     def tearDown(self):
         pass
