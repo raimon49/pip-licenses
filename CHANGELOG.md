@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+### 1.0.0
+
+* First stable release version
+
 ### 0.2.0
 * Implement new option `--order`
     * Default behavior is `--order=name`
