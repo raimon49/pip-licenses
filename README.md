@@ -10,6 +10,8 @@ Dump the license list of packages installed with pip.
 
 Implemented with the idea inspired by `composer licenses` command in Composer (a.k.a PHP package management tool).
 
+https://getcomposer.org/doc/03-cli.md#licenses
+
 ## Installation
 
 Install it via PyPI using `pip` command.
@@ -23,10 +25,10 @@ $ pip install pip-licenses
 Execute the command with your venv (or virtualenv) environment.
 
 ```bash
-# Install your venv environment
+# Install packages in your venv environment
 (venv) $ pip install Django pip-licenses
 
-# Check the licenses
+# Check the licenses with your venv environment
 (venv) $ pip-licenses
  Name    Version  License
  Django  2.0.2    BSD
