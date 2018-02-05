@@ -1,0 +1,13 @@
+language: python
+python:
+  - "2.7"
+  - "3.3"
+  - "3.4"
+  - "3.5"
+  - "3.6"
+install:
+  - pip install -r dev-requirements.txt
+script:
+  pytest --pep8 -v --cov
+after_success:
+  - if [[ $TRAVIS_PYTHON_VERSION == 2* ]]; then codecov; fi
