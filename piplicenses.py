@@ -179,7 +179,7 @@ def create_parser():
     return parser
 
 
-def main():
+def main():  # pragma: no cover
     parser = create_parser()
     args = parser.parse_args()
 

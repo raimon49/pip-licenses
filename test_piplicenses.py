@@ -99,5 +99,12 @@ class TestGetLicenses(CommandLineTestCase):
         sortby = get_sortby(args)
         self.assertEquals('URL', sortby)
 
+    def test_order_url_no_effect(self):
+        order_url_args = ['--order=url']
+        args = self.parser.parse_args(order_url_args)
+
+        sortby = get_sortby(args)
+        self.assertEquals('Name', sortby)
+
     def tearDown(self):
         pass
