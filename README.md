@@ -4,6 +4,21 @@
 
 Dump the license list of packages installed with pip.
 
+Table of Contents
+=================
+
+* [Description](#description)
+* [Installation](#installation)
+* [Usage](#usage)
+* [Command\-Line Options](#command-line-options)
+    * [\-\-with\-system](#--with-system)
+    * [\-\-with\-authors](#--with-authors)
+    * [\-\-with\-urls](#--with-urls)
+    * [\-\-order](#--order)
+    * [More Information](#more-information)
+* [License](#license)
+    * [Dependencies](#dependencies)
+
 ## Description
 
 `pip-licenses` is a CLI tool for checking the software license of installed packages with pip.
@@ -56,7 +71,7 @@ If you want to output all including system package, use the `--with-system` opti
 
 ### --with-authors
 
-When executed with the `--with-authors` option, output with the author of the package.
+When executed with the `--with-authors` option, output with author of the package.
 
 ```bash
 (venv) $ pip-licenses --with-authors
