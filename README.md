@@ -4,8 +4,7 @@
 
 Dump the license list of packages installed with pip.
 
-Table of Contents
-=================
+## Table of Contents
 
 * [Description](#description)
 * [Installation](#installation)
