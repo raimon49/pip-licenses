@@ -88,7 +88,7 @@ def get_licenses_table(args):
         if pkg.has_metadata('METADATA'):
             metadata = pkg.get_metadata('METADATA')
 
-        if pkg.has_metadata('PKG-INFO'):
+        if pkg.has_metadata('PKG-INFO') and metadata is None:
             metadata = pkg.get_metadata('PKG-INFO')
 
         if metadata is None:
