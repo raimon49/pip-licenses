@@ -1,5 +1,11 @@
 ## CHANGELOG
 
+### 1.1.0
+
+* Improve document
+    * Add ToC to README document
+    * Add a information of dependencies
+
 ### 1.0.0
 
 * First stable release version

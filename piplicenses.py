@@ -36,7 +36,7 @@ import pip
 from prettytable import PrettyTable
 
 __pkgname__ = 'pip-licenses'
-__version__ = '1.0.0'
+__version__ = '1.1.0'
 __author__ = 'raimon'
 __license__ = 'MIT License'
 __summary__ = 'Dump the license list of packages installed with pip.'
