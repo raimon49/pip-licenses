@@ -1,10 +1,13 @@
 from __future__ import (division, print_function,
                         absolute_import, unicode_literals)
 import unittest
+from email import message_from_string
 
 from piplicenses import (__pkgname__, create_parser,
                          get_licenses_table, get_output_fields, get_sortby,
-                         DEFAULT_OUTPUT_FIELDS, SYSTEM_PACKAGES)
+                         find_license_from_classifier,
+                         DEFAULT_OUTPUT_FIELDS, SYSTEM_PACKAGES,
+                         LICENSE_UNKNOWN)
 
 
 class CommandLineTestCase(unittest.TestCase):
@@ -19,11 +22,25 @@ class TestGetLicenses(CommandLineTestCase):
 
     def _create_pkg_name_columns(self, table):
         import copy
+        index = DEFAULT_OUTPUT_FIELDS.index('Name')
+
         # XXX: access to private API
         rows = copy.deepcopy(table._rows)
         pkg_name_columns = []
         for row in rows:
-            pkg_name_columns.append(row[0])
+            pkg_name_columns.append(row[index])
+
+        return pkg_name_columns
+
+    def _create_license_columns(self, table):
+        import copy
+        index = DEFAULT_OUTPUT_FIELDS.index('License')
+
+        # XXX: access to private API
+        rows = copy.deepcopy(table._rows)
+        pkg_name_columns = []
+        for row in rows:
+            pkg_name_columns.append(row[index])
 
         return pkg_name_columns
 
@@ -105,6 +122,35 @@ class TestGetLicenses(CommandLineTestCase):
 
         sortby = get_sortby(args)
         self.assertEquals('Name', sortby)
+
+    def test_from_classifier(self):
+        from_classifier_args = ['--from-classifier']
+        args = self.parser.parse_args(from_classifier_args)
+        table = get_licenses_table(args)
+
+        output_fields = get_output_fields(args)
+        self.assertIn('License', output_fields)
+
+        license_columns = self._create_license_columns(table)
+        license_notation_as_classifier = 'MIT License'
+        self.assertIn(license_notation_as_classifier, license_columns)
+
+    def test_find_license_from_classifier(self):
+        metadata = ('Metadata-Version: 2.0\r\n'
+                    'Name: pip-licenses\r\n'
+                    'Version: 1.0.0\r\n'
+                    'Classifier: License :: OSI Approved :: MIT License\r\n')
+        message = message_from_string(metadata)
+        self.assertEquals('MIT License',
+                          find_license_from_classifier(message))
+
+    def test_not_fond_license_from_classifier(self):
+        metadata_as_no_license = ('Metadata-Version: 2.0\r\n'
+                                  'Name: pip-licenses\r\n'
+                                  'Version: 1.0.0\r\n')
+        message = message_from_string(metadata_as_no_license)
+        self.assertEquals(LICENSE_UNKNOWN,
+                          find_license_from_classifier(message))
 
     def tearDown(self):
         pass
