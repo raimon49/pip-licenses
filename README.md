@@ -10,6 +10,7 @@ Dump the software license list of Python packages installed with pip.
 * [Installation](#installation)
 * [Usage](#usage)
 * [Command\-Line Options](#command-line-options)
+    * [\-\-from\-classifier](#--from-classifier)
     * [\-\-with\-system](#--with-system)
     * [\-\-with\-authors](#--with-authors)
     * [\-\-with\-urls](#--with-urls)
@@ -70,7 +71,7 @@ If you want to refer to the license declared in Classifiers, use the `--from-cla
  setuptools    38.5.0   MIT License
 ```
 
-### --with-syste
+### --with-system
 
 By default, system packages such as pip and setuptools are ignored.
 
