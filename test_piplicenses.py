@@ -22,11 +22,25 @@ class TestGetLicenses(CommandLineTestCase):
 
     def _create_pkg_name_columns(self, table):
         import copy
+        index = DEFAULT_OUTPUT_FIELDS.index('Name')
+
         # XXX: access to private API
         rows = copy.deepcopy(table._rows)
         pkg_name_columns = []
         for row in rows:
-            pkg_name_columns.append(row[0])
+            pkg_name_columns.append(row[index])
+
+        return pkg_name_columns
+
+    def _create_license_columns(self, table):
+        import copy
+        index = DEFAULT_OUTPUT_FIELDS.index('License')
+
+        # XXX: access to private API
+        rows = copy.deepcopy(table._rows)
+        pkg_name_columns = []
+        for row in rows:
+            pkg_name_columns.append(row[index])
 
         return pkg_name_columns
 
@@ -108,6 +122,18 @@ class TestGetLicenses(CommandLineTestCase):
 
         sortby = get_sortby(args)
         self.assertEquals('Name', sortby)
+
+    def test_from_classifier(self):
+        from_classifier_args = ['--from-classifier']
+        args = self.parser.parse_args(from_classifier_args)
+        table = get_licenses_table(args)
+
+        output_fields = get_output_fields(args)
+        self.assertIn('License', output_fields)
+
+        license_columns = self._create_license_columns(table)
+        license_notation_as_classifier = 'MIT License'
+        self.assertIn(license_notation_as_classifier, license_columns)
 
     def test_find_license_from_classifier(self):
         metadata = ('Metadata-Version: 2.0\r\n'
