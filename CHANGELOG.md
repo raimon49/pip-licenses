@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+### 1.2.0
+
+* Implement new option `--from-classifier`
+
 ### 1.1.0
 
 * Improve document
