@@ -40,7 +40,8 @@ __pkgname__ = 'pip-licenses'
 __version__ = '1.1.0'
 __author__ = 'raimon'
 __license__ = 'MIT License'
-__summary__ = 'Dump the license list of packages installed with pip.'
+__summary__ = ('Dump the software license list of '
+               'Python packages installed with pip.')
 __url__ = 'https://github.com/raimon49/pip-licenses'
 
 
@@ -175,7 +176,7 @@ def create_parser():
     parser.add_argument('-c', '--from-classifier',
                         action='store_true',
                         default=False,
-                        help='dump with system packages')
+                        help='find license from classifier')
     parser.add_argument('-s', '--with-system',
                         action='store_true',
                         default=False,

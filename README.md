@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/raimon49/pip-licenses.svg?branch=master)](https://travis-ci.org/raimon49/pip-licenses) [![PyPI version](https://badge.fury.io/py/pip-licenses.svg)](https://badge.fury.io/py/pip-licenses) [![GitHub Release](https://img.shields.io/github/release/raimon49/pip-licenses.svg)](https://github.com/raimon49/pip-licenses/releases) [![Codecov](https://codecov.io/gh/raimon49/pip-licenses/branch/master/graph/badge.svg)](https://codecov.io/gh/raimon49/pip-licenses) [![BSD License](http://img.shields.io/badge/license-MIT-green.svg)](https://github.com/raimon49/pip-licenses/blob/master/LICENSE) [![Requirements Status](https://requires.io/github/raimon49/pip-licenses/requirements.svg?branch=master)](https://requires.io/github/raimon49/pip-licenses/requirements/?branch=master)
 
-Dump the license list of packages installed with pip.
+Dump the software license list of Python packages installed with pip.
 
 ## Table of Contents
 
@@ -20,7 +20,7 @@ Dump the license list of packages installed with pip.
 
 ## Description
 
-`pip-licenses` is a CLI tool for checking the software license of installed packages with pip.
+`pip-licenses` is a CLI tool for checking the software license of installed Python packages with pip.
 
 Implemented with the idea inspired by `composer licenses` command in Composer (a.k.a PHP package management tool).
 
@@ -51,7 +51,26 @@ Execute the command with your venv (or virtualenv) environment.
 
 ## Command-Line Options
 
-### --with-system
+### --from-classifier
+
+By default, this tool finds the license from package METADATA or PKG-INFO.
+
+However, depending on the type of package, it does not declare a license only in the Classifiers. See also: [Set license to MIT in setup.py by alisianoi ・ Pull Request #1058 ・ pypa/setuptools](https://github.com/pypa/setuptools/pull/1058)
+
+If you want to refer to the license declared in Classifiers, use the `--from-classifier` option.
+
+```bash
+(venv) $ pip-licenses --from-classifier --with-system
+ Name          Version  License
+ Django        2.0.2    BSD License
+ PTable        0.9.2    BSD License
+ pip           9.0.1    MIT License
+ pip-licenses  1.0.0    MIT License
+ pytz          2017.3   MIT License
+ setuptools    38.5.0   MIT License
+```
+
+### --with-syste
 
 By default, system packages such as pip and setuptools are ignored.
 
@@ -81,7 +100,7 @@ When executed with the `--with-authors` option, output with author of the packag
 
 ### --with-urls
 
-For packages without METADATA, the license is output as `UNKNOWN`. To get more package information, use the `--with-urls` option.
+For packages without METADATA (or PKG-INFO or Classifiers), the license is output as `UNKNOWN`. To get more package information, use the `--with-urls` option.
 
 ```bash
 (venv) $ pip-licenses --with-urls
