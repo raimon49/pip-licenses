@@ -1,10 +1,13 @@
 from __future__ import (division, print_function,
                         absolute_import, unicode_literals)
 import unittest
+from email import message_from_string
 
 from piplicenses import (__pkgname__, create_parser,
                          get_licenses_table, get_output_fields, get_sortby,
-                         DEFAULT_OUTPUT_FIELDS, SYSTEM_PACKAGES)
+                         find_license_from_classifier,
+                         DEFAULT_OUTPUT_FIELDS, SYSTEM_PACKAGES,
+                         LICENSE_UNKNOWN)
 
 
 class CommandLineTestCase(unittest.TestCase):
@@ -105,6 +108,23 @@ class TestGetLicenses(CommandLineTestCase):
 
         sortby = get_sortby(args)
         self.assertEquals('Name', sortby)
+
+    def test_find_license_from_classifier(self):
+        metadata = ('Metadata-Version: 2.0\r\n'
+                    'Name: pip-licenses\r\n'
+                    'Version: 1.0.0\r\n'
+                    'Classifier: License :: OSI Approved :: MIT License\r\n')
+        message = message_from_string(metadata)
+        self.assertEquals('MIT License',
+                          find_license_from_classifier(message))
+
+    def test_not_fond_license_from_classifier(self):
+        metadata_as_no_license = ('Metadata-Version: 2.0\r\n'
+                                  'Name: pip-licenses\r\n'
+                                  'Version: 1.0.0\r\n')
+        message = message_from_string(metadata_as_no_license)
+        self.assertEquals(LICENSE_UNKNOWN,
+                          find_license_from_classifier(message))
 
     def tearDown(self):
         pass

@@ -31,6 +31,7 @@ from __future__ import (division, print_function,
 import sys
 import argparse
 from email.parser import FeedParser
+from email import message_from_string
 
 import pip
 from prettytable import PrettyTable
@@ -104,6 +105,10 @@ def get_licenses_table(args):
         for key in METADATA_KEYS:
             pkg_info[key] = parsed_metadata.get(key, LICENSE_UNKNOWN)
 
+        if args.from_classifier and metadata is not None:
+            message = message_from_string(metadata)
+            pkg_info['license'] = find_license_from_classifier(message)
+
         return pkg_info
 
     pkgs = pip.get_installed_distributions()
@@ -124,6 +129,16 @@ def get_licenses_table(args):
                        pkg_info['home-page'], ])
 
     return table
+
+
+def find_license_from_classifier(message):
+    license_from_classifier = LICENSE_UNKNOWN
+
+    for k, v in message.items():
+        if k == 'Classifier' and v.startswith('License'):
+            license_from_classifier = v.split(' :: ')[-1]
+
+    return license_from_classifier
 
 
 def get_output_fields(args):
@@ -157,6 +172,10 @@ def create_parser():
     parser.add_argument('-v', '--version',
                         action='version',
                         version='%(prog)s ' + __version__)
+    parser.add_argument('-c', '--from-classifier',
+                        action='store_true',
+                        default=False,
+                        help='dump with system packages')
     parser.add_argument('-s', '--with-system',
                         action='store_true',
                         default=False,
