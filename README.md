@@ -54,9 +54,9 @@ Execute the command with your venv (or virtualenv) environment.
 
 ### --from-classifier
 
-By default, this tool finds the license from package METADATA or PKG-INFO.
+By default, this tool finds the license from package METADATA or PKG-INFO. However, depending on the type of package, it does not declare a license only in the Classifiers.
 
-However, depending on the type of package, it does not declare a license only in the Classifiers. See also: [Set license to MIT in setup.py by alisianoi ・ Pull Request #1058 ・ pypa/setuptools](https://github.com/pypa/setuptools/pull/1058)
+(See also): [Set license to MIT in setup.py by alisianoi ・ Pull Request #1058 ・ pypa/setuptools](https://github.com/pypa/setuptools/pull/1058)
 
 If you want to refer to the license declared in Classifiers, use the `--from-classifier` option.
 
