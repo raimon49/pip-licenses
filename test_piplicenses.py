@@ -4,7 +4,7 @@ import unittest
 from email import message_from_string
 
 from piplicenses import (__pkgname__, create_parser,
-                         get_licenses_table, get_output_fields, get_sortby,
+                         create_licenses_table, get_output_fields, get_sortby,
                          find_license_from_classifier,
                          DEFAULT_OUTPUT_FIELDS, SYSTEM_PACKAGES,
                          LICENSE_UNKNOWN)
@@ -47,7 +47,7 @@ class TestGetLicenses(CommandLineTestCase):
     def test_with_empty_args(self):
         empty_args = []
         args = self.parser.parse_args(empty_args)
-        table = get_licenses_table(args)
+        table = create_licenses_table(args)
 
         output_fields = get_output_fields(args)
         self.assertEquals(output_fields, list(DEFAULT_OUTPUT_FIELDS))
@@ -64,7 +64,7 @@ class TestGetLicenses(CommandLineTestCase):
     def test_with_system_args(self):
         with_system_args = ['--with-system']
         args = self.parser.parse_args(with_system_args)
-        table = get_licenses_table(args)
+        table = create_licenses_table(args)
 
         pkg_name_columns = self._create_pkg_name_columns(table)
         external_sys_pkgs = list(SYSTEM_PACKAGES)
@@ -126,7 +126,7 @@ class TestGetLicenses(CommandLineTestCase):
     def test_from_classifier(self):
         from_classifier_args = ['--from-classifier']
         args = self.parser.parse_args(from_classifier_args)
-        table = get_licenses_table(args)
+        table = create_licenses_table(args)
 
         output_fields = get_output_fields(args)
         self.assertIn('License', output_fields)

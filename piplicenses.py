@@ -79,7 +79,7 @@ SYSTEM_PACKAGES = (
 LICENSE_UNKNOWN = 'UNKNOWN'
 
 
-def get_licenses_table(args):
+def create_licenses_table(args):
     def get_pkg_info(pkg):
         pkg_info = {
             'name': pkg.project_name,
@@ -203,7 +203,7 @@ def main():  # pragma: no cover
     parser = create_parser()
     args = parser.parse_args()
 
-    table = get_licenses_table(args)
+    table = create_licenses_table(args)
     output_fields = get_output_fields(args)
     sortby = get_sortby(args)
     print(table.get_string(fields=output_fields, sortby=sortby))
