@@ -110,6 +110,26 @@ For packages without Metadata, the license is output as `UNKNOWN`. To get more p
  pytz    2017.3   MIT      http://pythonhosted.org/pytz
 ```
 
+### --ignore-packages
+
+When executed with the `--ignore-packages` option, ignore the package specified by argument from list output.
+
+```bash
+(venv) $ pip-licenses --ignore-packages django
+ Name  Version  License
+ pytz  2017.3   MIT
+```
+
+Package names of arguments can be separated by spaces.
+
+```bash
+(venv) $ pip-licenses --with-system --ignore-packages django pip pip-licenses
+ Name        Version  License
+ PTable      0.9.2    BSD (3 clause)
+ pytz        2017.3   MIT
+ setuptools  38.5.0   UNKNOWN
+```
+
 ### --order
 
 By default, it is ordered by package name.
