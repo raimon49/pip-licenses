@@ -150,4 +150,6 @@ Other, please make sure to execute the `--help` option.
 
 ### Dependencies
 
+`pip-licenses` has been implemented in the policy to minimize the dependence on external package.
+
 * [PTable](https://pypi.python.org/pypi/PTable) by Luke Maurits and maintainer of fork version Kane Blueriver under the BSD-3-Clause License
