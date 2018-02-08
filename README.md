@@ -54,9 +54,9 @@ Execute the command with your venv (or virtualenv) environment.
 
 ### --from-classifier
 
-By default, this tool finds the license from package METADATA or PKG-INFO. However, depending on the type of package, it does not declare a license only in the Classifiers.
+By default, this tool finds the license from package Metadata. However, depending on the type of package, it does not declare a license only in the Classifiers.
 
-(See also): [Set license to MIT in setup.py by alisianoi ・ Pull Request #1058 ・ pypa/setuptools](https://github.com/pypa/setuptools/pull/1058)
+(See also): [Set license to MIT in setup.py by alisianoi ・ Pull Request #1058 ・ pypa/setuptools](https://github.com/pypa/setuptools/pull/1058), [PEP 314\#License](https://www.python.org/dev/peps/pep-0314/#license)
 
 If you want to refer to the license declared in Classifiers, use the `--from-classifier` option.
 
@@ -101,7 +101,7 @@ When executed with the `--with-authors` option, output with author of the packag
 
 ### --with-urls
 
-For packages without METADATA (or PKG-INFO or Classifiers), the license is output as `UNKNOWN`. To get more package information, use the `--with-urls` option.
+For packages without Metadata, the license is output as `UNKNOWN`. To get more package information, use the `--with-urls` option.
 
 ```bash
 (venv) $ pip-licenses --with-urls
