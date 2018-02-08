@@ -117,10 +117,15 @@ def create_licenses_table(args):
     table.field_names = FIELD_NAMES
     table.border = False
     table.align = 'l'
+    ignore_pkgs = [pkg.lower() for pkg in args.ignore_packages]
     for pkg in pkgs:
         pkg_info = get_pkg_info(pkg)
+        pkg_name = pkg_info['name']
 
-        if not args.with_system and pkg_info['name'] in SYSTEM_PACKAGES:
+        if pkg_name.lower() in ignore_pkgs:
+            continue
+
+        if not args.with_system and pkg_name in SYSTEM_PACKAGES:
             continue
 
         table.add_row([pkg_info['name'],
@@ -189,6 +194,11 @@ def create_parser():
                         action='store_true',
                         default=False,
                         help='dump with package urls')
+    parser.add_argument('-i', '--ignore-packages',
+                        action='store', type=str,
+                        nargs='+', metavar='PKG',
+                        default=[],
+                        help='ignore package name in dumped list')
     parser.add_argument('-o', '--order',
                         action='store', type=str,
                         default='name', metavar='COL',

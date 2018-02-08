@@ -117,6 +117,15 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertNotEquals(output_fields, list(DEFAULT_OUTPUT_FIELDS))
         self.assertIn('URL', output_fields)
 
+    def test_ignore_packages(self):
+        ignore_pkg_name = 'PTable'
+        ignore_packages_args = ['--ignore-package=' + ignore_pkg_name]
+        args = self.parser.parse_args(ignore_packages_args)
+        table = create_licenses_table(args)
+
+        pkg_name_columns = self._create_pkg_name_columns(table)
+        self.assertNotIn(ignore_pkg_name, pkg_name_columns)
+
     def test_order_name(self):
         order_name_args = ['--order=name']
         args = self.parser.parse_args(order_name_args)
