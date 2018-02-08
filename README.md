@@ -14,6 +14,7 @@ Dump the software license list of Python packages installed with pip.
     * [\-\-with\-system](#--with-system)
     * [\-\-with\-authors](#--with-authors)
     * [\-\-with\-urls](#--with-urls)
+    * [\-\-ignore\-packages](#--ignore-packages)
     * [\-\-order](#--order)
     * [More Information](#more-information)
 * [License](#license)
