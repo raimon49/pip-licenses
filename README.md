@@ -73,7 +73,7 @@ If you want to refer to the license declared in Classifiers, use the `--from-cla
 
 ### --with-system
 
-By default, system packages such as pip and setuptools are ignored.
+By default, system packages such as `pip` and `setuptools` are ignored.
 
 If you want to output all including system package, use the `--with-system` option.
 
