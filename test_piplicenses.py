@@ -3,8 +3,11 @@ from __future__ import (division, print_function,
 import unittest
 from email import message_from_string
 
+from prettytable.prettytable import (HEADER as RULE_HEADER,
+                                     FRAME as RULE_FRAME)
 from piplicenses import (__pkgname__, create_parser,
                          create_licenses_table, get_output_fields, get_sortby,
+                         factory_styled_table_as_args,
                          find_license_from_classifier,
                          DEFAULT_OUTPUT_FIELDS, SYSTEM_PACKAGES,
                          LICENSE_UNKNOWN)
@@ -48,6 +51,12 @@ class TestGetLicenses(CommandLineTestCase):
         empty_args = []
         args = self.parser.parse_args(empty_args)
         table = create_licenses_table(args)
+
+        self.assertIn('l', table.align.values())
+        self.assertFalse(table.border)
+        self.assertTrue(table.header)
+        self.assertEquals('+', table.junction_char)
+        self.assertEquals(RULE_FRAME, table.hrules)
 
         output_fields = get_output_fields(args)
         self.assertEquals(output_fields, list(DEFAULT_OUTPUT_FIELDS))
@@ -160,6 +169,17 @@ class TestGetLicenses(CommandLineTestCase):
 
         sortby = get_sortby(args)
         self.assertEquals('Name', sortby)
+
+    def test_format_markdown(self):
+        format_markdown_args = ['--format-markdown']
+        args = self.parser.parse_args(format_markdown_args)
+        table = factory_styled_table_as_args(args)
+
+        self.assertIn('l', table.align.values())
+        self.assertTrue(table.border)
+        self.assertTrue(table.header)
+        self.assertEquals('|', table.junction_char)
+        self.assertEquals(RULE_HEADER, table.hrules)
 
     def tearDown(self):
         pass
