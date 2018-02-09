@@ -113,7 +113,7 @@ def create_licenses_table(args):
 
         return pkg_info
 
-    table = factory_styled_table_as_args(args)
+    table = factory_styled_table_with_args(args)
 
     pkgs = pip.get_installed_distributions()
     ignore_pkgs_as_lower = [pkg.lower() for pkg in args.ignore_packages]
@@ -136,7 +136,7 @@ def create_licenses_table(args):
     return table
 
 
-def factory_styled_table_as_args(args):
+def factory_styled_table_with_args(args):
     table = PrettyTable()
     table.field_names = FIELD_NAMES
     table.align = 'l'

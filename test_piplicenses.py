@@ -7,7 +7,7 @@ from prettytable.prettytable import (HEADER as RULE_HEADER,
                                      FRAME as RULE_FRAME)
 from piplicenses import (__pkgname__, create_parser,
                          create_licenses_table, get_output_fields, get_sortby,
-                         factory_styled_table_as_args,
+                         factory_styled_table_with_args,
                          find_license_from_classifier,
                          DEFAULT_OUTPUT_FIELDS, SYSTEM_PACKAGES,
                          LICENSE_UNKNOWN)
@@ -173,7 +173,7 @@ class TestGetLicenses(CommandLineTestCase):
     def test_format_markdown(self):
         format_markdown_args = ['--format-markdown']
         args = self.parser.parse_args(format_markdown_args)
-        table = factory_styled_table_as_args(args)
+        table = factory_styled_table_with_args(args)
 
         self.assertIn('l', table.align.values())
         self.assertTrue(table.border)
