@@ -16,6 +16,7 @@ Dump the software license list of Python packages installed with pip.
     * [\-\-with\-urls](#--with-urls)
     * [\-\-ignore\-packages](#--ignore-packages)
     * [\-\-order](#--order)
+    * [\-\-format\-markdown](#--format-markdown)
     * [More Information](#more-information)
 * [License](#license)
     * [Dependencies](#dependencies)
@@ -140,6 +141,25 @@ If you give arguments to the `--order option`, you can output in other sorted or
 ```bash
 (venv) $ pip-licenses --order=license
 ```
+
+### --format-markdown
+
+When executed with the `--format-markdown` option, you can output list in markdown format.
+
+```bash
+(venv) $ pip-licenses --format-markdown
+| Name   | Version | License |
+|--------|---------|---------|
+| Django | 2.0.2   | BSD     |
+| pytz   | 2017.3  | MIT     |
+```
+
+When inserted in a markdown document, it is rendered as follows:
+
+| Name   | Version | License |
+|--------|---------|---------|
+| Django | 2.0.2   | BSD     |
+| pytz   | 2017.3  | MIT     |
 
 ### More Information
 
