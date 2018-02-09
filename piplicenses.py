@@ -35,9 +35,10 @@ from email import message_from_string
 
 import pip
 from prettytable import PrettyTable
+from prettytable.prettytable import HEADER as RULE_HEADER
 
 __pkgname__ = 'pip-licenses'
-__version__ = '1.3.0'
+__version__ = '1.4.0'
 __author__ = 'raimon'
 __license__ = 'MIT License'
 __summary__ = ('Dump the software license list of '
@@ -112,11 +113,9 @@ def create_licenses_table(args):
 
         return pkg_info
 
+    table = factory_styled_table_with_args(args)
+
     pkgs = pip.get_installed_distributions()
-    table = PrettyTable()
-    table.field_names = FIELD_NAMES
-    table.border = False
-    table.align = 'l'
     ignore_pkgs_as_lower = [pkg.lower() for pkg in args.ignore_packages]
     for pkg in pkgs:
         pkg_info = get_pkg_info(pkg)
@@ -133,6 +132,21 @@ def create_licenses_table(args):
                        pkg_info['license'],
                        pkg_info['author'],
                        pkg_info['home-page'], ])
+
+    return table
+
+
+def factory_styled_table_with_args(args):
+    table = PrettyTable()
+    table.field_names = FIELD_NAMES
+    table.align = 'l'
+    table.border = args.format_markdown
+    table.header = True
+
+    if args.format_markdown:
+        table.border = True
+        table.junction_char = '|'
+        table.hrules = RULE_HEADER
 
     return table
 
@@ -205,6 +219,10 @@ def create_parser():
                         help=('order by column\n'
                               '"name", "license", "author", "url"\n'
                               'default: --order=name'))
+    parser.add_argument('-m', '--format-markdown',
+                        action='store_true',
+                        default=False,
+                        help='dump as markdown style')
 
     return parser
 

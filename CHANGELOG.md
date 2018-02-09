@@ -1,5 +1,10 @@
 ## CHANGELOG
 
+### 1.4.0
+
+* Implement new option `--format-markdown`
+* Include LICENSE file in distribution package
+
 ### 1.3.0
 
 * Implement new option `--ignore-packages`
