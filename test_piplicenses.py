@@ -91,7 +91,7 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertEquals('MIT License',
                           find_license_from_classifier(message))
 
-    def test_not_fond_license_from_classifier(self):
+    def test_not_found_license_from_classifier(self):
         metadata_as_no_license = ('Metadata-Version: 2.0\r\n'
                                   'Name: pip-licenses\r\n'
                                   'Version: 1.0.0\r\n')
