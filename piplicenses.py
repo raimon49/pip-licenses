@@ -38,7 +38,7 @@ from prettytable import PrettyTable
 from prettytable.prettytable import HEADER as RULE_HEADER
 
 __pkgname__ = 'pip-licenses'
-__version__ = '1.3.0'
+__version__ = '1.4.0'
 __author__ = 'raimon'
 __license__ = 'MIT License'
 __summary__ = ('Dump the software license list of '
