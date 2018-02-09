@@ -117,12 +117,12 @@ def create_licenses_table(args):
     table.field_names = FIELD_NAMES
     table.border = False
     table.align = 'l'
-    ignore_pkgs = [pkg.lower() for pkg in args.ignore_packages]
+    ignore_pkgs_as_lower = [pkg.lower() for pkg in args.ignore_packages]
     for pkg in pkgs:
         pkg_info = get_pkg_info(pkg)
         pkg_name = pkg_info['name']
 
-        if pkg_name.lower() in ignore_pkgs:
+        if pkg_name.lower() in ignore_pkgs_as_lower:
             continue
 
         if not args.with_system and pkg_name in SYSTEM_PACKAGES:
