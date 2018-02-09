@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+### 1.3.0
+
+* Implement new option `--ignore-packages`
+
 ### 1.2.0
 
 * Implement new option `--from-classifier`
