@@ -14,6 +14,7 @@ Dump the software license list of Python packages installed with pip.
     * [\-\-with\-system](#--with-system)
     * [\-\-with\-authors](#--with-authors)
     * [\-\-with\-urls](#--with-urls)
+    * [\-\-ignore\-packages](#--ignore-packages)
     * [\-\-order](#--order)
     * [More Information](#more-information)
 * [License](#license)
@@ -54,9 +55,9 @@ Execute the command with your venv (or virtualenv) environment.
 
 ### --from-classifier
 
-By default, this tool finds the license from package METADATA or PKG-INFO. However, depending on the type of package, it does not declare a license only in the Classifiers.
+By default, this tool finds the license from package Metadata. However, depending on the type of package, it does not declare a license only in the Classifiers.
 
-(See also): [Set license to MIT in setup.py by alisianoi ・ Pull Request #1058 ・ pypa/setuptools](https://github.com/pypa/setuptools/pull/1058)
+(See also): [Set license to MIT in setup.py by alisianoi ・ Pull Request #1058 ・ pypa/setuptools](https://github.com/pypa/setuptools/pull/1058), [PEP 314\#License](https://www.python.org/dev/peps/pep-0314/#license)
 
 If you want to refer to the license declared in Classifiers, use the `--from-classifier` option.
 
@@ -73,7 +74,7 @@ If you want to refer to the license declared in Classifiers, use the `--from-cla
 
 ### --with-system
 
-By default, system packages such as pip and setuptools are ignored.
+By default, system packages such as `pip` and `setuptools` are ignored.
 
 If you want to output all including system package, use the `--with-system` option.
 
@@ -101,13 +102,33 @@ When executed with the `--with-authors` option, output with author of the packag
 
 ### --with-urls
 
-For packages without METADATA (or PKG-INFO or Classifiers), the license is output as `UNKNOWN`. To get more package information, use the `--with-urls` option.
+For packages without Metadata, the license is output as `UNKNOWN`. To get more package information, use the `--with-urls` option.
 
 ```bash
 (venv) $ pip-licenses --with-urls
  Name    Version  License  URL
  Django  2.0.2    BSD      https://www.djangoproject.com/
  pytz    2017.3   MIT      http://pythonhosted.org/pytz
+```
+
+### --ignore-packages
+
+When executed with the `--ignore-packages` option, ignore the package specified by argument from list output.
+
+```bash
+(venv) $ pip-licenses --ignore-packages django
+ Name  Version  License
+ pytz  2017.3   MIT
+```
+
+Package names of arguments can be separated by spaces.
+
+```bash
+(venv) $ pip-licenses --with-system --ignore-packages django pip pip-licenses
+ Name        Version  License
+ PTable      0.9.2    BSD (3 clause)
+ pytz        2017.3   MIT
+ setuptools  38.5.0   UNKNOWN
 ```
 
 ### --order
@@ -131,3 +152,5 @@ Other, please make sure to execute the `--help` option.
 ### Dependencies
 
 * [PTable](https://pypi.python.org/pypi/PTable) by Luke Maurits and maintainer of fork version Kane Blueriver under the BSD-3-Clause License
+
+`pip-licenses` has been implemented in the policy to minimize the dependence on external package.

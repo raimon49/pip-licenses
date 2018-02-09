@@ -37,7 +37,7 @@ import pip
 from prettytable import PrettyTable
 
 __pkgname__ = 'pip-licenses'
-__version__ = '1.2.0'
+__version__ = '1.3.0'
 __author__ = 'raimon'
 __license__ = 'MIT License'
 __summary__ = ('Dump the software license list of '
@@ -79,7 +79,7 @@ SYSTEM_PACKAGES = (
 LICENSE_UNKNOWN = 'UNKNOWN'
 
 
-def get_licenses_table(args):
+def create_licenses_table(args):
     def get_pkg_info(pkg):
         pkg_info = {
             'name': pkg.project_name,
@@ -117,10 +117,15 @@ def get_licenses_table(args):
     table.field_names = FIELD_NAMES
     table.border = False
     table.align = 'l'
+    ignore_pkgs_as_lower = [pkg.lower() for pkg in args.ignore_packages]
     for pkg in pkgs:
         pkg_info = get_pkg_info(pkg)
+        pkg_name = pkg_info['name']
 
-        if not args.with_system and pkg_info['name'] in SYSTEM_PACKAGES:
+        if pkg_name.lower() in ignore_pkgs_as_lower:
+            continue
+
+        if not args.with_system and pkg_name in SYSTEM_PACKAGES:
             continue
 
         table.add_row([pkg_info['name'],
@@ -189,6 +194,11 @@ def create_parser():
                         action='store_true',
                         default=False,
                         help='dump with package urls')
+    parser.add_argument('-i', '--ignore-packages',
+                        action='store', type=str,
+                        nargs='+', metavar='PKG',
+                        default=[],
+                        help='ignore package name in dumped list')
     parser.add_argument('-o', '--order',
                         action='store', type=str,
                         default='name', metavar='COL',
@@ -203,7 +213,7 @@ def main():  # pragma: no cover
     parser = create_parser()
     args = parser.parse_args()
 
-    table = get_licenses_table(args)
+    table = create_licenses_table(args)
     output_fields = get_output_fields(args)
     sortby = get_sortby(args)
     print(table.get_string(fields=output_fields, sortby=sortby))
