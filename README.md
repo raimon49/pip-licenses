@@ -161,6 +161,21 @@ When inserted in a markdown document, it is rendered as follows:
 | Django | 2.0.2   | BSD     |
 | pytz   | 2017.3  | MIT     |
 
+### --format-rst
+
+When executed with the `--format-rst` option, you can output list in "[Grid tables](http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html#grid-tables)" of reStructuredText format.
+
+```bash
+(venv) $ pip-licenses --format-rst
++--------+---------+---------+
+| Name   | Version | License |
++--------+---------+---------+
+| Django | 2.0.2   | BSD     |
++--------+---------+---------+
+| pytz   | 2017.3  | MIT     |
++--------+---------+---------+
+```
+
 ### More Information
 
 Other, please make sure to execute the `--help` option.
