@@ -35,7 +35,8 @@ https://getcomposer.org/doc/03-cli.md#licenses
 Install it via PyPI using `pip` command.
 
 ```bash
-$ pip install pip-licenses
+# Install or Upgrade to newest available version
+$ pip -U install pip-licenses
 ```
 
 ## Usage
