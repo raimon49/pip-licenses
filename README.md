@@ -36,7 +36,7 @@ Install it via PyPI using `pip` command.
 
 ```bash
 # Install or Upgrade to newest available version
-$ pip -U install pip-licenses
+$ pip install -U pip-licenses
 ```
 
 ## Usage
