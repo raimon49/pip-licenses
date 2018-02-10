@@ -10,13 +10,14 @@ Dump the software license list of Python packages installed with pip.
 * [Installation](#installation)
 * [Usage](#usage)
 * [Command\-Line Options](#command-line-options)
-    * [\-\-from\-classifier](#--from-classifier)
-    * [\-\-with\-system](#--with-system)
-    * [\-\-with\-authors](#--with-authors)
-    * [\-\-with\-urls](#--with-urls)
-    * [\-\-ignore\-packages](#--ignore-packages)
-    * [\-\-order](#--order)
-    * [\-\-format\-markdown](#--format-markdown)
+    * [Option: \-\-from\-classifier](#option---from-classifier)
+    * [Option: \-\-with\-system](#option---with-system)
+    * [Option: \-\-with\-authors](#option---with-authors)
+    * [Option: \-\-with\-urls](#option---with-urls)
+    * [Option: \-\-ignore\-packages](#option---ignore-packages)
+    * [Option: \-\-order](#option---order)
+    * [Option: \-\-format\-markdown](#option---format-markdown)
+    * [Option: \-\-format\-rst](#option---format-rst)
     * [More Information](#more-information)
 * [License](#license)
     * [Dependencies](#dependencies)
@@ -54,7 +55,7 @@ Execute the command with your venv (or virtualenv) environment.
 
 ## Command-Line Options
 
-### --from-classifier
+### Option: --from-classifier
 
 By default, this tool finds the license from package Metadata. However, depending on the type of package, it does not declare a license only in the Classifiers.
 
@@ -73,7 +74,7 @@ If you want to refer to the license declared in Classifiers, use the `--from-cla
  setuptools    38.5.0   MIT License
 ```
 
-### --with-system
+### Option: --with-system
 
 By default, system packages such as `pip` and `setuptools` are ignored.
 
@@ -90,7 +91,7 @@ If you want to output all including system package, use the `--with-system` opti
  setuptools    38.5.0   UNKNOWN
 ```
 
-### --with-authors
+### Option: --with-authors
 
 When executed with the `--with-authors` option, output with author of the package.
 
@@ -101,7 +102,7 @@ When executed with the `--with-authors` option, output with author of the packag
  pytz    2017.3   MIT      Stuart Bishop
 ```
 
-### --with-urls
+### Option: --with-urls
 
 For packages without Metadata, the license is output as `UNKNOWN`. To get more package information, use the `--with-urls` option.
 
@@ -112,7 +113,7 @@ For packages without Metadata, the license is output as `UNKNOWN`. To get more p
  pytz    2017.3   MIT      http://pythonhosted.org/pytz
 ```
 
-### --ignore-packages
+### Option: --ignore-packages
 
 When executed with the `--ignore-packages` option, ignore the package specified by argument from list output.
 
@@ -132,7 +133,7 @@ Package names of arguments can be separated by spaces.
  setuptools  38.5.0   UNKNOWN
 ```
 
-### --order
+### Option: --order
 
 By default, it is ordered by package name.
 
@@ -142,7 +143,7 @@ If you give arguments to the `--order option`, you can output in other sorted or
 (venv) $ pip-licenses --order=license
 ```
 
-### --format-markdown
+### Option: --format-markdown
 
 When executed with the `--format-markdown` option, you can output list in markdown format.
 
@@ -161,7 +162,7 @@ When inserted in a markdown document, it is rendered as follows:
 | Django | 2.0.2   | BSD     |
 | pytz   | 2017.3  | MIT     |
 
-### --format-rst
+### Option: --format-rst
 
 When executed with the `--format-rst` option, you can output list in "[Grid tables](http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html#grid-tables)" of reStructuredText format.
 
