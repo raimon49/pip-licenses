@@ -8,7 +8,7 @@ from prettytable.prettytable import (FRAME as RULE_FRAME, ALL as RULE_ALL,
 from piplicenses import (__pkgname__, create_parser,
                          create_licenses_table, get_output_fields, get_sortby,
                          factory_styled_table_with_args,
-                         find_license_from_classifier,
+                         find_license_from_classifier, create_output_string,
                          DEFAULT_OUTPUT_FIELDS, SYSTEM_PACKAGES,
                          LICENSE_UNKNOWN)
 
@@ -69,6 +69,9 @@ class TestGetLicenses(CommandLineTestCase):
 
         sortby = get_sortby(args)
         self.assertEquals('Name', sortby)
+
+        output_string = create_output_string(args)
+        self.assertNotIn('<table>', output_string)
 
     def test_from_classifier(self):
         from_classifier_args = ['--from-classifier']
@@ -191,6 +194,13 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertTrue(table.header)
         self.assertEquals('+', table.junction_char)
         self.assertEquals(RULE_ALL, table.hrules)
+
+    def test_format_html(self):
+        format_html_args = ['--format-html']
+        args = self.parser.parse_args(format_html_args)
+        output_string = create_output_string(args)
+
+        self.assertIn('<table>', output_string)
 
     def tearDown(self):
         pass

@@ -188,6 +188,17 @@ def get_sortby(args):
     return 'Name'
 
 
+def create_output_string(args):
+    table = create_licenses_table(args)
+    output_fields = get_output_fields(args)
+    sortby = get_sortby(args)
+
+    if args.format_html:
+        return table.get_html_string(fields=output_fields, sortby=sortby)
+    else:
+        return table.get_string(fields=output_fields, sortby=sortby)
+
+
 def create_parser():
     parser = argparse.ArgumentParser(
         description=__summary__)
@@ -229,6 +240,10 @@ def create_parser():
                         action='store_true',
                         default=False,
                         help='dump as reST style')
+    parser.add_argument('--format-html',
+                        action='store_true',
+                        default=False,
+                        help='dump as html style')
 
     return parser
 
@@ -237,10 +252,8 @@ def main():  # pragma: no cover
     parser = create_parser()
     args = parser.parse_args()
 
-    table = create_licenses_table(args)
-    output_fields = get_output_fields(args)
-    sortby = get_sortby(args)
-    print(table.get_string(fields=output_fields, sortby=sortby))
+    output_string = create_output_string(args)
+    print(output_string)
 
 
 if __name__ == '__main__':  # pragma: no cover
