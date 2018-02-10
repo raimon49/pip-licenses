@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+### 1.5.0
+
+* Implement new option `--format-rst`
+
 ### 1.4.0
 
 * Implement new option `--format-markdown`

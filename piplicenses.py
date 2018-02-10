@@ -35,10 +35,10 @@ from email import message_from_string
 
 import pip
 from prettytable import PrettyTable
-from prettytable.prettytable import HEADER as RULE_HEADER
+from prettytable.prettytable import HEADER as RULE_HEADER, ALL as RULE_ALL
 
 __pkgname__ = 'pip-licenses'
-__version__ = '1.4.0'
+__version__ = '1.5.0'
 __author__ = 'raimon'
 __license__ = 'MIT License'
 __summary__ = ('Dump the software license list of '
@@ -140,13 +140,15 @@ def factory_styled_table_with_args(args):
     table = PrettyTable()
     table.field_names = FIELD_NAMES
     table.align = 'l'
-    table.border = args.format_markdown
+    table.border = (args.format_markdown or args.format_rst)
     table.header = True
 
     if args.format_markdown:
-        table.border = True
         table.junction_char = '|'
         table.hrules = RULE_HEADER
+    elif args.format_rst:
+        table.junction_char = '+'
+        table.hrules = RULE_ALL
 
     return table
 
@@ -223,6 +225,10 @@ def create_parser():
                         action='store_true',
                         default=False,
                         help='dump as markdown style')
+    parser.add_argument('-r', '--format-rst',
+                        action='store_true',
+                        default=False,
+                        help='dump as reST style')
 
     return parser
 
