@@ -18,6 +18,7 @@ Dump the software license list of Python packages installed with pip.
     * [Option: order](#option-order)
     * [Option: format\-markdown](#option-format-markdown)
     * [Option: format\-rst](#option-format-rst)
+    * [Option: format\-html](#option-format-html)
     * [More Information](#more-information)
 * [License](#license)
     * [Dependencies](#dependencies)
@@ -176,6 +177,31 @@ When executed with the `--format-rst` option, you can output list in "[Grid tabl
 +--------+---------+---------+
 | pytz   | 2017.3  | MIT     |
 +--------+---------+---------+
+```
+
+### Option: format-html
+
+When executed with the `--format-html` option, you can output list in HTML table format.
+
+```bash
+(venv) $ pip-licenses --format-html
+<table>
+    <tr>
+        <th>Name</th>
+        <th>Version</th>
+        <th>License</th>
+    </tr>
+    <tr>
+        <td>Django</td>
+        <td>2.0.2</td>
+        <td>BSD</td>
+    </tr>
+    <tr>
+        <td>pytz</td>
+        <td>2017.3</td>
+        <td>MIT</td>
+    </tr>
+</table>
 ```
 
 ### More Information

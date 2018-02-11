@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+### 1.6.0
+
+* Implement new option `--format-html`
+
 ### 1.5.0
 
 * Implement new option `--format-rst`
