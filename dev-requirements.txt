@@ -11,7 +11,7 @@ certifi==2018.1.18        # via requests
 chardet==3.0.4            # via requests
 click==6.7                # via pip-tools
 codecov==2.0.15
-coverage==4.5             # via codecov, pytest-cov
+coverage==4.5.1           # via codecov, pytest-cov
 docutils==0.14
 execnet==1.5.0            # via pytest-cache
 first==2.0.1              # via pip-tools
@@ -27,7 +27,7 @@ pypandoc==1.4
 pytest-cache==1.0         # via pytest-pycodestyle
 pytest-cov==2.5.1
 pytest-pycodestyle==1.0.6
-pytest-runner==3.0
+pytest-runner==4.0
 pytest==3.4.0             # via pytest-cache, pytest-cov, pytest-pycodestyle
 requests-toolbelt==0.8.0  # via twine
 requests==2.18.4          # via codecov, requests-toolbelt, twine
