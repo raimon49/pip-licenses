@@ -156,9 +156,13 @@ def factory_styled_table_with_args(args):
 def find_license_from_classifier(message):
     license_from_classifier = LICENSE_UNKNOWN
 
+    licenses = []
     for k, v in message.items():
         if k == 'Classifier' and v.startswith('License'):
-            license_from_classifier = v.split(' :: ')[-1]
+            licenses.append(v.split(' :: ')[-1])
+
+    if len(licenses) > 0:
+        license_from_classifier = ', '.join(licenses)
 
     return license_from_classifier
 
