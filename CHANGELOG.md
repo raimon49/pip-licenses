@@ -1,5 +1,12 @@
 ## CHANGELOG
 
+### 1.6.1
+
+* Fix bug
+    * Support display multiple license with `--from-classifier` option
+* Improve document
+    * Add section of 'Uninstallation' in README
+
 ### 1.6.0
 
 * Implement new option `--format-html`

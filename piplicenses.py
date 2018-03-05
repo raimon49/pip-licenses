@@ -38,7 +38,7 @@ from prettytable import PrettyTable
 from prettytable.prettytable import HEADER as RULE_HEADER, ALL as RULE_ALL
 
 __pkgname__ = 'pip-licenses'
-__version__ = '1.6.0'
+__version__ = '1.6.1'
 __author__ = 'raimon'
 __license__ = 'MIT License'
 __summary__ = ('Dump the software license list of '
@@ -156,9 +156,13 @@ def factory_styled_table_with_args(args):
 def find_license_from_classifier(message):
     license_from_classifier = LICENSE_UNKNOWN
 
+    licenses = []
     for k, v in message.items():
         if k == 'Classifier' and v.startswith('License'):
-            license_from_classifier = v.split(' :: ')[-1]
+            licenses.append(v.split(' :: ')[-1])
+
+    if len(licenses) > 0:
+        license_from_classifier = ', '.join(licenses)
 
     return license_from_classifier
 

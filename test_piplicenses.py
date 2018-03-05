@@ -94,6 +94,17 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertEquals('MIT License',
                           find_license_from_classifier(message))
 
+    def test_display_multiple_license_from_classifier(self):
+        metadata = ('Metadata-Version: 2.0\r\n'
+                    'Name: helga\r\n'
+                    'Version: 1.7.6\r\n'
+                    'Classifier: License :: OSI Approved :: '
+                    'GNU General Public License v3 (GPLv3)\r\n'
+                    'Classifier: License :: OSI Approved :: MIT License\r\n')
+        message = message_from_string(metadata)
+        self.assertEquals('GNU General Public License v3 (GPLv3), MIT License',
+                          find_license_from_classifier(message))
+
     def test_not_found_license_from_classifier(self):
         metadata_as_no_license = ('Metadata-Version: 2.0\r\n'
                                   'Name: pip-licenses\r\n'
