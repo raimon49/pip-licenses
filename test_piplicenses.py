@@ -113,7 +113,7 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertEquals(LICENSE_UNKNOWN,
                           find_license_from_classifier(message))
 
-    def test_with_system_args(self):
+    def test_with_system(self):
         with_system_args = ['--with-system']
         args = self.parser.parse_args(with_system_args)
         table = create_licenses_table(args)
