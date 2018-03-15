@@ -18,7 +18,7 @@ first==2.0.1              # via pip-tools
 funcsigs==1.0.2           # via pytest
 idna==2.6                 # via requests
 pip-tools==1.11.0
-pkginfo==1.4.1            # via twine
+pkginfo==1.4.2            # via twine
 pluggy==0.6.0             # via pytest
 ptable==0.9.2
 py==1.5.2                 # via pytest
