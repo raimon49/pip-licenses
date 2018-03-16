@@ -140,7 +140,7 @@ Package names of arguments can be separated by spaces.
 
 By default, it is ordered by package name.
 
-If you give arguments to the `--order option`, you can output in other sorted order.
+If you give arguments to the `--order` option, you can output in other sorted order.
 
 ```bash
 (venv) $ pip-licenses --order=license
