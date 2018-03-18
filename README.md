@@ -18,6 +18,7 @@ Dump the software license list of Python packages installed with pip.
     * [Option: order](#option-order)
     * [Option: format\-markdown](#option-format-markdown)
     * [Option: format\-rst](#option-format-rst)
+    * [Option: format\-confluence](#option-format-confluence)
     * [Option: format\-html](#option-format-html)
     * [More Information](#more-information)
 * [License](#license)
@@ -178,6 +179,17 @@ When executed with the `--format-rst` option, you can output list in "[Grid tabl
 +--------+---------+---------+
 | pytz   | 2017.3  | MIT     |
 +--------+---------+---------+
+```
+
+### Option: format-confluence
+
+When executed with the `--format-confluence` option, you can output list in Confluence or JIRA Wiki format.
+
+```bash
+(venv) $ pip-licenses --format-confluence
+| Name   | Version | License |
+| Django | 2.0.2   | BSD     |
+| pytz   | 2017.3  | MIT     |
 ```
 
 ### Option: format-html
