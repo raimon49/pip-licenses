@@ -183,7 +183,7 @@ When executed with the `--format-rst` option, you can output list in "[Grid tabl
 
 ### Option: format-confluence
 
-When executed with the `--format-confluence` option, you can output list in Confluence or JIRA Wiki format.
+When executed with the `--format-confluence` option, you can output list in Confluence (or JIRA) Wiki markup format.
 
 ```bash
 (venv) $ pip-licenses --format-confluence
