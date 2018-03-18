@@ -4,7 +4,7 @@ import unittest
 from email import message_from_string
 
 from prettytable.prettytable import (FRAME as RULE_FRAME, ALL as RULE_ALL,
-                                     HEADER as RULE_HEADER)
+                                     HEADER as RULE_HEADER, NONE as RULE_NONE)
 from piplicenses import (__pkgname__, create_parser,
                          create_licenses_table, get_output_fields, get_sortby,
                          factory_styled_table_with_args,
@@ -205,6 +205,17 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertTrue(table.header)
         self.assertEquals('+', table.junction_char)
         self.assertEquals(RULE_ALL, table.hrules)
+
+    def test_format_confluence(self):
+        format_confluence_args = ['--format-confluence']
+        args = self.parser.parse_args(format_confluence_args)
+        table = factory_styled_table_with_args(args)
+
+        self.assertIn('l', table.align.values())
+        self.assertTrue(table.border)
+        self.assertTrue(table.header)
+        self.assertEquals('|', table.junction_char)
+        self.assertEquals(RULE_NONE, table.hrules)
 
     def test_format_html(self):
         format_html_args = ['--format-html']

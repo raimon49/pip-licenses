@@ -35,7 +35,8 @@ from email import message_from_string
 
 import pip
 from prettytable import PrettyTable
-from prettytable.prettytable import HEADER as RULE_HEADER, ALL as RULE_ALL
+from prettytable.prettytable import (FRAME as RULE_FRAME, ALL as RULE_ALL,
+                                     HEADER as RULE_HEADER, NONE as RULE_NONE)
 
 __pkgname__ = 'pip-licenses'
 __version__ = '1.6.1'
@@ -140,7 +141,8 @@ def factory_styled_table_with_args(args):
     table = PrettyTable()
     table.field_names = FIELD_NAMES
     table.align = 'l'
-    table.border = (args.format_markdown or args.format_rst)
+    table.border = (args.format_markdown or args.format_rst or
+                    args.format_confluence)
     table.header = True
 
     if args.format_markdown:
@@ -149,6 +151,9 @@ def factory_styled_table_with_args(args):
     elif args.format_rst:
         table.junction_char = '+'
         table.hrules = RULE_ALL
+    elif args.format_confluence:
+        table.junction_char = '|'
+        table.hrules = RULE_NONE
 
     return table
 
@@ -244,6 +249,10 @@ def create_parser():
                         action='store_true',
                         default=False,
                         help='dump as reST style')
+    parser.add_argument('--format-confluence',
+                        action='store_true',
+                        default=False,
+                        help='dump as confluence wiki style')
     parser.add_argument('--format-html',
                         action='store_true',
                         default=False,
