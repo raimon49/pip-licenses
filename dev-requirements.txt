@@ -27,12 +27,12 @@ pypandoc==1.4
 pytest-cache==1.0         # via pytest-pycodestyle
 pytest-cov==2.5.1
 pytest-pycodestyle==1.0.6
-pytest-runner==4.0
+pytest-runner==4.2
 pytest==3.4.2             # via pytest-cache, pytest-cov, pytest-pycodestyle
 requests-toolbelt==0.8.0  # via twine
 requests==2.18.4          # via codecov, requests-toolbelt, twine
 six==1.11.0               # via pip-tools, pytest
-tqdm==4.19.7              # via twine
+tqdm==4.19.8              # via twine
 twine==1.10.0
 urllib3==1.22             # via requests
 wheel==0.30.0
