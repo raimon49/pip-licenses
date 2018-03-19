@@ -18,6 +18,7 @@ Dump the software license list of Python packages installed with pip.
     * [Option: order](#option-order)
     * [Option: format\-markdown](#option-format-markdown)
     * [Option: format\-rst](#option-format-rst)
+    * [Option: format\-confluence](#option-format-confluence)
     * [Option: format\-html](#option-format-html)
     * [More Information](#more-information)
 * [License](#license)
@@ -64,7 +65,20 @@ By default, this tool finds the license from package Metadata. However, dependin
 
 (See also): [Set license to MIT in setup.py by alisianoi ・ Pull Request #1058 ・ pypa/setuptools](https://github.com/pypa/setuptools/pull/1058), [PEP 314\#License](https://www.python.org/dev/peps/pep-0314/#license)
 
-If you want to refer to the license declared in Classifiers, use the `--from-classifier` option.
+For example, even if you check with the `pip show` command, the license is displayed as `UNKNOWN`.
+
+```bash
+(venv) $ pip show setuptools
+Name: setuptools
+Version: 38.5.0
+Summary: Easily download, build, install, upgrade, and uninstall Python packages
+Home-page: https://github.com/pypa/setuptools
+Author: Python Packaging Authority
+Author-email: distutils-sig@python.org
+License: UNKNOWN
+```
+
+If you want to refer to the license declared in [the Classifiers](https://pypi.python.org/pypi?%3Aaction=list_classifiers), use the `--from-classifier` option.
 
 ```bash
 (venv) $ pip-licenses --from-classifier --with-system
@@ -178,6 +192,17 @@ When executed with the `--format-rst` option, you can output list in "[Grid tabl
 +--------+---------+---------+
 | pytz   | 2017.3  | MIT     |
 +--------+---------+---------+
+```
+
+### Option: format-confluence
+
+When executed with the `--format-confluence` option, you can output list in Confluence (or JIRA) Wiki markup format.
+
+```bash
+(venv) $ pip-licenses --format-confluence
+| Name   | Version | License |
+| Django | 2.0.2   | BSD     |
+| pytz   | 2017.3  | MIT     |
 ```
 
 ### Option: format-html

@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+### 1.7.0
+
+* Implement new option `--format-confluence`
+
 ### 1.6.1
 
 * Fix bug
