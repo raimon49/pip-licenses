@@ -36,8 +36,8 @@ deploy: build
 	twine upload dist/*
 
 .PHONY: test-deploy
-test-deploy: clean
-	python setup.py sdist bdist_wheel upload -r pypitest
+test-deploy: build
+	twine upload -r pypitest dist/*
 
 .PHONY: build
 build: clean

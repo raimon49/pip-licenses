@@ -33,6 +33,6 @@ requests-toolbelt==0.8.0  # via twine
 requests==2.18.4          # via codecov, requests-toolbelt, twine
 six==1.11.0               # via pip-tools, pytest
 tqdm==4.19.8              # via twine
-twine==1.10.0
+twine==1.11.0
 urllib3==1.22             # via requests
 wheel==0.30.0
