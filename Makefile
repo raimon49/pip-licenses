@@ -8,6 +8,7 @@ help:
 	@echo 'Subcommands:'
 	@echo '    setup          Setup for development'
 	@echo '    local-install  Install locally'
+	@echo '    local-uninstallUninstall locally'
 	@echo '    update-depends Re-compile requirements for development'
 	@echo '    test           Run unittests'
 	@echo '    deploy         Release to PyPI server'
@@ -22,6 +23,10 @@ setup:
 .PHONY: local-install
 local-install:
 	pip install -e .
+
+.PHONY: local-uninstall
+local-uninstall:
+	pip uninstall -y pip-licenses
 
 .PHONY: update-depends
 update-depends:
