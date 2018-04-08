@@ -33,7 +33,7 @@ pytest==3.5.0             # via pytest-cache, pytest-cov, pytest-pycodestyle
 requests-toolbelt==0.8.0  # via twine
 requests==2.18.4          # via codecov, requests-toolbelt, twine
 six==1.11.0               # via more-itertools, pip-tools, pytest
-tqdm==4.19.9              # via twine
+tqdm==4.21.0              # via twine
 twine==1.11.0
 urllib3==1.22             # via requests
-wheel==0.30.0
+wheel==0.31.0
