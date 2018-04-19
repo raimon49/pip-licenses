@@ -1,5 +1,10 @@
 ## CHANGELOG
 
+### 1.7.1
+
+* Fix bug
+    * Support pip 10.x
+
 ### 1.7.0
 
 * Implement new option `--format-confluence`
