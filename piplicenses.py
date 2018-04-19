@@ -33,13 +33,16 @@ import argparse
 from email.parser import FeedParser
 from email import message_from_string
 
-import pip
+try:
+    from pip._internal.utils.misc import get_installed_distributions
+except ImportError:
+    from pip import get_installed_distributions
 from prettytable import PrettyTable
 from prettytable.prettytable import (FRAME as RULE_FRAME, ALL as RULE_ALL,
                                      HEADER as RULE_HEADER, NONE as RULE_NONE)
 
 __pkgname__ = 'pip-licenses'
-__version__ = '1.7.0'
+__version__ = '1.7.1'
 __author__ = 'raimon'
 __license__ = 'MIT License'
 __summary__ = ('Dump the software license list of '
@@ -116,7 +119,7 @@ def create_licenses_table(args):
 
     table = factory_styled_table_with_args(args)
 
-    pkgs = pip.get_installed_distributions()
+    pkgs = get_installed_distributions()
     ignore_pkgs_as_lower = [pkg.lower() for pkg in args.ignore_packages]
     for pkg in pkgs:
         pkg_info = get_pkg_info(pkg)
