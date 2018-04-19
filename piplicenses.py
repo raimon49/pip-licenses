@@ -33,7 +33,10 @@ import argparse
 from email.parser import FeedParser
 from email import message_from_string
 
-import pip
+try:
+    from pip._internal.utils.misc import get_installed_distributions
+except:
+    from pip import get_installed_distributions
 from prettytable import PrettyTable
 from prettytable.prettytable import (FRAME as RULE_FRAME, ALL as RULE_ALL,
                                      HEADER as RULE_HEADER, NONE as RULE_NONE)
@@ -116,7 +119,7 @@ def create_licenses_table(args):
 
     table = factory_styled_table_with_args(args)
 
-    pkgs = pip.get_installed_distributions()
+    pkgs = get_installed_distributions()
     ignore_pkgs_as_lower = [pkg.lower() for pkg in args.ignore_packages]
     for pkg in pkgs:
         pkg_info = get_pkg_info(pkg)
