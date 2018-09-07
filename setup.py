@@ -91,6 +91,7 @@ setup(
     keywords='pip pypi package license check',
     py_modules=['piplicenses'],
     license=LICENSE,
+    python_requires='>=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*',
     install_requires=['PTable'],
     setup_requires=[
         'pytest-runner',
