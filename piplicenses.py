@@ -45,7 +45,7 @@ try:
     from pip._internal.req import parse_requirements
 except ImportError:
     from pip.req import parse_requirements
-from pip._vendor.pkg_resources import Requirement, WorkingSet
+from pip._vendor.pkg_resources import Requirement, working_set
 from prettytable import PrettyTable
 from prettytable.prettytable import (FRAME as RULE_FRAME, ALL as RULE_ALL,
                                      HEADER as RULE_HEADER, NONE as RULE_NONE)
@@ -99,17 +99,14 @@ def create_licenses_table(args):
         if len(requirements_file) == 0:
             return get_installed_distributions()
 
-        def to_distribution(parsedRequirement):
-            working_set = WorkingSet()
-            distribution = working_set.find(parsedRequirement)
-            return distribution
-
-        installRequirements = parse_requirements(requirements_file,
-                                                 session=PipSession())
-        parsedRequirements = [Requirement.parse(str(ir.req))
-                              for ir in installRequirements
-                              if ir.req is not None]
-        return [to_distribution(pr) for pr in parsedRequirements]
+        install_requirements = parse_requirements(requirements_file,
+                                                  session=PipSession())
+        parsed_requirements = [Requirement.parse(str(ir.req))
+                               for ir in install_requirements
+                               if ir.req is not None]
+        resolved_pkgs = working_set.resolve(parsed_requirements)
+        pkgs = set()
+        return [p for p in resolved_pkgs if p not in pkgs and not pkgs.add(p)]
 
     def get_pkg_info(pkg):
         pkg_info = {
