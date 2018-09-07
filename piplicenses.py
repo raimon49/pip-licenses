@@ -37,6 +37,15 @@ try:
     from pip._internal.utils.misc import get_installed_distributions
 except ImportError:
     from pip import get_installed_distributions
+try:
+    from pip._internal.download import PipSession
+except ImportError:
+    from pip.download import PipSession
+try:
+    from pip._internal.req import parse_requirements
+except ImportError:
+    from pip.req import parse_requirements
+from pip._vendor.pkg_resources import Requirement, WorkingSet
 from prettytable import PrettyTable
 from prettytable.prettytable import (FRAME as RULE_FRAME, ALL as RULE_ALL,
                                      HEADER as RULE_HEADER, NONE as RULE_NONE)
@@ -85,6 +94,23 @@ LICENSE_UNKNOWN = 'UNKNOWN'
 
 
 def create_licenses_table(args):
+    def get_pkgs(args):
+        requirements_file = args.requirements
+        if len(requirements_file) == 0:
+            return get_installed_distributions()
+
+        def to_distribution(parsedRequirement):
+            working_set = WorkingSet()
+            distribution = working_set.find(parsedRequirement)
+            return distribution
+
+        installRequirements = parse_requirements(requirements_file,
+                                                 session=PipSession())
+        parsedRequirements = [Requirement.parse(str(ir.req))
+                              for ir in installRequirements
+                              if ir.req is not None]
+        return [to_distribution(pr) for pr in parsedRequirements]
+
     def get_pkg_info(pkg):
         pkg_info = {
             'name': pkg.project_name,
@@ -119,7 +145,7 @@ def create_licenses_table(args):
 
     table = factory_styled_table_with_args(args)
 
-    pkgs = get_installed_distributions()
+    pkgs = get_pkgs(args)
     ignore_pkgs_as_lower = [pkg.lower() for pkg in args.ignore_packages]
     for pkg in pkgs:
         pkg_info = get_pkg_info(pkg)
@@ -244,6 +270,10 @@ def create_parser():
                         help=('order by column\n'
                               '"name", "license", "author", "url"\n'
                               'default: --order=name'))
+    parser.add_argument('--requirements',
+                        action='store', type=str,
+                        default='', metavar='FILE',
+                        help='parse external requirements file')
     parser.add_argument('-m', '--format-markdown',
                         action='store_true',
                         default=False,
