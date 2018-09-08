@@ -117,7 +117,7 @@ class RequirementsParser(object):
         return [p for p in resolved_pkgs if p not in pkgs and not pkgs.add(p)]
 
     def _detect_file_location(self):
-        if len(self.requirements_file)  == 0:
+        if len(self.requirements_file) == 0:
             return ""
 
         # TODO: Detect remote file

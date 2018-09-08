@@ -10,7 +10,7 @@ from piplicenses import (__pkgname__, create_parser,
                          factory_styled_table_with_args,
                          find_license_from_classifier, create_output_string,
                          DEFAULT_OUTPUT_FIELDS, SYSTEM_PACKAGES,
-                         LICENSE_UNKNOWN)
+                         LICENSE_UNKNOWN, RequirementsParser)
 
 
 class CommandLineTestCase(unittest.TestCase):
@@ -21,7 +21,7 @@ class CommandLineTestCase(unittest.TestCase):
 
 class TestGetLicenses(CommandLineTestCase):
     def setUp(self):
-        pass
+        self.empty_requirements = RequirementsParser("")
 
     def _create_pkg_name_columns(self, table):
         import copy
@@ -50,7 +50,7 @@ class TestGetLicenses(CommandLineTestCase):
     def test_with_empty_args(self):
         empty_args = []
         args = self.parser.parse_args(empty_args)
-        table = create_licenses_table(args)
+        table = create_licenses_table(args, self.empty_requirements)
 
         self.assertIn('l', table.align.values())
         self.assertFalse(table.border)
@@ -70,13 +70,13 @@ class TestGetLicenses(CommandLineTestCase):
         sortby = get_sortby(args)
         self.assertEquals('Name', sortby)
 
-        output_string = create_output_string(args)
+        output_string = create_output_string(args, self.empty_requirements)
         self.assertNotIn('<table>', output_string)
 
     def test_from_classifier(self):
         from_classifier_args = ['--from-classifier']
         args = self.parser.parse_args(from_classifier_args)
-        table = create_licenses_table(args)
+        table = create_licenses_table(args, self.empty_requirements)
 
         output_fields = get_output_fields(args)
         self.assertIn('License', output_fields)
@@ -116,7 +116,7 @@ class TestGetLicenses(CommandLineTestCase):
     def test_with_system(self):
         with_system_args = ['--with-system']
         args = self.parser.parse_args(with_system_args)
-        table = create_licenses_table(args)
+        table = create_licenses_table(args, self.empty_requirements)
 
         pkg_name_columns = self._create_pkg_name_columns(table)
         external_sys_pkgs = list(SYSTEM_PACKAGES)
@@ -144,7 +144,7 @@ class TestGetLicenses(CommandLineTestCase):
         ignore_pkg_name = 'PTable'
         ignore_packages_args = ['--ignore-package=' + ignore_pkg_name]
         args = self.parser.parse_args(ignore_packages_args)
-        table = create_licenses_table(args)
+        table = create_licenses_table(args, self.empty_requirements)
 
         pkg_name_columns = self._create_pkg_name_columns(table)
         self.assertNotIn(ignore_pkg_name, pkg_name_columns)
@@ -220,7 +220,7 @@ class TestGetLicenses(CommandLineTestCase):
     def test_format_html(self):
         format_html_args = ['--format-html']
         args = self.parser.parse_args(format_html_args)
-        output_string = create_output_string(args)
+        output_string = create_output_string(args, self.empty_requirements)
 
         self.assertIn('<table>', output_string)
 
