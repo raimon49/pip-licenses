@@ -29,6 +29,7 @@ SOFTWARE.
 from __future__ import (division, print_function,
                         absolute_import, unicode_literals)
 import sys
+from os import path
 import argparse
 from email.parser import FeedParser
 from email import message_from_string
@@ -93,13 +94,20 @@ SYSTEM_PACKAGES = (
 LICENSE_UNKNOWN = 'UNKNOWN'
 
 
-def create_licenses_table(args):
-    def get_pkgs(args):
-        requirements_file = args.requirements
-        if len(requirements_file) == 0:
+class RequirementsParser(object):
+
+    def __init__(self, requirements_file):
+        self.requirements_file = requirements_file
+        self.file_location = self._detect_file_location()
+
+    def has_external_file(self):
+        return len(self.file_location) > 0
+
+    def get_distribution_pkgs(self):
+        if not self.has_external_file():
             return get_installed_distributions()
 
-        install_requirements = parse_requirements(requirements_file,
+        install_requirements = parse_requirements(self.requirements_file,
                                                   session=PipSession())
         parsed_requirements = [Requirement.parse(str(ir.req))
                                for ir in install_requirements
@@ -108,6 +116,19 @@ def create_licenses_table(args):
         pkgs = set()
         return [p for p in resolved_pkgs if p not in pkgs and not pkgs.add(p)]
 
+    def _detect_file_location(self):
+        if len(self.requirements_file)  == 0:
+            return ""
+
+        # TODO: Detect remote file
+        return path.abspath(self.requirements_file)
+
+    def __str__(self):
+        return ('args: ' + str(self.requirements_file) + '\n'
+                'file: ' + str(self.file_location))
+
+
+def create_licenses_table(args, requirements):
     def get_pkg_info(pkg):
         pkg_info = {
             'name': pkg.project_name,
@@ -142,7 +163,7 @@ def create_licenses_table(args):
 
     table = factory_styled_table_with_args(args)
 
-    pkgs = get_pkgs(args)
+    pkgs = requirements.get_distribution_pkgs()
     ignore_pkgs_as_lower = [pkg.lower() for pkg in args.ignore_packages]
     for pkg in pkgs:
         pkg_info = get_pkg_info(pkg)
@@ -223,8 +244,8 @@ def get_sortby(args):
     return 'Name'
 
 
-def create_output_string(args):
-    table = create_licenses_table(args)
+def create_output_string(args, requirements):
+    table = create_licenses_table(args, requirements)
     output_fields = get_output_fields(args)
     sortby = get_sortby(args)
 
@@ -294,8 +315,9 @@ def create_parser():
 def main():  # pragma: no cover
     parser = create_parser()
     args = parser.parse_args()
+    requirements = RequirementsParser(args.requirements)
 
-    output_string = create_output_string(args)
+    output_string = create_output_string(args, requirements)
     print(output_string)
 
 
