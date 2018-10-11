@@ -187,7 +187,6 @@ def factory_styled_table_with_args(args):
     elif args.format_json:
         table = JsonPrettyTable(table.field_names)
 
-
     return table
 
 
