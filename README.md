@@ -20,6 +20,7 @@ Dump the software license list of Python packages installed with pip.
     * [Option: format\-rst](#option-format-rst)
     * [Option: format\-confluence](#option-format-confluence)
     * [Option: format\-html](#option-format-html)
+    * [Option: format\-json](#option-format-json)
     * [More Information](#more-information)
 * [License](#license)
     * [Dependencies](#dependencies)
@@ -229,6 +230,32 @@ When executed with the `--format-html` option, you can output list in HTML table
     </tr>
 </table>
 ```
+
+### Option: format-json
+
+When executed with the `--format-json` option, you can output list in JSON format
+easily allowing post-processing
+
+```json
+[
+  {
+    "License": "UNKNOWN",
+    "Version": "0.24",
+    "Author": "Armin Ronacher",
+    "Name": "itsdangerous",
+    "URL": "http://github.com/mitsuhiko/itsdangerous"
+  },
+  {
+    "License": "MIT",
+    "Version": "2018.5",
+    "Author": "Stuart Bishop",
+    "Name": "pytz",
+    "URL": "http://pythonhosted.org/pytz"
+  }
+]
+
+```
+
 
 ### More Information
 

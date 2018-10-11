@@ -140,12 +140,39 @@ def create_licenses_table(args):
     return table
 
 
+class JsonPrettyTable(PrettyTable):
+    """PrettyTable-like class exporting to JSON"""
+
+    def _format_row(self, row, options):
+        resrow = {}
+        for (field, value) in zip(self._field_names, row):
+            resrow[field] = value
+
+        return resrow
+
+    def get_string(self, **kwargs):
+        # import included here in order to limit dependencies
+        # if not interested in JSON output,
+        # then the dependency is not required
+        import json
+
+        options = self._get_options(kwargs)
+        rows = self._get_rows(options)
+        formatted_rows = self._format_rows(rows, options)
+
+        lines = []
+        for row in formatted_rows:
+            lines.append(row)
+
+        return json.dumps(lines, indent=2)
+
+
 def factory_styled_table_with_args(args):
     table = PrettyTable()
     table.field_names = FIELD_NAMES
     table.align = 'l'
     table.border = (args.format_markdown or args.format_rst or
-                    args.format_confluence)
+                    args.format_confluence or args.format_json)
     table.header = True
 
     if args.format_markdown:
@@ -157,6 +184,9 @@ def factory_styled_table_with_args(args):
     elif args.format_confluence:
         table.junction_char = '|'
         table.hrules = RULE_NONE
+    elif args.format_json:
+        table = JsonPrettyTable(table.field_names)
+
 
     return table
 
@@ -260,6 +290,10 @@ def create_parser():
                         action='store_true',
                         default=False,
                         help='dump as html style')
+    parser.add_argument('--format-json',
+                        action='store_true',
+                        default=False,
+                        help='dump as json')
 
     return parser
 
