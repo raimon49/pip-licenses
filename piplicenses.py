@@ -146,6 +146,9 @@ class JsonPrettyTable(PrettyTable):
     def _format_row(self, row, options):
         resrow = {}
         for (field, value) in zip(self._field_names, row):
+            if field not in options["fields"]:
+                continue
+
             resrow[field] = value
 
         return resrow
