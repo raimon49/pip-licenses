@@ -224,5 +224,13 @@ class TestGetLicenses(CommandLineTestCase):
 
         self.assertIn('<table>', output_string)
 
+    def test_format_json(self):
+        format_json_args = ['--format-json', '--with-authors']
+        args = self.parser.parse_args(format_json_args)
+        output_string = create_output_string(args)
+
+        self.assertIn('"Author":', output_string)
+        self.assertNotIn('"URL":', output_string)
+
     def tearDown(self):
         pass

@@ -1,5 +1,10 @@
 ## CHANGELOG
 
+### 1.8.0
+
+* Implement new option `--format-json`
+* Dropped support Python 3.3
+
 ### 1.7.1
 
 * Fix bug
