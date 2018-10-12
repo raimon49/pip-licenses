@@ -167,7 +167,7 @@ class JsonPrettyTable(PrettyTable):
         for row in formatted_rows:
             lines.append(row)
 
-        return json.dumps(lines, indent=2)
+        return json.dumps(lines, indent=2, sort_keys=True)
 
 
 def factory_styled_table_with_args(args):
