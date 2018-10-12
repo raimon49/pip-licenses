@@ -239,18 +239,18 @@ easily allowing post-processing
 ```json
 [
   {
-    "License": "UNKNOWN",
-    "Version": "0.24",
-    "Author": "Armin Ronacher",
-    "Name": "itsdangerous",
-    "URL": "http://github.com/mitsuhiko/itsdangerous"
+    "Author": "Django Software Foundation",
+    "License": "BSD",
+    "Name": "Django",
+    "URL": "https://www.djangoproject.com/",
+    "Version": "2.0.2"
   },
   {
-    "License": "MIT",
-    "Version": "2018.5",
     "Author": "Stuart Bishop",
+    "License": "MIT",
     "Name": "pytz",
-    "URL": "http://pythonhosted.org/pytz"
+    "URL": "http://pythonhosted.org/pytz",
+    "Version": "2017.3"
   }
 ]
 
