@@ -60,8 +60,8 @@ FIELD_NAMES = (
 
 
 SUMMARY_FIELD_NAMES = (
+    'Count',
     'License',
-    'Count'
 )
 
 
@@ -73,8 +73,8 @@ DEFAULT_OUTPUT_FIELDS = (
 
 
 SUMMARY_OUTPUT_FIELDS = (
+    'Count',
     'License',
-    'Count'
 )
 
 
@@ -168,8 +168,8 @@ def create_summary_table(args):
 
     table = factory_styled_table_with_args(args)
     for license in licenses.keys():
-        table.add_row([license,
-                       licenses[license], ])
+        table.add_row([licenses[license],
+                       license, ])
     return table
 
 
@@ -259,13 +259,12 @@ def get_output_fields(args):
 
 
 def get_sortby(args):
-    if args.summary:
+    if args.summary and args.order == 'count':
+        return 'Count'
+    elif args.summary or args.order == 'license':
         return 'License'
-
-    if args.order == 'name':
+    elif args.order == 'name':
         return 'Name'
-    elif args.order == 'license':
-        return 'License'
     elif args.order == 'author' and args.with_authors:
         return 'Author'
     elif args.order == 'url' and args.with_urls:
