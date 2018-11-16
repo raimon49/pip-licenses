@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+### 1.9.0
+
+* Implement new option `--summary`
+
 ### 1.8.0
 
 * Implement new option `--format-json`
