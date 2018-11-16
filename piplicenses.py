@@ -344,7 +344,7 @@ def create_parser():
     parser.add_argument('--summary',
                         action='store_true',
                         default=False,
-                        help='show license use summary only')
+                        help='dump summary of each license')
 
     return parser
 
