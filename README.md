@@ -21,6 +21,7 @@ Dump the software license list of Python packages installed with pip.
     * [Option: format\-confluence](#option-format-confluence)
     * [Option: format\-html](#option-format-html)
     * [Option: format\-json](#option-format-json)
+    * [Option: summary](#option-summary)
     * [More Information](#more-information)
 * [License](#license)
     * [Dependencies](#dependencies)
@@ -256,6 +257,18 @@ easily allowing post-processing
 
 ```
 
+### Option: summary
+
+When executed with the `--summary` option, you can output a summary of each license.
+
+```bash
+(venv) $ pip-licenses --summary --from-classifier --with-system
+ Count  License
+ 2      BSD License
+ 4      MIT License
+```
+
+**Note:** When using this option, only `--order=count` or `--order=license` has an effect for the `--order` option. And using `--with-authors` and `--with-urls` will be ignored.
 
 ### More Information
 
