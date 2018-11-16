@@ -59,9 +59,21 @@ FIELD_NAMES = (
 )
 
 
+SUMMARY_FIELD_NAMES = (
+    'Count',
+    'License',
+)
+
+
 DEFAULT_OUTPUT_FIELDS = (
     'Name',
     'Version',
+    'License',
+)
+
+
+SUMMARY_OUTPUT_FIELDS = (
+    'Count',
     'License',
 )
 
@@ -84,7 +96,8 @@ SYSTEM_PACKAGES = (
 LICENSE_UNKNOWN = 'UNKNOWN'
 
 
-def create_licenses_table(args):
+def get_packages(args):
+
     def get_pkg_info(pkg):
         pkg_info = {
             'name': pkg.project_name,
@@ -117,8 +130,6 @@ def create_licenses_table(args):
 
         return pkg_info
 
-    table = factory_styled_table_with_args(args)
-
     pkgs = get_installed_distributions()
     ignore_pkgs_as_lower = [pkg.lower() for pkg in args.ignore_packages]
     for pkg in pkgs:
@@ -131,12 +142,34 @@ def create_licenses_table(args):
         if not args.with_system and pkg_name in SYSTEM_PACKAGES:
             continue
 
-        table.add_row([pkg_info['name'],
-                       pkg_info['version'],
-                       pkg_info['license'],
-                       pkg_info['author'],
-                       pkg_info['home-page'], ])
+        yield pkg_info
 
+
+def create_licenses_table(args):
+    table = factory_styled_table_with_args(args)
+
+    for pkg in get_packages(args):
+        table.add_row([pkg['name'],
+                       pkg['version'],
+                       pkg['license'],
+                       pkg['author'],
+                       pkg['home-page'], ])
+
+    return table
+
+
+def create_summary_table(args):
+    licenses = {}
+    for pkg in get_packages(args):
+        if pkg['license'] not in licenses:
+            licenses.update({pkg['license']: 1})
+        else:
+            licenses[pkg['license']] += 1
+
+    table = factory_styled_table_with_args(args)
+    for license in licenses.keys():
+        table.add_row([licenses[license],
+                       license, ])
     return table
 
 
@@ -172,7 +205,10 @@ class JsonPrettyTable(PrettyTable):
 
 def factory_styled_table_with_args(args):
     table = PrettyTable()
-    table.field_names = FIELD_NAMES
+    if args.summary:
+        table.field_names = SUMMARY_FIELD_NAMES
+    else:
+        table.field_names = FIELD_NAMES
     table.align = 'l'
     table.border = (args.format_markdown or args.format_rst or
                     args.format_confluence or args.format_json)
@@ -208,6 +244,9 @@ def find_license_from_classifier(message):
 
 
 def get_output_fields(args):
+    if args.summary:
+        return list(SUMMARY_OUTPUT_FIELDS)
+
     output_fields = list(DEFAULT_OUTPUT_FIELDS)
 
     if args.with_authors:
@@ -220,10 +259,12 @@ def get_output_fields(args):
 
 
 def get_sortby(args):
-    if args.order == 'name':
-        return 'Name'
-    elif args.order == 'license':
+    if args.summary and args.order == 'count':
+        return 'Count'
+    elif args.summary or args.order == 'license':
         return 'License'
+    elif args.order == 'name':
+        return 'Name'
     elif args.order == 'author' and args.with_authors:
         return 'Author'
     elif args.order == 'url' and args.with_urls:
@@ -233,7 +274,11 @@ def get_sortby(args):
 
 
 def create_output_string(args):
-    table = create_licenses_table(args)
+    if args.summary:
+        table = create_summary_table(args)
+    else:
+        table = create_licenses_table(args)
+
     output_fields = get_output_fields(args)
     sortby = get_sortby(args)
 
@@ -296,6 +341,10 @@ def create_parser():
                         action='store_true',
                         default=False,
                         help='dump as json')
+    parser.add_argument('--summary',
+                        action='store_true',
+                        default=False,
+                        help='dump summary of each license')
 
     return parser
 
