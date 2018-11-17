@@ -7,13 +7,13 @@
 apipkg==1.5               # via execnet
 atomicwrites==1.2.1       # via pytest
 attrs==18.2.0             # via pytest
-autopep8==1.4.2
+autopep8==1.4.3
 bleach==3.0.2             # via readme-renderer
 certifi==2018.10.15       # via requests
 chardet==3.0.4            # via requests
 click==7.0                # via pip-tools
 codecov==2.0.15
-coverage==4.5.1           # via codecov, pytest-cov
+coverage==4.5.2           # via codecov, pytest-cov
 docutils==0.14
 execnet==1.5.0            # via pytest-cache
 funcsigs==1.0.2           # via pytest
@@ -32,14 +32,14 @@ pytest-cache==1.0         # via pytest-pycodestyle
 pytest-cov==2.6.0
 pytest-pycodestyle==1.0.6
 pytest-runner==4.2
-pytest==3.9.3             # via pytest-cache, pytest-cov, pytest-pycodestyle
+pytest==4.0.0             # via pytest-cache, pytest-cov, pytest-pycodestyle
 readme-renderer==24.0     # via twine
 requests-toolbelt==0.8.0  # via twine
-requests==2.20.0          # via codecov, requests-toolbelt, twine
+requests==2.20.1          # via codecov, requests-toolbelt, twine
 scandir==1.9.0            # via pathlib2
 six==1.11.0               # via bleach, more-itertools, pathlib2, pip-tools, pytest, readme-renderer
 tqdm==4.28.1              # via twine
 twine==1.12.1
-urllib3==1.24             # via requests
+urllib3==1.24.1           # via requests
 webencodings==0.5.1       # via bleach
 wheel==0.32.2
