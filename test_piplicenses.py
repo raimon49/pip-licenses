@@ -233,31 +233,31 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertNotIn('"URL":', output_string)
 
     def test_summary(self):
-        format_html_args = ['--summary']
-        args = self.parser.parse_args(format_html_args)
+        summary_args = ['--summary']
+        args = self.parser.parse_args(summary_args)
         output_string = create_output_string(args)
 
         self.assertIn('Count', output_string)
         self.assertNotIn('Name', output_string)
 
     def test_summary(self):
-        format_html_args = ['--summary', '-o count']
-        args = self.parser.parse_args(format_html_args)
+        summary_args = ['--summary', '-o count']
+        args = self.parser.parse_args(summary_args)
         output_string = create_output_string(args)
 
         self.assertIn('Count', output_string)
         self.assertNotIn('Name', output_string)
 
     def test_summary_sort_by_count(self):
-        order_url_args = ['--summary', '--order=count']
-        args = self.parser.parse_args(order_url_args)
+        summary_args = ['--summary', '--order=count']
+        args = self.parser.parse_args(summary_args)
 
         sortby = get_sortby(args)
         self.assertEquals('Count', sortby)
 
     def test_summary_sort_by_name(self):
-        order_url_args = ['--summary', '--order=name']
-        args = self.parser.parse_args(order_url_args)
+        summary_args = ['--summary', '--order=name']
+        args = self.parser.parse_args(summary_args)
 
         sortby = get_sortby(args)
         self.assertEquals('License', sortby)
