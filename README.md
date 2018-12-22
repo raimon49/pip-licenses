@@ -132,6 +132,17 @@ For packages without Metadata, the license is output as `UNKNOWN`. To get more p
  pytz    2017.3   MIT      http://pythonhosted.org/pytz
 ```
 
+### Option: with-summary
+
+When executed with the `--with-summary` option, output with short description of the package.
+
+```bash
+(venv) $ pip-licenses --with-summary
+ Name    Version  License  Summary
+ Django  2.0.2    BSD      A high-level Python Web framework that encourages rapid development and clean, pragmatic design.
+ pytz    2017.3   MIT      World timezone definitions, modern and historical
+```
+
 ### Option: ignore-packages
 
 When executed with the `--ignore-packages` option, ignore the package specified by argument from list output.
