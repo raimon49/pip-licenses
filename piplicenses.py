@@ -55,7 +55,7 @@ FIELD_NAMES = (
     'Version',
     'License',
     'Author',
-    'Summary',
+    'Description',
     'URL',
 )
 
@@ -258,8 +258,8 @@ def get_output_fields(args):
     if args.with_urls:
         output_fields.append('URL')
 
-    if args.with_summary:
-        output_fields.append('Summary')
+    if args.with_description:
+        output_fields.append('Description')
 
     return output_fields
 
@@ -316,10 +316,10 @@ def create_parser():
                         action='store_true',
                         default=False,
                         help='dump with package urls')
-    parser.add_argument('-d', '--with-summary',
+    parser.add_argument('-d', '--with-description',
                         action='store_true',
                         default=False,
-                        help='dump with short package summary description')
+                        help='dump with short package description')
     parser.add_argument('-i', '--ignore-packages',
                         action='store', type=str,
                         nargs='+', metavar='PKG',
