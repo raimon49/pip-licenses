@@ -55,6 +55,7 @@ FIELD_NAMES = (
     'Version',
     'License',
     'Author',
+    'Description',
     'URL',
 )
 
@@ -82,6 +83,7 @@ METADATA_KEYS = (
     'home-page',
     'author',
     'license',
+    'summary',
 )
 
 
@@ -153,6 +155,7 @@ def create_licenses_table(args):
                        pkg['version'],
                        pkg['license'],
                        pkg['author'],
+                       pkg['summary'],
                        pkg['home-page'], ])
 
     return table
@@ -255,6 +258,9 @@ def get_output_fields(args):
     if args.with_urls:
         output_fields.append('URL')
 
+    if args.with_description:
+        output_fields.append('Description')
+
     return output_fields
 
 
@@ -310,6 +316,10 @@ def create_parser():
                         action='store_true',
                         default=False,
                         help='dump with package urls')
+    parser.add_argument('-d', '--with-description',
+                        action='store_true',
+                        default=False,
+                        help='dump with short package description')
     parser.add_argument('-i', '--ignore-packages',
                         action='store', type=str,
                         nargs='+', metavar='PKG',
