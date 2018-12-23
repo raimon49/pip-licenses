@@ -14,6 +14,7 @@ Dump the software license list of Python packages installed with pip.
     * [Option: with\-system](#option-with-system)
     * [Option: with\-authors](#option-with-authors)
     * [Option: with\-urls](#option-with-urls)
+    * [Option: with\-description](#option-with-description)
     * [Option: ignore\-packages](#option-ignore-packages)
     * [Option: order](#option-order)
     * [Option: format\-markdown](#option-format-markdown)

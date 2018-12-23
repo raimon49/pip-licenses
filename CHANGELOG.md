@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+### 1.10.0
+
+* Implement new option `--with-description`
+
 ### 1.9.0
 
 * Implement new option `--summary`
