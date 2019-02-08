@@ -164,6 +164,38 @@ Package names of arguments can be separated by spaces.
  setuptools  38.5.0   UNKNOWN
 ```
 
+### Option: packages
+
+When executed with the `--packages` option, only the packages specified by the argument are placed into the list output.
+
+```bash
+(venv) $ pip-licenses --packages twine numpy
+ Name  Version  License
+ numpy 1.16.1   BSD
+ twine 1.12.1   MIT
+```
+
+Packages can be included from requirements.txt files.
+
+```bash
+(venv) $ echo -e "twine\nnumpy\n" > requirements.txt
+(venv) $ pip-licenses --packages requirements.txt
+ Name  Version  License
+ numpy 1.16.1   BSD
+ twine 1.12.1   MIT
+```
+
+In addition, packages can be included from json files (e.g. as produced by `pydeps`).
+
+```bash
+(venv) $ pydeps --externals <project_root> | tail -1 > pkgs.json
+(venv) $ pip-licenses --packages pkgs.json pydeps
+ Name  Version  License
+ numpy   1.16.1   BSD
+ pydeps  1.7.0    BSD
+ twine   1.12.1   MIT
+```
+
 ### Option: order
 
 By default, it is ordered by package name.

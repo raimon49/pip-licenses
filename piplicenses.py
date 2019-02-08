@@ -30,6 +30,9 @@ from __future__ import (division, print_function,
                         absolute_import, unicode_literals)
 import sys
 import argparse
+import re
+import json
+import os.path
 from email.parser import FeedParser
 from email import message_from_string
 
@@ -134,6 +137,21 @@ def get_packages(args):
 
     pkgs = get_installed_distributions()
     ignore_pkgs_as_lower = [pkg.lower() for pkg in args.ignore_packages]
+
+    included_packages = []
+    for pkg in args.packages:
+        if not os.path.isfile(pkg):
+            included_packages.append(pkg)
+        elif pkg.endswith('.json'):
+            with open(pkg) as f:
+                included_packages += json.loads(f.read.replace("'", '"'))
+        else:
+            with open(pkg) as f:
+                included_packages += [
+                    re.sub('(.*)(#.*|^[ ]{0,}|[=><].*|;.*)\n$',
+                           r'\1', line).replace('\n', '')
+                    for line in f.readlines()]
+
     for pkg in pkgs:
         pkg_info = get_pkg_info(pkg)
         pkg_name = pkg_info['name']
@@ -144,10 +162,13 @@ def get_packages(args):
         if not args.with_system and pkg_name in SYSTEM_PACKAGES:
             continue
 
+        if included_packages and pkg_name not in included_packages:
+            continue
+
         yield pkg_info
 
 
-def create_licenses_table(args):
+def create_licenses_table(args,):
     table = factory_styled_table_with_args(args)
 
     for pkg in get_packages(args):
@@ -325,6 +346,10 @@ def create_parser():
                         nargs='+', metavar='PKG',
                         default=[],
                         help='ignore package name in dumped list')
+    parser.add_argument('-p', '--packages',
+                        action='store', type=str,
+                        nargs='+', metavar='INCLUDES', default=[],
+                        help='Only include selected packages in output')
     parser.add_argument('-o', '--order',
                         action='store', type=str,
                         default='name', metavar='COL',
