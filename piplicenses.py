@@ -151,6 +151,7 @@ def get_packages(args):
                     re.sub('(.*)(#.*|^[ ]{0,}|[=><].*|;.*)\n$',
                            r'\1', line).replace('\n', '')
                     for line in f.readlines()]
+    included_packages = [pkg.lower() for pkg in included_packages]
 
     for pkg in pkgs:
         pkg_info = get_pkg_info(pkg)
@@ -162,7 +163,7 @@ def get_packages(args):
         if not args.with_system and pkg_name in SYSTEM_PACKAGES:
             continue
 
-        if included_packages and pkg_name not in included_packages:
+        if included_packages and pkg_name.lower() not in included_packages:
             continue
 
         yield pkg_info
