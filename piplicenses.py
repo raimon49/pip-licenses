@@ -144,7 +144,7 @@ def get_packages(args):
             included_packages.append(pkg)
         elif pkg.endswith('.json'):
             with open(pkg) as f:
-                included_packages += json.loads(f.read.replace("'", '"'))
+                included_packages += json.loads(f.read().replace("'", '"'))
         else:
             with open(pkg) as f:
                 included_packages += [
