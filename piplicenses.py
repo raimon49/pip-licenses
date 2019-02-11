@@ -139,7 +139,7 @@ def get_packages(args):
     ignore_pkgs_as_lower = [pkg.lower() for pkg in args.ignore_packages]
 
     included_packages = []
-    for pkg in args.packages:
+    for pkg in args.packages:  # iterate through included packages
         if not os.path.isfile(pkg):
             included_packages.append(pkg)
         elif pkg.endswith('.json'):
@@ -151,7 +151,8 @@ def get_packages(args):
                     re.sub('(.*)(#.*|^[ ]{0,}|[=><].*|;.*)\n$',
                            r'\1', line).replace('\n', '')
                     for line in f.readlines()]
-    included_packages = [pkg.lower() for pkg in included_packages]
+    # ensure each package only occurs once and that we ignore case
+    included_packages = set([pkg.lower() for pkg in included_packages])
 
     for pkg in pkgs:
         pkg_info = get_pkg_info(pkg)
@@ -163,7 +164,8 @@ def get_packages(args):
         if not args.with_system and pkg_name in SYSTEM_PACKAGES:
             continue
 
-        if included_packages and pkg_name.lower() not in included_packages:
+        if (included_packages and
+                pkg_name.lower() not in included_packages):
             continue
 
         yield pkg_info

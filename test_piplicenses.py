@@ -1,6 +1,10 @@
 from __future__ import (division, print_function,
                         absolute_import, unicode_literals)
 import unittest
+import json
+import tempfile
+import os
+
 from email import message_from_string
 
 from prettytable.prettytable import (FRAME as RULE_FRAME, ALL as RULE_ALL,
@@ -156,6 +160,56 @@ class TestGetLicenses(CommandLineTestCase):
 
         pkg_name_columns = self._create_pkg_name_columns(table)
         self.assertNotIn(ignore_pkg_name, pkg_name_columns)
+
+    def test_include_packages(self):
+        # test individual include
+        include_pkg_name = 'PTable'
+        include_packages_args = ['--package=' + include_pkg_name]
+        args = self.parser.parse_args(include_packages_args)
+        table = create_licenses_table(args)
+
+        pkg_name_columns = self._create_pkg_name_columns(table)
+        self.assertIn(include_pkg_name, pkg_name_columns)
+
+        included_packages = ['setuptools', 'PTable']
+        with tempfile.TemporaryDirectory() as tempdir:
+            # test json include
+            json_path = os.path.join(tempdir, 'deps.json')
+            with open(json_path, 'w') as json_file:
+                json.dump([
+                    included_packages[0]
+                ], json_file)
+            include_packages_args = ['--package=' + json_path]
+            args = self.parser.parse_args(include_packages_args)
+            table = create_licenses_table(args)
+
+            pkg_name_columns = self._create_pkg_name_columns(table)
+            self.assertIn(included_packages[0], pkg_name_columns)
+
+            # test requirements.txt include
+            requirements_txt_path = os.path.join(tempdir, 'requirements.txt')
+            with open(requirements_txt_path, 'w') as f:
+                f.write('\n'.join(included_packages))
+
+            include_packages_args = ['--package=' + requirements_txt_path]
+            args = self.parser.parse_args(include_packages_args)
+            table = create_licenses_table(args)
+
+            pkg_name_columns = self._create_pkg_name_columns(table)
+            for pkg in included_packages:
+                self.assertIn(pkg, pkg_name_columns)
+
+            # test combination
+            include_packages_args += ['--package=' + json_path,
+                                      '--package', included_packages[0]]
+            args = self.parser.parse_args(include_packages_args)
+            table = create_licenses_table(args)
+
+            pkg_name_columns = self._create_pkg_name_columns(table)
+            for pkg in included_packages:
+                self.assertIn(pkg, pkg_name_columns)
+                # check each package only appears once
+                self.assertEqual(included_packages.count(pkg), 1)
 
     def test_order_name(self):
         order_name_args = ['--order=name']
