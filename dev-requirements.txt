@@ -16,10 +16,9 @@ codecov==2.0.15
 coverage==4.5.2           # via codecov, pytest-cov
 docutils==0.14
 execnet==1.5.0            # via pytest-cache
-funcsigs==1.0.2           # via pytest
 idna==2.8                 # via requests
 more-itertools==4.3.0     # via pytest
-pathlib2==2.3.3           # via pytest
+pep8==1.7.1               # via pytest-pep8
 pip-tools==3.2.0
 pkginfo==1.4.2            # via twine
 pluggy==0.8.0             # via pytest
@@ -28,16 +27,16 @@ py==1.7.0                 # via pytest
 pycodestyle==2.4.0        # via autopep8, pytest-pycodestyle
 pygments==2.3.1           # via readme-renderer
 pypandoc==1.4
-pytest-cache==1.0         # via pytest-pycodestyle
+pytest-cache==1.0         # via pytest-pep8, pytest-pycodestyle
 pytest-cov==2.6.0
+pytest-pep8==1.0.6
 pytest-pycodestyle==1.0.6
 pytest-runner==4.2
-pytest==4.0.2             # via pytest-cache, pytest-cov, pytest-pycodestyle
+pytest==4.0.2             # via pytest-cache, pytest-cov, pytest-pep8, pytest-pycodestyle
 readme-renderer==24.0     # via twine
 requests-toolbelt==0.8.0  # via twine
 requests==2.21.0          # via codecov, requests-toolbelt, twine
-scandir==1.9.0            # via pathlib2
-six==1.12.0               # via bleach, more-itertools, pathlib2, pip-tools, pytest, readme-renderer
+six==1.12.0               # via bleach, more-itertools, pip-tools, pytest, readme-renderer
 tqdm==4.28.1              # via twine
 twine==1.12.1
 urllib3==1.24.1           # via requests

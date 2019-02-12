@@ -7,6 +7,7 @@ wheel
 pip-tools
 pypandoc
 pytest-cov
+pytest-pep8
 pytest-pycodestyle
 pytest-runner
 twine
