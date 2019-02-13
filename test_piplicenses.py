@@ -248,14 +248,6 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertIn('Count', output_string)
         self.assertNotIn('Name', output_string)
 
-    def test_summary(self):
-        summary_args = ['--summary', '-o count']
-        args = self.parser.parse_args(summary_args)
-        output_string = create_output_string(args)
-
-        self.assertIn('Count', output_string)
-        self.assertNotIn('Name', output_string)
-
     def test_summary_sort_by_count(self):
         summary_args = ['--summary', '--order=count']
         args = self.parser.parse_args(summary_args)
