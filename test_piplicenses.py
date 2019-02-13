@@ -132,6 +132,9 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertNotEquals(output_fields, list(DEFAULT_OUTPUT_FIELDS))
         self.assertIn('Author', output_fields)
 
+        output_string = create_output_string(args)
+        self.assertIn('Author', output_string)
+
     def test_with_urls(self):
         with_urls_args = ['--with-urls']
         args = self.parser.parse_args(with_urls_args)
@@ -140,6 +143,9 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertNotEquals(output_fields, list(DEFAULT_OUTPUT_FIELDS))
         self.assertIn('URL', output_fields)
 
+        output_string = create_output_string(args)
+        self.assertIn('URL', output_string)
+
     def test_with_description(self):
         with_description_args = ['--with-description']
         args = self.parser.parse_args(with_description_args)
@@ -147,6 +153,9 @@ class TestGetLicenses(CommandLineTestCase):
         output_fields = get_output_fields(args)
         self.assertNotEquals(output_fields, list(DEFAULT_OUTPUT_FIELDS))
         self.assertIn('Description', output_fields)
+
+        output_string = create_output_string(args)
+        self.assertIn('Description', output_string)
 
     def test_ignore_packages(self):
         ignore_pkg_name = 'PTable'
