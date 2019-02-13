@@ -15,6 +15,7 @@ Dump the software license list of Python packages installed with pip.
     * [Option: with\-authors](#option-with-authors)
     * [Option: with\-urls](#option-with-urls)
     * [Option: with\-description](#option-with-description)
+    * [Option: with\-license\-file](#option-with-license-file)
     * [Option: ignore\-packages](#option-ignore-packages)
     * [Option: order](#option-order)
     * [Option: format\-markdown](#option-format-markdown)
@@ -143,6 +144,11 @@ When executed with the `--with-description` option, output with short descriptio
  Django  2.0.2    BSD      A high-level Python Web framework that encourages rapid development and clean, pragmatic design.
  pytz    2017.3   MIT      World timezone definitions, modern and historical
 ```
+
+### Option: with-license-file
+
+When executed with the `--with-license-file` option, output the location of the package's license file on disk and the full contents of that file. Due to the length of these fields, this option is best paired with `--format-json`.
+
 
 ### Option: ignore-packages
 

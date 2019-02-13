@@ -148,6 +148,15 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertNotEquals(output_fields, list(DEFAULT_OUTPUT_FIELDS))
         self.assertIn('Description', output_fields)
 
+    def test_with_license_file(self):
+        with_license_file_args = ['--with-license-file']
+        args = self.parser.parse_args(with_license_file_args)
+
+        output_fields = get_output_fields(args)
+        self.assertNotEqual(output_fields, list(DEFAULT_OUTPUT_FIELDS))
+        self.assertIn('LicenseFile', output_fields)
+        self.assertIn('LicenseText', output_fields)
+
     def test_ignore_packages(self):
         ignore_pkg_name = 'PTable'
         ignore_packages_args = ['--ignore-package=' + ignore_pkg_name]

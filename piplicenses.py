@@ -28,7 +28,8 @@ SOFTWARE.
 """
 from __future__ import (division, print_function,
                         absolute_import, unicode_literals)
-import sys
+import glob
+import os
 import argparse
 from email.parser import FeedParser
 from email import message_from_string
@@ -54,6 +55,8 @@ FIELD_NAMES = (
     'Name',
     'Version',
     'License',
+    'LicenseFile',
+    'LicenseText',
     'Author',
     'Description',
     'URL',
@@ -100,11 +103,32 @@ LICENSE_UNKNOWN = 'UNKNOWN'
 
 def get_packages(args):
 
+    def get_pkg_license_file(pkg):
+        """
+        Attempt to find the package's LICENSE file on disk and return the
+        tuple (license_file_path, license_file_contents).
+        """
+        license_file = LICENSE_UNKNOWN
+        license_text = LICENSE_UNKNOWN
+        pkg_dirname = "{}-{}.dist-info".format(
+            pkg.project_name.replace("-", "_"), pkg.version)
+        license_file_base = os.path.join(pkg.location, pkg_dirname, 'LICENSE*')
+        for test_file in glob.glob(license_file_base):
+            if os.path.exists(test_file):
+                license_file = test_file
+                with open(test_file) as license_file_handle:
+                    license_text = "".join(license_file_handle.readlines())
+                break
+        return (license_file, license_text)
+
     def get_pkg_info(pkg):
+        (license_file, license_text) = get_pkg_license_file(pkg)
         pkg_info = {
             'name': pkg.project_name,
             'version': pkg.version,
             'namever': str(pkg),
+            'licenseFile': license_file,
+            'licenseText': license_text,
         }
         metadata = None
         if pkg.has_metadata('METADATA'):
@@ -154,6 +178,8 @@ def create_licenses_table(args):
         table.add_row([pkg['name'],
                        pkg['version'],
                        pkg['license'],
+                       pkg['licenseFile'],
+                       pkg['licenseText'],
                        pkg['author'],
                        pkg['summary'],
                        pkg['home-page'], ])
@@ -261,6 +287,10 @@ def get_output_fields(args):
     if args.with_description:
         output_fields.append('Description')
 
+    if args.with_license_file:
+        output_fields.append('LicenseFile')
+        output_fields.append('LicenseText')
+
     return output_fields
 
 
@@ -320,6 +350,11 @@ def create_parser():
                         action='store_true',
                         default=False,
                         help='dump with short package description')
+    parser.add_argument('-l', '--with-license-file',
+                        action='store_true',
+                        default=False,
+                        help='dump with location of license file and '
+                             'contents, most useful with JSON output')
     parser.add_argument('-i', '--ignore-packages',
                         action='store', type=str,
                         nargs='+', metavar='PKG',
