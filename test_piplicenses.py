@@ -55,11 +55,11 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertIn('l', table.align.values())
         self.assertFalse(table.border)
         self.assertTrue(table.header)
-        self.assertEquals('+', table.junction_char)
-        self.assertEquals(RULE_FRAME, table.hrules)
+        self.assertEqual('+', table.junction_char)
+        self.assertEqual(RULE_FRAME, table.hrules)
 
         output_fields = get_output_fields(args)
-        self.assertEquals(output_fields, list(DEFAULT_OUTPUT_FIELDS))
+        self.assertEqual(output_fields, list(DEFAULT_OUTPUT_FIELDS))
         self.assertNotIn('Author', output_fields)
         self.assertNotIn('URL', output_fields)
 
@@ -68,7 +68,7 @@ class TestGetLicenses(CommandLineTestCase):
             self.assertNotIn(sys_pkg, pkg_name_columns)
 
         sortby = get_sortby(args)
-        self.assertEquals('Name', sortby)
+        self.assertEqual('Name', sortby)
 
         output_string = create_output_string(args)
         self.assertNotIn('<table>', output_string)
@@ -91,8 +91,8 @@ class TestGetLicenses(CommandLineTestCase):
                     'Version: 1.0.0\r\n'
                     'Classifier: License :: OSI Approved :: MIT License\r\n')
         message = message_from_string(metadata)
-        self.assertEquals('MIT License',
-                          find_license_from_classifier(message))
+        self.assertEqual('MIT License',
+                         find_license_from_classifier(message))
 
     def test_display_multiple_license_from_classifier(self):
         metadata = ('Metadata-Version: 2.0\r\n'
@@ -102,16 +102,16 @@ class TestGetLicenses(CommandLineTestCase):
                     'GNU General Public License v3 (GPLv3)\r\n'
                     'Classifier: License :: OSI Approved :: MIT License\r\n')
         message = message_from_string(metadata)
-        self.assertEquals('GNU General Public License v3 (GPLv3), MIT License',
-                          find_license_from_classifier(message))
+        self.assertEqual('GNU General Public License v3 (GPLv3), MIT License',
+                         find_license_from_classifier(message))
 
     def test_not_found_license_from_classifier(self):
         metadata_as_no_license = ('Metadata-Version: 2.0\r\n'
                                   'Name: pip-licenses\r\n'
                                   'Version: 1.0.0\r\n')
         message = message_from_string(metadata_as_no_license)
-        self.assertEquals(LICENSE_UNKNOWN,
-                          find_license_from_classifier(message))
+        self.assertEqual(LICENSE_UNKNOWN,
+                         find_license_from_classifier(message))
 
     def test_with_system(self):
         with_system_args = ['--with-system']
@@ -129,7 +129,7 @@ class TestGetLicenses(CommandLineTestCase):
         args = self.parser.parse_args(with_authors_args)
 
         output_fields = get_output_fields(args)
-        self.assertNotEquals(output_fields, list(DEFAULT_OUTPUT_FIELDS))
+        self.assertNotEqual(output_fields, list(DEFAULT_OUTPUT_FIELDS))
         self.assertIn('Author', output_fields)
 
     def test_with_urls(self):
@@ -137,7 +137,7 @@ class TestGetLicenses(CommandLineTestCase):
         args = self.parser.parse_args(with_urls_args)
 
         output_fields = get_output_fields(args)
-        self.assertNotEquals(output_fields, list(DEFAULT_OUTPUT_FIELDS))
+        self.assertNotEqual(output_fields, list(DEFAULT_OUTPUT_FIELDS))
         self.assertIn('URL', output_fields)
 
     def test_with_description(self):
@@ -145,7 +145,7 @@ class TestGetLicenses(CommandLineTestCase):
         args = self.parser.parse_args(with_description_args)
 
         output_fields = get_output_fields(args)
-        self.assertNotEquals(output_fields, list(DEFAULT_OUTPUT_FIELDS))
+        self.assertNotEqual(output_fields, list(DEFAULT_OUTPUT_FIELDS))
         self.assertIn('Description', output_fields)
 
     def test_ignore_packages(self):
@@ -162,35 +162,35 @@ class TestGetLicenses(CommandLineTestCase):
         args = self.parser.parse_args(order_name_args)
 
         sortby = get_sortby(args)
-        self.assertEquals('Name', sortby)
+        self.assertEqual('Name', sortby)
 
     def test_order_license(self):
         order_license_args = ['--order=license']
         args = self.parser.parse_args(order_license_args)
 
         sortby = get_sortby(args)
-        self.assertEquals('License', sortby)
+        self.assertEqual('License', sortby)
 
     def test_order_author(self):
         order_author_args = ['--order=author', '--with-authors']
         args = self.parser.parse_args(order_author_args)
 
         sortby = get_sortby(args)
-        self.assertEquals('Author', sortby)
+        self.assertEqual('Author', sortby)
 
     def test_order_url(self):
         order_url_args = ['--order=url', '--with-urls']
         args = self.parser.parse_args(order_url_args)
 
         sortby = get_sortby(args)
-        self.assertEquals('URL', sortby)
+        self.assertEqual('URL', sortby)
 
     def test_order_url_no_effect(self):
         order_url_args = ['--order=url']
         args = self.parser.parse_args(order_url_args)
 
         sortby = get_sortby(args)
-        self.assertEquals('Name', sortby)
+        self.assertEqual('Name', sortby)
 
     def test_format_markdown(self):
         format_markdown_args = ['--format-markdown']
@@ -200,8 +200,8 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertIn('l', table.align.values())
         self.assertTrue(table.border)
         self.assertTrue(table.header)
-        self.assertEquals('|', table.junction_char)
-        self.assertEquals(RULE_HEADER, table.hrules)
+        self.assertEqual('|', table.junction_char)
+        self.assertEqual(RULE_HEADER, table.hrules)
 
     def test_format_rst(self):
         format_rst_args = ['--format-rst']
@@ -211,8 +211,8 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertIn('l', table.align.values())
         self.assertTrue(table.border)
         self.assertTrue(table.header)
-        self.assertEquals('+', table.junction_char)
-        self.assertEquals(RULE_ALL, table.hrules)
+        self.assertEqual('+', table.junction_char)
+        self.assertEqual(RULE_ALL, table.hrules)
 
     def test_format_confluence(self):
         format_confluence_args = ['--format-confluence']
@@ -222,8 +222,8 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertIn('l', table.align.values())
         self.assertTrue(table.border)
         self.assertTrue(table.header)
-        self.assertEquals('|', table.junction_char)
-        self.assertEquals(RULE_NONE, table.hrules)
+        self.assertEqual('|', table.junction_char)
+        self.assertEqual(RULE_NONE, table.hrules)
 
     def test_format_html(self):
         format_html_args = ['--format-html']
@@ -261,14 +261,14 @@ class TestGetLicenses(CommandLineTestCase):
         args = self.parser.parse_args(summary_args)
 
         sortby = get_sortby(args)
-        self.assertEquals('Count', sortby)
+        self.assertEqual('Count', sortby)
 
     def test_summary_sort_by_name(self):
         summary_args = ['--summary', '--order=name']
         args = self.parser.parse_args(summary_args)
 
         sortby = get_sortby(args)
-        self.assertEquals('License', sortby)
+        self.assertEqual('License', sortby)
 
     def tearDown(self):
         pass
