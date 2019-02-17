@@ -13,7 +13,7 @@ The design policy of pip-licenses is as follows.
 
 1. Create a new venv environment.
 2. Install package for development via `make setup` .
-    * pip-licenses are dependently managed by [pip-tools](https://pypi.org/project/pip-tools/).
+    * Dependencies are managed by [pip-tools](https://pypi.org/project/pip-tools/).
     * If you want to add dependency packages for development, edit [dev-requirements.in](https://github.com/raimon49/pip-licenses/blob/master/dev-requirements.in) file and run `make update-depends` .
 
 ## Implementation and testing
