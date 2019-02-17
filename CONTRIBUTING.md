@@ -20,3 +20,4 @@ The design policy of pip-licenses is as follows.
 
 * Code conventions follow the [PEP 8](https://www.python.org/dev/peps/pep-0008/).
 * pip-licenses always measures code coverage for code quality. If you implement the new feature, please also write unit test in [test\_piplicenses.py](https://github.com/raimon49/pip-licenses/blob/master/test_piplicenses.py).
+    * Tests can be run with `make test` .
