@@ -28,6 +28,7 @@ Dump the software license list of Python packages installed with pip.
 * [License](#license)
     * [Dependencies](#dependencies)
 * [Uninstallation](#uninstallation)
+* [Contributing](#contributing)
 
 ## Description
 
