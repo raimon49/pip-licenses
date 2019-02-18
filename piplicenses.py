@@ -28,7 +28,8 @@ SOFTWARE.
 """
 from __future__ import (division, print_function,
                         absolute_import, unicode_literals)
-import sys
+import glob
+import os
 import argparse
 from email.parser import FeedParser
 from email import message_from_string
@@ -54,6 +55,8 @@ FIELD_NAMES = (
     'Name',
     'Version',
     'License',
+    'LicenseFile',
+    'LicenseText',
     'Author',
     'Description',
     'URL',
@@ -86,6 +89,12 @@ METADATA_KEYS = (
     'summary',
 )
 
+# Mapping of FIELD_NAMES to METADATA_KEYS where they differ by more than case
+FIELDS_TO_METADATA_KEYS = {
+    'URL': 'home-page',
+    'Description': 'summary',
+}
+
 
 SYSTEM_PACKAGES = (
     __pkgname__,
@@ -100,11 +109,39 @@ LICENSE_UNKNOWN = 'UNKNOWN'
 
 def get_packages(args):
 
+    def get_pkg_license_file(pkg):
+        """
+        Attempt to find the package's LICENSE file on disk and return the
+        tuple (license_file_path, license_file_contents).
+        """
+        license_file = LICENSE_UNKNOWN
+        license_text = LICENSE_UNKNOWN
+        pkg_dirname = "{}-{}.dist-info".format(
+            pkg.project_name.replace("-", "_"), pkg.version)
+        license_file_base = os.path.join(pkg.location, pkg_dirname, 'LICENSE*')
+        for test_file in glob.glob(license_file_base):
+            if os.path.exists(test_file):
+                license_file = test_file
+                with open(test_file) as license_file_handle:
+                    file_lines = license_file_handle.readlines()
+                try:
+                    # python 3 is happy with maybe-Unicode files
+                    license_text = "".join(file_lines)
+                except UnicodeDecodeError:
+                    # python 2 not so much
+                    license_text = "".join([line.decode('utf-8', 'replace')
+                                           for line in file_lines])
+                break
+        return (license_file, license_text)
+
     def get_pkg_info(pkg):
+        (license_file, license_text) = get_pkg_license_file(pkg)
         pkg_info = {
             'name': pkg.project_name,
             'version': pkg.version,
             'namever': str(pkg),
+            'licensefile': license_file,
+            'licensetext': license_text,
         }
         metadata = None
         if pkg.has_metadata('METADATA'):
@@ -147,16 +184,17 @@ def get_packages(args):
         yield pkg_info
 
 
-def create_licenses_table(args):
-    table = factory_styled_table_with_args(args)
+def create_licenses_table(args, output_fields=DEFAULT_OUTPUT_FIELDS):
+    table = factory_styled_table_with_args(args, output_fields)
 
     for pkg in get_packages(args):
-        table.add_row([pkg['name'],
-                       pkg['version'],
-                       pkg['license'],
-                       pkg['author'],
-                       pkg['summary'],
-                       pkg['home-page'], ])
+        row = []
+        for field in output_fields:
+            if field.lower() in pkg:
+                row.append(pkg[field.lower()])
+            else:
+                row.append(pkg[FIELDS_TO_METADATA_KEYS[field]])
+        table.add_row(row)
 
     return table
 
@@ -169,7 +207,7 @@ def create_summary_table(args):
         else:
             licenses[pkg['license']] += 1
 
-    table = factory_styled_table_with_args(args)
+    table = factory_styled_table_with_args(args, SUMMARY_FIELD_NAMES)
     for license in licenses.keys():
         table.add_row([licenses[license],
                        license, ])
@@ -206,12 +244,9 @@ class JsonPrettyTable(PrettyTable):
         return json.dumps(lines, indent=2, sort_keys=True)
 
 
-def factory_styled_table_with_args(args):
+def factory_styled_table_with_args(args, output_fields=DEFAULT_OUTPUT_FIELDS):
     table = PrettyTable()
-    if args.summary:
-        table.field_names = SUMMARY_FIELD_NAMES
-    else:
-        table.field_names = FIELD_NAMES
+    table.field_names = output_fields
     table.align = 'l'
     table.border = (args.format_markdown or args.format_rst or
                     args.format_confluence or args.format_json)
@@ -261,6 +296,10 @@ def get_output_fields(args):
     if args.with_description:
         output_fields.append('Description')
 
+    if args.with_license_file:
+        output_fields.append('LicenseFile')
+        output_fields.append('LicenseText')
+
     return output_fields
 
 
@@ -280,12 +319,13 @@ def get_sortby(args):
 
 
 def create_output_string(args):
+    output_fields = get_output_fields(args)
+
     if args.summary:
         table = create_summary_table(args)
     else:
-        table = create_licenses_table(args)
+        table = create_licenses_table(args, output_fields)
 
-    output_fields = get_output_fields(args)
     sortby = get_sortby(args)
 
     if args.format_html:
@@ -320,6 +360,11 @@ def create_parser():
                         action='store_true',
                         default=False,
                         help='dump with short package description')
+    parser.add_argument('-l', '--with-license-file',
+                        action='store_true',
+                        default=False,
+                        help='dump with location of license file and '
+                             'contents, most useful with JSON output')
     parser.add_argument('-i', '--ignore-packages',
                         action='store', type=str,
                         nargs='+', metavar='PKG',
