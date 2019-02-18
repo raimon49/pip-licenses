@@ -309,3 +309,7 @@ Uninstall package and dependent package with `pip` command.
 ```bash
 $ pip uninstall pip-licenses PTable
 ```
+
+## Contributing
+
+See [contribution guidelines](https://github.com/raimon49/pip-licenses/blob/master/CONTRIBUTING.md).
