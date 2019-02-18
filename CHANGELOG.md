@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+### 1.11.0
+
+* Implement new option `--with-license-file`
+
 ### 1.10.0
 
 * Implement new option `--with-description`
