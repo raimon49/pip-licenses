@@ -284,14 +284,6 @@ class TestGetLicenses(CommandLineTestCase):
         sortby = get_sortby(args)
         self.assertEqual('License', sortby)
 
-    def tearDown(self):
-        pass
-
-
-class TestUtils(unittest.TestCase):
-    def setUp(self):
-        pass
-
     def test_output_colored_normal(self):
         color_code = '32'
         text = __pkgname__
