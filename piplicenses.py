@@ -31,6 +31,7 @@ from __future__ import (division, print_function,
 import glob
 import os
 import argparse
+from functools import partial
 from email.parser import FeedParser
 from email import message_from_string
 
@@ -248,20 +249,20 @@ def factory_styled_table_with_args(args, output_fields=DEFAULT_OUTPUT_FIELDS):
     table = PrettyTable()
     table.field_names = output_fields
     table.align = 'l'
-    table.border = (args.format_markdown or args.format_rst or
-                    args.format_confluence or args.format_json)
+    table.border = (args.format == 'markdown' or args.format == 'rst' or
+                    args.format == 'confluence' or args.format == 'json')
     table.header = True
 
-    if args.format_markdown:
+    if args.format == 'markdown':
         table.junction_char = '|'
         table.hrules = RULE_HEADER
-    elif args.format_rst:
+    elif args.format == 'rst':
         table.junction_char = '+'
         table.hrules = RULE_ALL
-    elif args.format_confluence:
+    elif args.format == 'confluence':
         table.junction_char = '|'
         table.hrules = RULE_NONE
-    elif args.format_json:
+    elif args.format == 'json':
         table = JsonPrettyTable(table.field_names)
 
     return table
@@ -328,14 +329,75 @@ def create_output_string(args):
 
     sortby = get_sortby(args)
 
-    if args.format_html:
+    if args.format == 'html':
         return table.get_html_string(fields=output_fields, sortby=sortby)
     else:
         return table.get_string(fields=output_fields, sortby=sortby)
 
 
+def create_warn_string(args):
+    warn_messages = []
+    warn = partial(output_colored, '33')
+
+    if args.with_license_file and not args.format == 'json':
+        message = warn(('Due to the length of these fields, this option is '
+                        'best paired with --format=json.'))
+        warn_messages.append(message)
+
+    if (args.format_markdown or args.format_rst or args.format_confluence or
+            args.format_html or args.format_json):
+        message = warn(('The option "--format-xxx" is deprecated. '
+                       'Please migrate to "--format=xxx".'))
+        warn_messages.append(message)
+
+    return '\n'.join(warn_messages)
+
+
+class CompatibleArgumentParser(argparse.ArgumentParser):
+
+    def parse_args(self, args=None, namespace=None):
+        args = super(CompatibleArgumentParser, self).parse_args(args,
+                                                                namespace)
+        self._compatible_format_args(args)
+
+        return args
+
+    def _compatible_format_args(self, args):
+        format_input = args.format.lower()
+
+        # XXX: Use enum when drop support python 2.7
+        if format_input in ('plain', 'p'):
+            args.format = 'plain'
+
+        if format_input in ('markdown', 'md', 'm'):
+            args.format = 'markdown'
+
+        if format_input in ('rst', 'rest', 'r'):
+            args.format = 'rst'
+
+        if format_input in ('confluence', 'c'):
+            args.format = 'confluence'
+
+        if format_input in ('html', 'h'):
+            args.format = 'html'
+
+        if format_input in ('json', 'j'):
+            args.format = 'json'
+
+        if args.format_markdown:
+            args.format = 'markdown'
+        elif args.format_rst:
+            args.format = 'rst'
+        elif args.format_confluence:
+            args.format = 'confluence'
+        elif args.format_html:
+            args.format = 'html'
+        elif args.format_json:
+            args.format = 'json'
+
+
 def create_parser():
-    parser = argparse.ArgumentParser(
+    parser = CompatibleArgumentParser(
         description=__summary__)
     parser.add_argument('-v', '--version',
                         action='version',
@@ -376,6 +438,13 @@ def create_parser():
                         help=('order by column\n'
                               '"name", "license", "author", "url"\n'
                               'default: --order=name'))
+    parser.add_argument('-f', '--format',
+                        action='store', type=str,
+                        default='plain', metavar='STYLE',
+                        help=('dump as set format style\n'
+                              '"plain", "markdown", "rst", "confluence",\n'
+                              '"html", "json"\n'
+                              'default: --format=plain'))
     parser.add_argument('-m', '--format-markdown',
                         action='store_true',
                         default=False,
@@ -420,6 +489,9 @@ def main():  # pragma: no cover
 
     output_string = create_output_string(args)
     print(output_string)
+    warn_string = create_warn_string(args)
+    if warn_string:
+        print(warn_string)
 
 
 if __name__ == '__main__':  # pragma: no cover

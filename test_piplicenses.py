@@ -7,7 +7,7 @@ from prettytable.prettytable import (FRAME as RULE_FRAME, ALL as RULE_ALL,
                                      HEADER as RULE_HEADER, NONE as RULE_NONE)
 from piplicenses import (__pkgname__, create_parser, output_colored,
                          create_licenses_table, get_output_fields, get_sortby,
-                         factory_styled_table_with_args,
+                         factory_styled_table_with_args, create_warn_string,
                          find_license_from_classifier, create_output_string,
                          DEFAULT_OUTPUT_FIELDS, SYSTEM_PACKAGES,
                          LICENSE_UNKNOWN)
@@ -170,6 +170,13 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertIn('LicenseFile', output_string)
         self.assertIn('LicenseText', output_string)
 
+    def test_with_license_file_warning(self):
+        with_license_file_args = ['--with-license-file', '--format=markdown']
+        args = self.parser.parse_args(with_license_file_args)
+
+        warn_string = create_warn_string(args)
+        self.assertIn('best paired with --format=json', warn_string)
+
     def test_ignore_packages(self):
         ignore_pkg_name = 'PTable'
         ignore_packages_args = ['--ignore-package=' + ignore_pkg_name]
@@ -214,8 +221,19 @@ class TestGetLicenses(CommandLineTestCase):
         sortby = get_sortby(args)
         self.assertEqual('Name', sortby)
 
+    def test_format_plain(self):
+        format_plain_args = ['--format=plain']
+        args = self.parser.parse_args(format_plain_args)
+        table = factory_styled_table_with_args(args)
+
+        self.assertIn('l', table.align.values())
+        self.assertFalse(table.border)
+        self.assertTrue(table.header)
+        self.assertEqual('+', table.junction_char)
+        self.assertEqual(RULE_FRAME, table.hrules)
+
     def test_format_markdown(self):
-        format_markdown_args = ['--format-markdown']
+        format_markdown_args = ['--format=markdown']
         args = self.parser.parse_args(format_markdown_args)
         table = factory_styled_table_with_args(args)
 
@@ -226,7 +244,7 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertEqual(RULE_HEADER, table.hrules)
 
     def test_format_rst(self):
-        format_rst_args = ['--format-rst']
+        format_rst_args = ['--format=rst']
         args = self.parser.parse_args(format_rst_args)
         table = factory_styled_table_with_args(args)
 
@@ -237,7 +255,7 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertEqual(RULE_ALL, table.hrules)
 
     def test_format_confluence(self):
-        format_confluence_args = ['--format-confluence']
+        format_confluence_args = ['--format=confluence']
         args = self.parser.parse_args(format_confluence_args)
         table = factory_styled_table_with_args(args)
 
@@ -248,19 +266,27 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertEqual(RULE_NONE, table.hrules)
 
     def test_format_html(self):
-        format_html_args = ['--format-html']
+        format_html_args = ['--format=html']
         args = self.parser.parse_args(format_html_args)
         output_string = create_output_string(args)
 
         self.assertIn('<table>', output_string)
 
     def test_format_json(self):
-        format_json_args = ['--format-json', '--with-authors']
+        format_json_args = ['--format=json', '--with-authors']
         args = self.parser.parse_args(format_json_args)
         output_string = create_output_string(args)
 
         self.assertIn('"Author":', output_string)
         self.assertNotIn('"URL":', output_string)
+
+    def test_format_compatibility(self):
+        format_old_style_args = ['--format-markdown']
+        args = self.parser.parse_args(format_old_style_args)
+        warn_string = create_warn_string(args)
+
+        self.assertEqual('markdown', args.format)
+        self.assertIn('deprecated', warn_string)
 
     def test_summary(self):
         summary_args = ['--summary']
