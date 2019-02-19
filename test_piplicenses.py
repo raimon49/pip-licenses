@@ -5,7 +5,7 @@ from email import message_from_string
 
 from prettytable.prettytable import (FRAME as RULE_FRAME, ALL as RULE_ALL,
                                      HEADER as RULE_HEADER, NONE as RULE_NONE)
-from piplicenses import (__pkgname__, create_parser,
+from piplicenses import (__pkgname__, create_parser, output_colored,
                          create_licenses_table, get_output_fields, get_sortby,
                          factory_styled_table_with_args,
                          find_license_from_classifier, create_output_string,
@@ -283,6 +283,32 @@ class TestGetLicenses(CommandLineTestCase):
 
         sortby = get_sortby(args)
         self.assertEqual('License', sortby)
+
+    def tearDown(self):
+        pass
+
+
+class TestUtils(unittest.TestCase):
+    def setUp(self):
+        pass
+
+    def test_output_colored_normal(self):
+        color_code = '32'
+        text = __pkgname__
+        actual = output_colored(color_code, text)
+
+        self.assertTrue(actual.startswith('\033[32'))
+        self.assertIn(text, actual)
+        self.assertTrue(actual.endswith('\033[0m'))
+
+    def test_output_colored_bold(self):
+        color_code = '32'
+        text = __pkgname__
+        actual = output_colored(color_code, text, is_bold=True)
+
+        self.assertTrue(actual.startswith('\033[1;32'))
+        self.assertIn(text, actual)
+        self.assertTrue(actual.endswith('\033[0m'))
 
     def tearDown(self):
         pass

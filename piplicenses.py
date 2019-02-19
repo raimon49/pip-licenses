@@ -404,6 +404,16 @@ def create_parser():
     return parser
 
 
+def output_colored(code, text, is_bold=False):
+    """
+    Create function to output with color sequence
+    """
+    if is_bold:
+        code = '1;%s' % code
+
+    return '\033[%sm%s\033[0m' % (code, text)
+
+
 def main():  # pragma: no cover
     parser = create_parser()
     args = parser.parse_args()
