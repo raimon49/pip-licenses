@@ -363,9 +363,25 @@ class CompatibleArgumentParser(argparse.ArgumentParser):
         return args
 
     def _compatible_format_args(self, args):
+        order_input = args.order.lower()
         format_input = args.format.lower()
 
         # XXX: Use enum when drop support python 2.7
+        if order_input in ('count', 'c'):
+            args.order = 'count'
+
+        if order_input in ('license', 'l'):
+            args.order = 'license'
+
+        if order_input in ('name', 'n'):
+            args.order = 'name'
+
+        if order_input in ('author', 'a'):
+            args.order = 'author'
+
+        if order_input in ('url', 'u'):
+            args.order = 'url'
+
         if format_input in ('plain', 'p'):
             args.format = 'plain'
 
