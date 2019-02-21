@@ -324,6 +324,9 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertIn('Count', output_string)
         self.assertNotIn('Name', output_string)
 
+        warn_string = create_warn_string(args)
+        self.assertTrue(len(warn_string) == 0)
+
     def test_summary_sort_by_count(self):
         summary_args = ['--summary', '--order=count']
         args = self.parser.parse_args(summary_args)
@@ -337,6 +340,21 @@ class TestGetLicenses(CommandLineTestCase):
 
         sortby = get_sortby(args)
         self.assertEqual('License', sortby)
+
+    def test_summary_warning(self):
+        summary_args = ['--summary', '--with-authors']
+        args = self.parser.parse_args(summary_args)
+
+        warn_string = create_warn_string(args)
+        self.assertIn('using --with-authors and --with-urls will be ignored.',
+                      warn_string)
+
+        summary_args = ['--summary', '--with-urls']
+        args = self.parser.parse_args(summary_args)
+
+        warn_string = create_warn_string(args)
+        self.assertIn('using --with-authors and --with-urls will be ignored.',
+                      warn_string)
 
     def test_output_colored_normal(self):
         color_code = '32'

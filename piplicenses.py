@@ -344,6 +344,13 @@ def create_warn_string(args):
                         'best paired with --format=json.'))
         warn_messages.append(message)
 
+    if args.summary and (args.with_authors or args.with_urls):
+        message = warn(('When using this option, only --order=count or '
+                        '--order=license has an effect for the --order '
+                        'option. And using --with-authors and --with-urls '
+                        'will be ignored.'))
+        warn_messages.append(message)
+
     if (args.format_markdown or args.format_rst or args.format_confluence or
             args.format_html or args.format_json):
         message = warn(('The option "--format-xxx" is deprecated. '
