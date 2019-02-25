@@ -18,11 +18,13 @@ Dump the software license list of Python packages installed with pip.
     * [Option: with\-license\-file](#option-with-license-file)
     * [Option: ignore\-packages](#option-ignore-packages)
     * [Option: order](#option-order)
-    * [Option: format\-markdown](#option-format-markdown)
-    * [Option: format\-rst](#option-format-rst)
-    * [Option: format\-confluence](#option-format-confluence)
-    * [Option: format\-html](#option-format-html)
-    * [Option: format\-json](#option-format-json)
+    * [Option: format](#option-format)
+        * [Markdown](#markdown)
+        * [reST](#rest)
+        * [Confluence](#confluence)
+        * [HTML](#html)
+        * [json](#json)
+        * [Deprecated options](#deprecated-options)
     * [Option: summary](#option-summary)
     * [More Information](#more-information)
 * [License](#license)
@@ -181,12 +183,16 @@ If you give arguments to the `--order` option, you can output in other sorted or
 (venv) $ pip-licenses --order=license
 ```
 
-### Option: format-markdown
+### Option: format
 
-When executed with the `--format-markdown` option, you can output list in markdown format.
+By default, it is output to the 'plain' format.
+
+#### Markdown
+
+When executed with the `--format=markdown` option, you can output list in markdown format. The `m` `md`  keyword is prepared as alias of `markdown`.
 
 ```bash
-(venv) $ pip-licenses --format-markdown
+(venv) $ pip-licenses --format=markdown
 | Name   | Version | License |
 |--------|---------|---------|
 | Django | 2.0.2   | BSD     |
@@ -200,12 +206,12 @@ When inserted in a markdown document, it is rendered as follows:
 | Django | 2.0.2   | BSD     |
 | pytz   | 2017.3  | MIT     |
 
-### Option: format-rst
+#### reST
 
-When executed with the `--format-rst` option, you can output list in "[Grid tables](http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html#grid-tables)" of reStructuredText format.
+When executed with the `--format=rst` option, you can output list in "[Grid tables](http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html#grid-tables)" of reStructuredText format. The `r` `rest`  keyword is prepared as alias of `rst`.
 
 ```bash
-(venv) $ pip-licenses --format-rst
+(venv) $ pip-licenses --format=rst
 +--------+---------+---------+
 | Name   | Version | License |
 +--------+---------+---------+
@@ -215,23 +221,23 @@ When executed with the `--format-rst` option, you can output list in "[Grid tabl
 +--------+---------+---------+
 ```
 
-### Option: format-confluence
+#### Confluence
 
-When executed with the `--format-confluence` option, you can output list in Confluence (or JIRA) Wiki markup format.
+When executed with the `--format=confluence` option, you can output list in Confluence (or JIRA) Wiki markup format. The `c` keyword is prepared as alias of `confluence`.
 
 ```bash
-(venv) $ pip-licenses --format-confluence
+(venv) $ pip-licenses --format=confluence
 | Name   | Version | License |
 | Django | 2.0.2   | BSD     |
 | pytz   | 2017.3  | MIT     |
 ```
 
-### Option: format-html
+#### HTML
 
-When executed with the `--format-html` option, you can output list in HTML table format.
+When executed with the `--format=html` option, you can output list in HTML table format. The `h` keyword is prepared as alias of `html`.
 
 ```bash
-(venv) $ pip-licenses --format-html
+(venv) $ pip-licenses --format=html
 <table>
     <tr>
         <th>Name</th>
@@ -251,10 +257,9 @@ When executed with the `--format-html` option, you can output list in HTML table
 </table>
 ```
 
-### Option: format-json
+#### json
 
-When executed with the `--format-json` option, you can output list in JSON format
-easily allowing post-processing
+When executed with the `--format-json` option, you can output list in JSON format easily allowing post-processing. The `j` keyword is prepared as alias of `json`.
 
 ```json
 [
@@ -275,6 +280,16 @@ easily allowing post-processing
 ]
 
 ```
+
+#### Deprecated options
+
+The following options are deprecated in version 2.0.0. Please migrate to `--format` option.
+
+* `--format-markdown`
+* `--format-rst`
+* `--format-confluence`
+* `--format-html`
+* `--format-json`
 
 ### Option: summary
 
