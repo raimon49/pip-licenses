@@ -274,7 +274,11 @@ def find_license_from_classifier(message):
     licenses = []
     for k, v in message.items():
         if k == 'Classifier' and v.startswith('License'):
-            licenses.append(v.split(' :: ')[-1])
+            license = v.split(' :: ')[-1]
+
+            # Through the declaration of 'Classifier: License :: OSI Approved'
+            if license != 'OSI Approved':
+                licenses.append(license)
 
     if len(licenses) > 0:
         license_from_classifier = ', '.join(licenses)

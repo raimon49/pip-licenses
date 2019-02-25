@@ -98,11 +98,15 @@ class TestGetLicenses(CommandLineTestCase):
         metadata = ('Metadata-Version: 2.0\r\n'
                     'Name: helga\r\n'
                     'Version: 1.7.6\r\n'
+                    'Classifier: License :: OSI Approved\r\n'
                     'Classifier: License :: OSI Approved :: '
                     'GNU General Public License v3 (GPLv3)\r\n'
-                    'Classifier: License :: OSI Approved :: MIT License\r\n')
+                    'Classifier: License :: OSI Approved :: MIT License\r\n'
+                    'Classifier: License :: Public Domain\r\n')
         message = message_from_string(metadata)
-        self.assertEqual('GNU General Public License v3 (GPLv3), MIT License',
+        self.assertEqual('GNU General Public License v3 (GPLv3), '
+                         'MIT License, '
+                         'Public Domain',
                          find_license_from_classifier(message))
 
     def test_not_found_license_from_classifier(self):
