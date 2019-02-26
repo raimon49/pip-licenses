@@ -27,6 +27,7 @@ Dump the software license list of Python packages installed with pip.
         * [Deprecated options](#deprecated-options)
     * [Option: summary](#option-summary)
     * [More Information](#more-information)
+* [Dockerfile](#dockerfile)
 * [License](#license)
     * [Dependencies](#dependencies)
 * [Uninstallation](#uninstallation)
@@ -307,6 +308,42 @@ When executed with the `--summary` option, you can output a summary of each lice
 ### More Information
 
 Other, please make sure to execute the `--help` option.
+
+## Dockerfile
+
+You can check the package license used by your app in the isolated Docker environment.
+
+```bash
+# Clone this repository to local
+$ git clone https://github.com/raimon49/pip-licenses.git
+$ cd pip-licenses
+
+# Create your app's requirements.txt file
+# Other ways, pip freeze > docker/requirements.txt
+$ echo "Flask" > docker/requirements.txt
+
+# Build docker image
+$ docker build . -t myapp-licenses
+
+# Check the package license in container
+$ docker run --rm myapp-licenses
+ Name          Version  License
+ Click         7.0      BSD License
+ Flask         1.0.2    BSD License
+ Jinja2        2.10     BSD License
+ MarkupSafe    1.1.1    BSD License
+ Werkzeug      0.14.1   BSD License
+ itsdangerous  1.1.0    BSD License
+
+# Check with options
+$ docker run --rm myapp-licenses --summary
+ Count  License
+ 5      BSD
+ 1      BSD-3-Clause
+
+# When you need help
+$ docker run --rm myapp-licenses --help
+```
 
 ## License
 
