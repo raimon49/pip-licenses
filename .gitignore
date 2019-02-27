@@ -100,3 +100,7 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+# ignore files to run in docker
+docker/*
+!docker/.gitkeep
