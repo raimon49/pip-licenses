@@ -186,7 +186,7 @@ If you give arguments to the `--order` option, you can output in other sorted or
 
 ### Option: format
 
-By default, it is output to the 'plain' format.
+By default, it is output to the `plain` format.
 
 #### Markdown
 
