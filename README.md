@@ -284,7 +284,7 @@ When executed with the `--format-json` option, you can output list in JSON forma
 
 #### Deprecated options
 
-The following options are deprecated in version 2.0.0. Please migrate to `--format` option.
+The following options will be deprecated in version 2.0.0. Please migrate to `--format` option.
 
 * `--format-markdown`
 * `--format-rst`
