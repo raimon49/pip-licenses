@@ -23,7 +23,7 @@ Dump the software license list of Python packages installed with pip.
         * [reST](#rest)
         * [Confluence](#confluence)
         * [HTML](#html)
-        * [json](#json)
+        * [JSON](#json)
         * [Deprecated options](#deprecated-options)
     * [Option: summary](#option-summary)
     * [More Information](#more-information)
@@ -258,7 +258,7 @@ When executed with the `--format=html` option, you can output list in HTML table
 </table>
 ```
 
-#### json
+#### JSON
 
 When executed with the `--format-json` option, you can output list in JSON format easily allowing post-processing. The `j` keyword is prepared as alias of `json`.
 
