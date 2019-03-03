@@ -89,13 +89,7 @@ License: UNKNOWN
 If you want to refer to the license declared in [the Classifiers](https://pypi.python.org/pypi?%3Aaction=list_classifiers), use the `--from-classifier` option.
 
 ```bash
-(venv) $ pip-licenses --from-classifier --with-system
- Name          Version  License
- Django        2.0.2    BSD License
- PTable        0.9.2    BSD License
- pip           9.0.1    MIT License
- pip-licenses  1.0.0    MIT License
- pytz          2017.3   MIT License
+(venv) $ pip-licenses --from-classifier --with-system | grep setuptools
  setuptools    38.5.0   MIT License
 ```
 
