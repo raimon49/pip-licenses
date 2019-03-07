@@ -28,6 +28,7 @@ SOFTWARE.
 """
 from __future__ import (division, print_function,
                         absolute_import, unicode_literals)
+import sys
 import glob
 import os
 import argparse
@@ -518,7 +519,7 @@ def main():  # pragma: no cover
     print(output_string)
     warn_string = create_warn_string(args)
     if warn_string:
-        print(warn_string)
+        print(warn_string, file=sys.stderr)
 
 
 if __name__ == '__main__':  # pragma: no cover
