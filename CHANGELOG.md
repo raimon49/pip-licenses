@@ -1,5 +1,10 @@
 ## CHANGELOG
 
+### 1.12.1
+
+* Fix bug
+    * Change warning output to standard error
+
 ### 1.12.0
 
 * Supports execution within Docker container
