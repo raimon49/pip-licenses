@@ -7,6 +7,6 @@ wheel
 pip-tools
 pypandoc
 pytest-cov
-pytest-pycodestyle
+pytest-pycodestyle~=1.0.6 # Pinned for Python 2.7
 pytest-runner
 twine

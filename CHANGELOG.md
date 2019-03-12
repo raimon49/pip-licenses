@@ -1,5 +1,21 @@
 ## CHANGELOG
 
+### 1.12.1
+
+* Fix bug
+    * Change warning output to standard error
+
+### 1.12.0
+
+* Supports execution within Docker container
+* Warning of deprecated options
+* Fix bug
+    * Ignore `OSI Approved` string with multiple licenses
+
+### 1.11.0
+
+* Implement new option `--with-license-file`
+
 ### 1.10.0
 
 * Implement new option `--with-description`

@@ -1,6 +1,6 @@
 # pip-licenses
 
-[![Build Status](https://travis-ci.org/raimon49/pip-licenses.svg?branch=master)](https://travis-ci.org/raimon49/pip-licenses) [![PyPI version](https://badge.fury.io/py/pip-licenses.svg)](https://badge.fury.io/py/pip-licenses) [![GitHub Release](https://img.shields.io/github/release/raimon49/pip-licenses.svg)](https://github.com/raimon49/pip-licenses/releases) [![Codecov](https://codecov.io/gh/raimon49/pip-licenses/branch/master/graph/badge.svg)](https://codecov.io/gh/raimon49/pip-licenses) [![BSD License](http://img.shields.io/badge/license-MIT-green.svg)](https://github.com/raimon49/pip-licenses/blob/master/LICENSE) [![Requirements Status](https://requires.io/github/raimon49/pip-licenses/requirements.svg?branch=master)](https://requires.io/github/raimon49/pip-licenses/requirements/?branch=master)
+[![Build Status](https://travis-ci.org/raimon49/pip-licenses.svg?branch=master)](https://travis-ci.org/raimon49/pip-licenses) [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/pip-licenses.svg)](https://pypi.org/project/pip-licenses/) [![PyPI version](https://badge.fury.io/py/pip-licenses.svg)](https://badge.fury.io/py/pip-licenses) [![GitHub Release](https://img.shields.io/github/release/raimon49/pip-licenses.svg)](https://github.com/raimon49/pip-licenses/releases) [![Codecov](https://codecov.io/gh/raimon49/pip-licenses/branch/master/graph/badge.svg)](https://codecov.io/gh/raimon49/pip-licenses) [![BSD License](http://img.shields.io/badge/license-MIT-green.svg)](https://github.com/raimon49/pip-licenses/blob/master/LICENSE) [![Requirements Status](https://requires.io/github/raimon49/pip-licenses/requirements.svg?branch=master)](https://requires.io/github/raimon49/pip-licenses/requirements/?branch=master)
 
 Dump the software license list of Python packages installed with pip.
 
@@ -15,18 +15,23 @@ Dump the software license list of Python packages installed with pip.
     * [Option: with\-authors](#option-with-authors)
     * [Option: with\-urls](#option-with-urls)
     * [Option: with\-description](#option-with-description)
+    * [Option: with\-license\-file](#option-with-license-file)
     * [Option: ignore\-packages](#option-ignore-packages)
     * [Option: order](#option-order)
-    * [Option: format\-markdown](#option-format-markdown)
-    * [Option: format\-rst](#option-format-rst)
-    * [Option: format\-confluence](#option-format-confluence)
-    * [Option: format\-html](#option-format-html)
-    * [Option: format\-json](#option-format-json)
+    * [Option: format](#option-format)
+        * [Markdown](#markdown)
+        * [reST](#rest)
+        * [Confluence](#confluence)
+        * [HTML](#html)
+        * [JSON](#json)
+        * [Deprecated options](#deprecated-options)
     * [Option: summary](#option-summary)
     * [More Information](#more-information)
+* [Dockerfile](#dockerfile)
 * [License](#license)
     * [Dependencies](#dependencies)
 * [Uninstallation](#uninstallation)
+* [Contributing](#contributing)
 
 ## Description
 
@@ -84,13 +89,7 @@ License: UNKNOWN
 If you want to refer to the license declared in [the Classifiers](https://pypi.python.org/pypi?%3Aaction=list_classifiers), use the `--from-classifier` option.
 
 ```bash
-(venv) $ pip-licenses --from-classifier --with-system
- Name          Version  License
- Django        2.0.2    BSD License
- PTable        0.9.2    BSD License
- pip           9.0.1    MIT License
- pip-licenses  1.0.0    MIT License
- pytz          2017.3   MIT License
+(venv) $ pip-licenses --from-classifier --with-system | grep setuptools
  setuptools    38.5.0   MIT License
 ```
 
@@ -143,6 +142,11 @@ When executed with the `--with-description` option, output with short descriptio
  Django  2.0.2    BSD      A high-level Python Web framework that encourages rapid development and clean, pragmatic design.
  pytz    2017.3   MIT      World timezone definitions, modern and historical
 ```
+
+### Option: with-license-file
+
+When executed with the `--with-license-file` option, output the location of the package's license file on disk and the full contents of that file. Due to the length of these fields, this option is best paired with `--format=json`.
+
 
 ### Option: ignore-packages
 
@@ -206,12 +210,16 @@ If you give arguments to the `--order` option, you can output in other sorted or
 (venv) $ pip-licenses --order=license
 ```
 
-### Option: format-markdown
+### Option: format
 
-When executed with the `--format-markdown` option, you can output list in markdown format.
+By default, it is output to the `plain` format.
+
+#### Markdown
+
+When executed with the `--format=markdown` option, you can output list in markdown format. The `m` `md`  keyword is prepared as alias of `markdown`.
 
 ```bash
-(venv) $ pip-licenses --format-markdown
+(venv) $ pip-licenses --format=markdown
 | Name   | Version | License |
 |--------|---------|---------|
 | Django | 2.0.2   | BSD     |
@@ -225,12 +233,12 @@ When inserted in a markdown document, it is rendered as follows:
 | Django | 2.0.2   | BSD     |
 | pytz   | 2017.3  | MIT     |
 
-### Option: format-rst
+#### reST
 
-When executed with the `--format-rst` option, you can output list in "[Grid tables](http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html#grid-tables)" of reStructuredText format.
+When executed with the `--format=rst` option, you can output list in "[Grid tables](http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html#grid-tables)" of reStructuredText format. The `r` `rest`  keyword is prepared as alias of `rst`.
 
 ```bash
-(venv) $ pip-licenses --format-rst
+(venv) $ pip-licenses --format=rst
 +--------+---------+---------+
 | Name   | Version | License |
 +--------+---------+---------+
@@ -240,23 +248,23 @@ When executed with the `--format-rst` option, you can output list in "[Grid tabl
 +--------+---------+---------+
 ```
 
-### Option: format-confluence
+#### Confluence
 
-When executed with the `--format-confluence` option, you can output list in Confluence (or JIRA) Wiki markup format.
+When executed with the `--format=confluence` option, you can output list in Confluence (or JIRA) Wiki markup format. The `c` keyword is prepared as alias of `confluence`.
 
 ```bash
-(venv) $ pip-licenses --format-confluence
+(venv) $ pip-licenses --format=confluence
 | Name   | Version | License |
 | Django | 2.0.2   | BSD     |
 | pytz   | 2017.3  | MIT     |
 ```
 
-### Option: format-html
+#### HTML
 
-When executed with the `--format-html` option, you can output list in HTML table format.
+When executed with the `--format=html` option, you can output list in HTML table format. The `h` keyword is prepared as alias of `html`.
 
 ```bash
-(venv) $ pip-licenses --format-html
+(venv) $ pip-licenses --format=html
 <table>
     <tr>
         <th>Name</th>
@@ -276,10 +284,9 @@ When executed with the `--format-html` option, you can output list in HTML table
 </table>
 ```
 
-### Option: format-json
+#### JSON
 
-When executed with the `--format-json` option, you can output list in JSON format
-easily allowing post-processing
+When executed with the `--format-json` option, you can output list in JSON format easily allowing post-processing. The `j` keyword is prepared as alias of `json`.
 
 ```json
 [
@@ -301,6 +308,16 @@ easily allowing post-processing
 
 ```
 
+#### Deprecated options
+
+The following options will be deprecated in version 2.0.0. Please migrate to `--format` option.
+
+* `--format-markdown`
+* `--format-rst`
+* `--format-confluence`
+* `--format-html`
+* `--format-json`
+
 ### Option: summary
 
 When executed with the `--summary` option, you can output a summary of each license.
@@ -317,6 +334,42 @@ When executed with the `--summary` option, you can output a summary of each lice
 ### More Information
 
 Other, please make sure to execute the `--help` option.
+
+## Dockerfile
+
+You can check the package license used by your app in the isolated Docker environment.
+
+```bash
+# Clone this repository to local
+$ git clone https://github.com/raimon49/pip-licenses.git
+$ cd pip-licenses
+
+# Create your app's requirements.txt file
+# Other ways, pip freeze > docker/requirements.txt
+$ echo "Flask" > docker/requirements.txt
+
+# Build docker image
+$ docker build . -t myapp-licenses
+
+# Check the package license in container
+$ docker run --rm myapp-licenses
+ Name          Version  License
+ Click         7.0      BSD License
+ Flask         1.0.2    BSD License
+ Jinja2        2.10     BSD License
+ MarkupSafe    1.1.1    BSD License
+ Werkzeug      0.14.1   BSD License
+ itsdangerous  1.1.0    BSD License
+
+# Check with options
+$ docker run --rm myapp-licenses --summary
+ Count  License
+ 5      BSD
+ 1      BSD-3-Clause
+
+# When you need help
+$ docker run --rm myapp-licenses --help
+```
 
 ## License
 
@@ -335,3 +388,7 @@ Uninstall package and dependent package with `pip` command.
 ```bash
 $ pip uninstall pip-licenses PTable
 ```
+
+## Contributing
+
+See [contribution guidelines](https://github.com/raimon49/pip-licenses/blob/master/CONTRIBUTING.md).
