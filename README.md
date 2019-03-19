@@ -218,7 +218,7 @@ When executed with the `--format=rst` option, you can output list in "[Grid tabl
 
 #### Confluence
 
-When executed with the `--format=confluence` option, you can output list in Confluence (or JIRA) Wiki markup format. The `c` keyword is prepared as alias of `confluence`.
+When executed with the `--format=confluence` option, you can output list in [Confluence (or JIRA) Wiki markup](https://confluence.atlassian.com/doc/confluence-wiki-markup-251003035.html#ConfluenceWikiMarkup-Tables) format. The `c` keyword is prepared as alias of `confluence`.
 
 ```bash
 (venv) $ pip-licenses --format=confluence
