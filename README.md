@@ -326,14 +326,14 @@ $ docker run --rm myapp-licenses
  Flask         1.0.2    BSD License
  Jinja2        2.10     BSD License
  MarkupSafe    1.1.1    BSD License
- Werkzeug      0.14.1   BSD License
+ Werkzeug      0.15.2   BSD License
  itsdangerous  1.1.0    BSD License
 
 # Check with options
 $ docker run --rm myapp-licenses --summary
  Count  License
- 5      BSD
- 1      BSD-3-Clause
+ 4      BSD
+ 2      BSD-3-Clause
 
 # When you need help
 $ docker run --rm myapp-licenses --help
