@@ -339,6 +339,8 @@ $ docker run --rm myapp-licenses --summary
 $ docker run --rm myapp-licenses --help
 ```
 
+**Note:** This Docker image can not check package licenses with C and C ++ Extensions. It only works with pure Python package dependencies.
+
 ## License
 
 [MIT License](https://github.com/raimon49/pip-licenses/blob/master/LICENSE)
