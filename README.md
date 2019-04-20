@@ -254,7 +254,7 @@ When executed with the `--format=html` option, you can output list in HTML table
 
 #### JSON
 
-When executed with the `--format-json` option, you can output list in JSON format easily allowing post-processing. The `j` keyword is prepared as alias of `json`.
+When executed with the `--format=json` option, you can output list in JSON format easily allowing post-processing. The `j` keyword is prepared as alias of `json`.
 
 ```json
 [
