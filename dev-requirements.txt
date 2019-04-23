@@ -40,6 +40,6 @@ scandir==1.10.0           # via pathlib2
 six==1.12.0               # via bleach, more-itertools, pathlib2, pip-tools, pytest, readme-renderer
 tqdm==4.31.1              # via twine
 twine==1.13.0
-urllib3==1.24.2           # via requests
+urllib3==1.25             # via requests
 webencodings==0.5.1       # via bleach
 wheel==0.33.1
