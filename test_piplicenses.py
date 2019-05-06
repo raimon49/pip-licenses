@@ -74,7 +74,7 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertNotIn('<table>', output_string)
 
     def test_from_classifier(self):
-        from_classifier_args = ['--from-classifier']
+        from_classifier_args = ['--from=classifier']
         args = self.parser.parse_args(from_classifier_args)
         table = create_licenses_table(args)
 
@@ -285,6 +285,13 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertNotIn('"URL":', output_string)
 
     def test_format_compatibility(self):
+        format_old_style_args = ['--from-classifier']
+        args = self.parser.parse_args(format_old_style_args)
+        warn_string = create_warn_string(args)
+
+        self.assertEqual('classifier', getattr(args, 'from'))
+        self.assertIn('deprecated', warn_string)
+
         format_old_style_args = ['--format-markdown']
         args = self.parser.parse_args(format_old_style_args)
         warn_string = create_warn_string(args)

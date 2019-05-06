@@ -165,7 +165,7 @@ def get_packages(args):
         for key in METADATA_KEYS:
             pkg_info[key] = parsed_metadata.get(key, LICENSE_UNKNOWN)
 
-        if args.from_classifier and metadata is not None:
+        if getattr(args, 'from') == 'classifier' and metadata is not None:
             message = message_from_string(metadata)
             pkg_info['license'] = find_license_from_classifier(message)
 
@@ -356,6 +356,11 @@ def create_warn_string(args):
                         'will be ignored.'))
         warn_messages.append(message)
 
+    if args.from_classifier:
+        message = warn(('The option "--from-classifier" is deprecated. '
+                       'Please migrate to "--from=classifier".'))
+        warn_messages.append(message)
+
     if (args.format_markdown or args.format_rst or args.format_confluence or
             args.format_html or args.format_json):
         message = warn(('The option "--format-xxx" is deprecated. '
@@ -375,10 +380,17 @@ class CompatibleArgumentParser(argparse.ArgumentParser):
         return args
 
     def _compatible_format_args(self, args):
+        from_input = getattr(args, 'from').lower()
         order_input = args.order.lower()
         format_input = args.format.lower()
 
-        # XXX: Use enum when drop support python 2.7
+        # XXX: Use enum when drop support Python 2.7
+        if from_input in ('meta', 'm'):
+            setattr(args, 'from', 'meta')
+
+        if from_input in ('classifier', 'c'):
+            setattr(args, 'from', 'classifier')
+
         if order_input in ('count', 'c'):
             args.order = 'count'
 
@@ -412,6 +424,9 @@ class CompatibleArgumentParser(argparse.ArgumentParser):
         if format_input in ('json', 'j'):
             args.format = 'json'
 
+        if args.from_classifier:
+            setattr(args, 'from', 'classifier')
+
         if args.format_markdown:
             args.format = 'markdown'
         elif args.format_rst:
@@ -430,6 +445,12 @@ def create_parser():
     parser.add_argument('-v', '--version',
                         action='version',
                         version='%(prog)s ' + __version__)
+    parser.add_argument('--from',
+                        action='store', type=str,
+                        default='meta', metavar='SOURCE',
+                        help=('where to find license information\n'
+                              '"meta", "classifier"\n'
+                              'default: --from=meta'))
     parser.add_argument('-c', '--from-classifier',
                         action='store_true',
                         default=False,
