@@ -15,4 +15,4 @@ RUN pip3 install -U pip \
         && pip3 install -U pip-licenses
 
 ENTRYPOINT ["pip-licenses"]
-CMD ["--from-classifier"]
+CMD ["--from=classifier"]
