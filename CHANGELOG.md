@@ -1,5 +1,10 @@
 ## CHANGELOG
 
+### 1.13.0
+
+* Implement new option `--from=meta`, `from=classifier`
+* Dropped support Python 3.4
+
 ### 1.12.1
 
 * Fix bug
