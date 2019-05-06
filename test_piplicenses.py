@@ -284,14 +284,15 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertIn('"Author":', output_string)
         self.assertNotIn('"URL":', output_string)
 
-    def test_format_compatibility(self):
-        format_old_style_args = ['--from-classifier']
-        args = self.parser.parse_args(format_old_style_args)
+    def test_from_compatibility(self):
+        from_old_style_args = ['--from-classifier']
+        args = self.parser.parse_args(from_old_style_args)
         warn_string = create_warn_string(args)
 
         self.assertEqual('classifier', getattr(args, 'from'))
         self.assertIn('deprecated', warn_string)
 
+    def test_format_compatibility(self):
         format_old_style_args = ['--format-markdown']
         args = self.parser.parse_args(format_old_style_args)
         warn_string = create_warn_string(args)
