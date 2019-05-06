@@ -10,7 +10,8 @@ Dump the software license list of Python packages installed with pip.
 * [Installation](#installation)
 * [Usage](#usage)
 * [Command\-Line Options](#command-line-options)
-    * [Option: from\-classifier](#option-from-classifier)
+    * [Option: from](#option-from)
+        * [Deprecated from\-classifier](#deprecated-from-classifier)
     * [Option: with\-system](#option-with-system)
     * [Option: with\-authors](#option-with-authors)
     * [Option: with\-urls](#option-with-urls)
@@ -67,9 +68,9 @@ Execute the command with your venv (or virtualenv) environment.
 
 ## Command-Line Options
 
-### Option: from-classifier
+### Option: from
 
-By default, this tool finds the license from package Metadata. However, depending on the type of package, it does not declare a license only in the Classifiers.
+By default, this tool finds the license from package Metadata (`--from=meta`). However, depending on the type of package, it does not declare a license only in the Classifiers.
 
 (See also): [Set license to MIT in setup.py by alisianoi ・ Pull Request #1058 ・ pypa/setuptools](https://github.com/pypa/setuptools/pull/1058), [PEP 314\#License](https://www.python.org/dev/peps/pep-0314/#license)
 
@@ -86,12 +87,19 @@ Author-email: distutils-sig@python.org
 License: UNKNOWN
 ```
 
-If you want to refer to the license declared in [the Classifiers](https://pypi.python.org/pypi?%3Aaction=list_classifiers), use the `--from-classifier` option.
+If you want to refer to the license declared in [the Classifiers](https://pypi.python.org/pypi?%3Aaction=list_classifiers), use the `--from=classifier` option.
 
 ```bash
-(venv) $ pip-licenses --from-classifier --with-system | grep setuptools
+(venv) $ pip-licenses --from=classifier --with-system | grep setuptools
  setuptools    38.5.0   MIT License
 ```
+
+* The `m` keyword is prepared as alias of `meta`.
+* The `c` keyword is prepared as alias of `classifier`.
+
+#### Deprecated from-classifier
+
+`from-classifier` option will be deprecated in version 2.0.0. Please migrate to `--from` option.
 
 ### Option: with-system
 
@@ -184,7 +192,7 @@ By default, it is output to the `plain` format.
 
 #### Markdown
 
-When executed with the `--format=markdown` option, you can output list in markdown format. The `m` `md`  keyword is prepared as alias of `markdown`.
+When executed with the `--format=markdown` option, you can output list in markdown format. The `m` `md` keyword is prepared as alias of `markdown`.
 
 ```bash
 (venv) $ pip-licenses --format=markdown
@@ -203,7 +211,7 @@ When inserted in a markdown document, it is rendered as follows:
 
 #### reST
 
-When executed with the `--format=rst` option, you can output list in "[Grid tables](http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html#grid-tables)" of reStructuredText format. The `r` `rest`  keyword is prepared as alias of `rst`.
+When executed with the `--format=rst` option, you can output list in "[Grid tables](http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html#grid-tables)" of reStructuredText format. The `r` `rest` keyword is prepared as alias of `rst`.
 
 ```bash
 (venv) $ pip-licenses --format=rst
@@ -291,7 +299,7 @@ The following options will be deprecated in version 2.0.0. Please migrate to `--
 When executed with the `--summary` option, you can output a summary of each license.
 
 ```bash
-(venv) $ pip-licenses --summary --from-classifier --with-system
+(venv) $ pip-licenses --summary --from=classifier --with-system
  Count  License
  2      BSD License
  4      MIT License
