@@ -253,6 +253,24 @@ class JsonPrettyTable(PrettyTable):
         return json.dumps(lines, indent=2, sort_keys=True)
 
 
+class CSVPrettyTable(JsonPrettyTable):
+    """PrettyTable-like class exporting to CSV"""
+
+    def get_string(self, **kwargs):
+
+        options = self._get_options(kwargs)
+        rows = self._get_rows(options)
+        formatted_rows = self._format_rows(rows, options)
+
+        lines = []
+        for index, row in enumerate(formatted_rows):
+            values = row.values() if index else row.keys()
+            formatted_row = ','.join(['"%s"' % (val, ) for val in values])
+            lines.append(formatted_row)
+
+        return '\n'.join(lines)
+
+
 def factory_styled_table_with_args(args, output_fields=DEFAULT_OUTPUT_FIELDS):
     table = PrettyTable()
     table.field_names = output_fields
@@ -272,6 +290,8 @@ def factory_styled_table_with_args(args, output_fields=DEFAULT_OUTPUT_FIELDS):
         table.hrules = RULE_NONE
     elif args.format == 'json':
         table = JsonPrettyTable(table.field_names)
+    elif args.format == 'csv':
+        table = CSVPrettyTable(table.field_names)
 
     return table
 
@@ -444,6 +464,9 @@ class CompatibleArgumentParser(argparse.ArgumentParser):
         if format_input in ('json', 'j'):
             args.format = 'json'
 
+        if format_input in ('csv', ):
+            args.format = 'csv'
+
         if args.from_classifier:
             setattr(args, 'from', 'classifier')
 
@@ -457,6 +480,8 @@ class CompatibleArgumentParser(argparse.ArgumentParser):
             args.format = 'html'
         elif args.format_json:
             args.format = 'json'
+        elif args.format_csv:
+            args.format = 'csv'
 
 
 def create_parser():
@@ -534,6 +559,10 @@ def create_parser():
                         action='store_true',
                         default=False,
                         help='dump as json')
+    parser.add_argument('--format-csv',
+                        action='store_true',
+                        default=False,
+                        help='dump as quoted CSV')
     parser.add_argument('--summary',
                         action='store_true',
                         default=False,
