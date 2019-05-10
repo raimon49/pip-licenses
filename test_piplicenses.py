@@ -284,6 +284,15 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertIn('"Author":', output_string)
         self.assertNotIn('"URL":', output_string)
 
+    def test_format_csv(self):
+        format_csv_args = ['--format-csv', '--with-authors']
+        args = self.parser.parse_args(format_csv_args)
+        output_string = create_output_string(args)
+
+        obtained_header = output_string.split('\n', 1)[0]
+        expected_header = '"Version","Name","License","Author"'
+        self.assertEqual(obtained_header, expected_header)
+
     def test_from_compatibility(self):
         from_old_style_args = ['--from-classifier']
         args = self.parser.parse_args(from_old_style_args)
