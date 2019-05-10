@@ -9,6 +9,7 @@ from piplicenses import (__pkgname__, create_parser, output_colored,
                          create_licenses_table, get_output_fields, get_sortby,
                          factory_styled_table_with_args, create_warn_string,
                          find_license_from_classifier, create_output_string,
+                         select_license_by_source,
                          DEFAULT_OUTPUT_FIELDS, SYSTEM_PACKAGES,
                          LICENSE_UNKNOWN)
 
@@ -85,6 +86,19 @@ class TestGetLicenses(CommandLineTestCase):
         license_notation_as_classifier = 'MIT License'
         self.assertIn(license_notation_as_classifier, license_columns)
 
+    def test_from_mixed(self):
+        from_classifier_args = ['--from=mixed']
+        args = self.parser.parse_args(from_classifier_args)
+        table = create_licenses_table(args)
+
+        output_fields = get_output_fields(args)
+        self.assertIn('License', output_fields)
+
+        license_columns = self._create_license_columns(table)
+        # Depending on the condition "MIT" or "BSD" etc.
+        license_notation_as_classifier = 'MIT License'
+        self.assertIn(license_notation_as_classifier, license_columns)
+
     def test_find_license_from_classifier(self):
         metadata = ('Metadata-Version: 2.0\r\n'
                     'Name: pip-licenses\r\n'
@@ -116,6 +130,27 @@ class TestGetLicenses(CommandLineTestCase):
         message = message_from_string(metadata_as_no_license)
         self.assertEqual(LICENSE_UNKNOWN,
                          find_license_from_classifier(message))
+
+    def test_select_license_by_source(self):
+        self.assertEqual('MIT License',
+                         select_license_by_source('classifier',
+                                                  'MIT License',
+                                                  'MIT'))
+
+        self.assertEqual(LICENSE_UNKNOWN,
+                         select_license_by_source('classifier',
+                                                  LICENSE_UNKNOWN,
+                                                  'MIT'))
+
+        self.assertEqual('MIT License',
+                         select_license_by_source('mixed',
+                                                  'MIT License',
+                                                  'MIT'))
+
+        self.assertEqual('MIT',
+                         select_license_by_source('mixed',
+                                                  LICENSE_UNKNOWN,
+                                                  'MIT'))
 
     def test_with_system(self):
         with_system_args = ['--with-system']
