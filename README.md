@@ -94,8 +94,15 @@ If you want to refer to the license declared in [the Classifiers](https://pypi.p
  setuptools    38.5.0   MIT License
 ```
 
+If you want to find a license from whichever, mixed mode (`--from=mixed`) is available in `pip-licenses` version 1.14.0 or later.
+
+In mixed mode, it first tries to look for licenses in the Classifiers. When not found in the Classifiers, the license declared in Metadata is displayed.
+
+**Note:** If neither can find license information, please check with the `with-authors` and `with-urls` options and contact the software author.
+
 * The `m` keyword is prepared as alias of `meta`.
 * The `c` keyword is prepared as alias of `classifier`.
+* The `mix` keyword is prepared as alias of `mixed`.
 
 #### Deprecated from-classifier
 

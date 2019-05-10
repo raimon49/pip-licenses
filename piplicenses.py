@@ -45,7 +45,7 @@ from prettytable.prettytable import (FRAME as RULE_FRAME, ALL as RULE_ALL,
                                      HEADER as RULE_HEADER, NONE as RULE_NONE)
 
 __pkgname__ = 'pip-licenses'
-__version__ = '1.13.0'
+__version__ = '1.14.0'
 __author__ = 'raimon'
 __license__ = 'MIT License'
 __summary__ = ('Dump the software license list of '
@@ -165,9 +165,16 @@ def get_packages(args):
         for key in METADATA_KEYS:
             pkg_info[key] = parsed_metadata.get(key, LICENSE_UNKNOWN)
 
-        if getattr(args, 'from') == 'classifier' and metadata is not None:
+        from_source = getattr(args, 'from')
+        need_classifier = from_source == 'classifier' or from_source == 'mixed'
+        if need_classifier and metadata is not None:
             message = message_from_string(metadata)
-            pkg_info['license'] = find_license_from_classifier(message)
+            license_classifier = find_license_from_classifier(message)
+            license_meta = pkg_info['license']
+            # Overwrite license by condition
+            pkg_info['license'] = select_license_by_source(from_source,
+                                                           license_classifier,
+                                                           license_meta)
 
         return pkg_info
 
@@ -287,6 +294,16 @@ def find_license_from_classifier(message):
     return license_from_classifier
 
 
+def select_license_by_source(from_source, license_classifier, license_meta):
+    if from_source == 'classifier':
+        return license_classifier
+    elif from_source == 'mixed':
+        if license_classifier != LICENSE_UNKNOWN:
+            return license_classifier
+        else:
+            return license_meta
+
+
 def get_output_fields(args):
     if args.summary:
         return list(SUMMARY_OUTPUT_FIELDS)
@@ -391,6 +408,9 @@ class CompatibleArgumentParser(argparse.ArgumentParser):
         if from_input in ('classifier', 'c'):
             setattr(args, 'from', 'classifier')
 
+        if from_input in ('mixed', 'mix'):
+            setattr(args, 'from', 'mixed')
+
         if order_input in ('count', 'c'):
             args.order = 'count'
 
@@ -449,7 +469,7 @@ def create_parser():
                         action='store', type=str,
                         default='meta', metavar='SOURCE',
                         help=('where to find license information\n'
-                              '"meta", "classifier"\n'
+                              '"meta", "classifier, "mixed"\n'
                               'default: --from=meta'))
     parser.add_argument('-c', '--from-classifier',
                         action='store_true',

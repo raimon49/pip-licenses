@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+### 1.14.0
+
+* Implement new option `--from=mixed` as a mixed mode
+
 ### 1.13.0
 
 * Implement new option `--from=meta`, `from=classifier`
