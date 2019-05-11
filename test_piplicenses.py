@@ -320,7 +320,7 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertNotIn('"URL":', output_string)
 
     def test_format_csv(self):
-        format_csv_args = ['--format-csv', '--with-authors']
+        format_csv_args = ['--format=csv', '--with-authors']
         args = self.parser.parse_args(format_csv_args)
         output_string = create_output_string(args)
 

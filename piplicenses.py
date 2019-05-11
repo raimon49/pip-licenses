@@ -495,8 +495,6 @@ class CompatibleArgumentParser(argparse.ArgumentParser):
             args.format = 'html'
         elif args.format_json:
             args.format = 'json'
-        elif args.format_csv:
-            args.format = 'csv'
 
 
 def create_parser():
@@ -552,7 +550,7 @@ def create_parser():
                         default='plain', metavar='STYLE',
                         help=('dump as set format style\n'
                               '"plain", "markdown", "rst", "confluence",\n'
-                              '"html", "json"\n'
+                              '"html", "json", "csv"\n'
                               'default: --format=plain'))
     parser.add_argument('-m', '--format-markdown',
                         action='store_true',
@@ -574,10 +572,6 @@ def create_parser():
                         action='store_true',
                         default=False,
                         help='dump as json')
-    parser.add_argument('--format-csv',
-                        action='store_true',
-                        default=False,
-                        help='dump as quoted CSV')
     parser.add_argument('--summary',
                         action='store_true',
                         default=False,
