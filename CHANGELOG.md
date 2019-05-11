@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+### 1.15.0
+
+* Implement new option `--format=csv`
+
 ### 1.14.0
 
 * Implement new option `--from=mixed` as a mixed mode

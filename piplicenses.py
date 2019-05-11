@@ -45,7 +45,7 @@ from prettytable.prettytable import (FRAME as RULE_FRAME, ALL as RULE_ALL,
                                      HEADER as RULE_HEADER, NONE as RULE_NONE)
 
 __pkgname__ = 'pip-licenses'
-__version__ = '1.14.0'
+__version__ = '1.15.0'
 __author__ = 'raimon'
 __license__ = 'MIT License'
 __summary__ = ('Dump the software license list of '
@@ -253,6 +253,39 @@ class JsonPrettyTable(PrettyTable):
         return json.dumps(lines, indent=2, sort_keys=True)
 
 
+class CSVPrettyTable(PrettyTable):
+    """PrettyTable-like class exporting to CSV"""
+
+    def get_string(self, **kwargs):
+
+        def esc_quotes(val):
+            """
+            Meta-escaping double quotes
+            https://tools.ietf.org/html/rfc4180
+            """
+            try:
+                return val.replace('"', '""')
+            except UnicodeDecodeError:  # pragma: no cover
+                return val.decode('utf-8').replace('"', '""')
+            except UnicodeEncodeError:  # pragma: no cover
+                return val.encode('unicode_escape').replace('"', '""')
+
+        options = self._get_options(kwargs)
+        rows = self._get_rows(options)
+        formatted_rows = self._format_rows(rows, options)
+
+        lines = []
+        formatted_header = ','.join(['"%s"' % (esc_quotes(val), )
+                                     for val in self._field_names])
+        lines.append(formatted_header)
+        for row in formatted_rows:
+            formatted_row = ','.join(['"%s"' % (esc_quotes(val), )
+                                      for val in row])
+            lines.append(formatted_row)
+
+        return '\n'.join(lines)
+
+
 def factory_styled_table_with_args(args, output_fields=DEFAULT_OUTPUT_FIELDS):
     table = PrettyTable()
     table.field_names = output_fields
@@ -272,6 +305,8 @@ def factory_styled_table_with_args(args, output_fields=DEFAULT_OUTPUT_FIELDS):
         table.hrules = RULE_NONE
     elif args.format == 'json':
         table = JsonPrettyTable(table.field_names)
+    elif args.format == 'csv':
+        table = CSVPrettyTable(table.field_names)
 
     return table
 
@@ -444,6 +479,9 @@ class CompatibleArgumentParser(argparse.ArgumentParser):
         if format_input in ('json', 'j'):
             args.format = 'json'
 
+        if format_input in ('csv', ):
+            args.format = 'csv'
+
         if args.from_classifier:
             setattr(args, 'from', 'classifier')
 
@@ -512,7 +550,7 @@ def create_parser():
                         default='plain', metavar='STYLE',
                         help=('dump as set format style\n'
                               '"plain", "markdown", "rst", "confluence",\n'
-                              '"html", "json"\n'
+                              '"html", "json", "csv"\n'
                               'default: --format=plain'))
     parser.add_argument('-m', '--format-markdown',
                         action='store_true',
