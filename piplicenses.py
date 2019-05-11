@@ -265,9 +265,9 @@ class CSVPrettyTable(PrettyTable):
             """
             try:
                 return val.replace('"', '""')
-            except UnicodeDecodeError:
+            except UnicodeDecodeError:  # pragma: no cover
                 return val.decode('utf-8').replace('"', '""')
-            except UnicodeEncodeError:
+            except UnicodeEncodeError:  # pragma: no cover
                 return val.encode('unicode_escape').replace('"', '""')
 
         options = self._get_options(kwargs)
