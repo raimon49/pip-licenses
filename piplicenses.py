@@ -253,7 +253,7 @@ class JsonPrettyTable(PrettyTable):
         return json.dumps(lines, indent=2, sort_keys=True)
 
 
-class CSVPrettyTable(JsonPrettyTable):
+class CSVPrettyTable(PrettyTable):
     """PrettyTable-like class exporting to CSV"""
 
     def get_string(self, **kwargs):
@@ -275,10 +275,12 @@ class CSVPrettyTable(JsonPrettyTable):
         formatted_rows = self._format_rows(rows, options)
 
         lines = []
-        for index, row in enumerate(formatted_rows):
-            values = row.values() if index else row.keys()
+        formatted_header = ','.join(['"%s"' % (esc_quotes(val), )
+                                     for val in self._field_names])
+        lines.append(formatted_header)
+        for row in formatted_rows:
             formatted_row = ','.join(['"%s"' % (esc_quotes(val), )
-                                      for val in values])
+                                      for val in row])
             lines.append(formatted_row)
 
         return '\n'.join(lines)

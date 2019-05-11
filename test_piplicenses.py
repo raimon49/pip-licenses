@@ -325,7 +325,7 @@ class TestGetLicenses(CommandLineTestCase):
         output_string = create_output_string(args)
 
         obtained_header = output_string.split('\n', 1)[0]
-        expected_header = '"Version","Name","License","Author"'
+        expected_header = '"Name","Version","License","Author"'
         self.assertEqual(obtained_header, expected_header)
 
     def test_from_compatibility(self):
