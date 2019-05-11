@@ -25,6 +25,7 @@ Dump the software license list of Python packages installed with pip.
         * [Confluence](#confluence)
         * [HTML](#html)
         * [JSON](#json)
+        * [CSV](#csv)
         * [Deprecated options](#deprecated-options)
     * [Option: summary](#option-summary)
     * [More Information](#more-information)
@@ -289,6 +290,17 @@ When executed with the `--format=json` option, you can output list in JSON forma
   }
 ]
 
+```
+
+#### CSV
+
+When executed with the `--format=csv` option, you can output list in quoted CSV format. Useful when you want to copy/paste the output to an excel sheet.
+
+```bash
+(venv) $ pip-licenses --format=csv
+"Name","Version","License"
+"Django","2.0.2","BSD"
+"pytz","2017.3","MIT"
 ```
 
 #### Deprecated options
