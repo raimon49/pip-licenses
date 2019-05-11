@@ -258,6 +258,18 @@ class CSVPrettyTable(JsonPrettyTable):
 
     def get_string(self, **kwargs):
 
+        def esc_quotes(val):
+            """
+            Meta-escaping double quotes
+            https://tools.ietf.org/html/rfc4180
+            """
+            try:
+                return val.replace('"', '""')
+            except UnicodeDecodeError:
+                return val.decode('utf-8').replace('"', '""')
+            except UnicodeEncodeError:
+                return val.encode('unicode_escape').replace('"', '""')
+
         options = self._get_options(kwargs)
         rows = self._get_rows(options)
         formatted_rows = self._format_rows(rows, options)
@@ -265,7 +277,8 @@ class CSVPrettyTable(JsonPrettyTable):
         lines = []
         for index, row in enumerate(formatted_rows):
             values = row.values() if index else row.keys()
-            formatted_row = ','.join(['"%s"' % (val, ) for val in values])
+            formatted_row = ','.join(['"%s"' % (esc_quotes(val), )
+                                      for val in values])
             lines.append(formatted_row)
 
         return '\n'.join(lines)
