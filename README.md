@@ -294,7 +294,7 @@ When executed with the `--format=json` option, you can output list in JSON forma
 
 #### CSV
 
-When executed with the `--format=csv` option, you can output list in quoted CSV format. Useful when you want to copy/paste the output to an excel sheet.
+When executed with the `--format=csv` option, you can output list in quoted CSV format. Useful when you want to copy/paste the output to an Excel sheet.
 
 ```bash
 (venv) $ pip-licenses --format=csv
