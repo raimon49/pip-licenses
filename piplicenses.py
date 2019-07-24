@@ -181,8 +181,7 @@ def get_packages(args):
     pkgs = get_installed_distributions()
     ignore_pkgs_as_lower = [pkg.lower() for pkg in args.ignore_packages]
     for pkg in pkgs:
-        pkg_info = get_pkg_info(pkg)
-        pkg_name = pkg_info['name']
+        pkg_name = pkg.project_name
 
         if pkg_name.lower() in ignore_pkgs_as_lower:
             continue
@@ -190,6 +189,7 @@ def get_packages(args):
         if not args.with_system and pkg_name in SYSTEM_PACKAGES:
             continue
 
+        pkg_info = get_pkg_info(pkg)
         yield pkg_info
 
 
