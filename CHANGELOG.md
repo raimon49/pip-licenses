@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+### 1.15.1
+
+* Skip parsing of license file for packages specified with `--ignore-packages` option
+
 ### 1.15.0
 
 * Implement new option `--format=csv`
