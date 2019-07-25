@@ -46,7 +46,7 @@ from prettytable.prettytable import (FRAME as RULE_FRAME, ALL as RULE_ALL,
                                      HEADER as RULE_HEADER, NONE as RULE_NONE)
 
 __pkgname__ = 'pip-licenses'
-__version__ = '1.15.1'
+__version__ = '1.15.2'
 __author__ = 'raimon'
 __license__ = 'MIT License'
 __summary__ = ('Dump the software license list of '
