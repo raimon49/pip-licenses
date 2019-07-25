@@ -132,7 +132,7 @@ def get_packages(args):
                 try:
                     # python 3 is happy with maybe-Unicode files
                     license_text = "".join(file_lines)
-                except UnicodeDecodeError:
+                except UnicodeDecodeError:  # pragma: no cover
                     # python 2 not so much
                     license_text = "".join([line.decode('utf-8', 'replace')
                                             for line in file_lines])
