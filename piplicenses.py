@@ -31,6 +31,7 @@ from __future__ import (division, print_function,
 import sys
 import glob
 import os
+import codecs
 import argparse
 from functools import partial
 from email.parser import FeedParser
@@ -45,7 +46,7 @@ from prettytable.prettytable import (FRAME as RULE_FRAME, ALL as RULE_ALL,
                                      HEADER as RULE_HEADER, NONE as RULE_NONE)
 
 __pkgname__ = 'pip-licenses'
-__version__ = '1.15.1'
+__version__ = '1.15.2'
 __author__ = 'raimon'
 __license__ = 'MIT License'
 __summary__ = ('Dump the software license list of '
@@ -124,15 +125,17 @@ def get_packages(args):
         for test_file in glob.glob(license_file_base):
             if os.path.exists(test_file):
                 license_file = test_file
-                with open(test_file) as license_file_handle:
+                with codecs.open(test_file,
+                                 encoding='utf-8',
+                                 errors='replace') as license_file_handle:
                     file_lines = license_file_handle.readlines()
                 try:
                     # python 3 is happy with maybe-Unicode files
                     license_text = "".join(file_lines)
-                except UnicodeDecodeError:
+                except UnicodeDecodeError:  # pragma: no cover
                     # python 2 not so much
                     license_text = "".join([line.decode('utf-8', 'replace')
-                                           for line in file_lines])
+                                            for line in file_lines])
                 break
         return (license_file, license_text)
 
@@ -410,13 +413,13 @@ def create_warn_string(args):
 
     if args.from_classifier:
         message = warn(('The option "--from-classifier" is deprecated. '
-                       'Please migrate to "--from=classifier".'))
+                        'Please migrate to "--from=classifier".'))
         warn_messages.append(message)
 
     if (args.format_markdown or args.format_rst or args.format_confluence or
             args.format_html or args.format_json):
         message = warn(('The option "--format-xxx" is deprecated. '
-                       'Please migrate to "--format=xxx".'))
+                        'Please migrate to "--format=xxx".'))
         warn_messages.append(message)
 
     return '\n'.join(warn_messages)

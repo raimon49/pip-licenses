@@ -16,7 +16,7 @@ codecov==2.0.15
 configparser==3.7.4       # via importlib-metadata
 contextlib2==0.5.5        # via importlib-metadata
 coverage==4.5.3           # via codecov, pytest-cov
-docutils==0.15.1
+docutils==0.15.1.post1
 execnet==1.6.1            # via pytest-cache
 funcsigs==1.0.2           # via pytest
 idna==2.8                 # via requests
@@ -32,7 +32,7 @@ py==1.8.0                 # via pytest
 pycodestyle==2.5.0        # via autopep8, pytest-pycodestyle
 pygments==2.4.2           # via readme-renderer
 pypandoc==1.4
-pyparsing==2.4.0          # via packaging
+pyparsing==2.4.1.1        # via packaging
 pytest-cache==1.0         # via pytest-pycodestyle
 pytest-cov==2.7.1
 pytest-pycodestyle==1.0.6

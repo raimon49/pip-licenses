@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+### 1.15.2
+
+* Read license file works well with Windows
+
 ### 1.15.1
 
 * Skip parsing of license file for packages specified with `--ignore-packages` option
