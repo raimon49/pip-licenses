@@ -135,7 +135,7 @@ def get_packages(args):
                 except UnicodeDecodeError:
                     # python 2 not so much
                     license_text = "".join([line.decode('utf-8', 'replace')
-                                           for line in file_lines])
+                                            for line in file_lines])
                 break
         return (license_file, license_text)
 
@@ -413,13 +413,13 @@ def create_warn_string(args):
 
     if args.from_classifier:
         message = warn(('The option "--from-classifier" is deprecated. '
-                       'Please migrate to "--from=classifier".'))
+                        'Please migrate to "--from=classifier".'))
         warn_messages.append(message)
 
     if (args.format_markdown or args.format_rst or args.format_confluence or
             args.format_html or args.format_json):
         message = warn(('The option "--format-xxx" is deprecated. '
-                       'Please migrate to "--format=xxx".'))
+                        'Please migrate to "--format=xxx".'))
         warn_messages.append(message)
 
     return '\n'.join(warn_messages)
