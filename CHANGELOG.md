@@ -2,7 +2,7 @@
 
 ### 1.15.2
 
-* Open license file works well with Windows
+* Read license file works well with Windows
 
 ### 1.15.1
 
