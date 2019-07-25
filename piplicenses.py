@@ -31,6 +31,7 @@ from __future__ import (division, print_function,
 import sys
 import glob
 import os
+import codecs
 import argparse
 from functools import partial
 from email.parser import FeedParser
@@ -124,7 +125,9 @@ def get_packages(args):
         for test_file in glob.glob(license_file_base):
             if os.path.exists(test_file):
                 license_file = test_file
-                with open(test_file) as license_file_handle:
+                with codecs.open(test_file,
+                                 encoding='utf-8',
+                                 errors='replace') as license_file_handle:
                     file_lines = license_file_handle.readlines()
                 try:
                     # python 3 is happy with maybe-Unicode files
