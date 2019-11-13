@@ -256,6 +256,38 @@ class JsonPrettyTable(PrettyTable):
         return json.dumps(lines, indent=2, sort_keys=True)
 
 
+class JsonLicenseFinderTable(JsonPrettyTable):
+    def _format_row(self, row, options):
+        resrow = {}
+        for (field, value) in zip(self._field_names, row):
+            if field == 'Name':
+                resrow['name'] = value
+
+            if field == 'Version':
+                resrow['version'] = value
+
+            if field == 'License':
+                resrow['licenses'] = [value]
+
+        return resrow
+
+    def get_string(self, **kwargs):
+        # import included here in order to limit dependencies
+        # if not interested in JSON output,
+        # then the dependency is not required
+        import json
+
+        options = self._get_options(kwargs)
+        rows = self._get_rows(options)
+        formatted_rows = self._format_rows(rows, options)
+
+        lines = []
+        for row in formatted_rows:
+            lines.append(row)
+
+        return json.dumps(lines, sort_keys=True)
+
+
 class CSVPrettyTable(PrettyTable):
     """PrettyTable-like class exporting to CSV"""
 
@@ -308,6 +340,8 @@ def factory_styled_table_with_args(args, output_fields=DEFAULT_OUTPUT_FIELDS):
         table.hrules = RULE_NONE
     elif args.format == 'json':
         table = JsonPrettyTable(table.field_names)
+    elif args.format == 'json-license-finder':
+        table = JsonLicenseFinderTable(table.field_names)
     elif args.format == 'csv':
         table = CSVPrettyTable(table.field_names)
 
@@ -481,6 +515,9 @@ class CompatibleArgumentParser(argparse.ArgumentParser):
 
         if format_input in ('json', 'j'):
             args.format = 'json'
+
+        if format_input in ('json-license-finder', 'jlf'):
+            args.format = 'json-license-finder'
 
         if format_input in ('csv', ):
             args.format = 'csv'

@@ -25,6 +25,7 @@ Dump the software license list of Python packages installed with pip.
         * [Confluence](#confluence)
         * [HTML](#html)
         * [JSON](#json)
+        * [JSON LicenseFinder](#json-licensefinder)
         * [CSV](#csv)
         * [Deprecated options](#deprecated-options)
     * [Option: summary](#option-summary)
@@ -287,6 +288,27 @@ When executed with the `--format=json` option, you can output list in JSON forma
     "Name": "pytz",
     "URL": "http://pythonhosted.org/pytz",
     "Version": "2017.3"
+  }
+]
+
+```
+
+#### JSON LicenseFinder
+
+When executed with the `--format=json-license-finder` option, you can output list in JSON format that is identical to [LicenseFinder](https://github.com/pivotal/LicenseFinder). The `jlf` keyword is prepared as alias of `jlf`.
+This makes pip-licenses a drop-in replacement for LicenseFinder.
+
+```json
+[
+  {
+    "licenses": ["BSD"],
+    "name": "Django",
+    "version": "2.0.2"
+  },
+  {
+    "licenses": ["MIT"],
+    "name": "pytz",
+    "version": "2017.3"
   }
 ]
 

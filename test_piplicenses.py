@@ -321,6 +321,16 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertIn('"Author":', output_string)
         self.assertNotIn('"URL":', output_string)
 
+    def test_format_json_license_manager(self):
+        format_json_args = ['--format=json-license-finder']
+        args = self.parser.parse_args(format_json_args)
+        output_string = create_output_string(args)
+
+        self.assertNotIn('"URL":', output_string)
+        self.assertIn('"name":', output_string)
+        self.assertIn('"version":', output_string)
+        self.assertIn('"licenses":', output_string)
+
     def test_format_csv(self):
         format_csv_args = ['--format=csv', '--with-authors']
         args = self.parser.parse_args(format_csv_args)
