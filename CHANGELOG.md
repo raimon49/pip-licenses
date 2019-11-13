@@ -2,7 +2,7 @@
 
 ### 1.16.0
 
-* Implement new option '--format=json-license-finder'
+* Implement new option `--format=json-license-finder`
 
 ### 1.15.2
 
