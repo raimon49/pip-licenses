@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+### 1.16.1
+
+* Add a help text for `--format=json-license-finder` option
+
 ### 1.16.0
 
 * Implement new option `--format=json-license-finder`
