@@ -590,7 +590,7 @@ def create_parser():
                         default='plain', metavar='STYLE',
                         help=('dump as set format style\n'
                               '"plain", "markdown", "rst", "confluence",\n'
-                              '"html", "json", "csv"\n'
+                              '"html", "json", "json-license-finder",  "csv"\n'
                               'default: --format=plain'))
     parser.add_argument('-m', '--format-markdown',
                         action='store_true',
