@@ -1,5 +1,10 @@
 ## CHANGELOG
 
+### 1.17.0
+
+* Implement new option `--output-file`
+* Clarified support for Python 3.8
+
 ### 1.16.1
 
 * Add a help text for `--format=json-license-finder` option

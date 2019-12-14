@@ -46,7 +46,7 @@ from prettytable.prettytable import (FRAME as RULE_FRAME, ALL as RULE_ALL,
                                      HEADER as RULE_HEADER, NONE as RULE_NONE)
 
 __pkgname__ = 'pip-licenses'
-__version__ = '1.16.1'
+__version__ = '1.17.0'
 __author__ = 'raimon'
 __license__ = 'MIT License'
 __summary__ = ('Dump the software license list of '
@@ -616,6 +616,9 @@ def create_parser():
                         action='store_true',
                         default=False,
                         help='dump summary of each license')
+    parser.add_argument('--output-file',
+                        action='store', type=str,
+                        help='save license list to file')
 
     return parser
 
@@ -630,11 +633,32 @@ def output_colored(code, text, is_bold=False):
     return '\033[%sm%s\033[0m' % (code, text)
 
 
+def save_if_needs(output_file, output_string):
+    """
+    Save to path given by args
+    """
+    if output_file is None:
+        return
+
+    try:
+        with codecs.open(output_file, 'w', 'utf-8',) as f:
+            f.write(output_string)
+        sys.stdout.write('created path: ' + output_file + '\n')
+        sys.exit(0)
+    except IOError:
+        sys.stderr.write('check path: --output-file\n')
+        sys.exit(1)
+
+
 def main():  # pragma: no cover
     parser = create_parser()
     args = parser.parse_args()
 
     output_string = create_output_string(args)
+
+    output_file = args.output_file
+    save_if_needs(output_file, output_string)
+
     print(output_string)
     warn_string = create_warn_string(args)
     if warn_string:
