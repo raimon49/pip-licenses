@@ -29,6 +29,7 @@ Dump the software license list of Python packages installed with pip.
         * [CSV](#csv)
         * [Deprecated options](#deprecated-options)
     * [Option: summary](#option-summary)
+    * [Option: output\-file](#option-output-file)
     * [More Information](#more-information)
 * [Dockerfile](#dockerfile)
 * [License](#license)
@@ -347,6 +348,15 @@ When executed with the `--summary` option, you can output a summary of each lice
 ```
 
 **Note:** When using this option, only `--order=count` or `--order=license` has an effect for the `--order` option. And using `--with-authors` and `--with-urls` will be ignored.
+
+### Option: output\-file
+
+When executed with the `--output-file` option, write the result to the path specified by the argument.
+
+```
+(venv) $ pip-licenses --format=rst --output-file=/tmp/output.rst
+created path: /tmp/output.rst
+```
 
 ### More Information
 
