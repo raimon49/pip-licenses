@@ -32,6 +32,7 @@ Dump the software license list of Python packages installed with pip.
     * [Option: output\-file](#option-output-file)
     * [More Information](#more-information)
 * [Dockerfile](#dockerfile)
+* [About UnicodeEncodeError](#about-unicodeencodeerror)
 * [License](#license)
     * [Dependencies](#dependencies)
 * [Uninstallation](#uninstallation)
@@ -414,6 +415,17 @@ If you want to resolve build environment issues, try adding `build-base` package
  RUN python3 -m venv ${APPDIR}/myapp \
          && source ${APPDIR}/myapp/bin/activate
 ```
+
+## About UnicodeEncodeError
+
+If a `UnicodeEncodeError` occurs, check your environment variables `LANG` and `LC_TYPE`.
+
+Often occurs in isolated environments such as Docker and tox.
+
+See useful reports:
+
+* [#35](https://github.com/raimon49/pip-licenses/issues/35)
+* [#45](https://github.com/raimon49/pip-licenses/issues/45)
 
 ## License
 
