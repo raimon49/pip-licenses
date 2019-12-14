@@ -11,7 +11,7 @@ from piplicenses import (__pkgname__, create_parser, output_colored,
                          create_licenses_table, get_output_fields, get_sortby,
                          factory_styled_table_with_args, create_warn_string,
                          find_license_from_classifier, create_output_string,
-                         select_license_by_source,
+                         select_license_by_source, save_if_needs,
                          DEFAULT_OUTPUT_FIELDS, SYSTEM_PACKAGES,
                          LICENSE_UNKNOWN)
 
@@ -444,3 +444,48 @@ class TestGetLicenses(CommandLineTestCase):
 
     def tearDown(self):
         pass
+
+
+class MockPrint(object):
+
+    def __init_(self):
+        self.printed = ''
+
+    def write(self, p):
+        self.printed = p
+
+
+def test_output_file_sccess(monkeypatch):
+    def mocked_open(*args, **kwargs):
+        import tempfile
+        return tempfile.TemporaryFile('w')
+
+    mocked_print = MockPrint()
+    import codecs
+    import sys
+    monkeypatch.setattr(codecs, 'open', mocked_open)
+    monkeypatch.setattr(sys.stdout, 'write', mocked_print.write)
+    monkeypatch.setattr(sys, 'exit', lambda n: None)
+
+    save_if_needs('/foo/bar.txt', 'license list')
+    assert 'created path: ' in mocked_print.printed
+
+
+def test_output_file_error(monkeypatch):
+    def mocked_open(*args, **kwargs):
+        raise IOError
+
+    mocked_print = MockPrint()
+    import codecs
+    import sys
+    monkeypatch.setattr(codecs, 'open', mocked_open)
+    monkeypatch.setattr(sys.stderr, 'write', mocked_print.write)
+    monkeypatch.setattr(sys, 'exit', lambda n: None)
+
+    save_if_needs('/foo/bar.txt', 'license list')
+    assert 'check path: ' in mocked_print.printed
+
+
+def test_output_file_none(monkeypatch):
+    save_if_needs(None, 'license list')
+    assert True  # nothing to do if file is None
