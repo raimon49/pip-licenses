@@ -446,9 +446,9 @@ class TestGetLicenses(CommandLineTestCase):
         pass
 
 
-class MockPrint(object):
+class MockStdStream(object):
 
-    def __init_(self):
+    def __init__(self):
         self.printed = ''
 
     def write(self, p):
@@ -460,30 +460,36 @@ def test_output_file_sccess(monkeypatch):
         import tempfile
         return tempfile.TemporaryFile('w')
 
-    mocked_print = MockPrint()
+    mocked_stdout = MockStdStream()
+    mocked_stderr = MockStdStream()
     import codecs
     import sys
     monkeypatch.setattr(codecs, 'open', mocked_open)
-    monkeypatch.setattr(sys.stdout, 'write', mocked_print.write)
+    monkeypatch.setattr(sys.stdout, 'write', mocked_stdout.write)
+    monkeypatch.setattr(sys.stderr, 'write', mocked_stderr.write)
     monkeypatch.setattr(sys, 'exit', lambda n: None)
 
     save_if_needs('/foo/bar.txt', 'license list')
-    assert 'created path: ' in mocked_print.printed
+    assert 'created path: ' in mocked_stdout.printed
+    assert '' == mocked_stderr.printed
 
 
 def test_output_file_error(monkeypatch):
     def mocked_open(*args, **kwargs):
         raise IOError
 
-    mocked_print = MockPrint()
+    mocked_stdout = MockStdStream()
+    mocked_stderr = MockStdStream()
     import codecs
     import sys
     monkeypatch.setattr(codecs, 'open', mocked_open)
-    monkeypatch.setattr(sys.stderr, 'write', mocked_print.write)
+    monkeypatch.setattr(sys.stdout, 'write', mocked_stdout.write)
+    monkeypatch.setattr(sys.stderr, 'write', mocked_stderr.write)
     monkeypatch.setattr(sys, 'exit', lambda n: None)
 
     save_if_needs('/foo/bar.txt', 'license list')
-    assert 'check path: ' in mocked_print.printed
+    assert '' == mocked_stdout.printed
+    assert 'check path: ' in mocked_stderr.printed
 
 
 def test_output_file_none(monkeypatch):
