@@ -493,5 +493,14 @@ def test_output_file_error(monkeypatch):
 
 
 def test_output_file_none(monkeypatch):
+    mocked_stdout = MockStdStream()
+    mocked_stderr = MockStdStream()
+    import codecs
+    import sys
+    monkeypatch.setattr(sys.stdout, 'write', mocked_stdout.write)
+    monkeypatch.setattr(sys.stderr, 'write', mocked_stderr.write)
+
     save_if_needs(None, 'license list')
-    assert True  # nothing to do if file is None
+    # stdout and stderr are expected not to be called
+    assert '' == mocked_stdout.printed
+    assert '' == mocked_stderr.printed
