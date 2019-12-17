@@ -42,8 +42,22 @@ try:
 except ImportError:
     from pip import get_installed_distributions
 from prettytable import PrettyTable
-from prettytable.prettytable import (FRAME as RULE_FRAME, ALL as RULE_ALL,
-                                     HEADER as RULE_HEADER, NONE as RULE_NONE)
+try:
+    from prettytable.prettytable import (
+        ALL as RULE_ALL,
+        FRAME as RULE_FRAME,
+        HEADER as RULE_HEADER,
+        NONE as RULE_NONE,
+    )
+    PTABLE = True
+except ImportError:  # pragma: no cover
+    from prettytable import (
+        ALL as RULE_ALL,
+        FRAME as RULE_FRAME,
+        HEADER as RULE_HEADER,
+        NONE as RULE_NONE,
+    )
+    PTABLE = False
 
 __pkgname__ = 'pip-licenses'
 __version__ = '1.17.0'
@@ -102,7 +116,7 @@ FIELDS_TO_METADATA_KEYS = {
 SYSTEM_PACKAGES = (
     __pkgname__,
     'pip',
-    'PTable',
+    'PTable' if PTABLE else 'prettytable',
     'setuptools',
     'wheel',
 )

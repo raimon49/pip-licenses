@@ -5,13 +5,12 @@ from __future__ import (division, print_function,
 import unittest
 from email import message_from_string
 
-from prettytable.prettytable import (FRAME as RULE_FRAME, ALL as RULE_ALL,
-                                     HEADER as RULE_HEADER, NONE as RULE_NONE)
 from piplicenses import (__pkgname__, create_parser, output_colored,
                          create_licenses_table, get_output_fields, get_sortby,
                          factory_styled_table_with_args, create_warn_string,
                          find_license_from_classifier, create_output_string,
                          select_license_by_source, save_if_needs,
+                         RULE_ALL, RULE_FRAME, RULE_HEADER, RULE_NONE,
                          DEFAULT_OUTPUT_FIELDS, SYSTEM_PACKAGES,
                          LICENSE_UNKNOWN)
 
@@ -219,7 +218,10 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertIn('best paired with --format=json', warn_string)
 
     def test_ignore_packages(self):
-        ignore_pkg_name = 'PTable'
+        if 'PTable' in SYSTEM_PACKAGES:
+            ignore_pkg_name = 'PTable'
+        else:
+            ignore_pkg_name = 'prettytable'
         ignore_packages_args = ['--ignore-package=' + ignore_pkg_name]
         args = self.parser.parse_args(ignore_packages_args)
         table = create_licenses_table(args)
