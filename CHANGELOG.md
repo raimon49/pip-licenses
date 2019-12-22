@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+### 1.18.0
+
+* Supports compatibility to work with either PTable or prettytable
+
 ### 1.17.0
 
 * Implement new option `--output-file`

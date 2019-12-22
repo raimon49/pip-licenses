@@ -60,7 +60,7 @@ except ImportError:  # pragma: no cover
     PTABLE = False
 
 __pkgname__ = 'pip-licenses'
-__version__ = '1.17.0'
+__version__ = '1.18.0'
 __author__ = 'raimon'
 __license__ = 'MIT License'
 __summary__ = ('Dump the software license list of '
