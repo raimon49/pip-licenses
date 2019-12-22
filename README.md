@@ -434,6 +434,7 @@ See useful reports:
 ### Dependencies
 
 * [PTable](https://pypi.org/project/PTable/) by Luke Maurits and maintainer of fork version Kane Blueriver under the BSD-3-Clause License
+    * **Note:** Alternatively, it works fine with the [PrettyTable](https://pypi.org/project/PrettyTable/) package. (See also): [Allow using prettytable #52](https://github.com/raimon49/pip-licenses/pull/52)
 
 `pip-licenses` has been implemented in the policy to minimize the dependence on external package.
 
