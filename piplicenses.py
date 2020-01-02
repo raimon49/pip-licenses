@@ -37,7 +37,7 @@ from email import message_from_string
 
 try:
     from pip._internal.utils.misc import get_installed_distributions
-except ImportError:
+except ImportError:  # pragma: no cover
     from pip import get_installed_distributions
 from prettytable import PrettyTable
 try:
