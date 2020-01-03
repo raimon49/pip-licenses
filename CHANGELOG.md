@@ -1,5 +1,18 @@
 ## CHANGELOG
 
+### 2.0.0
+
+* Dropped support Python 2.7
+* Breaking changes
+    * Removed migration path to obsolete options
+        * `--from-classifier`
+        * `--format-markdown`
+        * `--format-rst`
+        * `--format-confluence`
+        * `--format-html`
+        * `--format-json`
+* Implement new option `--no-license-path`
+
 ### 1.18.0
 
 * Supports compatibility to work with either PTable or prettytable
