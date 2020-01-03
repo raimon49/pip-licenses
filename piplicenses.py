@@ -457,12 +457,6 @@ def create_warn_string(args):
                         'will be ignored.'))
         warn_messages.append(message)
 
-    if (args.format_markdown or args.format_rst or args.format_confluence or
-            args.format_html or args.format_json):
-        message = warn(('The option "--format-xxx" is deprecated. '
-                        'Please migrate to "--format=xxx".'))
-        warn_messages.append(message)
-
     return '\n'.join(warn_messages)
 
 
@@ -529,17 +523,6 @@ class CompatibleArgumentParser(argparse.ArgumentParser):
         if format_input in ('csv', ):
             args.format = 'csv'
 
-        if args.format_markdown:
-            args.format = 'markdown'
-        elif args.format_rst:
-            args.format = 'rst'
-        elif args.format_confluence:
-            args.format = 'confluence'
-        elif args.format_html:
-            args.format = 'html'
-        elif args.format_json:
-            args.format = 'json'
-
 
 def create_parser():
     parser = CompatibleArgumentParser(
@@ -592,26 +575,6 @@ def create_parser():
                               '"plain", "markdown", "rst", "confluence",\n'
                               '"html", "json", "json-license-finder",  "csv"\n'
                               'default: --format=plain'))
-    parser.add_argument('-m', '--format-markdown',
-                        action='store_true',
-                        default=False,
-                        help='dump as markdown style')
-    parser.add_argument('-r', '--format-rst',
-                        action='store_true',
-                        default=False,
-                        help='dump as reST style')
-    parser.add_argument('--format-confluence',
-                        action='store_true',
-                        default=False,
-                        help='dump as confluence wiki style')
-    parser.add_argument('--format-html',
-                        action='store_true',
-                        default=False,
-                        help='dump as html style')
-    parser.add_argument('--format-json',
-                        action='store_true',
-                        default=False,
-                        help='dump as json')
     parser.add_argument('--summary',
                         action='store_true',
                         default=False,

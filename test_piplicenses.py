@@ -340,42 +340,6 @@ class TestGetLicenses(CommandLineTestCase):
         expected_header = '"Name","Version","License","Author"'
         self.assertEqual(obtained_header, expected_header)
 
-    def test_format_compatibility(self):
-        format_old_style_args = ['--format-markdown']
-        args = self.parser.parse_args(format_old_style_args)
-        warn_string = create_warn_string(args)
-
-        self.assertEqual('markdown', args.format)
-        self.assertIn('deprecated', warn_string)
-
-        format_old_style_args = ['--format-rst']
-        args = self.parser.parse_args(format_old_style_args)
-        warn_string = create_warn_string(args)
-
-        self.assertEqual('rst', args.format)
-        self.assertIn('deprecated', warn_string)
-
-        format_old_style_args = ['--format-confluence']
-        args = self.parser.parse_args(format_old_style_args)
-        warn_string = create_warn_string(args)
-
-        self.assertEqual('confluence', args.format)
-        self.assertIn('deprecated', warn_string)
-
-        format_old_style_args = ['--format-html']
-        args = self.parser.parse_args(format_old_style_args)
-        warn_string = create_warn_string(args)
-
-        self.assertEqual('html', args.format)
-        self.assertIn('deprecated', warn_string)
-
-        format_old_style_args = ['--format-json']
-        args = self.parser.parse_args(format_old_style_args)
-        warn_string = create_warn_string(args)
-
-        self.assertEqual('json', args.format)
-        self.assertIn('deprecated', warn_string)
-
     def test_summary(self):
         summary_args = ['--summary']
         args = self.parser.parse_args(summary_args)
