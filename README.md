@@ -53,6 +53,12 @@ Install it via PyPI using `pip` command.
 $ pip install -U pip-licenses
 ```
 
+**Note:** If you are still using Python 2.7, install version less than 2.0. No new features will be provided for version 1.x.
+
+```bash
+$ pip install 'pip-licenses<2.0'
+```
+
 ## Usage
 
 Execute the command with your venv (or virtualenv) environment.
