@@ -457,11 +457,6 @@ def create_warn_string(args):
                         'will be ignored.'))
         warn_messages.append(message)
 
-    if args.from_classifier:
-        message = warn(('The option "--from-classifier" is deprecated. '
-                        'Please migrate to "--from=classifier".'))
-        warn_messages.append(message)
-
     if (args.format_markdown or args.format_rst or args.format_confluence or
             args.format_html or args.format_json):
         message = warn(('The option "--format-xxx" is deprecated. '
@@ -534,9 +529,6 @@ class CompatibleArgumentParser(argparse.ArgumentParser):
         if format_input in ('csv', ):
             args.format = 'csv'
 
-        if args.from_classifier:
-            setattr(args, 'from', 'classifier')
-
         if args.format_markdown:
             args.format = 'markdown'
         elif args.format_rst:
@@ -561,10 +553,6 @@ def create_parser():
                         help=('where to find license information\n'
                               '"meta", "classifier, "mixed"\n'
                               'default: --from=meta'))
-    parser.add_argument('-c', '--from-classifier',
-                        action='store_true',
-                        default=False,
-                        help='find license from classifier')
     parser.add_argument('-s', '--with-system',
                         action='store_true',
                         default=False,
