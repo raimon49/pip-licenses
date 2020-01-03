@@ -404,7 +404,9 @@ def get_output_fields(args):
         output_fields.append('Description')
 
     if args.with_license_file:
-        output_fields.append('LicenseFile')
+        if not args.no_license_path:
+            output_fields.append('LicenseFile')
+
         output_fields.append('LicenseText')
 
     return output_fields
@@ -557,6 +559,11 @@ def create_parser():
                         default=False,
                         help='dump with location of license file and '
                              'contents, most useful with JSON output')
+    parser.add_argument('--no-license-path',
+                        action='store_true',
+                        default=False,
+                        help='when specified together with option -l, '
+                             'suppress location of license file output')
     parser.add_argument('-i', '--ignore-packages',
                         action='store', type=str,
                         nargs='+', metavar='PKG',

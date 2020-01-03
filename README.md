@@ -160,6 +160,7 @@ When executed with the `--with-description` option, output with short descriptio
 
 When executed with the `--with-license-file` option, output the location of the package's license file on disk and the full contents of that file. Due to the length of these fields, this option is best paired with `--format=json`.
 
+**Note:** If you want to keep the license file path secret, specify `--no-license-path` option together.
 
 ### Option: ignore-packages
 

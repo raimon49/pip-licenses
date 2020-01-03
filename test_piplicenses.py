@@ -208,6 +208,19 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertIn('LicenseFile', output_string)
         self.assertIn('LicenseText', output_string)
 
+    def test_with_license_file_no_path(self):
+        with_license_file_args = ['--with-license-file', '--no-license-path']
+        args = self.parser.parse_args(with_license_file_args)
+
+        output_fields = get_output_fields(args)
+        self.assertNotEqual(output_fields, list(DEFAULT_OUTPUT_FIELDS))
+        self.assertNotIn('LicenseFile', output_fields)
+        self.assertIn('LicenseText', output_fields)
+
+        output_string = create_output_string(args)
+        self.assertNotIn('LicenseFile', output_string)
+        self.assertIn('LicenseText', output_string)
+
     def test_with_license_file_warning(self):
         with_license_file_args = ['--with-license-file', '--format=markdown']
         args = self.parser.parse_args(with_license_file_args)
