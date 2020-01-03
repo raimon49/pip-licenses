@@ -11,7 +11,6 @@ Dump the software license list of Python packages installed with pip.
 * [Usage](#usage)
 * [Command\-Line Options](#command-line-options)
     * [Option: from](#option-from)
-        * [Deprecated from\-classifier](#deprecated-from-classifier)
     * [Option: with\-system](#option-with-system)
     * [Option: with\-authors](#option-with-authors)
     * [Option: with\-urls](#option-with-urls)
@@ -27,7 +26,6 @@ Dump the software license list of Python packages installed with pip.
         * [JSON](#json)
         * [JSON LicenseFinder](#json-licensefinder)
         * [CSV](#csv)
-        * [Deprecated options](#deprecated-options)
     * [Option: summary](#option-summary)
     * [Option: output\-file](#option-output-file)
     * [More Information](#more-information)
@@ -107,10 +105,6 @@ In mixed mode, it first tries to look for licenses in the Classifiers. When not 
 * The `m` keyword is prepared as alias of `meta`.
 * The `c` keyword is prepared as alias of `classifier`.
 * The `mix` keyword is prepared as alias of `mixed`.
-
-#### Deprecated from-classifier
-
-`from-classifier` option will be deprecated in version 2.0.0. Please migrate to `--from` option.
 
 ### Option: with-system
 
@@ -326,16 +320,6 @@ When executed with the `--format=csv` option, you can output list in quoted CSV 
 "Django","2.0.2","BSD"
 "pytz","2017.3","MIT"
 ```
-
-#### Deprecated options
-
-The following options will be deprecated in version 2.0.0. Please migrate to `--format` option.
-
-* `--format-markdown`
-* `--format-rst`
-* `--format-confluence`
-* `--format-html`
-* `--format-json`
 
 ### Option: summary
 
