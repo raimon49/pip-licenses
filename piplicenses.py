@@ -26,8 +26,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-from __future__ import (division, print_function,
-                        absolute_import, unicode_literals)
 import sys
 import glob
 import os
@@ -39,7 +37,7 @@ from email import message_from_string
 
 try:
     from pip._internal.utils.misc import get_installed_distributions
-except ImportError:
+except ImportError:  # pragma: no cover
     from pip import get_installed_distributions
 from prettytable import PrettyTable
 try:
@@ -60,7 +58,7 @@ except ImportError:  # pragma: no cover
     PTABLE = False
 
 __pkgname__ = 'pip-licenses'
-__version__ = '1.18.0'
+__version__ = '2.0.0'
 __author__ = 'raimon'
 __license__ = 'MIT License'
 __summary__ = ('Dump the software license list of '
@@ -406,7 +404,9 @@ def get_output_fields(args):
         output_fields.append('Description')
 
     if args.with_license_file:
-        output_fields.append('LicenseFile')
+        if not args.no_license_path:
+            output_fields.append('LicenseFile')
+
         output_fields.append('LicenseText')
 
     return output_fields
@@ -457,17 +457,6 @@ def create_warn_string(args):
                         '--order=license has an effect for the --order '
                         'option. And using --with-authors and --with-urls '
                         'will be ignored.'))
-        warn_messages.append(message)
-
-    if args.from_classifier:
-        message = warn(('The option "--from-classifier" is deprecated. '
-                        'Please migrate to "--from=classifier".'))
-        warn_messages.append(message)
-
-    if (args.format_markdown or args.format_rst or args.format_confluence or
-            args.format_html or args.format_json):
-        message = warn(('The option "--format-xxx" is deprecated. '
-                        'Please migrate to "--format=xxx".'))
         warn_messages.append(message)
 
     return '\n'.join(warn_messages)
@@ -536,20 +525,6 @@ class CompatibleArgumentParser(argparse.ArgumentParser):
         if format_input in ('csv', ):
             args.format = 'csv'
 
-        if args.from_classifier:
-            setattr(args, 'from', 'classifier')
-
-        if args.format_markdown:
-            args.format = 'markdown'
-        elif args.format_rst:
-            args.format = 'rst'
-        elif args.format_confluence:
-            args.format = 'confluence'
-        elif args.format_html:
-            args.format = 'html'
-        elif args.format_json:
-            args.format = 'json'
-
 
 def create_parser():
     parser = CompatibleArgumentParser(
@@ -563,10 +538,6 @@ def create_parser():
                         help=('where to find license information\n'
                               '"meta", "classifier, "mixed"\n'
                               'default: --from=meta'))
-    parser.add_argument('-c', '--from-classifier',
-                        action='store_true',
-                        default=False,
-                        help='find license from classifier')
     parser.add_argument('-s', '--with-system',
                         action='store_true',
                         default=False,
@@ -588,6 +559,11 @@ def create_parser():
                         default=False,
                         help='dump with location of license file and '
                              'contents, most useful with JSON output')
+    parser.add_argument('--no-license-path',
+                        action='store_true',
+                        default=False,
+                        help='when specified together with option -l, '
+                             'suppress location of license file output')
     parser.add_argument('-i', '--ignore-packages',
                         action='store', type=str,
                         nargs='+', metavar='PKG',
@@ -606,26 +582,6 @@ def create_parser():
                               '"plain", "markdown", "rst", "confluence",\n'
                               '"html", "json", "json-license-finder",  "csv"\n'
                               'default: --format=plain'))
-    parser.add_argument('-m', '--format-markdown',
-                        action='store_true',
-                        default=False,
-                        help='dump as markdown style')
-    parser.add_argument('-r', '--format-rst',
-                        action='store_true',
-                        default=False,
-                        help='dump as reST style')
-    parser.add_argument('--format-confluence',
-                        action='store_true',
-                        default=False,
-                        help='dump as confluence wiki style')
-    parser.add_argument('--format-html',
-                        action='store_true',
-                        default=False,
-                        help='dump as html style')
-    parser.add_argument('--format-json',
-                        action='store_true',
-                        default=False,
-                        help='dump as json')
     parser.add_argument('--summary',
                         action='store_true',
                         default=False,

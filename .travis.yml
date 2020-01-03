@@ -1,7 +1,6 @@
 dist: xenial
 language: python
 python:
-  - "2.7"
   - "3.5"
   - "3.6"
   - "3.7"
@@ -9,6 +8,6 @@ python:
 install:
   - pip install -r dev-requirements.txt
 script:
-  pytest --pep8 -v --cov
+  pytest --pycodestyle -v --cov
 after_success:
-  - if [[ $TRAVIS_PYTHON_VERSION == 2* ]]; then codecov; fi
+  - if [[ $TRAVIS_PYTHON_VERSION == "3.8" ]]; then codecov; fi

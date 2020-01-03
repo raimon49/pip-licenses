@@ -11,7 +11,6 @@ Dump the software license list of Python packages installed with pip.
 * [Usage](#usage)
 * [Command\-Line Options](#command-line-options)
     * [Option: from](#option-from)
-        * [Deprecated from\-classifier](#deprecated-from-classifier)
     * [Option: with\-system](#option-with-system)
     * [Option: with\-authors](#option-with-authors)
     * [Option: with\-urls](#option-with-urls)
@@ -27,7 +26,6 @@ Dump the software license list of Python packages installed with pip.
         * [JSON](#json)
         * [JSON LicenseFinder](#json-licensefinder)
         * [CSV](#csv)
-        * [Deprecated options](#deprecated-options)
     * [Option: summary](#option-summary)
     * [Option: output\-file](#option-output-file)
     * [More Information](#more-information)
@@ -53,6 +51,12 @@ Install it via PyPI using `pip` command.
 ```bash
 # Install or Upgrade to newest available version
 $ pip install -U pip-licenses
+```
+
+**Note:** If you are still using Python 2.7, install version less than 2.0. No new features will be provided for version 1.x.
+
+```bash
+$ pip install 'pip-licenses<2.0'
 ```
 
 ## Usage
@@ -108,10 +112,6 @@ In mixed mode, it first tries to look for licenses in the Classifiers. When not 
 * The `c` keyword is prepared as alias of `classifier`.
 * The `mix` keyword is prepared as alias of `mixed`.
 
-#### Deprecated from-classifier
-
-`from-classifier` option will be deprecated in version 2.0.0. Please migrate to `--from` option.
-
 ### Option: with-system
 
 By default, system packages such as `pip` and `setuptools` are ignored.
@@ -166,6 +166,7 @@ When executed with the `--with-description` option, output with short descriptio
 
 When executed with the `--with-license-file` option, output the location of the package's license file on disk and the full contents of that file. Due to the length of these fields, this option is best paired with `--format=json`.
 
+**Note:** If you want to keep the license file path secret, specify `--no-license-path` option together.
 
 ### Option: ignore-packages
 
@@ -326,16 +327,6 @@ When executed with the `--format=csv` option, you can output list in quoted CSV 
 "Django","2.0.2","BSD"
 "pytz","2017.3","MIT"
 ```
-
-#### Deprecated options
-
-The following options will be deprecated in version 2.0.0. Please migrate to `--format` option.
-
-* `--format-markdown`
-* `--format-rst`
-* `--format-confluence`
-* `--format-html`
-* `--format-json`
 
 ### Option: summary
 

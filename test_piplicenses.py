@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 # vim:fenc=utf-8 ff=unix ft=python ts=4 sw=4 sts=4 si et
-from __future__ import (division, print_function,
-                        absolute_import, unicode_literals)
 import unittest
 from email import message_from_string
 
@@ -210,6 +208,19 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertIn('LicenseFile', output_string)
         self.assertIn('LicenseText', output_string)
 
+    def test_with_license_file_no_path(self):
+        with_license_file_args = ['--with-license-file', '--no-license-path']
+        args = self.parser.parse_args(with_license_file_args)
+
+        output_fields = get_output_fields(args)
+        self.assertNotEqual(output_fields, list(DEFAULT_OUTPUT_FIELDS))
+        self.assertNotIn('LicenseFile', output_fields)
+        self.assertIn('LicenseText', output_fields)
+
+        output_string = create_output_string(args)
+        self.assertNotIn('LicenseFile', output_string)
+        self.assertIn('LicenseText', output_string)
+
     def test_with_license_file_warning(self):
         with_license_file_args = ['--with-license-file', '--format=markdown']
         args = self.parser.parse_args(with_license_file_args)
@@ -341,50 +352,6 @@ class TestGetLicenses(CommandLineTestCase):
         obtained_header = output_string.split('\n', 1)[0]
         expected_header = '"Name","Version","License","Author"'
         self.assertEqual(obtained_header, expected_header)
-
-    def test_from_compatibility(self):
-        from_old_style_args = ['--from-classifier']
-        args = self.parser.parse_args(from_old_style_args)
-        warn_string = create_warn_string(args)
-
-        self.assertEqual('classifier', getattr(args, 'from'))
-        self.assertIn('deprecated', warn_string)
-
-    def test_format_compatibility(self):
-        format_old_style_args = ['--format-markdown']
-        args = self.parser.parse_args(format_old_style_args)
-        warn_string = create_warn_string(args)
-
-        self.assertEqual('markdown', args.format)
-        self.assertIn('deprecated', warn_string)
-
-        format_old_style_args = ['--format-rst']
-        args = self.parser.parse_args(format_old_style_args)
-        warn_string = create_warn_string(args)
-
-        self.assertEqual('rst', args.format)
-        self.assertIn('deprecated', warn_string)
-
-        format_old_style_args = ['--format-confluence']
-        args = self.parser.parse_args(format_old_style_args)
-        warn_string = create_warn_string(args)
-
-        self.assertEqual('confluence', args.format)
-        self.assertIn('deprecated', warn_string)
-
-        format_old_style_args = ['--format-html']
-        args = self.parser.parse_args(format_old_style_args)
-        warn_string = create_warn_string(args)
-
-        self.assertEqual('html', args.format)
-        self.assertIn('deprecated', warn_string)
-
-        format_old_style_args = ['--format-json']
-        args = self.parser.parse_args(format_old_style_args)
-        warn_string = create_warn_string(args)
-
-        self.assertEqual('json', args.format)
-        self.assertIn('deprecated', warn_string)
 
     def test_summary(self):
         summary_args = ['--summary']
