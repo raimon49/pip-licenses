@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
 # vim:fenc=utf-8 ff=unix ft=python ts=4 sw=4 sts=4 si et
+import copy
+import sys
 import unittest
 from email import message_from_string
 
+import piplicenses
 from piplicenses import (__pkgname__, create_parser, output_colored,
                          create_licenses_table, get_output_fields, get_sortby,
                          factory_styled_table_with_args, create_warn_string,
@@ -20,11 +23,8 @@ class CommandLineTestCase(unittest.TestCase):
 
 
 class TestGetLicenses(CommandLineTestCase):
-    def setUp(self):
-        pass
 
     def _create_pkg_name_columns(self, table):
-        import copy
         index = DEFAULT_OUTPUT_FIELDS.index('Name')
 
         # XXX: access to private API
@@ -36,7 +36,6 @@ class TestGetLicenses(CommandLineTestCase):
         return pkg_name_columns
 
     def _create_license_columns(self, table):
-        import copy
         index = DEFAULT_OUTPUT_FIELDS.index('License')
 
         # XXX: access to private API
@@ -411,9 +410,6 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertIn(text, actual)
         self.assertTrue(actual.endswith('\033[0m'))
 
-    def tearDown(self):
-        pass
-
 
 class MockStdStream(object):
 
@@ -431,9 +427,7 @@ def test_output_file_sccess(monkeypatch):
 
     mocked_stdout = MockStdStream()
     mocked_stderr = MockStdStream()
-    import codecs
-    import sys
-    monkeypatch.setattr(codecs, 'open', mocked_open)
+    monkeypatch.setattr(piplicenses, 'open', mocked_open)
     monkeypatch.setattr(sys.stdout, 'write', mocked_stdout.write)
     monkeypatch.setattr(sys.stderr, 'write', mocked_stderr.write)
     monkeypatch.setattr(sys, 'exit', lambda n: None)
@@ -449,9 +443,7 @@ def test_output_file_error(monkeypatch):
 
     mocked_stdout = MockStdStream()
     mocked_stderr = MockStdStream()
-    import codecs
-    import sys
-    monkeypatch.setattr(codecs, 'open', mocked_open)
+    monkeypatch.setattr(piplicenses, 'open', mocked_open)
     monkeypatch.setattr(sys.stdout, 'write', mocked_stdout.write)
     monkeypatch.setattr(sys.stderr, 'write', mocked_stderr.write)
     monkeypatch.setattr(sys, 'exit', lambda n: None)
@@ -464,8 +456,6 @@ def test_output_file_error(monkeypatch):
 def test_output_file_none(monkeypatch):
     mocked_stdout = MockStdStream()
     mocked_stderr = MockStdStream()
-    import codecs
-    import sys
     monkeypatch.setattr(sys.stdout, 'write', mocked_stdout.write)
     monkeypatch.setattr(sys.stderr, 'write', mocked_stderr.write)
 
