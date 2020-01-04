@@ -31,6 +31,7 @@ import glob
 import os
 import codecs
 import argparse
+from collections import Counter
 from functools import partial
 from email.parser import FeedParser
 from email import message_from_string
@@ -224,17 +225,11 @@ def create_licenses_table(args, output_fields=DEFAULT_OUTPUT_FIELDS):
 
 
 def create_summary_table(args):
-    licenses = {}
-    for pkg in get_packages(args):
-        if pkg['license'] not in licenses:
-            licenses.update({pkg['license']: 1})
-        else:
-            licenses[pkg['license']] += 1
+    counts = Counter(pkg['license'] for pkg in get_packages(args))
 
     table = factory_styled_table_with_args(args, SUMMARY_FIELD_NAMES)
-    for license in licenses.keys():
-        table.add_row([licenses[license],
-                       license, ])
+    for license, count in counts.items():
+        table.add_row([count, license])
     return table
 
 
