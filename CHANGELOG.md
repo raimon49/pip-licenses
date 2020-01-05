@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+### 2.0.1
+
+* Better license file open handling in Python 3
+
 ### 2.0.0
 
 * Dropped support Python 2.7
