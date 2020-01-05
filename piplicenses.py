@@ -29,7 +29,6 @@ SOFTWARE.
 import sys
 import glob
 import os
-import codecs
 import argparse
 from functools import partial
 from email.parser import FeedParser
@@ -56,6 +55,8 @@ except ImportError:  # pragma: no cover
         NONE as RULE_NONE,
     )
     PTABLE = False
+
+open = open  # allow monkey patching
 
 __pkgname__ = 'pip-licenses'
 __version__ = '2.0.0'
@@ -137,17 +138,8 @@ def get_packages(args):
         for test_file in glob.glob(license_file_base):
             if os.path.exists(test_file):
                 license_file = test_file
-                with codecs.open(test_file,
-                                 encoding='utf-8',
-                                 errors='replace') as license_file_handle:
-                    file_lines = license_file_handle.readlines()
-                try:
-                    # python 3 is happy with maybe-Unicode files
-                    license_text = "".join(file_lines)
-                except UnicodeDecodeError:  # pragma: no cover
-                    # python 2 not so much
-                    license_text = "".join([line.decode('utf-8', 'replace')
-                                            for line in file_lines])
+                with open(test_file) as license_file_handle:
+                    license_text = license_file_handle.read()
                 break
         return (license_file, license_text)
 
@@ -611,7 +603,7 @@ def save_if_needs(output_file, output_string):
         return
 
     try:
-        with codecs.open(output_file, 'w', 'utf-8',) as f:
+        with open(output_file, 'w') as f:
             f.write(output_string)
         sys.stdout.write('created path: ' + output_file + '\n')
         sys.exit(0)
