@@ -139,7 +139,7 @@ def get_packages(args):
         for test_file in glob.glob(license_file_base):
             if os.path.exists(test_file):
                 license_file = test_file
-                with open(test_file) as license_file_handle:
+                with open(test_file, encoding='utf-8') as license_file_handle:
                     license_text = license_file_handle.read()
                 break
         return (license_file, license_text)
@@ -598,7 +598,7 @@ def save_if_needs(output_file, output_string):
         return
 
     try:
-        with open(output_file, 'w') as f:
+        with open(output_file, 'w', encoding='utf-8') as f:
             f.write(output_string)
         sys.stdout.write('created path: ' + output_file + '\n')
         sys.exit(0)
