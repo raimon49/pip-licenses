@@ -414,8 +414,21 @@ def get_sortby(args):
     return 'Name'
 
 
+def create_plain_vertical_output(args, output_fields):
+    output = ''
+    for pkg in get_packages(args):
+        for field in output_fields:
+            if field.lower() in pkg:
+                output += '{}\n'.format(pkg[field.lower()])
+        output += '\n'
+    return output
+
+
 def create_output_string(args):
     output_fields = get_output_fields(args)
+
+    if args.format == 'plain-vertical':
+        return create_plain_vertical_output(args, output_fields)
 
     if args.summary:
         table = create_summary_table(args)
@@ -566,8 +579,9 @@ def create_parser():
                         action='store', type=str,
                         default='plain', metavar='STYLE',
                         help=('dump as set format style\n'
-                              '"plain", "markdown", "rst", "confluence",\n'
-                              '"html", "json", "json-license-finder",  "csv"\n'
+                              '"plain", "plain-vertical" "markdown", "rst", \n'
+                              '"confluence", "html", "json", \n'
+                              '"json-license-finder",  "csv"\n'
                               'default: --format=plain'))
     parser.add_argument('--summary',
                         action='store_true',
