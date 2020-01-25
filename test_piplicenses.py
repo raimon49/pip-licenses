@@ -285,6 +285,12 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertEqual('+', table.junction_char)
         self.assertEqual(RULE_FRAME, table.hrules)
 
+    def test_format_plain_vertical(self):
+        format_plain_args = ['--format=plain-vertical']
+        args = self.parser.parse_args(format_plain_args)
+        output_string = create_output_string(args)
+        assert output_string == ''
+
     def test_format_markdown(self):
         format_markdown_args = ['--format=markdown']
         args = self.parser.parse_args(format_markdown_args)
