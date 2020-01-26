@@ -26,6 +26,7 @@ Dump the software license list of Python packages installed with pip.
         * [JSON](#json)
         * [JSON LicenseFinder](#json-licensefinder)
         * [CSV](#csv)
+        * [Plain Vertical](#plain-vertical)
     * [Option: summary](#option-summary)
     * [Option: output\-file](#option-output-file)
     * [More Information](#more-information)
