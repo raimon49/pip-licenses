@@ -331,7 +331,7 @@ When executed with the `--format=csv` option, you can output list in quoted CSV 
 #### Plain Vertical
 
 When executed with the `--format=plain-vertical` option, you can output a simple plain vertical output that is similar to Angular CLI's
-`--extractLicenses` flag. This format minimizes rightward drift.
+[`--extractLicenses` flag](https://angular.io/cli/build#options). This format minimizes rightward drift.
 
 ```bash
 (venv) $ pip-licenses --format=plain-vertical --with-license-file --no-license-path
