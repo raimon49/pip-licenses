@@ -320,6 +320,26 @@ class CSVPrettyTable(PrettyTable):
         return '\n'.join(lines)
 
 
+class PlainVerticalTable(PrettyTable):
+    """PrettyTable for outputting to a simple non-column based style.
+
+    When used with --with-license-file, this style is similar to the default
+    style generated from Angular CLI's --extractLicenses flag.
+    """
+
+    def get_string(self, **kwargs):
+        options = self._get_options(kwargs)
+        rows = self._get_rows(options)
+
+        output = ''
+        for row in rows:
+            for v in row:
+                output += '{}\n'.format(v)
+            output += '\n'
+
+        return output
+
+
 def factory_styled_table_with_args(args, output_fields=DEFAULT_OUTPUT_FIELDS):
     table = PrettyTable()
     table.field_names = output_fields
@@ -343,6 +363,8 @@ def factory_styled_table_with_args(args, output_fields=DEFAULT_OUTPUT_FIELDS):
         table = JsonLicenseFinderTable(table.field_names)
     elif args.format == 'csv':
         table = CSVPrettyTable(table.field_names)
+    elif args.format == 'plain-vertical':
+        table = PlainVerticalTable(table.field_names)
 
     return table
 
@@ -566,8 +588,9 @@ def create_parser():
                         action='store', type=str,
                         default='plain', metavar='STYLE',
                         help=('dump as set format style\n'
-                              '"plain", "markdown", "rst", "confluence",\n'
-                              '"html", "json", "json-license-finder",  "csv"\n'
+                              '"plain", "plain-vertical" "markdown", "rst", \n'
+                              '"confluence", "html", "json", \n'
+                              '"json-license-finder",  "csv"\n'
                               'default: --format=plain'))
     parser.add_argument('--summary',
                         action='store_true',

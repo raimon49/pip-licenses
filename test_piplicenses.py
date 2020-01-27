@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # vim:fenc=utf-8 ff=unix ft=python ts=4 sw=4 sts=4 si et
 import copy
+import re
 import sys
 import unittest
 from email import message_from_string
@@ -284,6 +285,13 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertTrue(table.header)
         self.assertEqual('+', table.junction_char)
         self.assertEqual(RULE_FRAME, table.hrules)
+
+    def test_format_plain_vertical(self):
+        format_plain_args = ['--format=plain-vertical']
+        args = self.parser.parse_args(format_plain_args)
+        output_string = create_output_string(args)
+        self.assertIsNotNone(
+            re.search(r'pytest\n\d\.\d\.\d\nMIT license\n', output_string))
 
     def test_format_markdown(self):
         format_markdown_args = ['--format=markdown']
