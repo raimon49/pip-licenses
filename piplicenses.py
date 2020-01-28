@@ -135,8 +135,12 @@ def get_packages(args):
         license_text = LICENSE_UNKNOWN
         pkg_dirname = "{}-{}.dist-info".format(
             pkg.project_name.replace("-", "_"), pkg.version)
-        license_file_base = os.path.join(pkg.location, pkg_dirname, 'LICENSE*')
-        for test_file in glob.glob(license_file_base):
+        file_names = ('LICENSE*', 'COPYING*')
+        patterns = []
+        [patterns.extend(glob.glob(os.path.join(pkg.location,
+                                                pkg_dirname,
+                                                f))) for f in file_names]
+        for test_file in patterns:
             if os.path.exists(test_file):
                 license_file = test_file
                 with open(test_file, encoding='utf-8') as license_file_handle:
