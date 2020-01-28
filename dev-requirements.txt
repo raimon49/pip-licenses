@@ -38,7 +38,7 @@ twine==1.15.0
 urllib3==1.25.8           # via requests
 wcwidth==0.1.8            # via pytest
 webencodings==0.5.1       # via bleach
-wheel==0.34.0
+wheel==0.34.1
 
 # The following packages are considered to be unsafe in a requirements file:
 # pip

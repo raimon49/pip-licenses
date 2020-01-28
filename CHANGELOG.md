@@ -1,5 +1,10 @@
 ## CHANGELOG
 
+### 2.1.0
+
+* Implement new option `--format=plain-vertical`
+* Support for outputting license file named `COPYING *`
+
 ### 2.0.1
 
 * Better license file open handling in Python 3
