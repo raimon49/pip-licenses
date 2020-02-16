@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+### 2.1.1
+
+* Suppress errors when opening license files
+
 ### 2.1.0
 
 * Implement new option `--format=plain-vertical`
