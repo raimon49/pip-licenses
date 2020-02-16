@@ -143,7 +143,8 @@ def get_packages(args):
         for test_file in patterns:
             if os.path.exists(test_file):
                 license_file = test_file
-                with open(test_file, encoding='utf-8') as license_file_handle:
+                with open(test_file, encoding='utf-8',
+                          errors='backslashreplace') as license_file_handle:
                     license_text = license_file_handle.read()
                 break
         return (license_file, license_text)
