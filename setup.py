@@ -49,11 +49,11 @@ def read_file(filename):
 
 LONG_DESC = ''
 try:
-    from pypandoc import convert
+    from pypandoc import convert_file
 
-    about_this = convert('README.md', 'rst', format='markdown_github')
+    about_this = convert_file('README.md', 'rst', format='markdown_github')
     separate = '\n\n'
-    change_log = convert('CHANGELOG.md', 'rst', format='markdown_github')
+    change_log = convert_file('CHANGELOG.md', 'rst', format='markdown_github')
 
     LONG_DESC = about_this + separate + change_log
 except (IOError, ImportError):
