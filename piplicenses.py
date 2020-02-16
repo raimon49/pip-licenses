@@ -60,7 +60,7 @@ except ImportError:  # pragma: no cover
 open = open  # allow monkey patching
 
 __pkgname__ = 'pip-licenses'
-__version__ = '2.1.0'
+__version__ = '2.1.1'
 __author__ = 'raimon'
 __license__ = 'MIT License'
 __summary__ = ('Dump the software license list of '
@@ -143,7 +143,8 @@ def get_packages(args):
         for test_file in patterns:
             if os.path.exists(test_file):
                 license_file = test_file
-                with open(test_file, encoding='utf-8') as license_file_handle:
+                with open(test_file, encoding='utf-8',
+                          errors='backslashreplace') as license_file_handle:
                     license_text = license_file_handle.read()
                 break
         return (license_file, license_text)
