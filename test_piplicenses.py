@@ -18,7 +18,7 @@ from piplicenses import (__pkgname__, create_parser, output_colored,
                          select_license_by_source, save_if_needs,
                          RULE_ALL, RULE_FRAME, RULE_HEADER, RULE_NONE,
                          DEFAULT_OUTPUT_FIELDS, SYSTEM_PACKAGES,
-                         LICENSE_UNKNOWN)
+                         LICENSE_UNKNOWN, PTABLE)
 
 
 class CommandLineTestCase(unittest.TestCase):
@@ -233,10 +233,7 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertIn('best paired with --format=json', warn_string)
 
     def test_ignore_packages(self):
-        if 'PTable' in SYSTEM_PACKAGES:
-            ignore_pkg_name = 'PTable'
-        else:
-            ignore_pkg_name = 'prettytable'
+        ignore_pkg_name = 'PTable' if not PTABLE else 'prettytable'
         ignore_packages_args = ['--ignore-package=' + ignore_pkg_name]
         args = self.parser.parse_args(ignore_packages_args)
         table = create_licenses_table(args)
@@ -246,7 +243,7 @@ class TestGetLicenses(CommandLineTestCase):
 
     def test_include_packages(self):
         # test individual include
-        include_pkg_name = 'PTable'
+        include_pkg_name = 'PTable' if not PTABLE else 'prettytable'
         include_packages_args = ['--package=' + include_pkg_name]
         args = self.parser.parse_args(include_packages_args)
         table = create_licenses_table(args)
@@ -254,7 +251,7 @@ class TestGetLicenses(CommandLineTestCase):
         pkg_name_columns = self._create_pkg_name_columns(table)
         self.assertIn(include_pkg_name, pkg_name_columns)
 
-        included_packages = ['setuptools', 'PTable']
+        included_packages = [include_pkg_name]
         with tempfile.TemporaryDirectory() as tempdir:
             # test json include
             json_path = os.path.join(tempdir, 'deps.json')
