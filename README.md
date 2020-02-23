@@ -1,6 +1,6 @@
 # pip-licenses
 
-[![Build Status](https://travis-ci.org/raimon49/pip-licenses.svg?branch=master)](https://travis-ci.org/raimon49/pip-licenses) [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/pip-licenses.svg)](https://pypi.org/project/pip-licenses/) [![PyPI version](https://badge.fury.io/py/pip-licenses.svg)](https://badge.fury.io/py/pip-licenses) [![GitHub Release](https://img.shields.io/github/release/raimon49/pip-licenses.svg)](https://github.com/raimon49/pip-licenses/releases) [![Codecov](https://codecov.io/gh/raimon49/pip-licenses/branch/master/graph/badge.svg)](https://codecov.io/gh/raimon49/pip-licenses) [![BSD License](http://img.shields.io/badge/license-MIT-green.svg)](https://github.com/raimon49/pip-licenses/blob/master/LICENSE) [![Requirements Status](https://requires.io/github/raimon49/pip-licenses/requirements.svg?branch=master)](https://requires.io/github/raimon49/pip-licenses/requirements/?branch=master)
+[![Build Status](https://travis-ci.org/raimon49/pip-licenses.svg?branch=master)](https://travis-ci.org/raimon49/pip-licenses) [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/pip-licenses.svg)](https://pypi.org/project/pip-licenses/) [![PyPI version](https://badge.fury.io/py/pip-licenses.svg)](https://badge.fury.io/py/pip-licenses) [![GitHub Release](https://img.shields.io/github/release/raimon49/pip-licenses.svg)](https://github.com/raimon49/pip-licenses/releases) [![Codecov](https://codecov.io/gh/raimon49/pip-licenses/branch/master/graph/badge.svg)](https://codecov.io/gh/raimon49/pip-licenses) [![GitHub contributors](https://img.shields.io/github/contributors/raimon49/pip-licenses)](https://github.com/raimon49/pip-licenses/graphs/contributors) [![BSD License](http://img.shields.io/badge/license-MIT-green.svg)](https://github.com/raimon49/pip-licenses/blob/master/LICENSE) [![Requirements Status](https://requires.io/github/raimon49/pip-licenses/requirements.svg?branch=master)](https://requires.io/github/raimon49/pip-licenses/requirements/?branch=master)
 
 Dump the software license list of Python packages installed with pip.
 
@@ -10,7 +10,7 @@ Dump the software license list of Python packages installed with pip.
 * [Installation](#installation)
 * [Usage](#usage)
 * [Command\-Line Options](#command-line-options)
-    * [Option: from\-classifier](#option-from-classifier)
+    * [Option: from](#option-from)
     * [Option: with\-system](#option-with-system)
     * [Option: with\-authors](#option-with-authors)
     * [Option: with\-urls](#option-with-urls)
@@ -24,10 +24,14 @@ Dump the software license list of Python packages installed with pip.
         * [Confluence](#confluence)
         * [HTML](#html)
         * [JSON](#json)
-        * [Deprecated options](#deprecated-options)
+        * [JSON LicenseFinder](#json-licensefinder)
+        * [CSV](#csv)
+        * [Plain Vertical](#plain-vertical)
     * [Option: summary](#option-summary)
+    * [Option: output\-file](#option-output-file)
     * [More Information](#more-information)
 * [Dockerfile](#dockerfile)
+* [About UnicodeEncodeError](#about-unicodeencodeerror)
 * [License](#license)
     * [Dependencies](#dependencies)
 * [Uninstallation](#uninstallation)
@@ -50,6 +54,12 @@ Install it via PyPI using `pip` command.
 $ pip install -U pip-licenses
 ```
 
+**Note:** If you are still using Python 2.7, install version less than 2.0. No new features will be provided for version 1.x.
+
+```bash
+$ pip install 'pip-licenses<2.0'
+```
+
 ## Usage
 
 Execute the command with your venv (or virtualenv) environment.
@@ -67,9 +77,9 @@ Execute the command with your venv (or virtualenv) environment.
 
 ## Command-Line Options
 
-### Option: from-classifier
+### Option: from
 
-By default, this tool finds the license from package Metadata. However, depending on the type of package, it does not declare a license only in the Classifiers.
+By default, this tool finds the license from package Metadata (`--from=meta`). However, depending on the type of package, it does not declare a license only in the Classifiers.
 
 (See also): [Set license to MIT in setup.py by alisianoi ・ Pull Request #1058 ・ pypa/setuptools](https://github.com/pypa/setuptools/pull/1058), [PEP 314\#License](https://www.python.org/dev/peps/pep-0314/#license)
 
@@ -86,12 +96,22 @@ Author-email: distutils-sig@python.org
 License: UNKNOWN
 ```
 
-If you want to refer to the license declared in [the Classifiers](https://pypi.python.org/pypi?%3Aaction=list_classifiers), use the `--from-classifier` option.
+If you want to refer to the license declared in [the Classifiers](https://pypi.python.org/pypi?%3Aaction=list_classifiers), use the `--from=classifier` option.
 
 ```bash
-(venv) $ pip-licenses --from-classifier --with-system | grep setuptools
+(venv) $ pip-licenses --from=classifier --with-system | grep setuptools
  setuptools    38.5.0   MIT License
 ```
+
+If you want to find a license from whichever, mixed mode (`--from=mixed`) is available in `pip-licenses` version 1.14.0 or later.
+
+In mixed mode, it first tries to look for licenses in the Classifiers. When not found in the Classifiers, the license declared in Metadata is displayed.
+
+**Note:** If neither can find license information, please check with the `with-authors` and `with-urls` options and contact the software author.
+
+* The `m` keyword is prepared as alias of `meta`.
+* The `c` keyword is prepared as alias of `classifier`.
+* The `mix` keyword is prepared as alias of `mixed`.
 
 ### Option: with-system
 
@@ -147,6 +167,7 @@ When executed with the `--with-description` option, output with short descriptio
 
 When executed with the `--with-license-file` option, output the location of the package's license file on disk and the full contents of that file. Due to the length of these fields, this option is best paired with `--format=json`.
 
+**Note:** If you want to keep the license file path secret, specify `--no-license-path` option together.
 
 ### Option: ignore-packages
 
@@ -216,7 +237,7 @@ By default, it is output to the `plain` format.
 
 #### Markdown
 
-When executed with the `--format=markdown` option, you can output list in markdown format. The `m` `md`  keyword is prepared as alias of `markdown`.
+When executed with the `--format=markdown` option, you can output list in markdown format. The `m` `md` keyword is prepared as alias of `markdown`.
 
 ```bash
 (venv) $ pip-licenses --format=markdown
@@ -235,7 +256,7 @@ When inserted in a markdown document, it is rendered as follows:
 
 #### reST
 
-When executed with the `--format=rst` option, you can output list in "[Grid tables](http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html#grid-tables)" of reStructuredText format. The `r` `rest`  keyword is prepared as alias of `rst`.
+When executed with the `--format=rst` option, you can output list in "[Grid tables](http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html#grid-tables)" of reStructuredText format. The `r` `rest` keyword is prepared as alias of `rst`.
 
 ```bash
 (venv) $ pip-licenses --format=rst
@@ -250,7 +271,7 @@ When executed with the `--format=rst` option, you can output list in "[Grid tabl
 
 #### Confluence
 
-When executed with the `--format=confluence` option, you can output list in Confluence (or JIRA) Wiki markup format. The `c` keyword is prepared as alias of `confluence`.
+When executed with the `--format=confluence` option, you can output list in [Confluence (or JIRA) Wiki markup](https://confluence.atlassian.com/doc/confluence-wiki-markup-251003035.html#ConfluenceWikiMarkup-Tables) format. The `c` keyword is prepared as alias of `confluence`.
 
 ```bash
 (venv) $ pip-licenses --format=confluence
@@ -286,7 +307,7 @@ When executed with the `--format=html` option, you can output list in HTML table
 
 #### JSON
 
-When executed with the `--format-json` option, you can output list in JSON format easily allowing post-processing. The `j` keyword is prepared as alias of `json`.
+When executed with the `--format=json` option, you can output list in JSON format easily allowing post-processing. The `j` keyword is prepared as alias of `json`.
 
 ```json
 [
@@ -308,28 +329,92 @@ When executed with the `--format-json` option, you can output list in JSON forma
 
 ```
 
-#### Deprecated options
+#### JSON LicenseFinder
 
-The following options will be deprecated in version 2.0.0. Please migrate to `--format` option.
+When executed with the `--format=json-license-finder` option, you can output list in JSON format that is identical to [LicenseFinder](https://github.com/pivotal/LicenseFinder). The `jlf` keyword is prepared as alias of `jlf`.
+This makes pip-licenses a drop-in replacement for LicenseFinder.
 
-* `--format-markdown`
-* `--format-rst`
-* `--format-confluence`
-* `--format-html`
-* `--format-json`
+```json
+[
+  {
+    "licenses": ["BSD"],
+    "name": "Django",
+    "version": "2.0.2"
+  },
+  {
+    "licenses": ["MIT"],
+    "name": "pytz",
+    "version": "2017.3"
+  }
+]
+
+```
+
+#### CSV
+
+When executed with the `--format=csv` option, you can output list in quoted CSV format. Useful when you want to copy/paste the output to an Excel sheet.
+
+```bash
+(venv) $ pip-licenses --format=csv
+"Name","Version","License"
+"Django","2.0.2","BSD"
+"pytz","2017.3","MIT"
+```
+
+#### Plain Vertical
+
+When executed with the `--format=plain-vertical` option, you can output a simple plain vertical output that is similar to Angular CLI's
+[--extractLicenses flag](https://angular.io/cli/build#options). This format minimizes rightward drift.
+
+```bash
+(venv) $ pip-licenses --format=plain-vertical --with-license-file --no-license-path
+pytest
+5.3.4
+MIT license
+The MIT License (MIT)
+
+Copyright (c) 2004-2020 Holger Krekel and others
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
 
 ### Option: summary
 
 When executed with the `--summary` option, you can output a summary of each license.
 
 ```bash
-(venv) $ pip-licenses --summary --from-classifier --with-system
+(venv) $ pip-licenses --summary --from=classifier --with-system
  Count  License
  2      BSD License
  4      MIT License
 ```
 
 **Note:** When using this option, only `--order=count` or `--order=license` has an effect for the `--order` option. And using `--with-authors` and `--with-urls` will be ignored.
+
+### Option: output\-file
+
+When executed with the `--output-file` option, write the result to the path specified by the argument.
+
+```
+(venv) $ pip-licenses --format=rst --output-file=/tmp/output.rst
+created path: /tmp/output.rst
+```
 
 ### More Information
 
@@ -358,18 +443,46 @@ $ docker run --rm myapp-licenses
  Flask         1.0.2    BSD License
  Jinja2        2.10     BSD License
  MarkupSafe    1.1.1    BSD License
- Werkzeug      0.14.1   BSD License
+ Werkzeug      0.15.2   BSD License
  itsdangerous  1.1.0    BSD License
 
 # Check with options
 $ docker run --rm myapp-licenses --summary
  Count  License
- 5      BSD
- 1      BSD-3-Clause
+ 4      BSD
+ 2      BSD-3-Clause
 
 # When you need help
 $ docker run --rm myapp-licenses --help
 ```
+
+**Note:** This Docker image can not check package licenses with C and C ++ Extensions. It only works with pure Python package dependencies.
+
+If you want to resolve build environment issues, try adding `build-base` packages and more.
+
+```diff
+--- a/Dockerfile
++++ b/Dockerfile
+@@ -7,6 +7,8 @@ WORKDIR ${APPDIR}
+
+ COPY ./docker/requirements.txt ${APPDIR}
+
++RUN set -ex && apk add --no-cache --update --virtual .py-deps \
++        build-base
+ RUN python3 -m venv ${APPDIR}/myapp \
+         && source ${APPDIR}/myapp/bin/activate
+```
+
+## About UnicodeEncodeError
+
+If a `UnicodeEncodeError` occurs, check your environment variables `LANG` and `LC_TYPE`.
+
+Often occurs in isolated environments such as Docker and tox.
+
+See useful reports:
+
+* [#35](https://github.com/raimon49/pip-licenses/issues/35)
+* [#45](https://github.com/raimon49/pip-licenses/issues/45)
 
 ## License
 
@@ -378,6 +491,7 @@ $ docker run --rm myapp-licenses --help
 ### Dependencies
 
 * [PTable](https://pypi.org/project/PTable/) by Luke Maurits and maintainer of fork version Kane Blueriver under the BSD-3-Clause License
+    * **Note:** Alternatively, it works fine with the [PrettyTable](https://pypi.org/project/PrettyTable/) package. (See also): [Allow using prettytable #52](https://github.com/raimon49/pip-licenses/pull/52)
 
 `pip-licenses` has been implemented in the policy to minimize the dependence on external package.
 

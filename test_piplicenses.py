@@ -1,5 +1,8 @@
-from __future__ import (division, print_function,
-                        absolute_import, unicode_literals)
+# -*- coding: utf-8 -*-
+# vim:fenc=utf-8 ff=unix ft=python ts=4 sw=4 sts=4 si et
+import copy
+import re
+import sys
 import unittest
 import json
 import tempfile
@@ -7,12 +10,13 @@ import os
 
 from email import message_from_string
 
-from prettytable.prettytable import (FRAME as RULE_FRAME, ALL as RULE_ALL,
-                                     HEADER as RULE_HEADER, NONE as RULE_NONE)
+import piplicenses
 from piplicenses import (__pkgname__, create_parser, output_colored,
                          create_licenses_table, get_output_fields, get_sortby,
                          factory_styled_table_with_args, create_warn_string,
                          find_license_from_classifier, create_output_string,
+                         select_license_by_source, save_if_needs,
+                         RULE_ALL, RULE_FRAME, RULE_HEADER, RULE_NONE,
                          DEFAULT_OUTPUT_FIELDS, SYSTEM_PACKAGES,
                          LICENSE_UNKNOWN)
 
@@ -24,11 +28,8 @@ class CommandLineTestCase(unittest.TestCase):
 
 
 class TestGetLicenses(CommandLineTestCase):
-    def setUp(self):
-        pass
 
     def _create_pkg_name_columns(self, table):
-        import copy
         index = DEFAULT_OUTPUT_FIELDS.index('Name')
 
         # XXX: access to private API
@@ -40,7 +41,6 @@ class TestGetLicenses(CommandLineTestCase):
         return pkg_name_columns
 
     def _create_license_columns(self, table):
-        import copy
         index = DEFAULT_OUTPUT_FIELDS.index('License')
 
         # XXX: access to private API
@@ -78,7 +78,7 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertNotIn('<table>', output_string)
 
     def test_from_classifier(self):
-        from_classifier_args = ['--from-classifier']
+        from_classifier_args = ['--from=classifier']
         args = self.parser.parse_args(from_classifier_args)
         table = create_licenses_table(args)
 
@@ -86,6 +86,19 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertIn('License', output_fields)
 
         license_columns = self._create_license_columns(table)
+        license_notation_as_classifier = 'MIT License'
+        self.assertIn(license_notation_as_classifier, license_columns)
+
+    def test_from_mixed(self):
+        from_classifier_args = ['--from=mixed']
+        args = self.parser.parse_args(from_classifier_args)
+        table = create_licenses_table(args)
+
+        output_fields = get_output_fields(args)
+        self.assertIn('License', output_fields)
+
+        license_columns = self._create_license_columns(table)
+        # Depending on the condition "MIT" or "BSD" etc.
         license_notation_as_classifier = 'MIT License'
         self.assertIn(license_notation_as_classifier, license_columns)
 
@@ -120,6 +133,27 @@ class TestGetLicenses(CommandLineTestCase):
         message = message_from_string(metadata_as_no_license)
         self.assertEqual(LICENSE_UNKNOWN,
                          find_license_from_classifier(message))
+
+    def test_select_license_by_source(self):
+        self.assertEqual('MIT License',
+                         select_license_by_source('classifier',
+                                                  'MIT License',
+                                                  'MIT'))
+
+        self.assertEqual(LICENSE_UNKNOWN,
+                         select_license_by_source('classifier',
+                                                  LICENSE_UNKNOWN,
+                                                  'MIT'))
+
+        self.assertEqual('MIT License',
+                         select_license_by_source('mixed',
+                                                  'MIT License',
+                                                  'MIT'))
+
+        self.assertEqual('MIT',
+                         select_license_by_source('mixed',
+                                                  LICENSE_UNKNOWN,
+                                                  'MIT'))
 
     def test_with_system(self):
         with_system_args = ['--with-system']
@@ -178,6 +212,19 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertIn('LicenseFile', output_string)
         self.assertIn('LicenseText', output_string)
 
+    def test_with_license_file_no_path(self):
+        with_license_file_args = ['--with-license-file', '--no-license-path']
+        args = self.parser.parse_args(with_license_file_args)
+
+        output_fields = get_output_fields(args)
+        self.assertNotEqual(output_fields, list(DEFAULT_OUTPUT_FIELDS))
+        self.assertNotIn('LicenseFile', output_fields)
+        self.assertIn('LicenseText', output_fields)
+
+        output_string = create_output_string(args)
+        self.assertNotIn('LicenseFile', output_string)
+        self.assertIn('LicenseText', output_string)
+
     def test_with_license_file_warning(self):
         with_license_file_args = ['--with-license-file', '--format=markdown']
         args = self.parser.parse_args(with_license_file_args)
@@ -186,7 +233,10 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertIn('best paired with --format=json', warn_string)
 
     def test_ignore_packages(self):
-        ignore_pkg_name = 'PTable'
+        if 'PTable' in SYSTEM_PACKAGES:
+            ignore_pkg_name = 'PTable'
+        else:
+            ignore_pkg_name = 'prettytable'
         ignore_packages_args = ['--ignore-package=' + ignore_pkg_name]
         args = self.parser.parse_args(ignore_packages_args)
         table = create_licenses_table(args)
@@ -290,6 +340,13 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertEqual('+', table.junction_char)
         self.assertEqual(RULE_FRAME, table.hrules)
 
+    def test_format_plain_vertical(self):
+        format_plain_args = ['--format=plain-vertical']
+        args = self.parser.parse_args(format_plain_args)
+        output_string = create_output_string(args)
+        self.assertIsNotNone(
+            re.search(r'pytest\n\d\.\d\.\d\nMIT license\n', output_string))
+
     def test_format_markdown(self):
         format_markdown_args = ['--format=markdown']
         args = self.parser.parse_args(format_markdown_args)
@@ -338,41 +395,24 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertIn('"Author":', output_string)
         self.assertNotIn('"URL":', output_string)
 
-    def test_format_compatibility(self):
-        format_old_style_args = ['--format-markdown']
-        args = self.parser.parse_args(format_old_style_args)
-        warn_string = create_warn_string(args)
+    def test_format_json_license_manager(self):
+        format_json_args = ['--format=json-license-finder']
+        args = self.parser.parse_args(format_json_args)
+        output_string = create_output_string(args)
 
-        self.assertEqual('markdown', args.format)
-        self.assertIn('deprecated', warn_string)
+        self.assertNotIn('"URL":', output_string)
+        self.assertIn('"name":', output_string)
+        self.assertIn('"version":', output_string)
+        self.assertIn('"licenses":', output_string)
 
-        format_old_style_args = ['--format-rst']
-        args = self.parser.parse_args(format_old_style_args)
-        warn_string = create_warn_string(args)
+    def test_format_csv(self):
+        format_csv_args = ['--format=csv', '--with-authors']
+        args = self.parser.parse_args(format_csv_args)
+        output_string = create_output_string(args)
 
-        self.assertEqual('rst', args.format)
-        self.assertIn('deprecated', warn_string)
-
-        format_old_style_args = ['--format-confluence']
-        args = self.parser.parse_args(format_old_style_args)
-        warn_string = create_warn_string(args)
-
-        self.assertEqual('confluence', args.format)
-        self.assertIn('deprecated', warn_string)
-
-        format_old_style_args = ['--format-html']
-        args = self.parser.parse_args(format_old_style_args)
-        warn_string = create_warn_string(args)
-
-        self.assertEqual('html', args.format)
-        self.assertIn('deprecated', warn_string)
-
-        format_old_style_args = ['--format-json']
-        args = self.parser.parse_args(format_old_style_args)
-        warn_string = create_warn_string(args)
-
-        self.assertEqual('json', args.format)
-        self.assertIn('deprecated', warn_string)
+        obtained_header = output_string.split('\n', 1)[0]
+        expected_header = '"Name","Version","License","Author"'
+        self.assertEqual(obtained_header, expected_header)
 
     def test_summary(self):
         summary_args = ['--summary']
@@ -432,5 +472,56 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertIn(text, actual)
         self.assertTrue(actual.endswith('\033[0m'))
 
-    def tearDown(self):
-        pass
+
+class MockStdStream(object):
+
+    def __init__(self):
+        self.printed = ''
+
+    def write(self, p):
+        self.printed = p
+
+
+def test_output_file_sccess(monkeypatch):
+    def mocked_open(*args, **kwargs):
+        import tempfile
+        return tempfile.TemporaryFile('w')
+
+    mocked_stdout = MockStdStream()
+    mocked_stderr = MockStdStream()
+    monkeypatch.setattr(piplicenses, 'open', mocked_open)
+    monkeypatch.setattr(sys.stdout, 'write', mocked_stdout.write)
+    monkeypatch.setattr(sys.stderr, 'write', mocked_stderr.write)
+    monkeypatch.setattr(sys, 'exit', lambda n: None)
+
+    save_if_needs('/foo/bar.txt', 'license list')
+    assert 'created path: ' in mocked_stdout.printed
+    assert '' == mocked_stderr.printed
+
+
+def test_output_file_error(monkeypatch):
+    def mocked_open(*args, **kwargs):
+        raise IOError
+
+    mocked_stdout = MockStdStream()
+    mocked_stderr = MockStdStream()
+    monkeypatch.setattr(piplicenses, 'open', mocked_open)
+    monkeypatch.setattr(sys.stdout, 'write', mocked_stdout.write)
+    monkeypatch.setattr(sys.stderr, 'write', mocked_stderr.write)
+    monkeypatch.setattr(sys, 'exit', lambda n: None)
+
+    save_if_needs('/foo/bar.txt', 'license list')
+    assert '' == mocked_stdout.printed
+    assert 'check path: ' in mocked_stderr.printed
+
+
+def test_output_file_none(monkeypatch):
+    mocked_stdout = MockStdStream()
+    mocked_stderr = MockStdStream()
+    monkeypatch.setattr(sys.stdout, 'write', mocked_stdout.write)
+    monkeypatch.setattr(sys.stderr, 'write', mocked_stderr.write)
+
+    save_if_needs(None, 'license list')
+    # stdout and stderr are expected not to be called
+    assert '' == mocked_stdout.printed
+    assert '' == mocked_stderr.printed

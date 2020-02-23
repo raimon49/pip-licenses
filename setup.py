@@ -49,11 +49,11 @@ def read_file(filename):
 
 LONG_DESC = ''
 try:
-    from pypandoc import convert
+    from pypandoc import convert_file
 
-    about_this = convert('README.md', 'rst', format='markdown_github')
+    about_this = convert_file('README.md', 'rst', format='markdown_github')
     separate = '\n\n'
-    change_log = convert('CHANGELOG.md', 'rst', format='markdown_github')
+    change_log = convert_file('CHANGELOG.md', 'rst', format='markdown_github')
 
     LONG_DESC = about_this + separate + change_log
 except (IOError, ImportError):
@@ -78,20 +78,18 @@ setup(
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
         'Topic :: System :: Systems Administration',
         'Topic :: System :: System Shells',
     ],
     keywords='pip pypi package license check',
     py_modules=['piplicenses'],
     license=LICENSE,
-    python_requires='>=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*',
+    python_requires='~=3.5',
     install_requires=['PTable'],
     setup_requires=[
         'pytest-runner',

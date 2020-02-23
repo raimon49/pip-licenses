@@ -26,8 +26,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-from __future__ import (division, print_function,
-                        absolute_import, unicode_literals)
 import sys
 import glob
 import os
@@ -35,20 +33,37 @@ import argparse
 import re
 import json
 import os.path
+from collections import Counter
 from functools import partial
 from email.parser import FeedParser
 from email import message_from_string
 
 try:
     from pip._internal.utils.misc import get_installed_distributions
-except ImportError:
+except ImportError:  # pragma: no cover
     from pip import get_installed_distributions
 from prettytable import PrettyTable
-from prettytable.prettytable import (FRAME as RULE_FRAME, ALL as RULE_ALL,
-                                     HEADER as RULE_HEADER, NONE as RULE_NONE)
+try:
+    from prettytable.prettytable import (
+        ALL as RULE_ALL,
+        FRAME as RULE_FRAME,
+        HEADER as RULE_HEADER,
+        NONE as RULE_NONE,
+    )
+    PTABLE = True
+except ImportError:  # pragma: no cover
+    from prettytable import (
+        ALL as RULE_ALL,
+        FRAME as RULE_FRAME,
+        HEADER as RULE_HEADER,
+        NONE as RULE_NONE,
+    )
+    PTABLE = False
+
+open = open  # allow monkey patching
 
 __pkgname__ = 'pip-licenses'
-__version__ = '1.12.1'
+__version__ = '2.1.1'
 __author__ = 'raimon'
 __license__ = 'MIT License'
 __summary__ = ('Dump the software license list of '
@@ -104,7 +119,7 @@ FIELDS_TO_METADATA_KEYS = {
 SYSTEM_PACKAGES = (
     __pkgname__,
     'pip',
-    'PTable',
+    'PTable' if PTABLE else 'prettytable',
     'setuptools',
     'wheel',
 )
@@ -123,19 +138,17 @@ def get_packages(args):
         license_text = LICENSE_UNKNOWN
         pkg_dirname = "{}-{}.dist-info".format(
             pkg.project_name.replace("-", "_"), pkg.version)
-        license_file_base = os.path.join(pkg.location, pkg_dirname, 'LICENSE*')
-        for test_file in glob.glob(license_file_base):
+        file_names = ('LICENSE*', 'COPYING*')
+        patterns = []
+        [patterns.extend(glob.glob(os.path.join(pkg.location,
+                                                pkg_dirname,
+                                                f))) for f in file_names]
+        for test_file in patterns:
             if os.path.exists(test_file):
                 license_file = test_file
-                with open(test_file) as license_file_handle:
-                    file_lines = license_file_handle.readlines()
-                try:
-                    # python 3 is happy with maybe-Unicode files
-                    license_text = "".join(file_lines)
-                except UnicodeDecodeError:
-                    # python 2 not so much
-                    license_text = "".join([line.decode('utf-8', 'replace')
-                                           for line in file_lines])
+                with open(test_file, encoding='utf-8',
+                          errors='backslashreplace') as license_file_handle:
+                    license_text = license_file_handle.read()
                 break
         return (license_file, license_text)
 
@@ -168,9 +181,16 @@ def get_packages(args):
         for key in METADATA_KEYS:
             pkg_info[key] = parsed_metadata.get(key, LICENSE_UNKNOWN)
 
-        if args.from_classifier and metadata is not None:
+        from_source = getattr(args, 'from')
+        need_classifier = from_source == 'classifier' or from_source == 'mixed'
+        if need_classifier and metadata is not None:
             message = message_from_string(metadata)
-            pkg_info['license'] = find_license_from_classifier(message)
+            license_classifier = find_license_from_classifier(message)
+            license_meta = pkg_info['license']
+            # Overwrite license by condition
+            pkg_info['license'] = select_license_by_source(from_source,
+                                                           license_classifier,
+                                                           license_meta)
 
         return pkg_info
 
@@ -194,8 +214,7 @@ def get_packages(args):
     included_packages = set([pkg.lower() for pkg in included_packages])
 
     for pkg in pkgs:
-        pkg_info = get_pkg_info(pkg)
-        pkg_name = pkg_info['name']
+        pkg_name = pkg.project_name
 
         if pkg_name.lower() in ignore_pkgs_as_lower:
             continue
@@ -203,10 +222,10 @@ def get_packages(args):
         if not args.with_system and pkg_name in SYSTEM_PACKAGES:
             continue
 
-        if (included_packages and
-                pkg_name.lower() not in included_packages):
+        if included_packages and pkg_name.lower() not in included_packages:
             continue
 
+        pkg_info = get_pkg_info(pkg)
         yield pkg_info
 
 
@@ -226,17 +245,11 @@ def create_licenses_table(args, output_fields=DEFAULT_OUTPUT_FIELDS):
 
 
 def create_summary_table(args):
-    licenses = {}
-    for pkg in get_packages(args):
-        if pkg['license'] not in licenses:
-            licenses.update({pkg['license']: 1})
-        else:
-            licenses[pkg['license']] += 1
+    counts = Counter(pkg['license'] for pkg in get_packages(args))
 
     table = factory_styled_table_with_args(args, SUMMARY_FIELD_NAMES)
-    for license in licenses.keys():
-        table.add_row([licenses[license],
-                       license, ])
+    for license, count in counts.items():
+        table.add_row([count, license])
     return table
 
 
@@ -270,6 +283,91 @@ class JsonPrettyTable(PrettyTable):
         return json.dumps(lines, indent=2, sort_keys=True)
 
 
+class JsonLicenseFinderTable(JsonPrettyTable):
+    def _format_row(self, row, options):
+        resrow = {}
+        for (field, value) in zip(self._field_names, row):
+            if field == 'Name':
+                resrow['name'] = value
+
+            if field == 'Version':
+                resrow['version'] = value
+
+            if field == 'License':
+                resrow['licenses'] = [value]
+
+        return resrow
+
+    def get_string(self, **kwargs):
+        # import included here in order to limit dependencies
+        # if not interested in JSON output,
+        # then the dependency is not required
+        import json
+
+        options = self._get_options(kwargs)
+        rows = self._get_rows(options)
+        formatted_rows = self._format_rows(rows, options)
+
+        lines = []
+        for row in formatted_rows:
+            lines.append(row)
+
+        return json.dumps(lines, sort_keys=True)
+
+
+class CSVPrettyTable(PrettyTable):
+    """PrettyTable-like class exporting to CSV"""
+
+    def get_string(self, **kwargs):
+
+        def esc_quotes(val):
+            """
+            Meta-escaping double quotes
+            https://tools.ietf.org/html/rfc4180
+            """
+            try:
+                return val.replace('"', '""')
+            except UnicodeDecodeError:  # pragma: no cover
+                return val.decode('utf-8').replace('"', '""')
+            except UnicodeEncodeError:  # pragma: no cover
+                return val.encode('unicode_escape').replace('"', '""')
+
+        options = self._get_options(kwargs)
+        rows = self._get_rows(options)
+        formatted_rows = self._format_rows(rows, options)
+
+        lines = []
+        formatted_header = ','.join(['"%s"' % (esc_quotes(val), )
+                                     for val in self._field_names])
+        lines.append(formatted_header)
+        for row in formatted_rows:
+            formatted_row = ','.join(['"%s"' % (esc_quotes(val), )
+                                      for val in row])
+            lines.append(formatted_row)
+
+        return '\n'.join(lines)
+
+
+class PlainVerticalTable(PrettyTable):
+    """PrettyTable for outputting to a simple non-column based style.
+
+    When used with --with-license-file, this style is similar to the default
+    style generated from Angular CLI's --extractLicenses flag.
+    """
+
+    def get_string(self, **kwargs):
+        options = self._get_options(kwargs)
+        rows = self._get_rows(options)
+
+        output = ''
+        for row in rows:
+            for v in row:
+                output += '{}\n'.format(v)
+            output += '\n'
+
+        return output
+
+
 def factory_styled_table_with_args(args, output_fields=DEFAULT_OUTPUT_FIELDS):
     table = PrettyTable()
     table.field_names = output_fields
@@ -289,6 +387,12 @@ def factory_styled_table_with_args(args, output_fields=DEFAULT_OUTPUT_FIELDS):
         table.hrules = RULE_NONE
     elif args.format == 'json':
         table = JsonPrettyTable(table.field_names)
+    elif args.format == 'json-license-finder':
+        table = JsonLicenseFinderTable(table.field_names)
+    elif args.format == 'csv':
+        table = CSVPrettyTable(table.field_names)
+    elif args.format == 'plain-vertical':
+        table = PlainVerticalTable(table.field_names)
 
     return table
 
@@ -311,6 +415,16 @@ def find_license_from_classifier(message):
     return license_from_classifier
 
 
+def select_license_by_source(from_source, license_classifier, license_meta):
+    if from_source == 'classifier':
+        return license_classifier
+    elif from_source == 'mixed':
+        if license_classifier != LICENSE_UNKNOWN:
+            return license_classifier
+        else:
+            return license_meta
+
+
 def get_output_fields(args):
     if args.summary:
         return list(SUMMARY_OUTPUT_FIELDS)
@@ -327,7 +441,9 @@ def get_output_fields(args):
         output_fields.append('Description')
 
     if args.with_license_file:
-        output_fields.append('LicenseFile')
+        if not args.no_license_path:
+            output_fields.append('LicenseFile')
+
         output_fields.append('LicenseText')
 
     return output_fields
@@ -380,12 +496,6 @@ def create_warn_string(args):
                         'will be ignored.'))
         warn_messages.append(message)
 
-    if (args.format_markdown or args.format_rst or args.format_confluence or
-            args.format_html or args.format_json):
-        message = warn(('The option "--format-xxx" is deprecated. '
-                       'Please migrate to "--format=xxx".'))
-        warn_messages.append(message)
-
     return '\n'.join(warn_messages)
 
 
@@ -399,10 +509,20 @@ class CompatibleArgumentParser(argparse.ArgumentParser):
         return args
 
     def _compatible_format_args(self, args):
+        from_input = getattr(args, 'from').lower()
         order_input = args.order.lower()
         format_input = args.format.lower()
 
-        # XXX: Use enum when drop support python 2.7
+        # XXX: Use enum when drop support Python 2.7
+        if from_input in ('meta', 'm'):
+            setattr(args, 'from', 'meta')
+
+        if from_input in ('classifier', 'c'):
+            setattr(args, 'from', 'classifier')
+
+        if from_input in ('mixed', 'mix'):
+            setattr(args, 'from', 'mixed')
+
         if order_input in ('count', 'c'):
             args.order = 'count'
 
@@ -436,16 +556,11 @@ class CompatibleArgumentParser(argparse.ArgumentParser):
         if format_input in ('json', 'j'):
             args.format = 'json'
 
-        if args.format_markdown:
-            args.format = 'markdown'
-        elif args.format_rst:
-            args.format = 'rst'
-        elif args.format_confluence:
-            args.format = 'confluence'
-        elif args.format_html:
-            args.format = 'html'
-        elif args.format_json:
-            args.format = 'json'
+        if format_input in ('json-license-finder', 'jlf'):
+            args.format = 'json-license-finder'
+
+        if format_input in ('csv', ):
+            args.format = 'csv'
 
 
 def create_parser():
@@ -454,10 +569,12 @@ def create_parser():
     parser.add_argument('-v', '--version',
                         action='version',
                         version='%(prog)s ' + __version__)
-    parser.add_argument('-c', '--from-classifier',
-                        action='store_true',
-                        default=False,
-                        help='find license from classifier')
+    parser.add_argument('--from',
+                        action='store', type=str,
+                        default='meta', metavar='SOURCE',
+                        help=('where to find license information\n'
+                              '"meta", "classifier, "mixed"\n'
+                              'default: --from=meta'))
     parser.add_argument('-s', '--with-system',
                         action='store_true',
                         default=False,
@@ -479,6 +596,11 @@ def create_parser():
                         default=False,
                         help='dump with location of license file and '
                              'contents, most useful with JSON output')
+    parser.add_argument('--no-license-path',
+                        action='store_true',
+                        default=False,
+                        help='when specified together with option -l, '
+                             'suppress location of license file output')
     parser.add_argument('-i', '--ignore-packages',
                         action='store', type=str,
                         nargs='+', metavar='PKG',
@@ -498,33 +620,17 @@ def create_parser():
                         action='store', type=str,
                         default='plain', metavar='STYLE',
                         help=('dump as set format style\n'
-                              '"plain", "markdown", "rst", "confluence",\n'
-                              '"html", "json"\n'
+                              '"plain", "plain-vertical" "markdown", "rst", \n'
+                              '"confluence", "html", "json", \n'
+                              '"json-license-finder",  "csv"\n'
                               'default: --format=plain'))
-    parser.add_argument('-m', '--format-markdown',
-                        action='store_true',
-                        default=False,
-                        help='dump as markdown style')
-    parser.add_argument('-r', '--format-rst',
-                        action='store_true',
-                        default=False,
-                        help='dump as reST style')
-    parser.add_argument('--format-confluence',
-                        action='store_true',
-                        default=False,
-                        help='dump as confluence wiki style')
-    parser.add_argument('--format-html',
-                        action='store_true',
-                        default=False,
-                        help='dump as html style')
-    parser.add_argument('--format-json',
-                        action='store_true',
-                        default=False,
-                        help='dump as json')
     parser.add_argument('--summary',
                         action='store_true',
                         default=False,
                         help='dump summary of each license')
+    parser.add_argument('--output-file',
+                        action='store', type=str,
+                        help='save license list to file')
 
     return parser
 
@@ -539,11 +645,32 @@ def output_colored(code, text, is_bold=False):
     return '\033[%sm%s\033[0m' % (code, text)
 
 
+def save_if_needs(output_file, output_string):
+    """
+    Save to path given by args
+    """
+    if output_file is None:
+        return
+
+    try:
+        with open(output_file, 'w', encoding='utf-8') as f:
+            f.write(output_string)
+        sys.stdout.write('created path: ' + output_file + '\n')
+        sys.exit(0)
+    except IOError:
+        sys.stderr.write('check path: --output-file\n')
+        sys.exit(1)
+
+
 def main():  # pragma: no cover
     parser = create_parser()
     args = parser.parse_args()
 
     output_string = create_output_string(args)
+
+    output_file = args.output_file
+    save_if_needs(output_file, output_string)
+
     print(output_string)
     warn_string = create_warn_string(args)
     if warn_string:

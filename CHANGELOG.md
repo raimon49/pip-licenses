@@ -1,5 +1,69 @@
 ## CHANGELOG
 
+### 2.1.1
+
+* Suppress errors when opening license files
+
+### 2.1.0
+
+* Implement new option `--format=plain-vertical`
+* Support for outputting license file named `COPYING *`
+
+### 2.0.1
+
+* Better license file open handling in Python 3
+
+### 2.0.0
+
+* Dropped support Python 2.7
+* Breaking changes
+    * Removed migration path to obsolete options
+        * `--from-classifier`
+        * `--format-markdown`
+        * `--format-rst`
+        * `--format-confluence`
+        * `--format-html`
+        * `--format-json`
+* Implement new option `--no-license-path`
+
+### 1.18.0
+
+* Supports compatibility to work with either PTable or prettytable
+
+### 1.17.0
+
+* Implement new option `--output-file`
+* Clarified support for Python 3.8
+
+### 1.16.1
+
+* Add a help text for `--format=json-license-finder` option
+
+### 1.16.0
+
+* Implement new option `--format=json-license-finder`
+
+### 1.15.2
+
+* Read license file works well with Windows
+
+### 1.15.1
+
+* Skip parsing of license file for packages specified with `--ignore-packages` option
+
+### 1.15.0
+
+* Implement new option `--format=csv`
+
+### 1.14.0
+
+* Implement new option `--from=mixed` as a mixed mode
+
+### 1.13.0
+
+* Implement new option `--from=meta`, `from=classifier`
+* Dropped support Python 3.4
+
 ### 1.12.1
 
 * Fix bug
