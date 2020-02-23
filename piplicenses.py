@@ -197,19 +197,23 @@ def get_packages(args):
     pkgs = get_installed_distributions()
     ignore_pkgs_as_lower = [pkg.lower() for pkg in args.ignore_packages]
 
+    # optionally downselect on specific packages of interest within python environment  
     included_packages = []
     for pkg in args.packages:  # iterate through included packages
         if not os.path.isfile(pkg):
             included_packages.append(pkg)
         elif pkg.endswith('.json'):
+            # NOTE: this is included for compatibility with pydeps JSON output
             with open(pkg) as f:
                 included_packages += json.loads(f.read().replace("'", '"'))
         else:
+            # assume requirements file
             with open(pkg) as f:
                 included_packages += [
                     re.sub('(.*)(#.*|^[ ]{0,}|[=><].*|;.*)\n$',
                            r'\1', line).replace('\n', '')
                     for line in f.readlines()]
+
     # ensure each package only occurs once and that we ignore case
     included_packages = set([pkg.lower() for pkg in included_packages])
 
