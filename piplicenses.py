@@ -197,7 +197,7 @@ def get_packages(args):
     pkgs = get_installed_distributions()
     ignore_pkgs_as_lower = [pkg.lower() for pkg in args.ignore_packages]
 
-    # optionally downselect on specific packages of interest within python environment  
+    # optionally downselect on specific packages of interest within python env
     included_packages = []
     for pkg in args.packages:  # iterate through included packages
         if not os.path.isfile(pkg):
