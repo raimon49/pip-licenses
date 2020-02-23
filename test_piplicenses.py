@@ -20,6 +20,15 @@ from piplicenses import (__pkgname__, create_parser, output_colored,
                          DEFAULT_OUTPUT_FIELDS, SYSTEM_PACKAGES,
                          LICENSE_UNKNOWN)
 
+# create a dummy subset of dev-requirements.txt for testing --package option
+test_requirements = """coverage
+pip-tools
+pkginfo
+pytest-cov
+pytest-pycodestyle
+pytest-runner
+"""
+
 
 class CommandLineTestCase(unittest.TestCase):
     @classmethod
@@ -233,7 +242,7 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertIn('best paired with --format=json', warn_string)
 
     def test_ignore_packages(self):
-        ignore_pkg_name = 'prettytable'
+        ignore_pkg_name = 'pytest'
         ignore_packages_args = ['--ignore-package=' + ignore_pkg_name]
         args = self.parser.parse_args(ignore_packages_args)
         table = create_licenses_table(args)
@@ -241,17 +250,29 @@ class TestGetLicenses(CommandLineTestCase):
         pkg_name_columns = self._create_pkg_name_columns(table)
         self.assertNotIn(ignore_pkg_name, pkg_name_columns)
 
-    def test_include_packages(self):
+    def test_include_packages_with_package_name(self):
         # test individual include
-        include_pkg_name = 'prettytable'
+        include_pkg_name = 'pytest'
         include_packages_args = ['--package=' + include_pkg_name]
         args = self.parser.parse_args(include_packages_args)
         table = create_licenses_table(args)
-
         pkg_name_columns = self._create_pkg_name_columns(table)
         self.assertIn(include_pkg_name, pkg_name_columns)
 
-        included_packages = [include_pkg_name]
+    def test_include_packages_with_multiple_package_names_specified(self):
+        include_pkg_names = ['pip-tools', 'codecov', 'pytest']
+        include_packages_args = ['--package=' + pkg
+                                 for pkg in include_pkg_names]
+        args = self.parser.parse_args(include_packages_args)
+        table = create_licenses_table(args)
+        pkg_name_columns = self._create_pkg_name_columns(table)
+        for pkg in include_pkg_names:
+            self.assertIn(pkg, pkg_name_columns)
+        self.assertEqual(len(include_pkg_names), len(pkg_name_columns))
+
+    def test_include_packages_with_json_file(self):
+        # tests JSON style output from pydeps as input into pip-licenses
+        included_packages = ['pip-tools', 'coverage']
         with tempfile.TemporaryDirectory() as tempdir:
             # test json include
             json_path = os.path.join(tempdir, 'deps.json')
@@ -266,10 +287,17 @@ class TestGetLicenses(CommandLineTestCase):
             pkg_name_columns = self._create_pkg_name_columns(table)
             self.assertIn(included_packages[0], pkg_name_columns)
 
-            # test requirements.txt include
-            requirements_txt_path = os.path.join(tempdir, 'requirements.txt')
+    def test_include_packages_with_requirements_file(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            requirements_txt_path = \
+                os.path.join(tempdir, 'test-requirements.txt')
             with open(requirements_txt_path, 'w') as f:
-                f.write('\n'.join(included_packages))
+                f.write(test_requirements)
+
+            # crude - should work for requirements.txt here:
+            included_packages = [line.strip('\n')  # noqa
+                for line in open(requirements_txt_path).readlines()
+                if not line.startswith('#') and line.strip('\n')]  # noqa
 
             include_packages_args = ['--package=' + requirements_txt_path]
             args = self.parser.parse_args(include_packages_args)
@@ -278,18 +306,6 @@ class TestGetLicenses(CommandLineTestCase):
             pkg_name_columns = self._create_pkg_name_columns(table)
             for pkg in included_packages:
                 self.assertIn(pkg, pkg_name_columns)
-
-            # test combination
-            include_packages_args += ['--package=' + json_path,
-                                      '--package', included_packages[0]]
-            args = self.parser.parse_args(include_packages_args)
-            table = create_licenses_table(args)
-
-            pkg_name_columns = self._create_pkg_name_columns(table)
-            for pkg in included_packages:
-                self.assertIn(pkg, pkg_name_columns)
-                # check each package only appears once
-                self.assertEqual(included_packages.count(pkg), 1)
 
     def test_order_name(self):
         order_name_args = ['--order=name']

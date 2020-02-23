@@ -606,13 +606,12 @@ def create_parser():
                         help='when specified together with option -l, '
                              'suppress location of license file output')
     parser.add_argument('-i', '--ignore-packages',
-                        action='store', type=str,
-                        nargs='+', metavar='PKG',
-                        default=[],
+                        action='append', type=str,
+                        default=[], metavar='PKG',
                         help='ignore package name in dumped list')
     parser.add_argument('-p', '--packages',
-                        action='store', type=str,
-                        nargs='+', metavar='INCLUDES', default=[],
+                        action='append', type=str,
+                        metavar='INCLUDES', default=[],
                         help='Only include selected packages in output')
     parser.add_argument('-o', '--order',
                         action='store', type=str,
