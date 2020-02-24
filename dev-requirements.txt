@@ -6,7 +6,7 @@
 #
 attrs==19.3.0             # via pytest
 autopep8==1.5
-bleach==3.1.0             # via readme-renderer
+bleach==3.1.1             # via readme-renderer
 certifi==2019.11.28       # via requests
 chardet==3.0.4            # via requests
 click==7.0                # via pip-tools
