@@ -4,4 +4,4 @@
 #
 #    pip-compile requirements.in
 #
-ptable==0.9.2
+ptable==0.9.2             # via -r requirements.in
