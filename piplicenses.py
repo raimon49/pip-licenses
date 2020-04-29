@@ -60,7 +60,7 @@ except ImportError:  # pragma: no cover
 open = open  # allow monkey patching
 
 __pkgname__ = 'pip-licenses'
-__version__ = '2.1.1'
+__version__ = '2.2.0'
 __author__ = 'raimon'
 __license__ = 'MIT License'
 __summary__ = ('Dump the software license list of '
@@ -74,6 +74,8 @@ FIELD_NAMES = (
     'License',
     'LicenseFile',
     'LicenseText',
+    'NoticeFile',
+    'NoticeText',
     'Author',
     'Description',
     'URL',
@@ -126,37 +128,45 @@ LICENSE_UNKNOWN = 'UNKNOWN'
 
 def get_packages(args):
 
-    def get_pkg_license_file(pkg):
+    def get_pkg_included_file(pkg, file_names):
         """
-        Attempt to find the package's LICENSE file on disk and return the
-        tuple (license_file_path, license_file_contents).
+        Attempt to find the package's included file on disk and return the
+        tuple (included_file_path, included_file_contents).
         """
-        license_file = LICENSE_UNKNOWN
-        license_text = LICENSE_UNKNOWN
+        included_file = LICENSE_UNKNOWN
+        included_text = LICENSE_UNKNOWN
         pkg_dirname = "{}-{}.dist-info".format(
             pkg.project_name.replace("-", "_"), pkg.version)
-        file_names = ('LICENSE*', 'COPYING*')
         patterns = []
         [patterns.extend(glob.glob(os.path.join(pkg.location,
                                                 pkg_dirname,
                                                 f))) for f in file_names]
         for test_file in patterns:
             if os.path.exists(test_file):
-                license_file = test_file
+                included_file = test_file
                 with open(test_file, encoding='utf-8',
-                          errors='backslashreplace') as license_file_handle:
-                    license_text = license_file_handle.read()
+                          errors='backslashreplace') as included_file_handle:
+                    included_text = included_file_handle.read()
                 break
-        return (license_file, license_text)
+        return (included_file, included_text)
 
     def get_pkg_info(pkg):
-        (license_file, license_text) = get_pkg_license_file(pkg)
+        (license_file, license_text) = get_pkg_included_file(
+            pkg,
+            ('LICENSE*', 'LICENCE*', 'COPYING*')
+        )
+        (notice_file, notice_text) = get_pkg_included_file(
+            pkg,
+            ('NOTICE*',)
+        )
         pkg_info = {
             'name': pkg.project_name,
             'version': pkg.version,
             'namever': str(pkg),
             'licensefile': license_file,
             'licensetext': license_text,
+            'noticefile': notice_file,
+            'noticetext': notice_text,
         }
         metadata = None
         if pkg.has_metadata('METADATA'):
@@ -423,6 +433,11 @@ def get_output_fields(args):
 
         output_fields.append('LicenseText')
 
+        if args.with_notice_file:
+            output_fields.append('NoticeText')
+            if not args.no_license_path:
+                output_fields.append('NoticeFile')
+
     return output_fields
 
 
@@ -578,6 +593,11 @@ def create_parser():
                         default=False,
                         help='when specified together with option -l, '
                              'suppress location of license file output')
+    parser.add_argument('--with-notice-file',
+                        action='store_true',
+                        default=False,
+                        help='when specified together with option -l, '
+                             'dump with location of license file and contents')
     parser.add_argument('-i', '--ignore-packages',
                         action='store', type=str,
                         nargs='+', metavar='PKG',
