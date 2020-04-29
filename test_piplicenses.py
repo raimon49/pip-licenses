@@ -203,23 +203,49 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertNotEqual(output_fields, list(DEFAULT_OUTPUT_FIELDS))
         self.assertIn('LicenseFile', output_fields)
         self.assertIn('LicenseText', output_fields)
+        self.assertNotIn('NoticeFile', output_fields)
+        self.assertNotIn('NoticeText', output_fields)
 
         output_string = create_output_string(args)
         self.assertIn('LicenseFile', output_string)
         self.assertIn('LicenseText', output_string)
+        self.assertNotIn('NoticeFile', output_string)
+        self.assertNotIn('NoticeText', output_string)
+
+    def test_with_notice_file(self):
+        with_license_file_args = ['--with-license-file', '--with-notice-file']
+        args = self.parser.parse_args(with_license_file_args)
+
+        output_fields = get_output_fields(args)
+        self.assertNotEqual(output_fields, list(DEFAULT_OUTPUT_FIELDS))
+        self.assertIn('LicenseFile', output_fields)
+        self.assertIn('LicenseText', output_fields)
+        self.assertIn('NoticeFile', output_fields)
+        self.assertIn('NoticeText', output_fields)
+
+        output_string = create_output_string(args)
+        self.assertIn('LicenseFile', output_string)
+        self.assertIn('LicenseText', output_string)
+        self.assertIn('NoticeFile', output_string)
+        self.assertIn('NoticeText', output_string)
 
     def test_with_license_file_no_path(self):
-        with_license_file_args = ['--with-license-file', '--no-license-path']
+        with_license_file_args = ['--with-license-file', '--with-notice-file',
+                                  '--no-license-path']
         args = self.parser.parse_args(with_license_file_args)
 
         output_fields = get_output_fields(args)
         self.assertNotEqual(output_fields, list(DEFAULT_OUTPUT_FIELDS))
         self.assertNotIn('LicenseFile', output_fields)
         self.assertIn('LicenseText', output_fields)
+        self.assertNotIn('NoticeFile', output_fields)
+        self.assertIn('NoticeText', output_fields)
 
         output_string = create_output_string(args)
         self.assertNotIn('LicenseFile', output_string)
         self.assertIn('LicenseText', output_string)
+        self.assertNotIn('NoticeFile', output_string)
+        self.assertIn('NoticeText', output_string)
 
     def test_with_license_file_warning(self):
         with_license_file_args = ['--with-license-file', '--format=markdown']
