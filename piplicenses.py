@@ -74,6 +74,8 @@ FIELD_NAMES = (
     'License',
     'LicenseFile',
     'LicenseText',
+    'NoticeFile',
+    'NoticeText',
     'Author',
     'Description',
     'URL',
@@ -153,12 +155,18 @@ def get_packages(args):
             pkg,
             ('LICENSE*', 'LICENCE*', 'COPYING*')
         )
+        (notice_file, notice_text) = get_pkg_included_file(
+            pkg,
+            ('NOTICE*',)
+        )
         pkg_info = {
             'name': pkg.project_name,
             'version': pkg.version,
             'namever': str(pkg),
             'licensefile': license_file,
             'licensetext': license_text,
+            'noticefile': notice_file,
+            'noticetext': notice_text,
         }
         metadata = None
         if pkg.has_metadata('METADATA'):
@@ -425,6 +433,11 @@ def get_output_fields(args):
 
         output_fields.append('LicenseText')
 
+        if args.with_notice_file:
+            output_fields.append('NoticeText')
+            if not args.no_license_path:
+                output_fields.append('NoticeFile')
+
     return output_fields
 
 
@@ -580,6 +593,11 @@ def create_parser():
                         default=False,
                         help='when specified together with option -l, '
                              'suppress location of license file output')
+    parser.add_argument('--with-notice-file',
+                        action='store_true',
+                        default=False,
+                        help='when specified together with option -l, '
+                             'dump with location of license file and contents')
     parser.add_argument('-i', '--ignore-packages',
                         action='store', type=str,
                         nargs='+', metavar='PKG',
