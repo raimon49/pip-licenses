@@ -3,7 +3,7 @@
 ### 2.2.0
 
 * Implement new option `--with-notice-file`
-* Added to find British style file name `LICENCE` with run '--with-license-file'
+* Added to find British style file name `LICENCE` with run `--with-license-file`
 
 ### 2.1.1
 
