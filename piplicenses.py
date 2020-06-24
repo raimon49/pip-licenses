@@ -139,8 +139,9 @@ def get_packages(args):
             pkg.project_name.replace("-", "_"), pkg.version)
         patterns = []
         [patterns.extend(sorted(glob.glob(os.path.join(pkg.location,
-                                                pkg_dirname,
-                                                f)))) for f in file_names]
+                                                       pkg_dirname,
+                                                       f))))
+         for f in file_names]
         for test_file in patterns:
             if os.path.exists(test_file):
                 included_file = test_file
