@@ -60,7 +60,7 @@ except ImportError:  # pragma: no cover
 open = open  # allow monkey patching
 
 __pkgname__ = 'pip-licenses'
-__version__ = '2.2.0'
+__version__ = '2.2.1'
 __author__ = 'raimon'
 __license__ = 'MIT License'
 __summary__ = ('Dump the software license list of '
@@ -138,9 +138,10 @@ def get_packages(args):
         pkg_dirname = "{}-{}.dist-info".format(
             pkg.project_name.replace("-", "_"), pkg.version)
         patterns = []
-        [patterns.extend(glob.glob(os.path.join(pkg.location,
-                                                pkg_dirname,
-                                                f))) for f in file_names]
+        [patterns.extend(sorted(glob.glob(os.path.join(pkg.location,
+                                                       pkg_dirname,
+                                                       f))))
+         for f in file_names]
         for test_file in patterns:
             if os.path.exists(test_file):
                 included_file = test_file
