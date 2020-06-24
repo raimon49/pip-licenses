@@ -2,12 +2,12 @@
 
 ### 2.2.1
 
-* Fixed the file that is selected when multiple matches are made with "LICENSE" with run '--with-license-file'
+* Fixed the file that is selected when multiple matches are made with `LICENSE*` with run `--with-license-file`
 
 ### 2.2.0
 
 * Implement new option `--with-notice-file`
-* Added to find British style file name `LICENCE` with run '--with-license-file'
+* Added to find British style file name `LICENCE` with run `--with-license-file`
 
 ### 2.1.1
 
