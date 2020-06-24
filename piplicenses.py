@@ -138,9 +138,9 @@ def get_packages(args):
         pkg_dirname = "{}-{}.dist-info".format(
             pkg.project_name.replace("-", "_"), pkg.version)
         patterns = []
-        [patterns.extend(glob.glob(os.path.join(pkg.location,
+        [patterns.extend(sorted(glob.glob(os.path.join(pkg.location,
                                                 pkg_dirname,
-                                                f))) for f in file_names]
+                                                f)))) for f in file_names]
         for test_file in patterns:
             if os.path.exists(test_file):
                 included_file = test_file
