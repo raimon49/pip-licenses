@@ -4,6 +4,10 @@ import copy
 import re
 import sys
 import unittest
+import docutils.nodes
+import docutils.parsers.rst
+import docutils.utils
+import docutils.frontend
 from email import message_from_string
 
 import piplicenses
@@ -46,6 +50,18 @@ class TestGetLicenses(CommandLineTestCase):
             pkg_name_columns.append(row[index])
 
         return pkg_name_columns
+
+    # from https://stackoverflow.com/questions/12883428/ ...
+    # ... how-to-parse-restructuredtext-in-python
+    @staticmethod
+    def check_rst(text: str):
+        parser = docutils.parsers.rst.Parser()
+        components = (docutils.parsers.rst.Parser,)
+        settings = docutils.frontend.\
+            OptionParser(components=components).get_default_values()
+        settings.halt_level = 3
+        document = docutils.utils.new_document('<rst-doc>', settings=settings)
+        parser.parse(text, document)
 
     def test_with_empty_args(self):
         empty_args = []
@@ -322,7 +338,7 @@ class TestGetLicenses(CommandLineTestCase):
     def test_format_markdown(self):
         format_markdown_args = ['--format=markdown']
         args = self.parser.parse_args(format_markdown_args)
-        table = factory_styled_table_with_args(args)
+        table = create_licenses_table(args)
 
         self.assertIn('l', table.align.values())
         self.assertTrue(table.border)
@@ -333,18 +349,19 @@ class TestGetLicenses(CommandLineTestCase):
     def test_format_rst(self):
         format_rst_args = ['--format=rst']
         args = self.parser.parse_args(format_rst_args)
-        table = factory_styled_table_with_args(args)
+        table = create_licenses_table(args)
 
         self.assertIn('l', table.align.values())
         self.assertTrue(table.border)
         self.assertTrue(table.header)
         self.assertEqual('+', table.junction_char)
         self.assertEqual(RULE_ALL, table.hrules)
+        self.check_rst(str(table))
 
     def test_format_confluence(self):
         format_confluence_args = ['--format=confluence']
         args = self.parser.parse_args(format_confluence_args)
-        table = factory_styled_table_with_args(args)
+        table = create_licenses_table(args)
 
         self.assertIn('l', table.align.values())
         self.assertTrue(table.border)
