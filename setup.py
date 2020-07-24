@@ -61,6 +61,7 @@ except (IOError, ImportError):
 
 
 TEST_DEPENDS = [
+    'docutils',
     'pytest-cov',
     'pytest-pycodestyle',
     'pytest-runner',

@@ -4,11 +4,12 @@ import copy
 import re
 import sys
 import unittest
+from email import message_from_string
+
 import docutils.nodes
 import docutils.parsers.rst
 import docutils.utils
 import docutils.frontend
-from email import message_from_string
 
 import piplicenses
 from piplicenses import (__pkgname__, create_parser, output_colored,
