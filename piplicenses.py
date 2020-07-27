@@ -26,6 +26,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+import codecs
 import sys
 import glob
 import os
@@ -199,6 +200,11 @@ def get_packages(args):
             pkg_info['license'] = select_license_by_source(from_source,
                                                            license_classifier,
                                                            license_meta)
+        if args.filter_strings:
+            for k in pkg_info:
+                pkg_info[k] = pkg_info[k]. \
+                    encode(args.filter_code_page, errors="ignore"). \
+                    decode(args.filter_code_page)
 
         return pkg_info
 
@@ -498,10 +504,23 @@ class CompatibleArgumentParser(argparse.ArgumentParser):
         args = super(CompatibleArgumentParser, self).parse_args(args,
                                                                 namespace)
         self._compatible_format_args(args)
+        self._check_code_page(args.filter_code_page)
 
         return args
 
-    def _compatible_format_args(self, args):
+    @staticmethod
+    def _check_code_page(code_page):
+        try:
+            codecs.lookup(code_page)
+        except LookupError:
+            print(("error: invalid code page '%s' given for "
+                   "--filter-code-page;\n"
+                   "       check https://docs.python.org/3/library/"
+                   "codecs.html for valid code pages") % code_page)
+            sys.exit(1)
+
+    @staticmethod
+    def _compatible_format_args(args):
         from_input = getattr(args, 'from').lower()
         order_input = args.order.lower()
         format_input = args.format.lower()
@@ -618,6 +637,14 @@ def create_parser():
                               '"confluence", "html", "json", \n'
                               '"json-license-finder",  "csv"\n'
                               'default: --format=plain'))
+    parser.add_argument('--filter-strings',
+                        action="store_true",
+                        default=False,
+                        help=('filter input according to code page'))
+    parser.add_argument('--filter-code-page',
+                        action="store", type=str,
+                        default="latin1",
+                        help=('specify code page for filtering'))
     parser.add_argument('--summary',
                         action='store_true',
                         default=False,

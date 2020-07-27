@@ -22,6 +22,20 @@ from piplicenses import (__pkgname__, create_parser, output_colored,
                          LICENSE_UNKNOWN)
 
 
+UNICODE_APPENDIX = "🐍🐓🐿️"
+
+
+def get_installed_distributions_mocked(*args, **kwargs):
+    packages = get_installed_distributions_orig(*args, **kwargs)
+    if not packages[-1].project_name.endswith(UNICODE_APPENDIX):
+        packages[-1].project_name += " "+UNICODE_APPENDIX
+    return packages
+
+
+get_installed_distributions_orig = piplicenses.get_installed_distributions
+piplicenses.get_installed_distributions = get_installed_distributions_mocked
+
+
 class CommandLineTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -347,8 +361,21 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertEqual('|', table.junction_char)
         self.assertEqual(RULE_HEADER, table.hrules)
 
-    def test_format_rst(self):
+    def test_format_rst_without_filter(self):
         format_rst_args = ['--format=rst']
+        args = self.parser.parse_args(format_rst_args)
+        table = create_licenses_table(args)
+
+        self.assertIn('l', table.align.values())
+        self.assertTrue(table.border)
+        self.assertTrue(table.header)
+        self.assertEqual('+', table.junction_char)
+        self.assertEqual(RULE_ALL, table.hrules)
+        with self.assertRaises(docutils.utils.SystemMessage):
+            self.check_rst(str(table))
+
+    def test_format_rst_default_filter(self):
+        format_rst_args = ['--format=rst', '--filter-strings']
         args = self.parser.parse_args(format_rst_args)
         table = create_licenses_table(args)
 
@@ -461,6 +488,27 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertTrue(actual.startswith('\033[1;32'))
         self.assertIn(text, actual)
         self.assertTrue(actual.endswith('\033[0m'))
+
+    def test_without_filter(self):
+        args = self.parser.parse_args([])
+        packages = list(piplicenses.get_packages(args))
+        self.assertIn(UNICODE_APPENDIX, packages[-1]["name"])
+
+    def test_with_default_filter(self):
+        args = self.parser.parse_args(["--filter-strings"])
+        packages = list(piplicenses.get_packages(args))
+        self.assertNotIn(UNICODE_APPENDIX, packages[-1]["name"])
+
+    def test_with_specified_filter(self):
+        args = self.parser.parse_args(["--filter-strings",
+                                       "--filter-code-page=ascii"])
+        packages = list(piplicenses.get_packages(args))
+        self.assertNotIn(UNICODE_APPENDIX, packages[-1]["summary"])
+
+    def test_invalid_code_page(self):
+        with self.assertRaises(SystemExit):
+            self.parser.parse_args(["--filter-strings",
+                                    "--filter-code-page=XXX"])
 
 
 class MockStdStream(object):
