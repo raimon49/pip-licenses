@@ -394,7 +394,7 @@ Some package data contains Unicode characters which might cause problems for cer
 
 ### Option: filter\-code\-page
 
-If the input strings are filtered (see `--filter-strings`), you can specify the applied code page (default `latin-1`). A list of all available code pages can be found [here](https://docs.python.org/3/library/codecs.html#standard-encodings).
+If the input strings are filtered (see `--filter-strings`), you can specify the applied code page (default `latin-1`). A list of all available code pages can be found [codecs module document](https://docs.python.org/3/library/codecs.html#standard-encodings).
 
 ### More Information
 
