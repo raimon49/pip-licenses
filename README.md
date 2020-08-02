@@ -29,6 +29,8 @@ Dump the software license list of Python packages installed with pip.
         * [Plain Vertical](#plain-vertical)
     * [Option: summary](#option-summary)
     * [Option: output\-file](#option-output-file)
+    * [Option: filter\-strings](#option-filter-strings)
+    * [Option: filter\-code\-page](#option-filter-code-page)
     * [More Information](#more-information)
 * [Dockerfile](#dockerfile)
 * [About UnicodeEncodeError](#about-unicodeencodeerror)
@@ -385,6 +387,14 @@ When executed with the `--output-file` option, write the result to the path spec
 (venv) $ pip-licenses --format=rst --output-file=/tmp/output.rst
 created path: /tmp/output.rst
 ```
+
+### Option: filter\-strings
+
+Some package data contains Unicode characters which might cause problems for certain output formats (in particular ReST tables). If this filter is enabled, all characters which cannot be encoded with a given code page (see `--filter-code-page`) will be removed from any input strings (e.g. package name, description).
+
+### Option: filter\-code\-page
+
+If the input strings are filtered (see `--filter-strings`), you can specify the applied code page (default `latin-1`). A list of all available code pages can be found [here](https://docs.python.org/3/library/codecs.html#standard-encodings).
 
 ### More Information
 
