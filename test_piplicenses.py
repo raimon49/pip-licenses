@@ -363,6 +363,8 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertEqual('|', table.junction_char)
         self.assertEqual(RULE_HEADER, table.hrules)
 
+    @unittest.skipIf(sys.version_info < (3, 6, 0),
+                     "To unsupport Python 3.5 in the near future")
     def test_format_rst_without_filter(self):
         format_rst_args = ['--format=rst']
         args = self.parser.parse_args(format_rst_args)
