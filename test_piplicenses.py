@@ -6,7 +6,6 @@ import sys
 import unittest
 from email import message_from_string
 
-import docutils.nodes
 import docutils.parsers.rst
 import docutils.utils
 import docutils.frontend
@@ -22,7 +21,10 @@ from piplicenses import (__pkgname__, create_parser, output_colored,
                          LICENSE_UNKNOWN)
 
 
-UNICODE_APPENDIX = "🐍🐓🐿️"
+UNICODE_APPENDIX = ""
+with open('tests/fixtures/unicode_characters.txt', encoding='utf-8') as f:
+    # Read from external file considering a terminal that cannot handle "emoji"
+    UNICODE_APPENDIX = f.readline().replace("\n", "")
 
 
 def get_installed_distributions_mocked(*args, **kwargs):
