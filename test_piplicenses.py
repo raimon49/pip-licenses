@@ -106,9 +106,21 @@ class TestGetLicenses(CommandLineTestCase):
         output_string = create_output_string(args)
         self.assertNotIn('<table>', output_string)
 
+    def test_from_meta(self):
+        from_args = ['--from=meta']
+        args = self.parser.parse_args(from_args)
+        table = create_licenses_table(args)
+
+        output_fields = get_output_fields(args)
+        self.assertIn('License', output_fields)
+
+        license_columns = self._create_license_columns(table)
+        license_notation_as_meta = 'BSD-3-Clause'
+        self.assertIn(license_notation_as_meta, license_columns)
+
     def test_from_classifier(self):
-        from_classifier_args = ['--from=classifier']
-        args = self.parser.parse_args(from_classifier_args)
+        from_args = ['--from=classifier']
+        args = self.parser.parse_args(from_args)
         table = create_licenses_table(args)
 
         output_fields = get_output_fields(args)
@@ -119,8 +131,8 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertIn(license_notation_as_classifier, license_columns)
 
     def test_from_mixed(self):
-        from_classifier_args = ['--from=mixed']
-        args = self.parser.parse_args(from_classifier_args)
+        from_args = ['--from=mixed']
+        args = self.parser.parse_args(from_args)
         table = create_licenses_table(args)
 
         output_fields = get_output_fields(args)
