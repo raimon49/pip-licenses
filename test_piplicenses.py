@@ -346,11 +346,11 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertEqual(RULE_FRAME, table.hrules)
 
     def test_format_plain_vertical(self):
-        format_plain_args = ['--format=plain-vertical']
+        format_plain_args = ['--format=plain-vertical', '--from=classifier']
         args = self.parser.parse_args(format_plain_args)
         output_string = create_output_string(args)
         self.assertIsNotNone(
-            re.search(r'pytest\n\d\.\d\.\d\nMIT license\n', output_string))
+            re.search(r'pytest\n\d\.\d\.\d\nMIT License\n', output_string))
 
     def test_format_markdown(self):
         format_markdown_args = ['--format=markdown']
