@@ -81,7 +81,7 @@ Execute the command with your venv (or virtualenv) environment.
 
 ### Option: from
 
-By default, this tool finds the license from [Trove Classifiers](https://pypi.org/classifiers/) or package Metadata (`--from=meta`). Some Python packages declare their license only in Trove Classifiers.
+By default, this tool finds the license from [Trove Classifiers](https://pypi.org/classifiers/) or package Metadata. Some Python packages declare their license only in Trove Classifiers.
 
 (See also): [Set license to MIT in setup.py by alisianoi ・ Pull Request #1058 ・ pypa/setuptools](https://github.com/pypa/setuptools/pull/1058), [PEP 314\#License](https://www.python.org/dev/peps/pep-0314/#license)
 
@@ -114,6 +114,7 @@ If you want to looks only in metadata, use `--from=meta`. If you want to looks o
 * The `m` keyword is prepared as alias of `meta`.
 * The `c` keyword is prepared as alias of `classifier`.
 * The `mix` keyword is prepared as alias of `mixed`.
+    * Default behavior in this tool
 
 ### Option: with-system
 
