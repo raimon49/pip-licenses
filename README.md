@@ -81,7 +81,7 @@ Execute the command with your venv (or virtualenv) environment.
 
 ### Option: from
 
-By default, this tool finds the license from package Metadata (`--from=meta`). However, depending on the type of package, it does not declare a license only in the Classifiers.
+By default, this tool finds the license from [Trove Classifiers](https://pypi.org/classifiers/) or package Metadata (`--from=meta`). Some Python packages declare their license only in Trove Classifiers.
 
 (See also): [Set license to MIT in setup.py by alisianoi ・ Pull Request #1058 ・ pypa/setuptools](https://github.com/pypa/setuptools/pull/1058), [PEP 314\#License](https://www.python.org/dev/peps/pep-0314/#license)
 
@@ -98,16 +98,16 @@ Author-email: distutils-sig@python.org
 License: UNKNOWN
 ```
 
-If you want to refer to the license declared in [the Classifiers](https://pypi.python.org/pypi?%3Aaction=list_classifiers), use the `--from=classifier` option.
+The mixed mode (`--from=mixed`) of this tool works well and looks for licenses.
 
 ```bash
-(venv) $ pip-licenses --from=classifier --with-system | grep setuptools
+(venv) $ pip-licenses --from=mixed --with-system | grep setuptools
  setuptools    38.5.0   MIT License
 ```
 
-If you want to find a license from whichever, mixed mode (`--from=mixed`) is available in `pip-licenses` version 1.14.0 or later.
+In mixed mode, it first tries to look for licenses in the Trove Classifiers. When not found in the Trove Classifiers, the license declared in Metadata is displayed.
 
-In mixed mode, it first tries to look for licenses in the Classifiers. When not found in the Classifiers, the license declared in Metadata is displayed.
+If you want to looks only in metadata, use `--from=meta`. If you want to looks only in Trove Classifiers, use `--from=classifier`.
 
 **Note:** If neither can find license information, please check with the `with-authors` and `with-urls` options and contact the software author.
 

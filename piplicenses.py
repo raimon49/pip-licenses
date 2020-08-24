@@ -583,10 +583,10 @@ def create_parser():
                         version='%(prog)s ' + __version__)
     parser.add_argument('--from',
                         action='store', type=str,
-                        default='meta', metavar='SOURCE',
+                        default='mixed', metavar='SOURCE',
                         help=('where to find license information\n'
                               '"meta", "classifier, "mixed"\n'
-                              'default: --from=meta'))
+                              'default: --from=mixed'))
     parser.add_argument('-s', '--with-system',
                         action='store_true',
                         default=False,
