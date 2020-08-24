@@ -27,7 +27,7 @@ SOFTWARE.
 """
 
 import os
-from setuptools import setup, find_packages
+from setuptools import setup
 from codecs import open
 from os import path
 
@@ -60,14 +60,6 @@ except (IOError, ImportError):
     LONG_DESC = read_file('README.md')
 
 
-TEST_DEPENDS = [
-    'docutils',
-    'pytest-cov',
-    'pytest-pycodestyle',
-    'pytest-runner',
-]
-
-
 setup(
     name=PKG_NAME,
     version=VERSION,
@@ -75,30 +67,7 @@ setup(
     long_description=LONG_DESC,
     url=URL,
     author=AUTHOR,
-    classifiers=[
-        'Development Status :: 5 - Production/Stable',
-        'Intended Audience :: Developers',
-        'License :: OSI Approved :: MIT License',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7',
-        'Programming Language :: Python :: 3.8',
-        'Programming Language :: Python :: 3.9',
-        'Topic :: System :: Systems Administration',
-        'Topic :: System :: System Shells',
-    ],
-    keywords='pip pypi package license check',
-    py_modules=['piplicenses'],
     license=LICENSE,
-    python_requires='~=3.6',
-    install_requires=['PTable'],
-    setup_requires=[
-        'pytest-runner',
-    ],
-    tests_require=TEST_DEPENDS,
-    extras_require={
-        'test': TEST_DEPENDS,
-    },
     entry_points={
         'console_scripts': [
             PKG_NAME + '=piplicenses:main',
