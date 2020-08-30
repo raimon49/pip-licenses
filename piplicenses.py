@@ -134,8 +134,8 @@ def get_packages(args):
         Attempt to find the package's included file on disk and return the
         tuple (included_file_path, included_file_contents).
         """
-        included_file = LICENSE_UNKNOWN
-        included_text = LICENSE_UNKNOWN
+        included_files = []
+        included_texts = []
         pkg_dirname = "{}-{}.dist-info".format(
             pkg.project_name.replace("-", "_"), pkg.version)
         patterns = []
@@ -145,19 +145,23 @@ def get_packages(args):
          for f in file_names]
         for test_file in patterns:
             if os.path.exists(test_file):
-                included_file = test_file
+                included_files.append(test_file)
                 with open(test_file, encoding='utf-8',
                           errors='backslashreplace') as included_file_handle:
-                    included_text = included_file_handle.read()
-                break
-        return (included_file, included_text)
+                    included_texts.append(included_file_handle.read())
+
+        if len(included_files) == 0:
+            included_files = [LICENSE_UNKNOWN]
+            included_texts = [LICENSE_UNKNOWN]
+
+        return included_files, included_texts
 
     def get_pkg_info(pkg):
-        (license_file, license_text) = get_pkg_included_file(
+        (license_files, license_texts) = get_pkg_included_file(
             pkg,
             ('LICENSE*', 'LICENCE*', 'COPYING*')
         )
-        (notice_file, notice_text) = get_pkg_included_file(
+        (notice_files, notice_texts) = get_pkg_included_file(
             pkg,
             ('NOTICE*',)
         )
@@ -165,10 +169,10 @@ def get_packages(args):
             'name': pkg.project_name,
             'version': pkg.version,
             'namever': str(pkg),
-            'licensefile': license_file,
-            'licensetext': license_text,
-            'noticefile': notice_file,
-            'noticetext': notice_text,
+            'licensefile': license_files,
+            'licensetext': license_texts,
+            'noticefile': notice_files,
+            'noticetext': notice_texts,
         }
         metadata = None
         if pkg.has_metadata('METADATA'):
