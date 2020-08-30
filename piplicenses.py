@@ -131,8 +131,11 @@ def get_packages(args):
 
     def get_pkg_included_file(pkg, file_names):
         """
-        Attempt to find the package's included file on disk and return the
-        tuple (included_file_path, included_file_contents).
+        Attempt to find the package's included file(s) on disk and return the
+        tuple (included_file_paths, included_files_contents).
+
+        Note that packages can have more than one file that matches a given
+        glob (e.g. multiple LICENSE* files).
         """
         included_files = []
         included_texts = []
@@ -360,7 +363,11 @@ class PlainVerticalTable(PrettyTable):
         output = ''
         for row in rows:
             for v in row:
-                output += '{}\n'.format(v)
+                if isinstance(v, list):
+                    for item in v:
+                        output += '{}\n'.format(item)
+                else:
+                    output += '{}\n'.format(v)
             output += '\n'
 
         return output
