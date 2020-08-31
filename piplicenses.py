@@ -73,8 +73,8 @@ FIELD_NAMES = (
     'Name',
     'Version',
     'License',
-    'LicenseFile',
-    'LicenseText',
+    'LicenseFiles',
+    'LicenseTexts',
     'NoticeFile',
     'NoticeText',
     'Author',
@@ -172,10 +172,10 @@ def get_packages(args):
             'name': pkg.project_name,
             'version': pkg.version,
             'namever': str(pkg),
-            'licensefile': license_files,
-            'licensetext': license_texts,
-            'noticefile': notice_files,
-            'noticetext': notice_texts,
+            'licensefiles': license_files,
+            'licensetexts': license_texts,
+            'noticefiles': notice_files,
+            'noticetexts': notice_texts,
         }
         metadata = None
         if pkg.has_metadata('METADATA'):
@@ -447,9 +447,9 @@ def get_output_fields(args):
 
     if args.with_license_file:
         if not args.no_license_path:
-            output_fields.append('LicenseFile')
+            output_fields.append('LicenseFiles')
 
-        output_fields.append('LicenseText')
+        output_fields.append('LicenseTexts')
 
         if args.with_notice_file:
             output_fields.append('NoticeText')
