@@ -254,6 +254,20 @@ def create_summary_table(args):
     return table
 
 
+def flatten_single_entry_lists(rows):
+    """Flatten a list of lists, if the inner lists are of length 1."""
+    new_rows = []
+    for row in rows:
+        new_columns = []
+        for column in row:
+            if isinstance(column, list) and len(column) == 1:
+                new_columns.append(column[0])
+            else:
+                new_columns.append(column)
+        new_rows.append(new_columns)
+    return new_rows
+
+
 class JsonPrettyTable(PrettyTable):
     """PrettyTable-like class exporting to JSON"""
 
@@ -335,6 +349,7 @@ class CSVPrettyTable(PrettyTable):
 
         options = self._get_options(kwargs)
         rows = self._get_rows(options)
+        rows = flatten_single_entry_lists(rows)
         formatted_rows = self._format_rows(rows, options)
 
         lines = []
