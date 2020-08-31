@@ -492,7 +492,6 @@ def create_output_string(args):
 
 def create_warn_string(args):
     warn_messages = []
-    warn = partial(output_colored, '33')
 
     if args.with_license_file and not args.format == 'json':
         message = warn(('Due to the length of these fields, this option is '
@@ -516,6 +515,11 @@ class CompatibleArgumentParser(argparse.ArgumentParser):
                                                                 namespace)
         self._compatible_format_args(args)
         self._check_code_page(args.filter_code_page)
+
+        if args.with_license_file:
+            print(warn('The option "--with-license-file" is deprecated. '
+                  'Please migrate to "--with-license-files".'))
+            args.with_license_files = True
 
         return args
 
@@ -614,11 +618,17 @@ def create_parser():
                         action='store_true',
                         default=False,
                         help='dump with short package description')
-    parser.add_argument('-l', '--with-license-file',
+    parser.add_argument('-l', '--with-license-files',
                         action='store_true',
                         default=False,
-                        help='dump with location of license file and '
+                        help='dump with location of license files and '
                              'contents, most useful with JSON output')
+    parser.add_argument('--with-license-file',
+                        action='store_true',
+                        default=False,
+                        help='[Deprecated] dump with location of license '
+                             'files and contents, most useful with JSON '
+                             'output')
     parser.add_argument('--no-license-path',
                         action='store_true',
                         default=False,
@@ -675,6 +685,9 @@ def output_colored(code, text, is_bold=False):
         code = '1;%s' % code
 
     return '\033[%sm%s\033[0m' % (code, text)
+
+
+warn = partial(output_colored, '33')
 
 
 def save_if_needs(output_file, output_string):
