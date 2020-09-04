@@ -208,7 +208,7 @@ def get_packages(args):
 
         return pkg_info
 
-    pkgs = get_installed_distributions()
+    pkgs = get_installed_distributions(paths=args.path)
     ignore_pkgs_as_lower = [pkg.lower() for pkg in args.ignore_packages]
     for pkg in pkgs:
         pkg_name = pkg.project_name
@@ -652,6 +652,12 @@ def create_parser():
     parser.add_argument('--output-file',
                         action='store', type=str,
                         help='save license list to file')
+    parser.add_argument('--path',
+                        action='store', type=str,
+                        nargs='+', metavar='PATH',
+                        default=[],
+                        help='restrict to the specified installation path '
+                             'for listing packages')
 
     return parser
 
