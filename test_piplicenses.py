@@ -514,6 +514,16 @@ class TestGetLicenses(CommandLineTestCase):
             self.parser.parse_args(["--filter-strings",
                                     "--filter-code-page=XXX"])
 
+    def test_path(self):
+        args = self.parser.parse_args([])
+        packages = list(piplicenses.get_packages(args))
+        self.assertNotEqual([], packages)
+
+        args = self.parser.parse_args(["--path=."])
+        packages = list(piplicenses.get_packages(args))
+        self.assertEqual(1, len(packages))
+        self.assertIn('pip-license', packages[0]["name"])
+
 
 class MockStdStream(object):
 
