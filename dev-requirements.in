@@ -7,6 +7,6 @@ wheel
 pip-tools
 pypandoc
 pytest-cov
-pytest-pycodestyle<2.1 # Pinned for Python 3.5
+pytest-pycodestyle
 pytest-runner
-twine<2 # Pinned for Python 3.5
+twine

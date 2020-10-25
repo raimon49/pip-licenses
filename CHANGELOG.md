@@ -1,5 +1,13 @@
 ## CHANGELOG
 
+### 3.0.0
+
+* Dropped support Python 3.5
+* Clarified support for Python 3.9
+* Migrate package metadata to `setup.cfg`
+* Breaking changes
+    * Change default behavior to `--from=mixed`
+
 ### 2.3.0
 
 * Implement new option for manage unicode characters
