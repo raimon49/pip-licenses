@@ -1,4 +1,4 @@
-FROM python:3.7.2-alpine
+FROM python:3.9.0-alpine
 LABEL maintainer="raimon <raimon49@hotmail.com>"
 
 ARG APPDIR=/opt/piplicenses
@@ -15,4 +15,4 @@ RUN pip3 install -U pip \
         && pip3 install -U pip-licenses
 
 ENTRYPOINT ["pip-licenses"]
-CMD ["--from=classifier"]
+CMD ["--from=mixed"]
