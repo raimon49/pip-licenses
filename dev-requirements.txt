@@ -14,7 +14,7 @@ click==7.1.2              # via pip-tools
 codecov==2.1.10           # via -r dev-requirements.in
 colorama==0.4.4           # via twine
 coverage==5.3             # via codecov, pytest-cov
-cryptography==3.1.1       # via secretstorage
+cryptography==3.2         # via secretstorage
 docutils==0.16            # via -r dev-requirements.in, readme-renderer
 idna==2.10                # via requests
 iniconfig==1.1.1          # via pytest
