@@ -31,6 +31,8 @@ Dump the software license list of Python packages installed with pip.
     * [Option: output\-file](#option-output-file)
     * [Option: filter\-strings](#option-filter-strings)
     * [Option: filter\-code\-page](#option-filter-code-page)
+    * [Option: fail\-on](#option-fail-on-page)
+    * [Option: allow\-only](#option-allow-only-page)
     * [More Information](#more-information)
 * [Dockerfile](#dockerfile)
 * [About UnicodeEncodeError](#about-unicodeencodeerror)
@@ -396,6 +398,22 @@ Some package data contains Unicode characters which might cause problems for cer
 ### Option: filter\-code\-page
 
 If the input strings are filtered (see `--filter-strings`), you can specify the applied code page (default `latin-1`). A list of all available code pages can be found [codecs module document](https://docs.python.org/3/library/codecs.html#standard-encodings).
+
+### Option: fail\-on
+
+Fail (exit with code 1) on the first occurrence of the licenses of the semicolon-separated list
+
+```
+(venv) $ pip-licenses --fail-on="MIT License;BSD License"
+```
+
+### Option: fail\-on
+
+Fail (exit with code 1) on the first occurrence of the licenses not in the semicolon-separated list
+
+```
+(venv) $ pip-licenses --fail-on="MIT License;BSD License"
+```
 
 ### More Information
 

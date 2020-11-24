@@ -579,3 +579,48 @@ def test_output_file_none(monkeypatch):
     # stdout and stderr are expected not to be called
     assert '' == mocked_stdout.printed
     assert '' == mocked_stderr.printed
+
+
+def test_allow_only(monkeypatch):
+    licenses = (
+        "BSD License",
+        "Apache Software License",
+        "Mozilla Public License 2.0 (MPL 2.0)",
+        "MIT License, Mozilla Public License 2.0 (MPL 2.0)",
+        "Apache Software License, BSD License",
+        "Python Software Foundation License, MIT License",
+        "Public Domain, Python Software Foundation License, BSD License,"
+        "GNU General Public License (GPL)",
+        "GNU Library or Lesser General Public License (LGPL)",
+    )
+    allow_only_args = ['--allow-only={}'.format(";".join(licenses))]
+    mocked_stdout = MockStdStream()
+    mocked_stderr = MockStdStream()
+    monkeypatch.setattr(sys.stdout, 'write', mocked_stdout.write)
+    monkeypatch.setattr(sys.stderr, 'write', mocked_stderr.write)
+    monkeypatch.setattr(sys, 'exit', lambda n: None)
+    args = create_parser().parse_args(allow_only_args)
+    create_licenses_table(args)
+
+    assert '' == mocked_stdout.printed
+    assert 'license MIT License not in allow-only licenses was found for ' \
+           'package attrs 🐍🐓🐿️:20.3.0' in mocked_stderr.printed
+
+
+def test_fail_on(monkeypatch):
+    licenses = (
+        "MIT License",
+        "BSD License",
+    )
+    allow_only_args = ['--fail-on={}'.format(";".join(licenses))]
+    mocked_stdout = MockStdStream()
+    mocked_stderr = MockStdStream()
+    monkeypatch.setattr(sys.stdout, 'write', mocked_stdout.write)
+    monkeypatch.setattr(sys.stderr, 'write', mocked_stderr.write)
+    monkeypatch.setattr(sys, 'exit', lambda n: None)
+    args = create_parser().parse_args(allow_only_args)
+    create_licenses_table(args)
+
+    assert '' == mocked_stdout.printed
+    assert 'fail-on license MIT License was found for ' \
+           'package attrs 🐍🐓🐿️:20.3.0' in mocked_stderr.printed
