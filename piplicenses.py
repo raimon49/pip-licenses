@@ -218,8 +218,6 @@ def get_packages(args):
     allow_only_licenses = None
     if args.allow_only:
         allow_only_licenses = args.allow_only.split(";")
-        import logging
-        logging.warning(allow_only_licenses)
 
     for pkg in pkgs:
         pkg_name = pkg.project_name
@@ -728,8 +726,6 @@ def save_if_needs(output_file, output_string):
 def main():  # pragma: no cover
     parser = create_parser()
     args = parser.parse_args()
-    import logging
-    logging.warning(args)
 
     output_string = create_output_string(args)
 
