@@ -407,12 +407,12 @@ Fail (exit with code 1) on the first occurrence of the licenses of the semicolon
 (venv) $ pip-licenses --fail-on="MIT License;BSD License"
 ```
 
-### Option: fail\-on
+### Option: allow\-only
 
 Fail (exit with code 1) on the first occurrence of the licenses not in the semicolon-separated list
 
 ```
-(venv) $ pip-licenses --fail-on="MIT License;BSD License"
+(venv) $ pip-licenses --allow-only="MIT License;BSD License"
 ```
 
 ### More Information
