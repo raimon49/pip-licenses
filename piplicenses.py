@@ -26,15 +26,15 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+import argparse
 import codecs
-import sys
 import glob
 import os
-import argparse
+import sys
 from collections import Counter
-from functools import partial
-from email.parser import FeedParser
 from email import message_from_string
+from email.parser import FeedParser
+from functools import partial
 
 try:
     from pip._internal.utils.misc import get_installed_distributions
@@ -210,6 +210,15 @@ def get_packages(args):
 
     pkgs = get_installed_distributions()
     ignore_pkgs_as_lower = [pkg.lower() for pkg in args.ignore_packages]
+
+    fail_on_licenses = None
+    if args.fail_on:
+        fail_on_licenses = args.fail_on.split(";")
+
+    allow_only_licenses = None
+    if args.allow_only:
+        allow_only_licenses = args.allow_only.split(";")
+
     for pkg in pkgs:
         pkg_name = pkg.project_name
 
@@ -220,6 +229,26 @@ def get_packages(args):
             continue
 
         pkg_info = get_pkg_info(pkg)
+
+        license_name = pkg_info['license']
+        if fail_on_licenses and license_name in fail_on_licenses:
+            sys.stderr.write("fail-on license {} was found for package "
+                             "{}:{}".format(
+                                license_name,
+                                pkg_info['name'],
+                                pkg_info['version'])
+                             )
+            sys.exit(1)
+
+        if allow_only_licenses and license_name not in allow_only_licenses:
+            sys.stderr.write("license {} not in allow-only licenses was found"
+                             " for package {}:{}".format(
+                                license_name,
+                                pkg_info['name'],
+                                pkg_info['version'])
+                             )
+            sys.exit(1)
+
         yield pkg_info
 
 
@@ -652,6 +681,17 @@ def create_parser():
     parser.add_argument('--output-file',
                         action='store', type=str,
                         help='save license list to file')
+    parser.add_argument('--fail-on',
+                        action='store', type=str,
+                        default=None,
+                        help='fail (exit with code 1) on the first occurrence '
+                             'of the licenses of the semicolon-separated list')
+    parser.add_argument('--allow-only',
+                        action='store', type=str,
+                        default=None,
+                        help='fail (exit with code 1) on the first occurrence '
+                             'of the licenses not in the semicolon-separated '
+                             'list')
 
     return parser
 

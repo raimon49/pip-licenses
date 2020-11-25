@@ -31,6 +31,8 @@ Dump the software license list of Python packages installed with pip.
     * [Option: output\-file](#option-output-file)
     * [Option: filter\-strings](#option-filter-strings)
     * [Option: filter\-code\-page](#option-filter-code-page)
+    * [Option: fail\-on](#option-fail-on)
+    * [Option: allow\-only](#option-allow-only)
     * [More Information](#more-information)
 * [Dockerfile](#dockerfile)
 * [About UnicodeEncodeError](#about-unicodeencodeerror)
@@ -396,6 +398,45 @@ Some package data contains Unicode characters which might cause problems for cer
 ### Option: filter\-code\-page
 
 If the input strings are filtered (see `--filter-strings`), you can specify the applied code page (default `latin-1`). A list of all available code pages can be found [codecs module document](https://docs.python.org/3/library/codecs.html#standard-encodings).
+
+### Option: fail\-on
+
+Fail (exit with code 1) on the first occurrence of the licenses of the semicolon-separated list
+
+```
+(venv) $ pip-licenses --fail-on="MIT License;BSD License"
+```
+**Note:** When using this option, pip-licenses looks for an exact match. Packages with multiple licenses will only fail if that license combination is included in the list. For example:
+```
+# keyring library has 2 licenses, separated by a comma
+$ pip-licenses | grep keyring 
+ keyring             21.4.0     Python Software Foundation License, MIT License
+
+# If just "Python Software Foundation License" is specified, it will succeed.
+$ pip-licenses --fail-on="Python Software Foundation License;"
+$ echo $?
+0
+
+# Both licenses must be specified together.
+$ pip-licenses --fail-on="Python Software Foundation License, MIT License;"
+```
+
+### Option: allow\-only
+
+Fail (exit with code 1) on the first occurrence of the licenses not in the semicolon-separated list
+
+```
+(venv) $ pip-licenses --allow-only="MIT License;BSD License"
+```
+**Note:** When using this option, pip-licenses looks for an exact match. Packages with multiple licenses will only be allowed if that license combination is included in the list. For example:
+```
+# keyring library has 2 licenses, separated by a comma
+$ pip-licenses | grep keyring 
+ keyring             21.4.0     Python Software Foundation License, MIT License
+
+# Both licenses must be specified together.
+$ pip-licenses --allow-only="Python Software Foundation License, MIT License;"
+```
 
 ### More Information
 
