@@ -406,6 +406,20 @@ Fail (exit with code 1) on the first occurrence of the licenses of the semicolon
 ```
 (venv) $ pip-licenses --fail-on="MIT License;BSD License"
 ```
+**Note:** When using this option, pip-licenses looks for an exact match. Packages with multiple licenses will only fail if that license combination is included in the list. For example:
+```
+# keyring library has 2 licenses, separated by a comma
+$ pip-licenses | grep keyring 
+ keyring             21.4.0     Python Software Foundation License, MIT License
+
+# If just "Python Software Foundation License" is specified, it will succeed.
+$ pip-licenses --fail-on="Python Software Foundation License;"
+$ echo $?
+0
+
+# Both licenses must be specified together.
+$ pip-licenses --fail-on="Python Software Foundation License, MIT License;"
+```
 
 ### Option: allow\-only
 
@@ -413,6 +427,15 @@ Fail (exit with code 1) on the first occurrence of the licenses not in the semic
 
 ```
 (venv) $ pip-licenses --allow-only="MIT License;BSD License"
+```
+**Note:** When using this option, pip-licenses looks for an exact match. Packages with multiple licenses will only be allowed if that license combination is included in the list. For example:
+```
+# keyring library has 2 licenses, separated by a comma
+$ pip-licenses | grep keyring 
+ keyring             21.4.0     Python Software Foundation License, MIT License
+
+# Both licenses must be specified together.
+$ pip-licenses --allow-only="Python Software Foundation License, MIT License;"
 ```
 
 ### More Information
