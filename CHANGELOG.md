@@ -1,5 +1,11 @@
 ## CHANGELOG
 
+### 3.1.0
+
+* Implement new option for use in continuous integration
+    * `--fail-on`
+    * `--allow-only`
+
 ### 3.0.0
 
 * Dropped support Python 3.5

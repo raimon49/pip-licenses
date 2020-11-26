@@ -7,8 +7,8 @@
 attrs==20.3.0             # via pytest
 autopep8==1.5.4           # via -r dev-requirements.in
 bleach==3.2.1             # via readme-renderer
-certifi==2020.6.20        # via requests
-cffi==1.14.3              # via cryptography
+certifi==2020.11.8        # via requests
+cffi==1.14.4              # via cryptography
 chardet==3.0.4            # via requests
 click==7.1.2              # via pip-tools
 codecov==2.1.10           # via -r dev-requirements.in
@@ -18,10 +18,10 @@ cryptography==3.2.1       # via secretstorage
 docutils==0.16            # via -r dev-requirements.in, readme-renderer
 idna==2.10                # via requests
 iniconfig==1.1.1          # via pytest
-jeepney==0.4.3            # via keyring, secretstorage
-keyring==21.4.0           # via twine
+jeepney==0.6.0            # via keyring, secretstorage
+keyring==21.5.0           # via twine
 packaging==20.4           # via bleach, pytest
-pip-tools==5.3.1          # via -r dev-requirements.in
+pip-tools==5.4.0          # via -r dev-requirements.in
 pkginfo==1.6.1            # via twine
 pluggy==0.13.1            # via pytest
 ptable==0.9.2             # via -r requirements.in
@@ -37,14 +37,14 @@ pytest-runner==5.2        # via -r dev-requirements.in
 pytest==6.1.2             # via pytest-cov, pytest-pycodestyle
 readme-renderer==28.0     # via twine
 requests-toolbelt==0.9.1  # via twine
-requests==2.24.0          # via codecov, requests-toolbelt, twine
+requests==2.25.0          # via codecov, requests-toolbelt, twine
 rfc3986==1.4.0            # via twine
-secretstorage==3.1.2      # via keyring
+secretstorage==3.3.0      # via keyring
 six==1.15.0               # via bleach, cryptography, packaging, pip-tools, readme-renderer
 toml==0.10.2              # via autopep8, pytest
-tqdm==4.51.0              # via twine
+tqdm==4.53.0              # via twine
 twine==3.2.0              # via -r dev-requirements.in
-urllib3==1.25.11          # via requests
+urllib3==1.26.2           # via requests
 webencodings==0.5.1       # via bleach
 wheel==0.35.1             # via -r dev-requirements.in, pypandoc
 
