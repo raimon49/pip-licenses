@@ -1,4 +1,6 @@
-DEV_DEPENDS='dev-requirements'
+REPO_NAME:=$(shell basename -s .git `git remote get-url origin`)
+VENV_NAME:='venv/$(REPO_NAME)'
+DEV_DEPENDS:='dev-requirements'
 
 .DEFAULT_GOAL:= help
 .PHONY: help
@@ -18,7 +20,8 @@ help:
 
 .PHONY: setup
 setup:
-	pip install -r $(DEV_DEPENDS).txt
+	test -d $(VENV_NAME) || python -m venv $(VENV_NAME)
+	$(VENV_NAME)/bin/python -m pip install -r $(DEV_DEPENDS).txt
 
 .PHONY: local-install
 local-install:
