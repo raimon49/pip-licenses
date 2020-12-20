@@ -57,8 +57,8 @@ class TestGetLicenses(CommandLineTestCase):
 
         return pkg_name_columns
 
-    def _create_license_columns(self, table):
-        index = DEFAULT_OUTPUT_FIELDS.index('License')
+    def _create_license_columns(self, table, output_fields):
+        index = output_fields.index('License')
 
         # XXX: access to private API
         rows = copy.deepcopy(table._rows)
@@ -92,7 +92,8 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertEqual(RULE_FRAME, table.hrules)
 
         output_fields = get_output_fields(args)
-        self.assertEqual(output_fields, list(DEFAULT_OUTPUT_FIELDS))
+        self.assertEqual(output_fields,
+                         list(DEFAULT_OUTPUT_FIELDS) + ['License'])
         self.assertNotIn('Author', output_fields)
         self.assertNotIn('URL', output_fields)
 
@@ -109,36 +110,36 @@ class TestGetLicenses(CommandLineTestCase):
     def test_from_meta(self):
         from_args = ['--from=meta']
         args = self.parser.parse_args(from_args)
-        table = create_licenses_table(args)
 
         output_fields = get_output_fields(args)
         self.assertIn('License', output_fields)
 
-        license_columns = self._create_license_columns(table)
+        table = create_licenses_table(args, output_fields)
+        license_columns = self._create_license_columns(table, output_fields)
         license_notation_as_meta = 'BSD-3-Clause'
         self.assertIn(license_notation_as_meta, license_columns)
 
     def test_from_classifier(self):
         from_args = ['--from=classifier']
         args = self.parser.parse_args(from_args)
-        table = create_licenses_table(args)
-
         output_fields = get_output_fields(args)
+        table = create_licenses_table(args, output_fields)
+
         self.assertIn('License', output_fields)
 
-        license_columns = self._create_license_columns(table)
+        license_columns = self._create_license_columns(table, output_fields)
         license_notation_as_classifier = 'MIT License'
         self.assertIn(license_notation_as_classifier, license_columns)
 
     def test_from_mixed(self):
         from_args = ['--from=mixed']
         args = self.parser.parse_args(from_args)
-        table = create_licenses_table(args)
-
         output_fields = get_output_fields(args)
+        table = create_licenses_table(args, output_fields)
+
         self.assertIn('License', output_fields)
 
-        license_columns = self._create_license_columns(table)
+        license_columns = self._create_license_columns(table, output_fields)
         # Depending on the condition "MIT" or "BSD" etc.
         license_notation_as_classifier = 'MIT License'
         self.assertIn(license_notation_as_classifier, license_columns)
@@ -149,7 +150,7 @@ class TestGetLicenses(CommandLineTestCase):
                     'Version: 1.0.0\r\n'
                     'Classifier: License :: OSI Approved :: MIT License\r\n')
         message = message_from_string(metadata)
-        self.assertEqual('MIT License',
+        self.assertEqual(['MIT License'],
                          find_license_from_classifier(message))
 
     def test_display_multiple_license_from_classifier(self):
@@ -162,9 +163,9 @@ class TestGetLicenses(CommandLineTestCase):
                     'Classifier: License :: OSI Approved :: MIT License\r\n'
                     'Classifier: License :: Public Domain\r\n')
         message = message_from_string(metadata)
-        self.assertEqual('GNU General Public License v3 (GPLv3), '
-                         'MIT License, '
-                         'Public Domain',
+        self.assertEqual(['GNU General Public License v3 (GPLv3)',
+                          'MIT License',
+                          'Public Domain'],
                          find_license_from_classifier(message))
 
     def test_not_found_license_from_classifier(self):
@@ -172,28 +173,28 @@ class TestGetLicenses(CommandLineTestCase):
                                   'Name: pip-licenses\r\n'
                                   'Version: 1.0.0\r\n')
         message = message_from_string(metadata_as_no_license)
-        self.assertEqual(LICENSE_UNKNOWN,
+        self.assertEqual([],
                          find_license_from_classifier(message))
 
     def test_select_license_by_source(self):
         self.assertEqual('MIT License',
                          select_license_by_source('classifier',
-                                                  'MIT License',
+                                                  ['MIT License'],
                                                   'MIT'))
 
         self.assertEqual(LICENSE_UNKNOWN,
                          select_license_by_source('classifier',
-                                                  LICENSE_UNKNOWN,
+                                                  [],
                                                   'MIT'))
 
         self.assertEqual('MIT License',
                          select_license_by_source('mixed',
-                                                  'MIT License',
+                                                  ['MIT License'],
                                                   'MIT'))
 
         self.assertEqual('MIT',
                          select_license_by_source('mixed',
-                                                  LICENSE_UNKNOWN,
+                                                  [],
                                                   'MIT'))
 
     def test_with_system(self):
