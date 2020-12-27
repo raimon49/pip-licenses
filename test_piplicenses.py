@@ -144,6 +144,31 @@ class TestGetLicenses(CommandLineTestCase):
         license_notation_as_classifier = 'MIT License'
         self.assertIn(license_notation_as_classifier, license_columns)
 
+    def test_from_all(self):
+        from_args = ['--from=all']
+        args = self.parser.parse_args(from_args)
+        output_fields = get_output_fields(args)
+        table = create_licenses_table(args, output_fields)
+
+        self.assertIn('License-Metadata', output_fields)
+        self.assertIn('License-Classifier', output_fields)
+
+        index_license_meta = output_fields.index('License-Metadata')
+        license_meta = []
+        for row in table._rows:
+            license_meta.append(row[index_license_meta])
+
+        index_license_classifier = output_fields.index('License-Classifier')
+        license_classifier = []
+        for row in table._rows:
+            license_classifier.append(row[index_license_classifier])
+
+        for license in ('BSD', 'MIT', 'Apache 2.0'):
+            self.assertIn(license, license_meta)
+        for license in ('BSD License', 'MIT License',
+                        'Apache Software License'):
+            self.assertIn(license, license_classifier)
+
     def test_find_license_from_classifier(self):
         metadata = ('Metadata-Version: 2.0\r\n'
                     'Name: pip-licenses\r\n'
