@@ -92,7 +92,6 @@ SUMMARY_FIELD_NAMES = (
 DEFAULT_OUTPUT_FIELDS = (
     'Name',
     'Version',
-    'License',
 )
 
 
@@ -107,12 +106,15 @@ METADATA_KEYS = (
     'author',
     'license',
     'summary',
+    'license_classifier',
 )
 
 # Mapping of FIELD_NAMES to METADATA_KEYS where they differ by more than case
 FIELDS_TO_METADATA_KEYS = {
     'URL': 'home-page',
     'Description': 'summary',
+    'License-Metadata': 'license',
+    'License-Classifier': 'license_classifier',
 }
 
 
@@ -190,21 +192,22 @@ def get_packages(args):
         for key in METADATA_KEYS:
             pkg_info[key] = parsed_metadata.get(key, LICENSE_UNKNOWN)
 
-        from_source = getattr(args, 'from')
-        need_classifier = from_source == 'classifier' or from_source == 'mixed'
-        if need_classifier and metadata is not None:
+        if metadata is not None:
             message = message_from_string(metadata)
-            license_classifier = find_license_from_classifier(message)
-            license_meta = pkg_info['license']
-            # Overwrite license by condition
-            pkg_info['license'] = select_license_by_source(from_source,
-                                                           license_classifier,
-                                                           license_meta)
+            pkg_info['license_classifier'] = \
+                find_license_from_classifier(message)
+
         if args.filter_strings:
             for k in pkg_info:
-                pkg_info[k] = pkg_info[k]. \
-                    encode(args.filter_code_page, errors="ignore"). \
-                    decode(args.filter_code_page)
+                if isinstance(pkg_info[k], list):
+                    for i, item in enumerate(pkg_info[k]):
+                        pkg_info[k][i] = item. \
+                            encode(args.filter_code_page, errors="ignore"). \
+                            decode(args.filter_code_page)
+                else:
+                    pkg_info[k] = pkg_info[k]. \
+                        encode(args.filter_code_page, errors="ignore"). \
+                        decode(args.filter_code_page)
 
         return pkg_info
 
@@ -230,7 +233,11 @@ def get_packages(args):
 
         pkg_info = get_pkg_info(pkg)
 
-        license_name = pkg_info['license']
+        license_name = select_license_by_source(
+            getattr(args, 'from'),
+            pkg_info['license_classifier'],
+            pkg_info['license'])
+
         if fail_on_licenses and license_name in fail_on_licenses:
             sys.stderr.write("fail-on license {} was found for package "
                              "{}:{}".format(
@@ -254,11 +261,19 @@ def get_packages(args):
 
 def create_licenses_table(args, output_fields=DEFAULT_OUTPUT_FIELDS):
     table = factory_styled_table_with_args(args, output_fields)
+    from_source = getattr(args, 'from')
 
     for pkg in get_packages(args):
         row = []
         for field in output_fields:
-            if field.lower() in pkg:
+            if field == 'License':
+                license_str = select_license_by_source(
+                    from_source, pkg['license_classifier'], pkg['license'])
+                row.append(license_str)
+            elif field == 'License-Classifier':
+                row.append(', '.join(pkg['license_classifier'])
+                           or LICENSE_UNKNOWN)
+            elif field.lower() in pkg:
                 row.append(pkg[field.lower()])
             else:
                 row.append(pkg[FIELDS_TO_METADATA_KEYS[field]])
@@ -421,8 +436,6 @@ def factory_styled_table_with_args(args, output_fields=DEFAULT_OUTPUT_FIELDS):
 
 
 def find_license_from_classifier(message):
-    license_from_classifier = LICENSE_UNKNOWN
-
     licenses = []
     for k, v in message.items():
         if k == 'Classifier' and v.startswith('License'):
@@ -432,20 +445,16 @@ def find_license_from_classifier(message):
             if license != 'OSI Approved':
                 licenses.append(license)
 
-    if len(licenses) > 0:
-        license_from_classifier = ', '.join(licenses)
-
-    return license_from_classifier
+    return licenses
 
 
 def select_license_by_source(from_source, license_classifier, license_meta):
-    if from_source == 'classifier':
-        return license_classifier
-    elif from_source == 'mixed':
-        if license_classifier != LICENSE_UNKNOWN:
-            return license_classifier
-        else:
-            return license_meta
+    license_classifier_str = ', '.join(license_classifier) or LICENSE_UNKNOWN
+    if (from_source == 'classifier' or
+            from_source == 'mixed' and len(license_classifier) > 0):
+        return license_classifier_str
+    else:
+        return license_meta
 
 
 def get_output_fields(args):
@@ -453,6 +462,12 @@ def get_output_fields(args):
         return list(SUMMARY_OUTPUT_FIELDS)
 
     output_fields = list(DEFAULT_OUTPUT_FIELDS)
+
+    if getattr(args, 'from') == 'all':
+        output_fields.append('License-Metadata')
+        output_fields.append('License-Classifier')
+    else:
+        output_fields.append('License')
 
     if args.with_authors:
         output_fields.append('Author')
@@ -614,7 +629,7 @@ def create_parser():
                         action='store', type=str,
                         default='mixed', metavar='SOURCE',
                         help=('where to find license information\n'
-                              '"meta", "classifier, "mixed"\n'
+                              '"meta", "classifier, "mixed", "all"\n'
                               'default: --from=mixed'))
     parser.add_argument('-s', '--with-system',
                         action='store_true',

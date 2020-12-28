@@ -111,6 +111,8 @@ In mixed mode, it first tries to look for licenses in the Trove Classifiers. Whe
 
 If you want to looks only in metadata, use `--from=meta`. If you want to looks only in Trove Classifiers, use `--from=classifier`.
 
+To list license information from both metadata and classifier, use `--from=all`.
+
 **Note:** If neither can find license information, please check with the `with-authors` and `with-urls` options and contact the software author.
 
 * The `m` keyword is prepared as alias of `meta`.
@@ -403,13 +405,15 @@ If the input strings are filtered (see `--filter-strings`), you can specify the 
 
 Fail (exit with code 1) on the first occurrence of the licenses of the semicolon-separated list
 
+If `--from=all`, the option will apply to the metadata license field.
+
 ```
 (venv) $ pip-licenses --fail-on="MIT License;BSD License"
 ```
 **Note:** When using this option, pip-licenses looks for an exact match. Packages with multiple licenses will only fail if that license combination is included in the list. For example:
 ```
 # keyring library has 2 licenses, separated by a comma
-$ pip-licenses | grep keyring 
+$ pip-licenses | grep keyring
  keyring             21.4.0     Python Software Foundation License, MIT License
 
 # If just "Python Software Foundation License" is specified, it will succeed.
@@ -425,13 +429,15 @@ $ pip-licenses --fail-on="Python Software Foundation License, MIT License;"
 
 Fail (exit with code 1) on the first occurrence of the licenses not in the semicolon-separated list
 
+If `--from=all`, the option will apply to the metadata license field.
+
 ```
 (venv) $ pip-licenses --allow-only="MIT License;BSD License"
 ```
 **Note:** When using this option, pip-licenses looks for an exact match. Packages with multiple licenses will only be allowed if that license combination is included in the list. For example:
 ```
 # keyring library has 2 licenses, separated by a comma
-$ pip-licenses | grep keyring 
+$ pip-licenses | grep keyring
  keyring             21.4.0     Python Software Foundation License, MIT License
 
 # Both licenses must be specified together.
