@@ -1,5 +1,10 @@
 ## CHANGELOG
 
+### 3.2.0
+
+* Implement new option `--from=all`
+* Change license notation under [SPDX license identifier](https://spdx.org/licenses/) style
+
 ### 3.1.0
 
 * Implement new option for use in continuous integration
