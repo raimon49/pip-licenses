@@ -621,10 +621,12 @@ class CompatibleArgumentParser(argparse.ArgumentParser):
 def create_parser():
     parser = CompatibleArgumentParser(
         description=__summary__)
+
     parser.add_argument(
         '-v', '--version',
         action='version',
         version='%(prog)s ' + __version__)
+
     parser.add_argument(
         '--from',
         action='store', type=str,
@@ -632,6 +634,38 @@ def create_parser():
         help=('where to find license information\n'
               '"meta", "classifier, "mixed", "all"\n'
               'default: --from=mixed'))
+    parser.add_argument(
+        '-o', '--order',
+        action='store', type=str,
+        default='name', metavar='COL',
+        help=('order by column\n'
+              '"name", "license", "author", "url"\n'
+              'default: --order=name'))
+    parser.add_argument(
+        '-f', '--format',
+        action='store', type=str,
+        default='plain', metavar='STYLE',
+        help=('dump as set format style\n'
+              '"plain", "plain-vertical" "markdown", "rst", \n'
+              '"confluence", "html", "json", \n'
+              '"json-license-finder",  "csv"\n'
+              'default: --format=plain'))
+    parser.add_argument(
+        '--summary',
+        action='store_true',
+        default=False,
+        help='dump summary of each license')
+    parser.add_argument(
+        '--output-file',
+        action='store', type=str,
+        help='save license list to file')
+    parser.add_argument(
+        '-i', '--ignore-packages',
+        action='store', type=str,
+        nargs='+', metavar='PKG',
+        default=[],
+        help='ignore package name in dumped list')
+
     parser.add_argument(
         '-s', '--with-system',
         action='store_true',
@@ -671,28 +705,6 @@ def create_parser():
         help='when specified together with option -l, '
              'dump with location of license file and contents')
     parser.add_argument(
-        '-i', '--ignore-packages',
-        action='store', type=str,
-        nargs='+', metavar='PKG',
-        default=[],
-        help='ignore package name in dumped list')
-    parser.add_argument(
-        '-o', '--order',
-        action='store', type=str,
-        default='name', metavar='COL',
-        help=('order by column\n'
-              '"name", "license", "author", "url"\n'
-              'default: --order=name'))
-    parser.add_argument(
-        '-f', '--format',
-        action='store', type=str,
-        default='plain', metavar='STYLE',
-        help=('dump as set format style\n'
-              '"plain", "plain-vertical" "markdown", "rst", \n'
-              '"confluence", "html", "json", \n'
-              '"json-license-finder",  "csv"\n'
-              'default: --format=plain'))
-    parser.add_argument(
         '--filter-strings',
         action="store_true",
         default=False,
@@ -702,15 +714,7 @@ def create_parser():
         action="store", type=str,
         default="latin1",
         help=('specify code page for filtering'))
-    parser.add_argument(
-        '--summary',
-        action='store_true',
-        default=False,
-        help='dump summary of each license')
-    parser.add_argument(
-        '--output-file',
-        action='store', type=str,
-        help='save license list to file')
+
     parser.add_argument(
         '--fail-on',
         action='store', type=str,
