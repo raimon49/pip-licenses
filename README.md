@@ -10,29 +10,32 @@ Dump the software license list of Python packages installed with pip.
 * [Installation](#installation)
 * [Usage](#usage)
 * [Command\-Line Options](#command-line-options)
-    * [Option: from](#option-from)
-    * [Option: with\-system](#option-with-system)
-    * [Option: with\-authors](#option-with-authors)
-    * [Option: with\-urls](#option-with-urls)
-    * [Option: with\-description](#option-with-description)
-    * [Option: with\-license\-file](#option-with-license-file)
-    * [Option: ignore\-packages](#option-ignore-packages)
-    * [Option: order](#option-order)
-    * [Option: format](#option-format)
-        * [Markdown](#markdown)
-        * [reST](#rest)
-        * [Confluence](#confluence)
-        * [HTML](#html)
-        * [JSON](#json)
-        * [JSON LicenseFinder](#json-licensefinder)
-        * [CSV](#csv)
-        * [Plain Vertical](#plain-vertical)
-    * [Option: summary](#option-summary)
-    * [Option: output\-file](#option-output-file)
-    * [Option: filter\-strings](#option-filter-strings)
-    * [Option: filter\-code\-page](#option-filter-code-page)
-    * [Option: fail\-on](#option-fail-on)
-    * [Option: allow\-only](#option-allow-only)
+    * [Common options](#common-options)
+        * [Option: from](#option-from)
+        * [Option: order](#option-order)
+        * [Option: format](#option-format)
+            * [Markdown](#markdown)
+            * [reST](#rest)
+            * [Confluence](#confluence)
+            * [HTML](#html)
+            * [JSON](#json)
+            * [JSON LicenseFinder](#json-licensefinder)
+            * [CSV](#csv)
+            * [Plain Vertical](#plain-vertical)
+        * [Option: summary](#option-summary)
+        * [Option: output\-file](#option-output-file)
+        * [Option: ignore\-packages](#option-ignore-packages)
+    * [Format options](#format-options)
+        * [Option: with\-system](#option-with-system)
+        * [Option: with\-authors](#option-with-authors)
+        * [Option: with\-urls](#option-with-urls)
+        * [Option: with\-description](#option-with-description)
+        * [Option: with\-license\-file](#option-with-license-file)
+        * [Option: filter\-strings](#option-filter-strings)
+        * [Option: filter\-code\-page](#option-filter-code-page)
+    * [Verify options](#verify-options)
+        * [Option: fail\-on](#option-fail-on)
+        * [Option: allow\-only](#option-allow-only)
     * [More Information](#more-information)
 * [Dockerfile](#dockerfile)
 * [About UnicodeEncodeError](#about-unicodeencodeerror)
@@ -81,7 +84,9 @@ Execute the command with your venv (or virtualenv) environment.
 
 ## Command-Line Options
 
-### Option: from
+### Common options
+
+#### Option: from
 
 By default, this tool finds the license from [Trove Classifiers](https://pypi.org/classifiers/) or package Metadata. Some Python packages declare their license only in Trove Classifiers.
 
@@ -120,85 +125,7 @@ To list license information from both metadata and classifier, use `--from=all`.
 * The `mix` keyword is prepared as alias of `mixed`.
     * Default behavior in this tool
 
-### Option: with-system
-
-By default, system packages such as `pip` and `setuptools` are ignored.
-
-If you want to output all including system package, use the `--with-system` option.
-
-```bash
-(venv) $ pip-licenses --with-system
- Name          Version  License
- Django        2.0.2    BSD
- PTable        0.9.2    BSD (3 clause)
- pip           9.0.1    MIT
- pip-licenses  1.0.0    MIT License
- pytz          2017.3   MIT
- setuptools    38.5.0   UNKNOWN
-```
-
-### Option: with-authors
-
-When executed with the `--with-authors` option, output with author of the package.
-
-```bash
-(venv) $ pip-licenses --with-authors
- Name    Version  License  Author
- Django  2.0.2    BSD      Django Software Foundation
- pytz    2017.3   MIT      Stuart Bishop
-```
-
-### Option: with-urls
-
-For packages without Metadata, the license is output as `UNKNOWN`. To get more package information, use the `--with-urls` option.
-
-```bash
-(venv) $ pip-licenses --with-urls
- Name    Version  License  URL
- Django  2.0.2    BSD      https://www.djangoproject.com/
- pytz    2017.3   MIT      http://pythonhosted.org/pytz
-```
-
-### Option: with-description
-
-When executed with the `--with-description` option, output with short description of the package.
-
-```bash
-(venv) $ pip-licenses --with-description
- Name    Version  License  Description
- Django  2.0.2    BSD      A high-level Python Web framework that encourages rapid development and clean, pragmatic design.
- pytz    2017.3   MIT      World timezone definitions, modern and historical
-```
-
-### Option: with-license-file
-
-When executed with the `--with-license-file` option, output the location of the package's license file on disk and the full contents of that file. Due to the length of these fields, this option is best paired with `--format=json`.
-
-If you also want to output the file `NOTICE` distributed under Apache License etc., specify the `--with-notice-file` option additionally.
-
-**Note:** If you want to keep the license file path secret, specify `--no-license-path` option together.
-
-### Option: ignore-packages
-
-When executed with the `--ignore-packages` option, ignore the package specified by argument from list output.
-
-```bash
-(venv) $ pip-licenses --ignore-packages django
- Name  Version  License
- pytz  2017.3   MIT
-```
-
-Package names of arguments can be separated by spaces.
-
-```bash
-(venv) $ pip-licenses --with-system --ignore-packages django pip pip-licenses
- Name        Version  License
- PTable      0.9.2    BSD (3 clause)
- pytz        2017.3   MIT
- setuptools  38.5.0   UNKNOWN
-```
-
-### Option: order
+#### Option: order
 
 By default, it is ordered by package name.
 
@@ -208,11 +135,11 @@ If you give arguments to the `--order` option, you can output in other sorted or
 (venv) $ pip-licenses --order=license
 ```
 
-### Option: format
+#### Option: format
 
 By default, it is output to the `plain` format.
 
-#### Markdown
+##### Markdown
 
 When executed with the `--format=markdown` option, you can output list in markdown format. The `m` `md` keyword is prepared as alias of `markdown`.
 
@@ -231,7 +158,7 @@ When inserted in a markdown document, it is rendered as follows:
 | Django | 2.0.2   | BSD     |
 | pytz   | 2017.3  | MIT     |
 
-#### reST
+##### reST
 
 When executed with the `--format=rst` option, you can output list in "[Grid tables](http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html#grid-tables)" of reStructuredText format. The `r` `rest` keyword is prepared as alias of `rst`.
 
@@ -246,7 +173,7 @@ When executed with the `--format=rst` option, you can output list in "[Grid tabl
 +--------+---------+---------+
 ```
 
-#### Confluence
+##### Confluence
 
 When executed with the `--format=confluence` option, you can output list in [Confluence (or JIRA) Wiki markup](https://confluence.atlassian.com/doc/confluence-wiki-markup-251003035.html#ConfluenceWikiMarkup-Tables) format. The `c` keyword is prepared as alias of `confluence`.
 
@@ -257,7 +184,7 @@ When executed with the `--format=confluence` option, you can output list in [Con
 | pytz   | 2017.3  | MIT     |
 ```
 
-#### HTML
+##### HTML
 
 When executed with the `--format=html` option, you can output list in HTML table format. The `h` keyword is prepared as alias of `html`.
 
@@ -282,7 +209,7 @@ When executed with the `--format=html` option, you can output list in HTML table
 </table>
 ```
 
-#### JSON
+##### JSON
 
 When executed with the `--format=json` option, you can output list in JSON format easily allowing post-processing. The `j` keyword is prepared as alias of `json`.
 
@@ -303,10 +230,9 @@ When executed with the `--format=json` option, you can output list in JSON forma
     "Version": "2017.3"
   }
 ]
-
 ```
 
-#### JSON LicenseFinder
+##### JSON LicenseFinder
 
 When executed with the `--format=json-license-finder` option, you can output list in JSON format that is identical to [LicenseFinder](https://github.com/pivotal/LicenseFinder). The `jlf` keyword is prepared as alias of `jlf`.
 This makes pip-licenses a drop-in replacement for LicenseFinder.
@@ -327,7 +253,7 @@ This makes pip-licenses a drop-in replacement for LicenseFinder.
 
 ```
 
-#### CSV
+##### CSV
 
 When executed with the `--format=csv` option, you can output list in quoted CSV format. Useful when you want to copy/paste the output to an Excel sheet.
 
@@ -338,7 +264,7 @@ When executed with the `--format=csv` option, you can output list in quoted CSV 
 "pytz","2017.3","MIT"
 ```
 
-#### Plain Vertical
+##### Plain Vertical
 
 When executed with the `--format=plain-vertical` option, you can output a simple plain vertical output that is similar to Angular CLI's
 [--extractLicenses flag](https://angular.io/cli/build#options). This format minimizes rightward drift.
@@ -371,7 +297,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-### Option: summary
+#### Option: summary
 
 When executed with the `--summary` option, you can output a summary of each license.
 
@@ -384,7 +310,7 @@ When executed with the `--summary` option, you can output a summary of each lice
 
 **Note:** When using this option, only `--order=count` or `--order=license` has an effect for the `--order` option. And using `--with-authors` and `--with-urls` will be ignored.
 
-### Option: output\-file
+#### Option: output\-file
 
 When executed with the `--output-file` option, write the result to the path specified by the argument.
 
@@ -393,15 +319,99 @@ When executed with the `--output-file` option, write the result to the path spec
 created path: /tmp/output.rst
 ```
 
-### Option: filter\-strings
+#### Option: ignore-packages
+
+When executed with the `--ignore-packages` option, ignore the package specified by argument from list output.
+
+```bash
+(venv) $ pip-licenses --ignore-packages django
+ Name  Version  License
+ pytz  2017.3   MIT
+```
+
+Package names of arguments can be separated by spaces.
+
+```bash
+(venv) $ pip-licenses --with-system --ignore-packages django pip pip-licenses
+ Name        Version  License
+ PTable      0.9.2    BSD (3 clause)
+ pytz        2017.3   MIT
+ setuptools  38.5.0   UNKNOWN
+```
+
+
+### Format options
+
+#### Option: with-system
+
+By default, system packages such as `pip` and `setuptools` are ignored.
+
+If you want to output all including system package, use the `--with-system` option.
+
+```bash
+(venv) $ pip-licenses --with-system
+ Name          Version  License
+ Django        2.0.2    BSD
+ PTable        0.9.2    BSD (3 clause)
+ pip           9.0.1    MIT
+ pip-licenses  1.0.0    MIT License
+ pytz          2017.3   MIT
+ setuptools    38.5.0   UNKNOWN
+```
+
+#### Option: with-authors
+
+When executed with the `--with-authors` option, output with author of the package.
+
+```bash
+(venv) $ pip-licenses --with-authors
+ Name    Version  License  Author
+ Django  2.0.2    BSD      Django Software Foundation
+ pytz    2017.3   MIT      Stuart Bishop
+```
+
+#### Option: with-urls
+
+For packages without Metadata, the license is output as `UNKNOWN`. To get more package information, use the `--with-urls` option.
+
+```bash
+(venv) $ pip-licenses --with-urls
+ Name    Version  License  URL
+ Django  2.0.2    BSD      https://www.djangoproject.com/
+ pytz    2017.3   MIT      http://pythonhosted.org/pytz
+```
+
+#### Option: with-description
+
+When executed with the `--with-description` option, output with short description of the package.
+
+```bash
+(venv) $ pip-licenses --with-description
+ Name    Version  License  Description
+ Django  2.0.2    BSD      A high-level Python Web framework that encourages rapid development and clean, pragmatic design.
+ pytz    2017.3   MIT      World timezone definitions, modern and historical
+```
+
+#### Option: with-license-file
+
+When executed with the `--with-license-file` option, output the location of the package's license file on disk and the full contents of that file. Due to the length of these fields, this option is best paired with `--format=json`.
+
+If you also want to output the file `NOTICE` distributed under Apache License etc., specify the `--with-notice-file` option additionally.
+
+**Note:** If you want to keep the license file path secret, specify `--no-license-path` option together.
+
+#### Option: filter\-strings
 
 Some package data contains Unicode characters which might cause problems for certain output formats (in particular ReST tables). If this filter is enabled, all characters which cannot be encoded with a given code page (see `--filter-code-page`) will be removed from any input strings (e.g. package name, description).
 
-### Option: filter\-code\-page
+#### Option: filter\-code\-page
 
 If the input strings are filtered (see `--filter-strings`), you can specify the applied code page (default `latin-1`). A list of all available code pages can be found [codecs module document](https://docs.python.org/3/library/codecs.html#standard-encodings).
 
-### Option: fail\-on
+
+### Verify options
+
+#### Option: fail\-on
 
 Fail (exit with code 1) on the first occurrence of the licenses of the semicolon-separated list
 
@@ -425,7 +435,7 @@ $ echo $?
 $ pip-licenses --fail-on="Python Software Foundation License, MIT License;"
 ```
 
-### Option: allow\-only
+#### Option: allow\-only
 
 Fail (exit with code 1) on the first occurrence of the licenses not in the semicolon-separated list
 
@@ -443,6 +453,7 @@ $ pip-licenses | grep keyring
 # Both licenses must be specified together.
 $ pip-licenses --allow-only="Python Software Foundation License, MIT License;"
 ```
+
 
 ### More Information
 
