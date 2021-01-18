@@ -543,7 +543,6 @@ def create_warn_string(args):
 
 
 class CompatibleArgumentParser(argparse.ArgumentParser):
-
     def parse_args(self, args=None, namespace=None):
         args = super(CompatibleArgumentParser, self).parse_args(args,
                                                                 namespace)
@@ -622,91 +621,108 @@ class CompatibleArgumentParser(argparse.ArgumentParser):
 def create_parser():
     parser = CompatibleArgumentParser(
         description=__summary__)
-    parser.add_argument('-v', '--version',
-                        action='version',
-                        version='%(prog)s ' + __version__)
-    parser.add_argument('--from',
-                        action='store', type=str,
-                        default='mixed', metavar='SOURCE',
-                        help=('where to find license information\n'
-                              '"meta", "classifier, "mixed", "all"\n'
-                              'default: --from=mixed'))
-    parser.add_argument('-s', '--with-system',
-                        action='store_true',
-                        default=False,
-                        help='dump with system packages')
-    parser.add_argument('-a', '--with-authors',
-                        action='store_true',
-                        default=False,
-                        help='dump with package authors')
-    parser.add_argument('-u', '--with-urls',
-                        action='store_true',
-                        default=False,
-                        help='dump with package urls')
-    parser.add_argument('-d', '--with-description',
-                        action='store_true',
-                        default=False,
-                        help='dump with short package description')
-    parser.add_argument('-l', '--with-license-file',
-                        action='store_true',
-                        default=False,
-                        help='dump with location of license file and '
-                             'contents, most useful with JSON output')
-    parser.add_argument('--no-license-path',
-                        action='store_true',
-                        default=False,
-                        help='when specified together with option -l, '
-                             'suppress location of license file output')
-    parser.add_argument('--with-notice-file',
-                        action='store_true',
-                        default=False,
-                        help='when specified together with option -l, '
-                             'dump with location of license file and contents')
-    parser.add_argument('-i', '--ignore-packages',
-                        action='store', type=str,
-                        nargs='+', metavar='PKG',
-                        default=[],
-                        help='ignore package name in dumped list')
-    parser.add_argument('-o', '--order',
-                        action='store', type=str,
-                        default='name', metavar='COL',
-                        help=('order by column\n'
-                              '"name", "license", "author", "url"\n'
-                              'default: --order=name'))
-    parser.add_argument('-f', '--format',
-                        action='store', type=str,
-                        default='plain', metavar='STYLE',
-                        help=('dump as set format style\n'
-                              '"plain", "plain-vertical" "markdown", "rst", \n'
-                              '"confluence", "html", "json", \n'
-                              '"json-license-finder",  "csv"\n'
-                              'default: --format=plain'))
-    parser.add_argument('--filter-strings',
-                        action="store_true",
-                        default=False,
-                        help=('filter input according to code page'))
-    parser.add_argument('--filter-code-page',
-                        action="store", type=str,
-                        default="latin1",
-                        help=('specify code page for filtering'))
-    parser.add_argument('--summary',
-                        action='store_true',
-                        default=False,
-                        help='dump summary of each license')
-    parser.add_argument('--output-file',
-                        action='store', type=str,
-                        help='save license list to file')
-    parser.add_argument('--fail-on',
-                        action='store', type=str,
-                        default=None,
-                        help='fail (exit with code 1) on the first occurrence '
-                             'of the licenses of the semicolon-separated list')
-    parser.add_argument('--allow-only',
-                        action='store', type=str,
-                        default=None,
-                        help='fail (exit with code 1) on the first occurrence '
-                             'of the licenses not in the semicolon-separated '
-                             'list')
+    parser.add_argument(
+        '-v', '--version',
+        action='version',
+        version='%(prog)s ' + __version__)
+    parser.add_argument(
+        '--from',
+        action='store', type=str,
+        default='mixed', metavar='SOURCE',
+        help=('where to find license information\n'
+              '"meta", "classifier, "mixed", "all"\n'
+              'default: --from=mixed'))
+    parser.add_argument(
+        '-s', '--with-system',
+        action='store_true',
+        default=False,
+        help='dump with system packages')
+    parser.add_argument(
+        '-a', '--with-authors',
+        action='store_true',
+        default=False,
+        help='dump with package authors')
+    parser.add_argument(
+        '-u', '--with-urls',
+        action='store_true',
+        default=False,
+        help='dump with package urls')
+    parser.add_argument(
+        '-d', '--with-description',
+        action='store_true',
+        default=False,
+        help='dump with short package description')
+    parser.add_argument(
+        '-l', '--with-license-file',
+        action='store_true',
+        default=False,
+        help='dump with location of license file and '
+             'contents, most useful with JSON output')
+    parser.add_argument(
+        '--no-license-path',
+        action='store_true',
+        default=False,
+        help='when specified together with option -l, '
+             'suppress location of license file output')
+    parser.add_argument(
+        '--with-notice-file',
+        action='store_true',
+        default=False,
+        help='when specified together with option -l, '
+             'dump with location of license file and contents')
+    parser.add_argument(
+        '-i', '--ignore-packages',
+        action='store', type=str,
+        nargs='+', metavar='PKG',
+        default=[],
+        help='ignore package name in dumped list')
+    parser.add_argument(
+        '-o', '--order',
+        action='store', type=str,
+        default='name', metavar='COL',
+        help=('order by column\n'
+              '"name", "license", "author", "url"\n'
+              'default: --order=name'))
+    parser.add_argument(
+        '-f', '--format',
+        action='store', type=str,
+        default='plain', metavar='STYLE',
+        help=('dump as set format style\n'
+              '"plain", "plain-vertical" "markdown", "rst", \n'
+              '"confluence", "html", "json", \n'
+              '"json-license-finder",  "csv"\n'
+              'default: --format=plain'))
+    parser.add_argument(
+        '--filter-strings',
+        action="store_true",
+        default=False,
+        help=('filter input according to code page'))
+    parser.add_argument(
+        '--filter-code-page',
+        action="store", type=str,
+        default="latin1",
+        help=('specify code page for filtering'))
+    parser.add_argument(
+        '--summary',
+        action='store_true',
+        default=False,
+        help='dump summary of each license')
+    parser.add_argument(
+        '--output-file',
+        action='store', type=str,
+        help='save license list to file')
+    parser.add_argument(
+        '--fail-on',
+        action='store', type=str,
+        default=None,
+        help='fail (exit with code 1) on the first occurrence '
+             'of the licenses of the semicolon-separated list')
+    parser.add_argument(
+        '--allow-only',
+        action='store', type=str,
+        default=None,
+        help='fail (exit with code 1) on the first occurrence '
+             'of the licenses not in the semicolon-separated list')
 
     return parser
 
