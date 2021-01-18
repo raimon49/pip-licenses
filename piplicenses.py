@@ -35,6 +35,7 @@ from collections import Counter
 from email import message_from_string
 from email.parser import FeedParser
 from functools import partial
+from typing import Optional, List, Text
 
 try:
     from pip._internal.utils.misc import get_installed_distributions
@@ -542,6 +543,38 @@ def create_warn_string(args):
     return '\n'.join(warn_messages)
 
 
+class CustomHelpFormatter(argparse.HelpFormatter):  # pragma: no cover
+    def __init__(
+        self, prog: Text, indent_increment: int = 2,
+        max_help_position: int = 24, width: Optional[int] = None
+    ) -> None:
+        max_help_position = 30
+        super().__init__(
+            prog, indent_increment=indent_increment,
+            max_help_position=max_help_position, width=width)
+
+    def _format_action(self, action: argparse.Action) -> str:
+        flag_indent_argument: bool = False
+        text = self._expand_help(action)
+        separator_pos = text[:3].find('|')
+        if separator_pos != -1 and 'I' in text[:separator_pos]:
+            self._indent()
+            flag_indent_argument = True
+        help_str = super()._format_action(action)
+        if flag_indent_argument:
+            self._dedent()
+        return help_str
+
+    def _split_lines(self, text: Text, width: int) -> List[str]:
+        separator_pos = text[:3].find('|')
+        if separator_pos != -1:
+            flag_splitlines: bool = 'R' in text[:separator_pos]
+            text = text[separator_pos + 1:]
+            if flag_splitlines:
+                return text.splitlines()
+        return super()._split_lines(text, width)
+
+
 class CompatibleArgumentParser(argparse.ArgumentParser):
     def parse_args(self, args=None, namespace=None):
         args = super(CompatibleArgumentParser, self).parse_args(args,
@@ -620,7 +653,8 @@ class CompatibleArgumentParser(argparse.ArgumentParser):
 
 def create_parser():
     parser = CompatibleArgumentParser(
-        description=__summary__)
+        description=__summary__,
+        formatter_class=CustomHelpFormatter)
 
     common_options = parser.add_argument_group('Common options')
     format_options = parser.add_argument_group('Format options')
@@ -635,25 +669,25 @@ def create_parser():
         '--from',
         action='store', type=str,
         default='mixed', metavar='SOURCE',
-        help=('where to find license information\n'
-              '"meta", "classifier, "mixed", "all"\n'
-              'default: --from=mixed'))
+        help='R|where to find license information\n'
+             '"meta", "classifier, "mixed", "all"\n'
+             '(default: %(default)s)')
     common_options.add_argument(
         '-o', '--order',
         action='store', type=str,
         default='name', metavar='COL',
-        help=('order by column\n'
-              '"name", "license", "author", "url"\n'
-              'default: --order=name'))
+        help='R|order by column\n'
+             '"name", "license", "author", "url"\n'
+             '(default: %(default)s)')
     common_options.add_argument(
         '-f', '--format',
         action='store', type=str,
         default='plain', metavar='STYLE',
-        help=('dump as set format style\n'
-              '"plain", "plain-vertical" "markdown", "rst", \n'
-              '"confluence", "html", "json", \n'
-              '"json-license-finder",  "csv"\n'
-              'default: --format=plain'))
+        help='R|dump as set format style\n'
+             '"plain", "plain-vertical" "markdown", "rst", \n'
+             '"confluence", "html", "json", \n'
+             '"json-license-finder",  "csv"\n'
+             '(default: %(default)s)')
     common_options.add_argument(
         '--summary',
         action='store_true',
@@ -700,24 +734,26 @@ def create_parser():
         '--no-license-path',
         action='store_true',
         default=False,
-        help='when specified together with option -l, '
+        help='I|when specified together with option -l, '
              'suppress location of license file output')
     format_options.add_argument(
         '--with-notice-file',
         action='store_true',
         default=False,
-        help='when specified together with option -l, '
+        help='I|when specified together with option -l, '
              'dump with location of license file and contents')
     format_options.add_argument(
         '--filter-strings',
         action="store_true",
         default=False,
-        help=('filter input according to code page'))
+        help='filter input according to code page')
     format_options.add_argument(
         '--filter-code-page',
         action="store", type=str,
         default="latin1",
-        help=('specify code page for filtering'))
+        metavar="CODE",
+        help='I|specify code page for filtering '
+             '(default: %(default)s)')
 
     verify_options.add_argument(
         '--fail-on',
