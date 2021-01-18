@@ -11,7 +11,7 @@ import docutils.utils
 import docutils.frontend
 
 import piplicenses
-from piplicenses import (__pkgname__, create_parser, output_colored,
+from piplicenses import (FromArg, __pkgname__, create_parser, output_colored,
                          create_licenses_table, get_output_fields, get_sortby,
                          factory_styled_table_with_args, create_warn_string,
                          find_license_from_classifier, create_output_string,
@@ -203,22 +203,22 @@ class TestGetLicenses(CommandLineTestCase):
 
     def test_select_license_by_source(self):
         self.assertEqual('MIT License',
-                         select_license_by_source('classifier',
+                         select_license_by_source(FromArg.CLASSIFIER,
                                                   ['MIT License'],
                                                   'MIT'))
 
         self.assertEqual(LICENSE_UNKNOWN,
-                         select_license_by_source('classifier',
+                         select_license_by_source(FromArg.CLASSIFIER,
                                                   [],
                                                   'MIT'))
 
         self.assertEqual('MIT License',
-                         select_license_by_source('mixed',
+                         select_license_by_source(FromArg.MIXED,
                                                   ['MIT License'],
                                                   'MIT'))
 
         self.assertEqual('MIT',
-                         select_license_by_source('mixed',
+                         select_license_by_source(FromArg.MIXED,
                                                   [],
                                                   'MIT'))
 
