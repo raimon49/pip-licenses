@@ -566,6 +566,12 @@ class CustomHelpFormatter(argparse.HelpFormatter):  # pragma: no cover
             self._dedent()
         return help_str
 
+    def _expand_help(self, action: argparse.Action) -> str:
+        if isinstance(action.default, Enum):
+            default_value = enum_key_to_value(action.default)
+            return self._get_help_string(action) % {'default': default_value}
+        return super()._expand_help(action)
+
     def _split_lines(self, text: Text, width: int) -> List[str]:
         separator_pos = text[:3].find('|')
         if separator_pos != -1:
@@ -628,8 +634,12 @@ class FormatArg(NoValueEnum):
     CSV = auto()
 
 
-def format_arg_option(value: str) -> str:
+def value_to_enum_key(value: str) -> str:
     return value.replace('-', '_').upper()
+
+
+def enum_key_to_value(enum_key: Enum) -> str:
+    return enum_key.name.replace('_', '-').lower()
 
 
 def choices_from_enum(enum_cls: NoValueEnum) -> List[str]:
@@ -652,7 +662,7 @@ class SelectAction(argparse.Action):
         option_string: Optional[Text] = None,
     ) -> None:
         enum_cls = map_dest_to_enum[self.dest]
-        values = format_arg_option(values)
+        values = value_to_enum_key(values)
         setattr(namespace, self.dest, getattr(enum_cls, values))
 
 
