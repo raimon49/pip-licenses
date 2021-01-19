@@ -32,32 +32,30 @@ import glob
 import os
 import sys
 from collections import Counter
-from enum import Enum, auto
 from email import message_from_string
 from email.parser import FeedParser
+from enum import Enum, auto
 from functools import partial
-from typing import Optional, List, Text
+from typing import List, Optional, Text
 
 try:
     from pip._internal.utils.misc import get_installed_distributions
 except ImportError:  # pragma: no cover
     from pip import get_installed_distributions
+
 from prettytable import PrettyTable
+
 try:
-    from prettytable.prettytable import (
-        ALL as RULE_ALL,
-        FRAME as RULE_FRAME,
-        HEADER as RULE_HEADER,
-        NONE as RULE_NONE,
-    )
+    from prettytable.prettytable import ALL as RULE_ALL
+    from prettytable.prettytable import FRAME as RULE_FRAME
+    from prettytable.prettytable import HEADER as RULE_HEADER
+    from prettytable.prettytable import NONE as RULE_NONE
     PTABLE = True
 except ImportError:  # pragma: no cover
-    from prettytable import (
-        ALL as RULE_ALL,
-        FRAME as RULE_FRAME,
-        HEADER as RULE_HEADER,
-        NONE as RULE_NONE,
-    )
+    from prettytable import ALL as RULE_ALL
+    from prettytable import FRAME as RULE_FRAME
+    from prettytable import HEADER as RULE_HEADER
+    from prettytable import NONE as RULE_NONE
     PTABLE = False
 
 open = open  # allow monkey patching
