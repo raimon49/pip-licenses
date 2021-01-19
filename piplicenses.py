@@ -584,22 +584,30 @@ class CustomHelpFormatter(argparse.HelpFormatter):  # pragma: no cover
 
 class CompatibleArgumentParser(argparse.ArgumentParser):
     def parse_args(self, args=None, namespace=None):
-        args = super(CompatibleArgumentParser, self).parse_args(args,
-                                                                namespace)
-        self._check_code_page(args.filter_code_page)
-
+        args = super().parse_args(args, namespace)
+        self._verify_args(args)
         return args
 
-    @staticmethod
-    def _check_code_page(code_page):
+    def _verify_args(self, args):
+        if args.with_license_file is False and (
+                args.no_license_path is True or
+                args.with_notice_file is True):
+            self.error(
+                "'--no-license-path' and '--with-notice-file' require "
+                "the '--with-license-file' option to be set")
+        if args.filter_strings is False and \
+                args.filter_code_page != 'latin1':
+            self.error(
+                "'--filter-code-page' requires the '--filter-strings' "
+                "option to be set")
         try:
-            codecs.lookup(code_page)
+            codecs.lookup(args.filter_code_page)
         except LookupError:
-            print(("error: invalid code page '%s' given for "
-                   "--filter-code-page;\n"
-                   "       check https://docs.python.org/3/library/"
-                   "codecs.html for valid code pages") % code_page)
-            sys.exit(1)
+            self.error(
+                "invalid code page '%s' given for '--filter-code-page, "
+                "check https://docs.python.org/3/library/codecs.html"
+                "#standard-encodings for valid code pages"
+                % args.filter_code_page)
 
 
 class NoValueEnum(Enum):
