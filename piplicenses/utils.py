@@ -5,8 +5,6 @@ from typing import List
 
 from .const import CustomNamespace, FormatArg, NoValueEnum
 
-open = open  # allow monkey patching
-
 
 def value_to_enum_key(value: str) -> str:
     return value.replace('-', '_').upper()
