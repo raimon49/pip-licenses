@@ -11,15 +11,23 @@ import docutils.utils
 import pytest
 from _pytest.capture import CaptureFixture
 
-import piplicenses
-from piplicenses import (
-    DEFAULT_OUTPUT_FIELDS, LICENSE_UNKNOWN, RULE_ALL, RULE_FRAME,
-    RULE_HEADER, RULE_NONE, SYSTEM_PACKAGES, CompatibleArgumentParser,
-    FromArg, __pkgname__, create_licenses_table, create_output_string,
-    create_parser, create_warn_string, enum_key_to_value,
-    factory_styled_table_with_args, find_license_from_classifier,
-    get_output_fields, get_sortby, output_colored, save_if_needs,
-    select_license_by_source, value_to_enum_key)
+import piplicenses.__main__
+import piplicenses.utils
+from piplicenses.__main__ import (
+    create_licenses_table, create_output_string, get_output_fields,
+    get_packages, get_sortby)
+from piplicenses.argparse import CompatibleArgumentParser, create_parser
+from piplicenses.const import (
+    DEFAULT_OUTPUT_FIELDS, LICENSE_UNKNOWN, SYSTEM_PACKAGES, FromArg,
+    __pkgname__)
+from piplicenses.parse import (
+    find_license_from_classifier, select_license_by_source)
+from piplicenses.table import (
+    RULE_ALL, RULE_FRAME, RULE_HEADER, RULE_NONE,
+    factory_styled_table_with_args)
+from piplicenses.utils import (
+    create_warn_string, enum_key_to_value, output_colored,
+    save_if_needs, value_to_enum_key)
 
 UNICODE_APPENDIX = ""
 with open('tests/fixtures/unicode_characters.txt', encoding='utf-8') as f:
@@ -34,8 +42,8 @@ def get_installed_distributions_mocked(*args, **kwargs):
     return packages
 
 
-get_installed_distributions_orig = piplicenses.get_installed_distributions
-piplicenses.get_installed_distributions = get_installed_distributions_mocked
+get_installed_distributions_orig = piplicenses.__main__.get_installed_distributions  # noqa
+piplicenses.__main__.get_installed_distributions = get_installed_distributions_mocked  # noqa
 
 
 class CommandLineTestCase(unittest.TestCase):
@@ -533,18 +541,18 @@ class TestGetLicenses(CommandLineTestCase):
 
     def test_without_filter(self):
         args = self.parser.parse_args([])
-        packages = list(piplicenses.get_packages(args))
+        packages = list(get_packages(args))
         self.assertIn(UNICODE_APPENDIX, packages[-1]["name"])
 
     def test_with_default_filter(self):
         args = self.parser.parse_args(["--filter-strings"])
-        packages = list(piplicenses.get_packages(args))
+        packages = list(get_packages(args))
         self.assertNotIn(UNICODE_APPENDIX, packages[-1]["name"])
 
     def test_with_specified_filter(self):
         args = self.parser.parse_args(["--filter-strings",
                                        "--filter-code-page=ascii"])
-        packages = list(piplicenses.get_packages(args))
+        packages = list(get_packages(args))
         self.assertNotIn(UNICODE_APPENDIX, packages[-1]["summary"])
 
 
@@ -564,7 +572,7 @@ def test_output_file_sccess(monkeypatch):
 
     mocked_stdout = MockStdStream()
     mocked_stderr = MockStdStream()
-    monkeypatch.setattr(piplicenses, 'open', mocked_open)
+    monkeypatch.setattr(piplicenses.utils, 'open', mocked_open)
     monkeypatch.setattr(sys.stdout, 'write', mocked_stdout.write)
     monkeypatch.setattr(sys.stderr, 'write', mocked_stderr.write)
     monkeypatch.setattr(sys, 'exit', lambda n: None)
@@ -580,7 +588,7 @@ def test_output_file_error(monkeypatch):
 
     mocked_stdout = MockStdStream()
     mocked_stderr = MockStdStream()
-    monkeypatch.setattr(piplicenses, 'open', mocked_open)
+    monkeypatch.setattr(piplicenses.utils, 'open', mocked_open)
     monkeypatch.setattr(sys.stdout, 'write', mocked_stdout.write)
     monkeypatch.setattr(sys.stderr, 'write', mocked_stderr.write)
     monkeypatch.setattr(sys, 'exit', lambda n: None)
