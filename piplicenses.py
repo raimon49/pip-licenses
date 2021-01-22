@@ -234,7 +234,7 @@ def get_packages(args: "CustomNamespace"):
         pkg_info = get_pkg_info(pkg)
 
         license_name = select_license_by_source(
-            getattr(args, 'from'),
+            args.from_,
             pkg_info['license_classifier'],
             pkg_info['license'])
 
@@ -262,14 +262,13 @@ def get_packages(args: "CustomNamespace"):
 def create_licenses_table(
         args: "CustomNamespace", output_fields=DEFAULT_OUTPUT_FIELDS):
     table = factory_styled_table_with_args(args, output_fields)
-    from_source = getattr(args, 'from')
 
     for pkg in get_packages(args):
         row = []
         for field in output_fields:
             if field == 'License':
                 license_str = select_license_by_source(
-                    from_source, pkg['license_classifier'], pkg['license'])
+                    args.from_, pkg['license_classifier'], pkg['license'])
                 row.append(license_str)
             elif field == 'License-Classifier':
                 row.append(', '.join(pkg['license_classifier'])
@@ -412,26 +411,26 @@ def factory_styled_table_with_args(
     table = PrettyTable()
     table.field_names = output_fields
     table.align = 'l'
-    table.border = args.format in (FormatArg.MARKDOWN, FormatArg.RST,
-                                   FormatArg.CONFLUENCE, FormatArg.JSON)
+    table.border = args.format_ in (FormatArg.MARKDOWN, FormatArg.RST,
+                                    FormatArg.CONFLUENCE, FormatArg.JSON)
     table.header = True
 
-    if args.format == FormatArg.MARKDOWN:
+    if args.format_ == FormatArg.MARKDOWN:
         table.junction_char = '|'
         table.hrules = RULE_HEADER
-    elif args.format == FormatArg.RST:
+    elif args.format_ == FormatArg.RST:
         table.junction_char = '+'
         table.hrules = RULE_ALL
-    elif args.format == FormatArg.CONFLUENCE:
+    elif args.format_ == FormatArg.CONFLUENCE:
         table.junction_char = '|'
         table.hrules = RULE_NONE
-    elif args.format == FormatArg.JSON:
+    elif args.format_ == FormatArg.JSON:
         table = JsonPrettyTable(table.field_names)
-    elif args.format == FormatArg.JSON_LICENSE_FINDER:
+    elif args.format_ == FormatArg.JSON_LICENSE_FINDER:
         table = JsonLicenseFinderTable(table.field_names)
-    elif args.format == FormatArg.CSV:
+    elif args.format_ == FormatArg.CSV:
         table = CSVPrettyTable(table.field_names)
-    elif args.format == FormatArg.PLAIN_VERTICAL:
+    elif args.format_ == FormatArg.PLAIN_VERTICAL:
         table = PlainVerticalTable(table.field_names)
 
     return table
@@ -465,7 +464,7 @@ def get_output_fields(args: "CustomNamespace"):
 
     output_fields = list(DEFAULT_OUTPUT_FIELDS)
 
-    if getattr(args, 'from') == FromArg.ALL:
+    if args.from_ == FromArg.ALL:
         output_fields.append('License-Metadata')
         output_fields.append('License-Classifier')
     else:
@@ -519,7 +518,7 @@ def create_output_string(args: "CustomNamespace"):
 
     sortby = get_sortby(args)
 
-    if args.format == FormatArg.HTML:
+    if args.format_ == FormatArg.HTML:
         return table.get_html_string(fields=output_fields, sortby=sortby)
     else:
         return table.get_string(fields=output_fields, sortby=sortby)
@@ -529,7 +528,7 @@ def create_warn_string(args: "CustomNamespace"):
     warn_messages = []
     warn = partial(output_colored, '33')
 
-    if args.with_license_file and not args.format == FormatArg.JSON:
+    if args.with_license_file and not args.format_ == FormatArg.JSON:
         message = warn(('Due to the length of these fields, this option is '
                         'best paired with --format=json.'))
         warn_messages.append(message)
@@ -583,9 +582,9 @@ class CustomHelpFormatter(argparse.HelpFormatter):  # pragma: no cover
 
 
 class CustomNamespace(argparse.Namespace):
-    _from: "FromArg"
+    from_: "FromArg"
     order: "OrderArg"
-    format: "FormatArg"
+    format_: "FormatArg"
     summary: bool
     output_file: str
     ignore_packages: List[str]
@@ -598,8 +597,8 @@ class CustomNamespace(argparse.Namespace):
     with_notice_file: bool
     filter_strings: bool
     filter_code_page: str
-    fail_on: str
-    allow_only: str
+    fail_on: Optional[str]
+    allow_only: Optional[str]
 
 
 class CompatibleArgumentParser(argparse.ArgumentParser):
@@ -676,10 +675,10 @@ def choices_from_enum(enum_cls: NoValueEnum) -> List[str]:
             for key in enum_cls.__members__.keys()]
 
 
-map_dest_to_enum = {
-    'from': FromArg,
+MAP_DEST_TO_ENUM = {
+    'from_': FromArg,
     'order': OrderArg,
-    'format': FormatArg,
+    'format_': FormatArg,
 }
 
 
@@ -690,7 +689,7 @@ class SelectAction(argparse.Action):
         values: Text,
         option_string: Optional[Text] = None,
     ) -> None:
-        enum_cls = map_dest_to_enum[self.dest]
+        enum_cls = MAP_DEST_TO_ENUM[self.dest]
         values = value_to_enum_key(values)
         setattr(namespace, self.dest, getattr(enum_cls, values))
 
@@ -711,6 +710,7 @@ def create_parser():
 
     common_options.add_argument(
         '--from',
+        dest='from_',
         action=SelectAction, type=str,
         default=FromArg.MIXED, metavar='SOURCE',
         choices=choices_from_enum(FromArg),
@@ -727,6 +727,7 @@ def create_parser():
              '(default: %(default)s)')
     common_options.add_argument(
         '-f', '--format',
+        dest='format_',
         action=SelectAction, type=str,
         default=FormatArg.PLAIN, metavar='STYLE',
         choices=choices_from_enum(FormatArg),
