@@ -25,16 +25,17 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-
-import os
-from setuptools import setup
 from codecs import open
 from os import path
 
-from piplicenses import (__pkgname__ as PKG_NAME, __version__ as VERSION,
-                         __author__ as AUTHOR, __license__ as LICENSE,
-                         __summary__ as SUMMARY, __url__ as URL)
+from setuptools import setup
 
+from piplicenses.const import __author__ as AUTHOR
+from piplicenses.const import __license__ as LICENSE
+from piplicenses.const import __pkgname__ as PKG_NAME
+from piplicenses.const import __summary__ as SUMMARY
+from piplicenses.const import __url__ as URL
+from piplicenses.const import __version__ as VERSION
 
 here = path.abspath(path.dirname(__file__))
 
@@ -70,7 +71,7 @@ setup(
     license=LICENSE,
     entry_points={
         'console_scripts': [
-            PKG_NAME + '=piplicenses:main',
+            PKG_NAME + '=piplicenses.__main__:main',
         ],
     },
 )
