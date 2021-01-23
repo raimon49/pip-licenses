@@ -12,6 +12,7 @@ help:
 	@echo '    local-install   Install locally'
 	@echo '    local-uninstall Uninstall locally'
 	@echo '    update-depends  Re-compile requirements for development'
+	@echo '    format          Re-format by isort with setup.cfg'
 	@echo '    test            Run unittests'
 	@echo '    deploy          Release to PyPI server'
 	@echo '    test-deploy     Release to Test PyPI server'
@@ -34,6 +35,10 @@ local-uninstall:
 .PHONY: update-depends
 update-depends:
 	pip-compile -U $(DEV_DEPENDS).in
+
+.PHONY: format
+format:
+	isort piplicenses.py test_piplicenses.py
 
 .PHONY: test
 test:
