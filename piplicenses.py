@@ -34,28 +34,28 @@ import sys
 from collections import Counter
 from email import message_from_string
 from email.parser import FeedParser
+from enum import Enum, auto
 from functools import partial
+from typing import List, Optional, Sequence, Text
 
 try:
     from pip._internal.utils.misc import get_installed_distributions
 except ImportError:  # pragma: no cover
     from pip import get_installed_distributions
+
 from prettytable import PrettyTable
+
 try:
-    from prettytable.prettytable import (
-        ALL as RULE_ALL,
-        FRAME as RULE_FRAME,
-        HEADER as RULE_HEADER,
-        NONE as RULE_NONE,
-    )
+    from prettytable.prettytable import ALL as RULE_ALL
+    from prettytable.prettytable import FRAME as RULE_FRAME
+    from prettytable.prettytable import HEADER as RULE_HEADER
+    from prettytable.prettytable import NONE as RULE_NONE
     PTABLE = True
 except ImportError:  # pragma: no cover
-    from prettytable import (
-        ALL as RULE_ALL,
-        FRAME as RULE_FRAME,
-        HEADER as RULE_HEADER,
-        NONE as RULE_NONE,
-    )
+    from prettytable import ALL as RULE_ALL
+    from prettytable import FRAME as RULE_FRAME
+    from prettytable import HEADER as RULE_HEADER
+    from prettytable import NONE as RULE_NONE
     PTABLE = False
 
 open = open  # allow monkey patching
@@ -129,7 +129,7 @@ SYSTEM_PACKAGES = (
 LICENSE_UNKNOWN = 'UNKNOWN'
 
 
-def get_packages(args):
+def get_packages(args: "CustomNamespace"):
 
     def get_pkg_included_file(pkg, file_names):
         """
@@ -234,7 +234,7 @@ def get_packages(args):
         pkg_info = get_pkg_info(pkg)
 
         license_name = select_license_by_source(
-            getattr(args, 'from'),
+            args.from_,
             pkg_info['license_classifier'],
             pkg_info['license'])
 
@@ -259,16 +259,16 @@ def get_packages(args):
         yield pkg_info
 
 
-def create_licenses_table(args, output_fields=DEFAULT_OUTPUT_FIELDS):
+def create_licenses_table(
+        args: "CustomNamespace", output_fields=DEFAULT_OUTPUT_FIELDS):
     table = factory_styled_table_with_args(args, output_fields)
-    from_source = getattr(args, 'from')
 
     for pkg in get_packages(args):
         row = []
         for field in output_fields:
             if field == 'License':
                 license_str = select_license_by_source(
-                    from_source, pkg['license_classifier'], pkg['license'])
+                    args.from_, pkg['license_classifier'], pkg['license'])
                 row.append(license_str)
             elif field == 'License-Classifier':
                 row.append(', '.join(pkg['license_classifier'])
@@ -282,7 +282,7 @@ def create_licenses_table(args, output_fields=DEFAULT_OUTPUT_FIELDS):
     return table
 
 
-def create_summary_table(args):
+def create_summary_table(args: "CustomNamespace"):
     counts = Counter(pkg['license'] for pkg in get_packages(args))
 
     table = factory_styled_table_with_args(args, SUMMARY_FIELD_NAMES)
@@ -406,30 +406,31 @@ class PlainVerticalTable(PrettyTable):
         return output
 
 
-def factory_styled_table_with_args(args, output_fields=DEFAULT_OUTPUT_FIELDS):
+def factory_styled_table_with_args(
+        args: "CustomNamespace", output_fields=DEFAULT_OUTPUT_FIELDS):
     table = PrettyTable()
     table.field_names = output_fields
     table.align = 'l'
-    table.border = (args.format == 'markdown' or args.format == 'rst' or
-                    args.format == 'confluence' or args.format == 'json')
+    table.border = args.format_ in (FormatArg.MARKDOWN, FormatArg.RST,
+                                    FormatArg.CONFLUENCE, FormatArg.JSON)
     table.header = True
 
-    if args.format == 'markdown':
+    if args.format_ == FormatArg.MARKDOWN:
         table.junction_char = '|'
         table.hrules = RULE_HEADER
-    elif args.format == 'rst':
+    elif args.format_ == FormatArg.RST:
         table.junction_char = '+'
         table.hrules = RULE_ALL
-    elif args.format == 'confluence':
+    elif args.format_ == FormatArg.CONFLUENCE:
         table.junction_char = '|'
         table.hrules = RULE_NONE
-    elif args.format == 'json':
+    elif args.format_ == FormatArg.JSON:
         table = JsonPrettyTable(table.field_names)
-    elif args.format == 'json-license-finder':
+    elif args.format_ == FormatArg.JSON_LICENSE_FINDER:
         table = JsonLicenseFinderTable(table.field_names)
-    elif args.format == 'csv':
+    elif args.format_ == FormatArg.CSV:
         table = CSVPrettyTable(table.field_names)
-    elif args.format == 'plain-vertical':
+    elif args.format_ == FormatArg.PLAIN_VERTICAL:
         table = PlainVerticalTable(table.field_names)
 
     return table
@@ -450,20 +451,20 @@ def find_license_from_classifier(message):
 
 def select_license_by_source(from_source, license_classifier, license_meta):
     license_classifier_str = ', '.join(license_classifier) or LICENSE_UNKNOWN
-    if (from_source == 'classifier' or
-            from_source == 'mixed' and len(license_classifier) > 0):
+    if (from_source == FromArg.CLASSIFIER or
+            from_source == FromArg.MIXED and len(license_classifier) > 0):
         return license_classifier_str
     else:
         return license_meta
 
 
-def get_output_fields(args):
+def get_output_fields(args: "CustomNamespace"):
     if args.summary:
         return list(SUMMARY_OUTPUT_FIELDS)
 
     output_fields = list(DEFAULT_OUTPUT_FIELDS)
 
-    if getattr(args, 'from') == 'all':
+    if args.from_ == FromArg.ALL:
         output_fields.append('License-Metadata')
         output_fields.append('License-Classifier')
     else:
@@ -492,22 +493,22 @@ def get_output_fields(args):
     return output_fields
 
 
-def get_sortby(args):
-    if args.summary and args.order == 'count':
+def get_sortby(args: "CustomNamespace"):
+    if args.summary and args.order == OrderArg.COUNT:
         return 'Count'
-    elif args.summary or args.order == 'license':
+    elif args.summary or args.order == OrderArg.LICENSE:
         return 'License'
-    elif args.order == 'name':
+    elif args.order == OrderArg.NAME:
         return 'Name'
-    elif args.order == 'author' and args.with_authors:
+    elif args.order == OrderArg.AUTHOR and args.with_authors:
         return 'Author'
-    elif args.order == 'url' and args.with_urls:
+    elif args.order == OrderArg.URL and args.with_urls:
         return 'URL'
 
     return 'Name'
 
 
-def create_output_string(args):
+def create_output_string(args: "CustomNamespace"):
     output_fields = get_output_fields(args)
 
     if args.summary:
@@ -517,17 +518,17 @@ def create_output_string(args):
 
     sortby = get_sortby(args)
 
-    if args.format == 'html':
+    if args.format_ == FormatArg.HTML:
         return table.get_html_string(fields=output_fields, sortby=sortby)
     else:
         return table.get_string(fields=output_fields, sortby=sortby)
 
 
-def create_warn_string(args):
+def create_warn_string(args: "CustomNamespace"):
     warn_messages = []
     warn = partial(output_colored, '33')
 
-    if args.with_license_file and not args.format == 'json':
+    if args.with_license_file and not args.format_ == FormatArg.JSON:
         message = warn(('Due to the length of these fields, this option is '
                         'best paired with --format=json.'))
         warn_messages.append(message)
@@ -542,171 +543,278 @@ def create_warn_string(args):
     return '\n'.join(warn_messages)
 
 
+class CustomHelpFormatter(argparse.HelpFormatter):  # pragma: no cover
+    def __init__(
+        self, prog: Text, indent_increment: int = 2,
+        max_help_position: int = 24, width: Optional[int] = None
+    ) -> None:
+        max_help_position = 30
+        super().__init__(
+            prog, indent_increment=indent_increment,
+            max_help_position=max_help_position, width=width)
+
+    def _format_action(self, action: argparse.Action) -> str:
+        flag_indent_argument: bool = False
+        text = self._expand_help(action)
+        separator_pos = text[:3].find('|')
+        if separator_pos != -1 and 'I' in text[:separator_pos]:
+            self._indent()
+            flag_indent_argument = True
+        help_str = super()._format_action(action)
+        if flag_indent_argument:
+            self._dedent()
+        return help_str
+
+    def _expand_help(self, action: argparse.Action) -> str:
+        if isinstance(action.default, Enum):
+            default_value = enum_key_to_value(action.default)
+            return self._get_help_string(action) % {'default': default_value}
+        return super()._expand_help(action)
+
+    def _split_lines(self, text: Text, width: int) -> List[str]:
+        separator_pos = text[:3].find('|')
+        if separator_pos != -1:
+            flag_splitlines: bool = 'R' in text[:separator_pos]
+            text = text[separator_pos + 1:]
+            if flag_splitlines:
+                return text.splitlines()
+        return super()._split_lines(text, width)
+
+
+class CustomNamespace(argparse.Namespace):
+    from_: "FromArg"
+    order: "OrderArg"
+    format_: "FormatArg"
+    summary: bool
+    output_file: str
+    ignore_packages: List[str]
+    with_system: bool
+    with_authors: bool
+    with_urls: bool
+    with_description: bool
+    with_license_file: bool
+    no_license_path: bool
+    with_notice_file: bool
+    filter_strings: bool
+    filter_code_page: str
+    fail_on: Optional[str]
+    allow_only: Optional[str]
+
+
 class CompatibleArgumentParser(argparse.ArgumentParser):
-
-    def parse_args(self, args=None, namespace=None):
-        args = super(CompatibleArgumentParser, self).parse_args(args,
-                                                                namespace)
-        self._compatible_format_args(args)
-        self._check_code_page(args.filter_code_page)
-
+    def parse_args(self, args: Optional[Sequence[Text]] = None,
+                   namespace: CustomNamespace = None) -> CustomNamespace:
+        args = super().parse_args(args, namespace)
+        self._verify_args(args)
         return args
 
-    @staticmethod
-    def _check_code_page(code_page):
+    def _verify_args(self, args: CustomNamespace):
+        if args.with_license_file is False and (
+                args.no_license_path is True or
+                args.with_notice_file is True):
+            self.error(
+                "'--no-license-path' and '--with-notice-file' require "
+                "the '--with-license-file' option to be set")
+        if args.filter_strings is False and \
+                args.filter_code_page != 'latin1':
+            self.error(
+                "'--filter-code-page' requires the '--filter-strings' "
+                "option to be set")
         try:
-            codecs.lookup(code_page)
+            codecs.lookup(args.filter_code_page)
         except LookupError:
-            print(("error: invalid code page '%s' given for "
-                   "--filter-code-page;\n"
-                   "       check https://docs.python.org/3/library/"
-                   "codecs.html for valid code pages") % code_page)
-            sys.exit(1)
+            self.error(
+                "invalid code page '%s' given for '--filter-code-page, "
+                "check https://docs.python.org/3/library/codecs.html"
+                "#standard-encodings for valid code pages"
+                % args.filter_code_page)
 
-    @staticmethod
-    def _compatible_format_args(args):
-        from_input = getattr(args, 'from').lower()
-        order_input = args.order.lower()
-        format_input = args.format.lower()
 
-        # XXX: Use enum when drop support Python 2.7
-        if from_input in ('meta', 'm'):
-            setattr(args, 'from', 'meta')
+class NoValueEnum(Enum):
+    def __repr__(self):  # pragma: no cover
+        return '<%s.%s>' % (self.__class__.__name__, self.name)
 
-        if from_input in ('classifier', 'c'):
-            setattr(args, 'from', 'classifier')
 
-        if from_input in ('mixed', 'mix'):
-            setattr(args, 'from', 'mixed')
+class FromArg(NoValueEnum):
+    META = M = auto()
+    CLASSIFIER = C = auto()
+    MIXED = MIX = auto()
+    ALL = auto()
 
-        if order_input in ('count', 'c'):
-            args.order = 'count'
 
-        if order_input in ('license', 'l'):
-            args.order = 'license'
+class OrderArg(NoValueEnum):
+    COUNT = C = auto()
+    LICENSE = L = auto()
+    NAME = N = auto()
+    AUTHOR = A = auto()
+    URL = U = auto()
 
-        if order_input in ('name', 'n'):
-            args.order = 'name'
 
-        if order_input in ('author', 'a'):
-            args.order = 'author'
+class FormatArg(NoValueEnum):
+    PLAIN = P = auto()
+    PLAIN_VERTICAL = auto()
+    MARKDOWN = MD = M = auto()
+    RST = REST = R = auto()
+    CONFLUENCE = C = auto()
+    HTML = H = auto()
+    JSON = J = auto()
+    JSON_LICENSE_FINDER = JLF = auto()
+    CSV = auto()
 
-        if order_input in ('url', 'u'):
-            args.order = 'url'
 
-        if format_input in ('plain', 'p'):
-            args.format = 'plain'
+def value_to_enum_key(value: str) -> str:
+    return value.replace('-', '_').upper()
 
-        if format_input in ('markdown', 'md', 'm'):
-            args.format = 'markdown'
 
-        if format_input in ('rst', 'rest', 'r'):
-            args.format = 'rst'
+def enum_key_to_value(enum_key: Enum) -> str:
+    return enum_key.name.replace('_', '-').lower()
 
-        if format_input in ('confluence', 'c'):
-            args.format = 'confluence'
 
-        if format_input in ('html', 'h'):
-            args.format = 'html'
+def choices_from_enum(enum_cls: NoValueEnum) -> List[str]:
+    return [key.replace('_', '-').lower()
+            for key in enum_cls.__members__.keys()]
 
-        if format_input in ('json', 'j'):
-            args.format = 'json'
 
-        if format_input in ('json-license-finder', 'jlf'):
-            args.format = 'json-license-finder'
+MAP_DEST_TO_ENUM = {
+    'from_': FromArg,
+    'order': OrderArg,
+    'format_': FormatArg,
+}
 
-        if format_input in ('csv', ):
-            args.format = 'csv'
+
+class SelectAction(argparse.Action):
+    def __call__(
+        self, parser: argparse.ArgumentParser,
+        namespace: argparse.Namespace,
+        values: Text,
+        option_string: Optional[Text] = None,
+    ) -> None:
+        enum_cls = MAP_DEST_TO_ENUM[self.dest]
+        values = value_to_enum_key(values)
+        setattr(namespace, self.dest, getattr(enum_cls, values))
 
 
 def create_parser():
     parser = CompatibleArgumentParser(
-        description=__summary__)
-    parser.add_argument('-v', '--version',
-                        action='version',
-                        version='%(prog)s ' + __version__)
-    parser.add_argument('--from',
-                        action='store', type=str,
-                        default='mixed', metavar='SOURCE',
-                        help=('where to find license information\n'
-                              '"meta", "classifier, "mixed", "all"\n'
-                              'default: --from=mixed'))
-    parser.add_argument('-s', '--with-system',
-                        action='store_true',
-                        default=False,
-                        help='dump with system packages')
-    parser.add_argument('-a', '--with-authors',
-                        action='store_true',
-                        default=False,
-                        help='dump with package authors')
-    parser.add_argument('-u', '--with-urls',
-                        action='store_true',
-                        default=False,
-                        help='dump with package urls')
-    parser.add_argument('-d', '--with-description',
-                        action='store_true',
-                        default=False,
-                        help='dump with short package description')
-    parser.add_argument('-l', '--with-license-file',
-                        action='store_true',
-                        default=False,
-                        help='dump with location of license file and '
-                             'contents, most useful with JSON output')
-    parser.add_argument('--no-license-path',
-                        action='store_true',
-                        default=False,
-                        help='when specified together with option -l, '
-                             'suppress location of license file output')
-    parser.add_argument('--with-notice-file',
-                        action='store_true',
-                        default=False,
-                        help='when specified together with option -l, '
-                             'dump with location of license file and contents')
-    parser.add_argument('-i', '--ignore-packages',
-                        action='store', type=str,
-                        nargs='+', metavar='PKG',
-                        default=[],
-                        help='ignore package name in dumped list')
-    parser.add_argument('-o', '--order',
-                        action='store', type=str,
-                        default='name', metavar='COL',
-                        help=('order by column\n'
-                              '"name", "license", "author", "url"\n'
-                              'default: --order=name'))
-    parser.add_argument('-f', '--format',
-                        action='store', type=str,
-                        default='plain', metavar='STYLE',
-                        help=('dump as set format style\n'
-                              '"plain", "plain-vertical" "markdown", "rst", \n'
-                              '"confluence", "html", "json", \n'
-                              '"json-license-finder",  "csv"\n'
-                              'default: --format=plain'))
-    parser.add_argument('--filter-strings',
-                        action="store_true",
-                        default=False,
-                        help=('filter input according to code page'))
-    parser.add_argument('--filter-code-page',
-                        action="store", type=str,
-                        default="latin1",
-                        help=('specify code page for filtering'))
-    parser.add_argument('--summary',
-                        action='store_true',
-                        default=False,
-                        help='dump summary of each license')
-    parser.add_argument('--output-file',
-                        action='store', type=str,
-                        help='save license list to file')
-    parser.add_argument('--fail-on',
-                        action='store', type=str,
-                        default=None,
-                        help='fail (exit with code 1) on the first occurrence '
-                             'of the licenses of the semicolon-separated list')
-    parser.add_argument('--allow-only',
-                        action='store', type=str,
-                        default=None,
-                        help='fail (exit with code 1) on the first occurrence '
-                             'of the licenses not in the semicolon-separated '
-                             'list')
+        description=__summary__,
+        formatter_class=CustomHelpFormatter)
+
+    common_options = parser.add_argument_group('Common options')
+    format_options = parser.add_argument_group('Format options')
+    verify_options = parser.add_argument_group('Verify options')
+
+    parser.add_argument(
+        '-v', '--version',
+        action='version',
+        version='%(prog)s ' + __version__)
+
+    common_options.add_argument(
+        '--from',
+        dest='from_',
+        action=SelectAction, type=str,
+        default=FromArg.MIXED, metavar='SOURCE',
+        choices=choices_from_enum(FromArg),
+        help='R|where to find license information\n'
+             '"meta", "classifier, "mixed", "all"\n'
+             '(default: %(default)s)')
+    common_options.add_argument(
+        '-o', '--order',
+        action=SelectAction, type=str,
+        default=OrderArg.NAME, metavar='COL',
+        choices=choices_from_enum(OrderArg),
+        help='R|order by column\n'
+             '"name", "license", "author", "url"\n'
+             '(default: %(default)s)')
+    common_options.add_argument(
+        '-f', '--format',
+        dest='format_',
+        action=SelectAction, type=str,
+        default=FormatArg.PLAIN, metavar='STYLE',
+        choices=choices_from_enum(FormatArg),
+        help='R|dump as set format style\n'
+             '"plain", "plain-vertical" "markdown", "rst", \n'
+             '"confluence", "html", "json", \n'
+             '"json-license-finder",  "csv"\n'
+             '(default: %(default)s)')
+    common_options.add_argument(
+        '--summary',
+        action='store_true',
+        default=False,
+        help='dump summary of each license')
+    common_options.add_argument(
+        '--output-file',
+        action='store', type=str,
+        help='save license list to file')
+    common_options.add_argument(
+        '-i', '--ignore-packages',
+        action='store', type=str,
+        nargs='+', metavar='PKG',
+        default=[],
+        help='ignore package name in dumped list')
+
+    format_options.add_argument(
+        '-s', '--with-system',
+        action='store_true',
+        default=False,
+        help='dump with system packages')
+    format_options.add_argument(
+        '-a', '--with-authors',
+        action='store_true',
+        default=False,
+        help='dump with package authors')
+    format_options.add_argument(
+        '-u', '--with-urls',
+        action='store_true',
+        default=False,
+        help='dump with package urls')
+    format_options.add_argument(
+        '-d', '--with-description',
+        action='store_true',
+        default=False,
+        help='dump with short package description')
+    format_options.add_argument(
+        '-l', '--with-license-file',
+        action='store_true',
+        default=False,
+        help='dump with location of license file and '
+             'contents, most useful with JSON output')
+    format_options.add_argument(
+        '--no-license-path',
+        action='store_true',
+        default=False,
+        help='I|when specified together with option -l, '
+             'suppress location of license file output')
+    format_options.add_argument(
+        '--with-notice-file',
+        action='store_true',
+        default=False,
+        help='I|when specified together with option -l, '
+             'dump with location of license file and contents')
+    format_options.add_argument(
+        '--filter-strings',
+        action="store_true",
+        default=False,
+        help='filter input according to code page')
+    format_options.add_argument(
+        '--filter-code-page',
+        action="store", type=str,
+        default="latin1",
+        metavar="CODE",
+        help='I|specify code page for filtering '
+             '(default: %(default)s)')
+
+    verify_options.add_argument(
+        '--fail-on',
+        action='store', type=str,
+        default=None,
+        help='fail (exit with code 1) on the first occurrence '
+             'of the licenses of the semicolon-separated list')
+    verify_options.add_argument(
+        '--allow-only',
+        action='store', type=str,
+        default=None,
+        help='fail (exit with code 1) on the first occurrence '
+             'of the licenses not in the semicolon-separated list')
 
     return parser
 

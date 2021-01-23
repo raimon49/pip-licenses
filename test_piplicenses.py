@@ -5,21 +5,23 @@ import re
 import sys
 import unittest
 from email import message_from_string
+from enum import Enum, auto
 
+import docutils.frontend
 import docutils.parsers.rst
 import docutils.utils
-import docutils.frontend
+import pytest
+from _pytest.capture import CaptureFixture
 
 import piplicenses
-from piplicenses import (__pkgname__, create_parser, output_colored,
-                         create_licenses_table, get_output_fields, get_sortby,
-                         factory_styled_table_with_args, create_warn_string,
-                         find_license_from_classifier, create_output_string,
-                         select_license_by_source, save_if_needs,
-                         RULE_ALL, RULE_FRAME, RULE_HEADER, RULE_NONE,
-                         DEFAULT_OUTPUT_FIELDS, SYSTEM_PACKAGES,
-                         LICENSE_UNKNOWN)
-
+from piplicenses import (
+    DEFAULT_OUTPUT_FIELDS, LICENSE_UNKNOWN, RULE_ALL, RULE_FRAME,
+    RULE_HEADER, RULE_NONE, SYSTEM_PACKAGES, CompatibleArgumentParser,
+    FromArg, __pkgname__, create_licenses_table, create_output_string,
+    create_parser, create_warn_string, enum_key_to_value,
+    factory_styled_table_with_args, find_license_from_classifier,
+    get_output_fields, get_sortby, output_colored, save_if_needs,
+    select_license_by_source, value_to_enum_key)
 
 UNICODE_APPENDIX = ""
 with open('tests/fixtures/unicode_characters.txt', encoding='utf-8') as f:
@@ -203,22 +205,22 @@ class TestGetLicenses(CommandLineTestCase):
 
     def test_select_license_by_source(self):
         self.assertEqual('MIT License',
-                         select_license_by_source('classifier',
+                         select_license_by_source(FromArg.CLASSIFIER,
                                                   ['MIT License'],
                                                   'MIT'))
 
         self.assertEqual(LICENSE_UNKNOWN,
-                         select_license_by_source('classifier',
+                         select_license_by_source(FromArg.CLASSIFIER,
                                                   [],
                                                   'MIT'))
 
         self.assertEqual('MIT License',
-                         select_license_by_source('mixed',
+                         select_license_by_source(FromArg.MIXED,
                                                   ['MIT License'],
                                                   'MIT'))
 
         self.assertEqual('MIT',
-                         select_license_by_source('mixed',
+                         select_license_by_source(FromArg.MIXED,
                                                   [],
                                                   'MIT'))
 
@@ -547,11 +549,6 @@ class TestGetLicenses(CommandLineTestCase):
         packages = list(piplicenses.get_packages(args))
         self.assertNotIn(UNICODE_APPENDIX, packages[-1]["summary"])
 
-    def test_invalid_code_page(self):
-        with self.assertRaises(SystemExit):
-            self.parser.parse_args(["--filter-strings",
-                                    "--filter-code-page=XXX"])
-
 
 class MockStdStream(object):
 
@@ -649,3 +646,54 @@ def test_fail_on(monkeypatch):
     assert '' == mocked_stdout.printed
     assert 'fail-on license MIT License was found for ' \
            'package' in mocked_stderr.printed
+
+
+def test_enums():
+    class TestEnum(Enum):
+        PLAIN = P = auto()
+        JSON_LICENSE_FINDER = JLF = auto()
+
+    assert TestEnum.PLAIN == TestEnum.P
+    assert getattr(TestEnum, value_to_enum_key('jlf')) == \
+        TestEnum.JSON_LICENSE_FINDER
+    assert value_to_enum_key('jlf') == 'JLF'
+    assert value_to_enum_key('json-license-finder') == \
+        'JSON_LICENSE_FINDER'
+    assert enum_key_to_value(TestEnum.JSON_LICENSE_FINDER) == \
+        'json-license-finder'
+    assert enum_key_to_value(TestEnum.PLAIN) == 'plain'
+
+
+@pytest.fixture(scope='package')
+def parser():
+    return create_parser()
+
+
+def test_verify_args(
+        parser: CompatibleArgumentParser, capsys: CaptureFixture):
+    # --with-license-file missing
+    with pytest.raises(SystemExit) as ex:
+        parser.parse_args(['--no-license-path'])
+    capture = capsys.readouterr().err
+    for arg in ('--no-license-path', '--with-license-file'):
+        assert arg in capture
+
+    with pytest.raises(SystemExit) as ex:
+        parser.parse_args(['--with-notice-file'])
+    capture = capsys.readouterr().err
+    for arg in ('--with-notice-file', '--with-license-file'):
+        assert arg in capture
+
+    # --filter-strings missing
+    with pytest.raises(SystemExit) as ex:
+        parser.parse_args(['--filter-code-page=utf8'])
+    capture = capsys.readouterr().err
+    for arg in ('--filter-code-page', '--filter-strings'):
+        assert arg in capture
+
+    # invalid code-page
+    with pytest.raises(SystemExit) as ex:
+        parser.parse_args(['--filter-strings', '--filter-code-page=XX'])
+    capture = capsys.readouterr().err
+    for arg in ('invalid code', '--filter-code-page'):
+        assert arg in capture
