@@ -104,3 +104,9 @@ ENV/
 # ignore files to run in docker
 docker/*
 !docker/.gitkeep
+
+# Windows
+[Dd]esktop.ini
+
+# macOS
+.DS_Store
