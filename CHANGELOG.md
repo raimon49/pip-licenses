@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+### 3.3.0
+
+* Improves the readability of the help command
+
 ### 3.2.0
 
 * Implement new option `--from=all`
