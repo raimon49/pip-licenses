@@ -1,3 +1,6 @@
+# ---------------------------------------------------------------------------
+# Licensed under the MIT License. See LICENSE file for license information.
+# ---------------------------------------------------------------------------
 import codecs
 from argparse import Action, ArgumentParser, HelpFormatter, Namespace
 from enum import Enum

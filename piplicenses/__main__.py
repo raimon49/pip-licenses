@@ -1,3 +1,6 @@
+# ---------------------------------------------------------------------------
+# Licensed under the MIT License. See LICENSE file for license information.
+# ---------------------------------------------------------------------------
 import sys
 from collections import Counter
 

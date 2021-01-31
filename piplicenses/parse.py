@@ -1,3 +1,6 @@
+# ---------------------------------------------------------------------------
+# Licensed under the MIT License. See LICENSE file for license information.
+# ---------------------------------------------------------------------------
 import glob
 import os
 from email import message_from_string

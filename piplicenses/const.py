@@ -1,3 +1,6 @@
+# ---------------------------------------------------------------------------
+# Licensed under the MIT License. See LICENSE file for license information.
+# ---------------------------------------------------------------------------
 from argparse import Namespace
 from enum import Enum, auto
 from typing import List, Optional

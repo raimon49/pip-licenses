@@ -1,3 +1,6 @@
+# ---------------------------------------------------------------------------
+# Licensed under the MIT License. See LICENSE file for license information.
+# ---------------------------------------------------------------------------
 from prettytable import PrettyTable
 
 from .const import DEFAULT_OUTPUT_FIELDS, CustomNamespace, FormatArg
