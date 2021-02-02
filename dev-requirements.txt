@@ -8,7 +8,7 @@ attrs==20.3.0
     # via pytest
 autopep8==1.5.4
     # via -r dev-requirements.in
-bleach==3.2.2
+bleach==3.3.0
     # via readme-renderer
 certifi==2020.12.5
     # via requests
