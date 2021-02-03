@@ -8,7 +8,7 @@ attrs==20.3.0
     # via pytest
 autopep8==1.5.4
     # via -r dev-requirements.in
-bleach==3.2.2
+bleach==3.3.0
     # via readme-renderer
 certifi==2020.12.5
     # via requests
@@ -22,7 +22,7 @@ codecov==2.1.11
     # via -r dev-requirements.in
 colorama==0.4.4
     # via twine
-coverage==5.3.1
+coverage==5.4
     # via
     #   codecov
     #   pytest-cov
@@ -42,9 +42,9 @@ jeepney==0.6.0
     # via
     #   keyring
     #   secretstorage
-keyring==21.8.0
+keyring==22.0.1
     # via twine
-packaging==20.8
+packaging==20.9
     # via
     #   bleach
     #   pytest
@@ -76,7 +76,7 @@ pytest-pycodestyle==2.2.0
     # via -r dev-requirements.in
 pytest-runner==5.2
     # via -r dev-requirements.in
-pytest==6.2.1
+pytest==6.2.2
     # via
     #   pytest-cov
     #   pytest-pycodestyle
@@ -106,7 +106,7 @@ tqdm==4.56.0
     # via twine
 twine==3.3.0
     # via -r dev-requirements.in
-urllib3==1.26.2
+urllib3==1.26.3
     # via requests
 webencodings==0.5.1
     # via bleach
