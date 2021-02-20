@@ -6,13 +6,13 @@
 #
 attrs==20.3.0
     # via pytest
-autopep8==1.5.4
+autopep8==1.5.5
     # via -r dev-requirements.in
 bleach==3.3.0
     # via readme-renderer
 certifi==2020.12.5
     # via requests
-cffi==1.14.4
+cffi==1.14.5
     # via cryptography
 chardet==4.0.0
     # via requests
@@ -26,7 +26,7 @@ coverage==5.4
     # via
     #   codecov
     #   pytest-cov
-cryptography==3.3.1
+cryptography==3.4.6
     # via secretstorage
 docutils==0.16
     # via
@@ -64,7 +64,7 @@ pycodestyle==2.6.0
     #   pytest-pycodestyle
 pycparser==2.20
     # via cffi
-pygments==2.7.4
+pygments==2.8.0
     # via readme-renderer
 pypandoc==1.5
     # via -r dev-requirements.in
@@ -74,7 +74,7 @@ pytest-cov==2.11.1
     # via -r dev-requirements.in
 pytest-pycodestyle==2.2.0
     # via -r dev-requirements.in
-pytest-runner==5.2
+pytest-runner==5.3.0
     # via -r dev-requirements.in
 pytest==6.2.2
     # via
@@ -91,18 +91,17 @@ requests==2.25.1
     #   twine
 rfc3986==1.4.0
     # via twine
-secretstorage==3.3.0
+secretstorage==3.3.1
     # via keyring
 six==1.15.0
     # via
     #   bleach
-    #   cryptography
     #   readme-renderer
 toml==0.10.2
     # via
     #   autopep8
     #   pytest
-tqdm==4.56.0
+tqdm==4.57.0
     # via twine
 twine==3.3.0
     # via -r dev-requirements.in
