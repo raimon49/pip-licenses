@@ -92,7 +92,9 @@ def create_licenses_table(
 
 
 def create_summary_table(args: CustomNamespace):
-    counts = Counter(pkg['license'] for pkg in get_packages(args))
+    counts = Counter(select_license_by_source(
+        args.from_, pkg['license_classifier'], pkg['license'])
+        for pkg in get_packages(args))
 
     table = factory_styled_table_with_args(args, SUMMARY_FIELD_NAMES)
     for license, count in counts.items():
