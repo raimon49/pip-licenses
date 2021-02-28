@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+### 3.3.1
+
+* Fix license summary refer to `--from` option
+
 ### 3.3.0
 
 * Improves the readability of the help command
