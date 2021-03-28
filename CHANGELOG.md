@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+### 3.3.2
+
+* Include the egg package directory in the scan
+
 ### 3.3.1
 
 * Fix license summary refer to `--from` option
