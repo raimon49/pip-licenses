@@ -138,13 +138,22 @@ def get_packages(args: "CustomNamespace"):
         """
         included_file = LICENSE_UNKNOWN
         included_text = LICENSE_UNKNOWN
-        pkg_dirname = "{}-{}.dist-info".format(
-            pkg.project_name.replace("-", "_"), pkg.version)
+        pkg_and_ver = "{}-{}".format(
+            pkg.project_name.replace("-", "_"),
+            pkg.version
+        )
         patterns = []
-        [patterns.extend(sorted(glob.glob(os.path.join(pkg.location,
-                                                       pkg_dirname,
-                                                       f))))
-         for f in file_names]
+        target_dirs = (
+            "{}.dist-info".format(pkg_and_ver),
+            "{}*.egg-info".format(pkg_and_ver),
+            "{}*.egg/EGG-INFO".format(pkg_and_ver),
+        )
+        for pkg_dirname in target_dirs:
+            [patterns.extend(sorted(glob.glob(os.path.join(pkg.location,
+                                                           pkg_dirname,
+                                                           f))))
+             for f in file_names]
+
         for test_file in patterns:
             if os.path.exists(test_file):
                 included_file = test_file
