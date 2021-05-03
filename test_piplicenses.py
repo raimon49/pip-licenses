@@ -612,7 +612,8 @@ def test_allow_only(monkeypatch):
         "MIT License, Mozilla Public License 2.0 (MPL 2.0)",
         "Apache Software License, BSD License",
         "Python Software Foundation License, MIT License",
-        "Public Domain, Python Software Foundation License, BSD License,"
+        "Public Domain, Python Software Foundation License, BSD License, "
+        "GNU General Public License (GPL)",
         "GNU General Public License (GPL)",
         "GNU Library or Lesser General Public License (LGPL)",
     )
