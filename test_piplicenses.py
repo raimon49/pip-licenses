@@ -118,7 +118,7 @@ class TestGetLicenses(CommandLineTestCase):
 
         table = create_licenses_table(args, output_fields)
         license_columns = self._create_license_columns(table, output_fields)
-        license_notation_as_meta = 'BSD-3-Clause'
+        license_notation_as_meta = 'MIT'
         self.assertIn(license_notation_as_meta, license_columns)
 
     def test_from_classifier(self):
