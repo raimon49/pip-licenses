@@ -37,7 +37,6 @@ def get_installed_distributions_mocked(*args, **kwargs):
 
 
 get_installed_distributions_orig = piplicenses.get_installed_distributions
-piplicenses.get_installed_distributions = get_installed_distributions_mocked
 
 
 class CommandLineTestCase(unittest.TestCase):
@@ -406,6 +405,8 @@ class TestGetLicenses(CommandLineTestCase):
     @unittest.skipIf(sys.version_info < (3, 6, 0),
                      "To unsupport Python 3.5 in the near future")
     def test_format_rst_without_filter(self):
+        piplicenses.get_installed_distributions = \
+            get_installed_distributions_mocked
         format_rst_args = ['--format=rst']
         args = self.parser.parse_args(format_rst_args)
         table = create_licenses_table(args)
@@ -417,8 +418,12 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertEqual(RULE_ALL, table.hrules)
         with self.assertRaises(docutils.utils.SystemMessage):
             self.check_rst(str(table))
+        piplicenses.get_installed_distributions = \
+            get_installed_distributions_orig
 
     def test_format_rst_default_filter(self):
+        piplicenses.get_installed_distributions = \
+            get_installed_distributions_mocked
         format_rst_args = ['--format=rst', '--filter-strings']
         args = self.parser.parse_args(format_rst_args)
         table = create_licenses_table(args)
@@ -429,6 +434,8 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertEqual('+', table.junction_char)
         self.assertEqual(RULE_ALL, table.hrules)
         self.check_rst(str(table))
+        piplicenses.get_installed_distributions = \
+            get_installed_distributions_orig
 
     def test_format_confluence(self):
         format_confluence_args = ['--format=confluence']
@@ -534,20 +541,32 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertTrue(actual.endswith('\033[0m'))
 
     def test_without_filter(self):
+        piplicenses.get_installed_distributions = \
+            get_installed_distributions_mocked
         args = self.parser.parse_args([])
         packages = list(piplicenses.get_packages(args))
         self.assertIn(UNICODE_APPENDIX, packages[-1]["name"])
+        piplicenses.get_installed_distributions = \
+            get_installed_distributions_orig
 
     def test_with_default_filter(self):
+        piplicenses.get_installed_distributions = \
+            get_installed_distributions_mocked
         args = self.parser.parse_args(["--filter-strings"])
         packages = list(piplicenses.get_packages(args))
+        piplicenses.get_installed_distributions = \
+            get_installed_distributions_orig
         self.assertNotIn(UNICODE_APPENDIX, packages[-1]["name"])
 
     def test_with_specified_filter(self):
+        piplicenses.get_installed_distributions = \
+            get_installed_distributions_mocked
         args = self.parser.parse_args(["--filter-strings",
                                        "--filter-code-page=ascii"])
         packages = list(piplicenses.get_packages(args))
         self.assertNotIn(UNICODE_APPENDIX, packages[-1]["summary"])
+        piplicenses.get_installed_distributions = \
+            get_installed_distributions_orig
 
 
 class MockStdStream(object):
