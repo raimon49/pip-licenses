@@ -25,6 +25,7 @@ Dump the software license list of Python packages installed with pip.
         * [Option: summary](#option-summary)
         * [Option: output\-file](#option-output-file)
         * [Option: ignore\-packages](#option-ignore-packages)
+        * [Option: packages](#option-packages)
     * [Format options](#format-options)
         * [Option: with\-system](#option-with-system)
         * [Option: with\-authors](#option-with-authors)
@@ -339,6 +340,24 @@ Package names of arguments can be separated by spaces.
  setuptools  38.5.0   UNKNOWN
 ```
 
+#### Option: packages
+
+When executed with the `packages` option, look at the package specified by argument from list output.
+
+```bash
+(venv) $ pip-licenses --packages django
+ Name   Version  License
+ Django 2.0.2    BSD
+```
+
+Package names of arguments can be separated by spaces.
+
+```bash
+(venv) $ pip-licenses --with-system --packages PTable pytz
+ Name        Version  License
+ PTable      0.9.2    BSD (3 clause)
+ pytz        2017.3   MIT
+```
 
 ### Format options
 

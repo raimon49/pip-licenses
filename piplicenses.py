@@ -213,6 +213,7 @@ def get_packages(args: "CustomNamespace"):
 
     pkgs = get_installed_distributions()
     ignore_pkgs_as_lower = [pkg.lower() for pkg in args.ignore_packages]
+    pkgs_as_lower = [pkg.lower() for pkg in args.packages]
 
     fail_on_licenses = None
     if args.fail_on:
@@ -226,6 +227,9 @@ def get_packages(args: "CustomNamespace"):
         pkg_name = pkg.project_name
 
         if pkg_name.lower() in ignore_pkgs_as_lower:
+            continue
+
+        if pkgs_as_lower and pkg_name.lower() not in pkgs_as_lower:
             continue
 
         if not args.with_system and pkg_name in SYSTEM_PACKAGES:
@@ -590,6 +594,7 @@ class CustomNamespace(argparse.Namespace):
     summary: bool
     output_file: str
     ignore_packages: List[str]
+    packages: List[str]
     with_system: bool
     with_authors: bool
     with_urls: bool
@@ -753,7 +758,12 @@ def create_parser():
         nargs='+', metavar='PKG',
         default=[],
         help='ignore package name in dumped list')
-
+    common_options.add_argument(
+        '-p', '--packages',
+        action='store', type=str,
+        nargs='+', metavar='PKG',
+        default=[],
+        help='only include selected packages in output')
     format_options.add_argument(
         '-s', '--with-system',
         action='store_true',
