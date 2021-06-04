@@ -4,19 +4,19 @@
 #
 #    pip-compile dev-requirements.in
 #
-attrs==20.3.0
+attrs==21.2.0
     # via pytest
 autopep8==1.5.7
     # via -r dev-requirements.in
 bleach==3.3.0
     # via readme-renderer
-certifi==2020.12.5
+certifi==2021.5.30
     # via requests
 cffi==1.14.5
     # via cryptography
 chardet==4.0.0
     # via requests
-click==7.1.2
+click==8.0.1
     # via pip-tools
 codecov==2.1.11
     # via -r dev-requirements.in
@@ -34,7 +34,7 @@ docutils==0.17.1
     #   readme-renderer
 idna==2.10
     # via requests
-importlib-metadata==4.0.1
+importlib-metadata==4.5.0
     # via
     #   keyring
     #   twine
@@ -70,19 +70,19 @@ pycodestyle==2.7.0
     #   pytest-pycodestyle
 pycparser==2.20
     # via cffi
-pygments==2.8.1
+pygments==2.9.0
     # via readme-renderer
 pypandoc==1.5
     # via -r dev-requirements.in
 pyparsing==2.4.7
     # via packaging
-pytest-cov==2.11.1
+pytest-cov==2.12.1
     # via -r dev-requirements.in
 pytest-pycodestyle==2.2.0
     # via -r dev-requirements.in
-pytest-runner==5.3.0
+pytest-runner==5.3.1
     # via -r dev-requirements.in
-pytest==6.2.3
+pytest==6.2.4
     # via
     #   pytest-cov
     #   pytest-pycodestyle
@@ -95,11 +95,11 @@ requests==2.25.1
     #   codecov
     #   requests-toolbelt
     #   twine
-rfc3986==1.4.0
+rfc3986==1.5.0
     # via twine
 secretstorage==3.3.1
     # via keyring
-six==1.15.0
+six==1.16.0
     # via
     #   bleach
     #   readme-renderer
@@ -108,11 +108,12 @@ toml==0.10.2
     #   autopep8
     #   pep517
     #   pytest
-tqdm==4.60.0
+    #   pytest-cov
+tqdm==4.61.0
     # via twine
 twine==3.4.1
     # via -r dev-requirements.in
-urllib3==1.26.4
+urllib3==1.26.5
     # via requests
 webencodings==0.5.1
     # via bleach
