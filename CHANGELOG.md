@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+### 3.4.0
+
+* Implement new option `--packages`
+
 ### 3.3.1
 
 * Fix license summary refer to `--from` option
