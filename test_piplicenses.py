@@ -338,6 +338,27 @@ class TestGetLicenses(CommandLineTestCase):
         pkg_name_columns = self._create_pkg_name_columns(table)
         self.assertNotIn(ignore_pkg_name, pkg_name_columns)
 
+    def test_with_packages(self):
+        pkg_name = 'py'
+        only_packages_args = ['--packages=' + pkg_name]
+        args = self.parser.parse_args(only_packages_args)
+        table = create_licenses_table(args)
+
+        pkg_name_columns = self._create_pkg_name_columns(table)
+        self.assertListEqual([pkg_name], pkg_name_columns)
+
+    def test_with_packages_with_system(self):
+        if 'PTable' in SYSTEM_PACKAGES:
+            pkg_name = 'PTable'
+        else:
+            pkg_name = 'prettytable'
+        only_packages_args = ['--packages=' + pkg_name, "--with-system"]
+        args = self.parser.parse_args(only_packages_args)
+        table = create_licenses_table(args)
+
+        pkg_name_columns = self._create_pkg_name_columns(table)
+        self.assertListEqual([pkg_name], pkg_name_columns)
+
     def test_order_name(self):
         order_name_args = ['--order=name']
         args = self.parser.parse_args(order_name_args)
