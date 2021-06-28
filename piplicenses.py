@@ -215,13 +215,13 @@ def get_packages(args: "CustomNamespace"):
     ignore_pkgs_as_lower = [pkg.lower() for pkg in args.ignore_packages]
     pkgs_as_lower = [pkg.lower() for pkg in args.packages]
 
-    fail_on_licenses = None
+    fail_on_licenses = set()
     if args.fail_on:
-        fail_on_licenses = args.fail_on.split(";")
+        fail_on_licenses = set(args.fail_on.split(";"))
 
-    allow_only_licenses = None
+    allow_only_licenses = set()
     if args.allow_only:
-        allow_only_licenses = args.allow_only.split(";")
+        allow_only_licenses = set(args.allow_only.split(";"))
 
     for pkg in pkgs:
         pkg_name = pkg.project_name
@@ -242,23 +242,30 @@ def get_packages(args: "CustomNamespace"):
             pkg_info['license_classifier'],
             pkg_info['license'])
 
-        if fail_on_licenses and license_name in fail_on_licenses:
-            sys.stderr.write("fail-on license {} was found for package "
-                             "{}:{}".format(
-                                license_name,
-                                pkg_info['name'],
-                                pkg_info['version'])
-                             )
-            sys.exit(1)
+        license_names = set(license_name.split(', '))
 
-        if allow_only_licenses and license_name not in allow_only_licenses:
-            sys.stderr.write("license {} not in allow-only licenses was found"
-                             " for package {}:{}".format(
-                                license_name,
-                                pkg_info['name'],
-                                pkg_info['version'])
-                             )
-            sys.exit(1)
+        if fail_on_licenses:
+            failed_licenses = license_names.intersection(fail_on_licenses)
+            if failed_licenses:
+                sys.stderr.write("fail-on license {} was found for package "
+                                 "{}:{}".format(
+                                    ', '.join(failed_licenses),
+                                    pkg_info['name'],
+                                    pkg_info['version'])
+                                 )
+                sys.exit(1)
+
+        if allow_only_licenses:
+            missing_licenses = license_names.difference(allow_only_licenses)
+            if missing_licenses:
+                sys.stderr.write(
+                    "license {} not in allow-only licenses was found"
+                    " for package {}:{}".format(
+                       ', '.join(missing_licenses),
+                       pkg_info['name'],
+                       pkg_info['version'])
+                    )
+                sys.exit(1)
 
         yield pkg_info
 

@@ -439,19 +439,16 @@ If `--from=all`, the option will apply to the metadata license field.
 ```
 (venv) $ pip-licenses --fail-on="MIT License;BSD License"
 ```
-**Note:** When using this option, pip-licenses looks for an exact match. Packages with multiple licenses will only fail if that license combination is included in the list. For example:
+**Note:** Packages with multiple licenses will fail if at least one license is included in the fail-on list. For example:
 ```
-# keyring library has 2 licenses, separated by a comma
+# keyring library has 2 licenses
 $ pip-licenses | grep keyring
  keyring             21.4.0     Python Software Foundation License, MIT License
 
-# If just "Python Software Foundation License" is specified, it will succeed.
+# If just "Python Software Foundation License" is specified, it will fail.
 $ pip-licenses --fail-on="Python Software Foundation License;"
 $ echo $?
-0
-
-# Both licenses must be specified together.
-$ pip-licenses --fail-on="Python Software Foundation License, MIT License;"
+1
 ```
 
 #### Option: allow\-only
@@ -463,14 +460,19 @@ If `--from=all`, the option will apply to the metadata license field.
 ```
 (venv) $ pip-licenses --allow-only="MIT License;BSD License"
 ```
-**Note:** When using this option, pip-licenses looks for an exact match. Packages with multiple licenses will only be allowed if that license combination is included in the list. For example:
+**Note:** Packages with multiple licenses will only be allowed if all the licenses are included in the allow-only list. For example:
 ```
-# keyring library has 2 licenses, separated by a comma
+# keyring library has 2 licenses
 $ pip-licenses | grep keyring
  keyring             21.4.0     Python Software Foundation License, MIT License
 
-# Both licenses must be specified together.
-$ pip-licenses --allow-only="Python Software Foundation License, MIT License;"
+# Both licenses must be specified (order does not matter).
+$ pip-licenses --allow-only="Python Software Foundation License;MIT License;"
+
+# If any one license is missing, the check will fail.
+$ pip-licenses --allow-only="Python Software Foundation License"
+$ echo $?
+1
 ```
 
 
