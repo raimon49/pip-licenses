@@ -237,34 +237,33 @@ def get_packages(args: "CustomNamespace"):
 
         pkg_info = get_pkg_info(pkg)
 
-        license_name = select_license_by_source(
+        license_names = select_license_by_source(
             args.from_,
             pkg_info['license_classifier'],
             pkg_info['license'])
 
-        license_names = set(license_name.split(', '))
-
         if fail_on_licenses:
             failed_licenses = license_names.intersection(fail_on_licenses)
             if failed_licenses:
-                sys.stderr.write("fail-on license {} was found for package "
-                                 "{}:{}".format(
-                                    ', '.join(failed_licenses),
-                                    pkg_info['name'],
-                                    pkg_info['version'])
-                                 )
+                sys.stderr.write(
+                    "fail-on license {} was found for package "
+                    "{}:{}".format(
+                        '; '.join(failed_licenses),
+                        pkg_info['name'],
+                        pkg_info['version'])
+                )
                 sys.exit(1)
 
         if allow_only_licenses:
-            missing_licenses = license_names.difference(allow_only_licenses)
-            if missing_licenses:
+            uncommon_licenses = license_names.difference(allow_only_licenses)
+            if len(uncommon_licenses) == len(license_names):
                 sys.stderr.write(
                     "license {} not in allow-only licenses was found"
                     " for package {}:{}".format(
-                       ', '.join(missing_licenses),
-                       pkg_info['name'],
-                       pkg_info['version'])
-                    )
+                        '; '.join(uncommon_licenses),
+                        pkg_info['name'],
+                        pkg_info['version'])
+                )
                 sys.exit(1)
 
         yield pkg_info
@@ -278,11 +277,12 @@ def create_licenses_table(
         row = []
         for field in output_fields:
             if field == 'License':
-                license_str = select_license_by_source(
+                license_set = select_license_by_source(
                     args.from_, pkg['license_classifier'], pkg['license'])
+                license_str = '; '.join(license_set)
                 row.append(license_str)
             elif field == 'License-Classifier':
-                row.append(', '.join(pkg['license_classifier'])
+                row.append('; '.join(pkg['license_classifier'])
                            or LICENSE_UNKNOWN)
             elif field.lower() in pkg:
                 row.append(pkg[field.lower()])
@@ -294,8 +294,9 @@ def create_licenses_table(
 
 
 def create_summary_table(args: "CustomNamespace"):
-    counts = Counter(select_license_by_source(
-        args.from_, pkg['license_classifier'], pkg['license'])
+    counts = Counter(
+        '; '.join(select_license_by_source(
+            args.from_, pkg['license_classifier'], pkg['license']))
         for pkg in get_packages(args))
 
     table = factory_styled_table_with_args(args, SUMMARY_FIELD_NAMES)
@@ -463,12 +464,12 @@ def find_license_from_classifier(message):
 
 
 def select_license_by_source(from_source, license_classifier, license_meta):
-    license_classifier_str = ', '.join(license_classifier) or LICENSE_UNKNOWN
+    license_classifier_set = set(license_classifier) or {LICENSE_UNKNOWN}
     if (from_source == FromArg.CLASSIFIER or
             from_source == FromArg.MIXED and len(license_classifier) > 0):
-        return license_classifier_str
+        return license_classifier_set
     else:
-        return license_meta
+        return {license_meta}
 
 
 def get_output_fields(args: "CustomNamespace"):

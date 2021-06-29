@@ -203,22 +203,22 @@ class TestGetLicenses(CommandLineTestCase):
                          find_license_from_classifier(message))
 
     def test_select_license_by_source(self):
-        self.assertEqual('MIT License',
+        self.assertEqual({'MIT License'},
                          select_license_by_source(FromArg.CLASSIFIER,
                                                   ['MIT License'],
                                                   'MIT'))
 
-        self.assertEqual(LICENSE_UNKNOWN,
+        self.assertEqual({LICENSE_UNKNOWN},
                          select_license_by_source(FromArg.CLASSIFIER,
                                                   [],
                                                   'MIT'))
 
-        self.assertEqual('MIT License',
+        self.assertEqual({'MIT License'},
                          select_license_by_source(FromArg.MIXED,
                                                   ['MIT License'],
                                                   'MIT'))
 
-        self.assertEqual('MIT',
+        self.assertEqual({'MIT'},
                          select_license_by_source(FromArg.MIXED,
                                                   [],
                                                   'MIT'))

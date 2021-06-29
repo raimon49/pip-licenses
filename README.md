@@ -115,7 +115,7 @@ The mixed mode (`--from=mixed`) of this tool works well and looks for licenses.
 
 In mixed mode, it first tries to look for licenses in the Trove Classifiers. When not found in the Trove Classifiers, the license declared in Metadata is displayed.
 
-If you want to looks only in metadata, use `--from=meta`. If you want to looks only in Trove Classifiers, use `--from=classifier`.
+If you want to look only in metadata, use `--from=meta`. If you want to look only in Trove Classifiers, use `--from=classifier`.
 
 To list license information from both metadata and classifier, use `--from=all`.
 
@@ -436,7 +436,7 @@ Fail (exit with code 1) on the first occurrence of the licenses of the semicolon
 
 If `--from=all`, the option will apply to the metadata license field.
 
-```
+```bash
 (venv) $ pip-licenses --fail-on="MIT License;BSD License"
 ```
 **Note:** Packages with multiple licenses will fail if at least one license is included in the fail-on list. For example:
@@ -453,24 +453,28 @@ $ echo $?
 
 #### Option: allow\-only
 
-Fail (exit with code 1) on the first occurrence of the licenses not in the semicolon-separated list
+Fail (exit with code 1) if none of the package licenses are in the semicolon-separated list
 
 If `--from=all`, the option will apply to the metadata license field.
 
-```
+```bash
 (venv) $ pip-licenses --allow-only="MIT License;BSD License"
 ```
-**Note:** Packages with multiple licenses will only be allowed if all the licenses are included in the allow-only list. For example:
+**Note:** Packages with multiple licenses will only be allowed if at least one license is included in the allow-only list. For example:
 ```
 # keyring library has 2 licenses
-$ pip-licenses | grep keyring
- keyring             21.4.0     Python Software Foundation License, MIT License
+$ pip-licenses --package keyring
+ Name     Version  License                                         
+ keyring  23.0.1   MIT License; Python Software Foundation License
 
-# Both licenses must be specified (order does not matter).
-$ pip-licenses --allow-only="Python Software Foundation License;MIT License;"
+# One or both licenses must be specified (order does not matter). Following checks will pass:
+$ pip-licenses --package keyring --allow-only="MIT License"
+$ pip-licenses --package keyring --allow-only="BSD License;MIT License"
+$ pip-licenses --package keyring --allow-only="Python Software Foundation License"
+$ pip-licenses --package keyring --allow-only="Python Software Foundation License;MIT License"
 
-# If any one license is missing, the check will fail.
-$ pip-licenses --allow-only="Python Software Foundation License"
+# If none of the license in the allow list match, the check will fail.
+$ pip-licenses --package keyring  --allow-only="BSD License"
 $ echo $?
 1
 ```
