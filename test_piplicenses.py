@@ -203,22 +203,22 @@ class TestGetLicenses(CommandLineTestCase):
                          find_license_from_classifier(message))
 
     def test_select_license_by_source(self):
-        self.assertEqual('MIT License',
+        self.assertEqual({'MIT License'},
                          select_license_by_source(FromArg.CLASSIFIER,
                                                   ['MIT License'],
                                                   'MIT'))
 
-        self.assertEqual(LICENSE_UNKNOWN,
+        self.assertEqual({LICENSE_UNKNOWN},
                          select_license_by_source(FromArg.CLASSIFIER,
                                                   [],
                                                   'MIT'))
 
-        self.assertEqual('MIT License',
+        self.assertEqual({'MIT License'},
                          select_license_by_source(FromArg.MIXED,
                                                   ['MIT License'],
                                                   'MIT'))
 
-        self.assertEqual('MIT',
+        self.assertEqual({'MIT'},
                          select_license_by_source(FromArg.MIXED,
                                                   [],
                                                   'MIT'))
@@ -599,7 +599,7 @@ class MockStdStream(object):
         self.printed = p
 
 
-def test_output_file_sccess(monkeypatch):
+def test_output_file_success(monkeypatch):
     def mocked_open(*args, **kwargs):
         import tempfile
         return tempfile.TemporaryFile('w')
@@ -649,11 +649,8 @@ def test_allow_only(monkeypatch):
         "BSD License",
         "Apache Software License",
         "Mozilla Public License 2.0 (MPL 2.0)",
-        "MIT License, Mozilla Public License 2.0 (MPL 2.0)",
-        "Apache Software License, BSD License",
-        "Python Software Foundation License, MIT License",
-        "Public Domain, Python Software Foundation License, BSD License, "
-        "GNU General Public License (GPL)",
+        "Python Software Foundation License",
+        "Public Domain",
         "GNU General Public License (GPL)",
         "GNU Library or Lesser General Public License (LGPL)",
     )
