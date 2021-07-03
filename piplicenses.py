@@ -61,7 +61,7 @@ except ImportError:  # pragma: no cover
 open = open  # allow monkey patching
 
 __pkgname__ = 'pip-licenses'
-__version__ = '3.4.0'
+__version__ = '3.5.0'
 __author__ = 'raimon'
 __license__ = 'MIT'
 __summary__ = ('Dump the software license list of '

@@ -1,5 +1,12 @@
 ## CHANGELOG
 
+### 3.5.0
+
+* Handle multiple licenses better with options `--fail-on` and `--allow-only`
+* Small change in output method for multiple licenses, change the separator from comma to semicolon
+    * Up to 3.4.0: `Python Software Foundation License, MIT License`
+    * 3.5.0 or later: `Python Software Foundation License; MIT License`
+
 ### 3.4.0
 
 * Implement new option `--packages`
