@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+### 3.5.1
+
+* Fix the order in which multiple licenses are output
+
 ### 3.5.0
 
 * Handle multiple licenses better with options `--fail-on` and `--allow-only`
