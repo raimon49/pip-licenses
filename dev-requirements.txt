@@ -34,7 +34,7 @@ docutils==0.17.1
     #   readme-renderer
 idna==2.10
     # via requests
-importlib-metadata==4.6.0
+importlib-metadata==4.6.1
     # via
     #   keyring
     #   twine
@@ -48,7 +48,7 @@ jeepney==0.6.0
     #   secretstorage
 keyring==23.0.1
     # via twine
-packaging==20.9
+packaging==21.0
     # via
     #   bleach
     #   pytest
@@ -109,7 +109,7 @@ toml==0.10.2
     #   pep517
     #   pytest
     #   pytest-cov
-tqdm==4.61.1
+tqdm==4.61.2
     # via twine
 twine==3.4.1
     # via -r dev-requirements.in

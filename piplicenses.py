@@ -61,7 +61,7 @@ except ImportError:  # pragma: no cover
 open = open  # allow monkey patching
 
 __pkgname__ = 'pip-licenses'
-__version__ = '3.5.0'
+__version__ = '3.5.1'
 __author__ = 'raimon'
 __license__ = 'MIT'
 __summary__ = ('Dump the software license list of '
@@ -248,7 +248,7 @@ def get_packages(args: "CustomNamespace"):
                 sys.stderr.write(
                     "fail-on license {} was found for package "
                     "{}:{}".format(
-                        '; '.join(failed_licenses),
+                        '; '.join(sorted(failed_licenses)),
                         pkg_info['name'],
                         pkg_info['version'])
                 )
@@ -260,7 +260,7 @@ def get_packages(args: "CustomNamespace"):
                 sys.stderr.write(
                     "license {} not in allow-only licenses was found"
                     " for package {}:{}".format(
-                        '; '.join(uncommon_licenses),
+                        '; '.join(sorted(uncommon_licenses)),
                         pkg_info['name'],
                         pkg_info['version'])
                 )
@@ -279,10 +279,10 @@ def create_licenses_table(
             if field == 'License':
                 license_set = select_license_by_source(
                     args.from_, pkg['license_classifier'], pkg['license'])
-                license_str = '; '.join(license_set)
+                license_str = '; '.join(sorted(license_set))
                 row.append(license_str)
             elif field == 'License-Classifier':
-                row.append('; '.join(pkg['license_classifier'])
+                row.append('; '.join(sorted(pkg['license_classifier']))
                            or LICENSE_UNKNOWN)
             elif field.lower() in pkg:
                 row.append(pkg[field.lower()])
@@ -295,8 +295,8 @@ def create_licenses_table(
 
 def create_summary_table(args: "CustomNamespace"):
     counts = Counter(
-        '; '.join(select_license_by_source(
-            args.from_, pkg['license_classifier'], pkg['license']))
+        '; '.join(sorted(select_license_by_source(
+            args.from_, pkg['license_classifier'], pkg['license'])))
         for pkg in get_packages(args))
 
     table = factory_styled_table_with_args(args, SUMMARY_FIELD_NAMES)
