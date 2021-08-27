@@ -8,17 +8,17 @@ attrs==21.2.0
     # via pytest
 autopep8==1.5.7
     # via -r dev-requirements.in
-bleach==3.3.0
+bleach==4.1.0
     # via readme-renderer
 certifi==2021.5.30
     # via requests
-cffi==1.14.5
+cffi==1.14.6
     # via cryptography
-chardet==4.0.0
+charset-normalizer==2.0.4
     # via requests
 click==8.0.1
     # via pip-tools
-codecov==2.1.11
+codecov==2.1.12
     # via -r dev-requirements.in
 colorama==0.4.4
     # via twine
@@ -26,37 +26,37 @@ coverage==5.5
     # via
     #   codecov
     #   pytest-cov
-cryptography==3.4.7
+cryptography==3.4.8
     # via secretstorage
 docutils==0.17.1
     # via
     #   -r dev-requirements.in
     #   readme-renderer
-idna==2.10
+idna==3.2
     # via requests
-importlib-metadata==4.6.1
+importlib-metadata==4.7.1
     # via
     #   keyring
     #   twine
 iniconfig==1.1.1
     # via pytest
-isort==5.9.1
+isort==5.9.3
     # via -r dev-requirements.in
-jeepney==0.6.0
+jeepney==0.7.1
     # via
     #   keyring
     #   secretstorage
-keyring==23.0.1
+keyring==23.1.0
     # via twine
 packaging==21.0
     # via
     #   bleach
     #   pytest
-pep517==0.10.0
+pep517==0.11.0
     # via pip-tools
 pip-tools==6.2.0
     # via -r dev-requirements.in
-pkginfo==1.7.0
+pkginfo==1.7.1
     # via twine
 pluggy==0.13.1
     # via pytest
@@ -70,7 +70,7 @@ pycodestyle==2.7.0
     #   pytest-pycodestyle
 pycparser==2.20
     # via cffi
-pygments==2.9.0
+pygments==2.10.0
     # via readme-renderer
 pypandoc==1.6.3
     # via -r dev-requirements.in
@@ -88,7 +88,7 @@ pytest-runner==5.3.1
     # via -r dev-requirements.in
 readme-renderer==29.0
     # via twine
-requests==2.25.1
+requests==2.26.0
     # via
     #   codecov
     #   requests-toolbelt
@@ -106,18 +106,19 @@ six==1.16.0
 toml==0.10.2
     # via
     #   autopep8
-    #   pep517
     #   pytest
     #   pytest-cov
-tqdm==4.61.2
+tomli==1.2.1
+    # via pep517
+tqdm==4.62.2
     # via twine
-twine==3.4.1
+twine==3.4.2
     # via -r dev-requirements.in
 urllib3==1.26.6
     # via requests
 webencodings==0.5.1
     # via bleach
-wheel==0.36.2
+wheel==0.37.0
     # via
     #   -r dev-requirements.in
     #   pip-tools
