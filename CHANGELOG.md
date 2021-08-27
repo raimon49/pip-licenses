@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+### 3.5.2
+
+* Ignore spaces around `--fail-on` and `--allow-only` parameters
+
 ### 3.5.1
 
 * Fix the order in which multiple licenses are output
