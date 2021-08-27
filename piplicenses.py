@@ -217,11 +217,11 @@ def get_packages(args: "CustomNamespace"):
 
     fail_on_licenses = set()
     if args.fail_on:
-        fail_on_licenses = set(args.fail_on.split(";"))
+        fail_on_licenses = set(map(str.strip, args.fail_on.split(";")))
 
     allow_only_licenses = set()
     if args.allow_only:
-        allow_only_licenses = set(args.allow_only.split(";"))
+        allow_only_licenses = set(map(str.strip, args.allow_only.split(";")))
 
     for pkg in pkgs:
         pkg_name = pkg.project_name
