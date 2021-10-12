@@ -45,8 +45,12 @@ except ImportError:  # pragma: no cover
         from pip import get_installed_distributions
     except ImportError:
         def get_installed_distributions():
-            from pip._internal.metadata import get_default_environment, get_environment
-            from pip._internal.metadata.pkg_resources import Distribution as _Dist
+            from pip._internal.metadata import (
+                get_default_environment, get_environment,
+            )
+            from pip._internal.metadata.pkg_resources import (
+                Distribution as _Dist,
+            )
             from pip._internal.utils.compat import stdlib_pkgs
 
             env = get_default_environment()
