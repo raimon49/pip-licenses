@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+### 3.5.3
+
+* Support pip 21.3 or later
+
 ### 3.5.2
 
 * Ignore spaces around `--fail-on` and `--allow-only` parameters
