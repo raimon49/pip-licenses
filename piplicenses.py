@@ -37,31 +37,7 @@ from email.parser import FeedParser
 from enum import Enum, auto
 from functools import partial
 from typing import List, Optional, Sequence, Text
-
-try:
-    from pip._internal.utils.misc import get_installed_distributions
-except ImportError:  # pragma: no cover
-    try:
-        from pip import get_installed_distributions
-    except ImportError:
-        def get_installed_distributions():
-            from pip._internal.metadata import (
-                get_default_environment, get_environment,
-            )
-            from pip._internal.metadata.pkg_resources import (
-                Distribution as _Dist,
-            )
-            from pip._internal.utils.compat import stdlib_pkgs
-
-            env = get_default_environment()
-            dists = env.iter_installed_distributions(
-                local_only=True,
-                skip=stdlib_pkgs,
-                include_editables=True,
-                editables_only=False,
-                user_only=False,
-            )
-            return [dist._dist for dist in dists]
+import pkg_resources
 
 from prettytable import PrettyTable
 
@@ -231,7 +207,7 @@ def get_packages(args: "CustomNamespace"):
 
         return pkg_info
 
-    pkgs = get_installed_distributions()
+    pkgs = pkg_resources.working_set
     ignore_pkgs_as_lower = [pkg.lower() for pkg in args.ignore_packages]
     pkgs_as_lower = [pkg.lower() for pkg in args.packages]
 
