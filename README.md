@@ -365,6 +365,8 @@ Package names of arguments can be separated by spaces.
 
 By default, system packages such as `pip` and `setuptools` are ignored.
 
+And `pip-licenses` and the implicit dependency `PTable` will also be ignored.
+
 If you want to output all including system package, use the `--with-system` option.
 
 ```bash
