@@ -166,7 +166,7 @@ def get_packages(args: "CustomNamespace"):
                                                        f))))
          for f in file_names]
         for test_file in patterns:
-            if os.path.exists(test_file) and \            
+            if os.path.exists(test_file) and \
                 os.path.isdir(test_file) is not True: 
                 included_file = test_file
                 with open(test_file, encoding='utf-8',
