@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+### 3.5.4
+
+* Skip directories when detecting license files
+
 ### 3.5.3
 
 * Support pip 21.3 or later

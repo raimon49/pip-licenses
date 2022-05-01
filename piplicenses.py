@@ -81,7 +81,7 @@ except ImportError:  # pragma: no cover
 open = open  # allow monkey patching
 
 __pkgname__ = 'pip-licenses'
-__version__ = '3.5.3'
+__version__ = '3.5.4'
 __author__ = 'raimon'
 __license__ = 'MIT'
 __summary__ = ('Dump the software license list of '
@@ -166,7 +166,8 @@ def get_packages(args: "CustomNamespace"):
                                                        f))))
          for f in file_names]
         for test_file in patterns:
-            if os.path.exists(test_file):
+            if os.path.exists(test_file) and \
+                    os.path.isdir(test_file) is not True:
                 included_file = test_file
                 with open(test_file, encoding='utf-8',
                           errors='backslashreplace') as included_file_handle:
