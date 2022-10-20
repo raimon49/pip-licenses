@@ -165,6 +165,12 @@ def get_packages(args: "CustomNamespace"):
                                                        pkg_dirname,
                                                        f))))
          for f in file_names]
+        # Search for path defined in PEP 639 https://peps.python.org/pep-0639/
+        [patterns.extend(sorted(glob.glob(os.path.join(pkg.location,
+                                                       pkg_dirname,
+                                                       "licenses",
+                                                       f))))
+         for f in file_names]
         for test_file in patterns:
             if os.path.exists(test_file) and \
                     os.path.isdir(test_file) is not True:
