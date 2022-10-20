@@ -81,7 +81,7 @@ except ImportError:  # pragma: no cover
 open = open  # allow monkey patching
 
 __pkgname__ = 'pip-licenses'
-__version__ = '3.5.4'
+__version__ = '3.5.5'
 __author__ = 'raimon'
 __license__ = 'MIT'
 __summary__ = ('Dump the software license list of '
@@ -163,6 +163,12 @@ def get_packages(args: "CustomNamespace"):
         patterns = []
         [patterns.extend(sorted(glob.glob(os.path.join(pkg.location,
                                                        pkg_dirname,
+                                                       f))))
+         for f in file_names]
+        # Search for path defined in PEP 639 https://peps.python.org/pep-0639/
+        [patterns.extend(sorted(glob.glob(os.path.join(pkg.location,
+                                                       pkg_dirname,
+                                                       "licenses",
                                                        f))))
          for f in file_names]
         for test_file in patterns:

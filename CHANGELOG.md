@@ -1,5 +1,10 @@
 ## CHANGELOG
 
+### 3.5.5
+
+* Search for path defined in [PEP 639](https://peps.python.org/pep-0639/)
+* Dropped support Python 3.6
+
 ### 3.5.4
 
 * Skip directories when detecting license files
