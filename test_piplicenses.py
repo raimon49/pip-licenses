@@ -571,8 +571,6 @@ class TestGetLicenses(CommandLineTestCase):
             importlib_metadata_distributions_mocked
         args = self.parser.parse_args([])
         packages = list(piplicenses.get_packages(args))
-        for pkg in packages:
-            print(pkg["name"])
         self.assertIn(UNICODE_APPENDIX, packages[-1]["name"])
         piplicenses.importlib_metadata.distributions = \
             importlib_metadata_distributions_orig
