@@ -50,10 +50,7 @@ except ImportError:  # pragma: no cover
     from prettytable import NONE as RULE_NONE
     PTABLE = False
 
-if sys.version_info < (3, 8):
-    import importlib_metadata
-else:
-    from importlib import metadata as importlib_metadata
+from importlib import metadata as importlib_metadata
 
 open = open  # allow monkey patching
 
