@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # vim:fenc=utf-8 ff=unix ft=python ts=4 sw=4 sts=4 si et
 import copy
+import email
 import re
 import sys
 import unittest
@@ -30,17 +31,26 @@ with open('tests/fixtures/unicode_characters.txt', encoding='utf-8') as f:
 
 
 def importlib_metadata_distributions_mocked(*args, **kwargs):
+
     class DistributionMocker(piplicenses.importlib_metadata.Distribution):
-        def __init__(self, orig_distribution):
-            self.__dist = orig_distribution
+        def __init__(self, orig_dist):
+            self.__dist = orig_dist
 
         @property
-        def name(self):
-            return self.__dist.name + " " + UNICODE_APPENDIX
+        def metadata(self):
+            return EmailMessageMocker(self.__dist.metadata)
 
-        @property
-        def version(self):
-            return self.__dist.version
+    class EmailMessageMocker(email.message.Message):
+        def __init__(self, orig_msg):
+            self.__msg = orig_msg
+
+        def __getattr__(self, attr):
+            return getattr(self.__msg, attr)
+
+        def __getitem__(self, key):
+            if key.lower() == "name":
+                return self.__msg["name"] + " " + UNICODE_APPENDIX
+            return self.__msg[key]
 
     packages = list(importlib_metadata_distributions_orig(*args, **kwargs))
     packages[-1] = DistributionMocker(packages[-1])

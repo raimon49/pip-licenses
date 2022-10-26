@@ -138,7 +138,10 @@ def get_packages(args: "CustomNamespace"):
 
         pkg_files = pkg.files or ()
         pattern = re.compile(file_names_rgx)
-        matched_rel_paths = filter(lambda file: pattern.match(file.name), pkg_files)
+        matched_rel_paths = filter(
+            lambda file: pattern.match(file.name),
+            pkg_files
+        )
         for rel_path in matched_rel_paths:
             abs_path = pkg.locate_file(rel_path)
             if not abs_path.is_file():
@@ -163,9 +166,9 @@ def get_packages(args: "CustomNamespace"):
             "NOTICE.*"
         )
         pkg_info = {
-            'name': pkg.name,
+            'name': pkg.metadata["name"],
             'version': pkg.version,
-            'namever': "{} {}".format(pkg.name, pkg.version),
+            'namever': "{} {}".format(pkg.metadata["name"], pkg.version),
             'licensefile': license_file,
             'licensetext': license_text,
             'noticefile': notice_file,
@@ -195,7 +198,7 @@ def get_packages(args: "CustomNamespace"):
         return pkg_info
 
     pkgs = filter(
-        lambda pkg: pkg.name != "pip-licenses",
+        lambda pkg: pkg.metadata["name"] != "pip-licenses",
         importlib_metadata.distributions()
     )
     ignore_pkgs_as_lower = [pkg.lower() for pkg in args.ignore_packages]
@@ -210,7 +213,7 @@ def get_packages(args: "CustomNamespace"):
         allow_only_licenses = set(map(str.strip, args.allow_only.split(";")))
 
     for pkg in pkgs:
-        pkg_name = pkg.name
+        pkg_name = pkg.metadata["name"]
 
         if pkg_name.lower() in ignore_pkgs_as_lower:
             continue
