@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # vim:fenc=utf-8 ff=unix ft=python ts=4 sw=4 sts=4 si et
 import copy
+import email
 import re
 import sys
 import unittest
@@ -29,14 +30,35 @@ with open('tests/fixtures/unicode_characters.txt', encoding='utf-8') as f:
     UNICODE_APPENDIX = f.readline().replace("\n", "")
 
 
-def get_installed_distributions_mocked(*args, **kwargs):
-    packages = get_installed_distributions_orig(*args, **kwargs)
-    if not packages[-1].project_name.endswith(UNICODE_APPENDIX):
-        packages[-1].project_name += " "+UNICODE_APPENDIX
+def importlib_metadata_distributions_mocked(*args, **kwargs):
+
+    class DistributionMocker(piplicenses.importlib_metadata.Distribution):
+        def __init__(self, orig_dist):
+            self.__dist = orig_dist
+
+        @property
+        def metadata(self):
+            return EmailMessageMocker(self.__dist.metadata)
+
+    class EmailMessageMocker(email.message.Message):
+        def __init__(self, orig_msg):
+            self.__msg = orig_msg
+
+        def __getattr__(self, attr):
+            return getattr(self.__msg, attr)
+
+        def __getitem__(self, key):
+            if key.lower() == "name":
+                return self.__msg["name"] + " " + UNICODE_APPENDIX
+            return self.__msg[key]
+
+    packages = list(importlib_metadata_distributions_orig(*args, **kwargs))
+    packages[-1] = DistributionMocker(packages[-1])
     return packages
 
 
-get_installed_distributions_orig = piplicenses.get_installed_distributions
+importlib_metadata_distributions_orig = \
+    piplicenses.importlib_metadata.distributions
 
 
 class CommandLineTestCase(unittest.TestCase):
@@ -171,28 +193,21 @@ class TestGetLicenses(CommandLineTestCase):
             self.assertIn(license, license_classifier)
 
     def test_find_license_from_classifier(self):
-        metadata = ('Metadata-Version: 2.0\r\n'
-                    'Name: pip-licenses\r\n'
-                    'Version: 1.0.0\r\n'
-                    'Classifier: License :: OSI Approved :: MIT License\r\n')
-        message = message_from_string(metadata)
+        classifiers = ['License :: OSI Approved :: MIT License']
         self.assertEqual(['MIT License'],
-                         find_license_from_classifier(message))
+                         find_license_from_classifier(classifiers))
 
     def test_display_multiple_license_from_classifier(self):
-        metadata = ('Metadata-Version: 2.0\r\n'
-                    'Name: helga\r\n'
-                    'Version: 1.7.6\r\n'
-                    'Classifier: License :: OSI Approved\r\n'
-                    'Classifier: License :: OSI Approved :: '
-                    'GNU General Public License v3 (GPLv3)\r\n'
-                    'Classifier: License :: OSI Approved :: MIT License\r\n'
-                    'Classifier: License :: Public Domain\r\n')
-        message = message_from_string(metadata)
+        classifiers = [
+            'License :: OSI Approved',
+            'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+            'License :: OSI Approved :: MIT License',
+            'License :: Public Domain'
+        ]
         self.assertEqual(['GNU General Public License v3 (GPLv3)',
                           'MIT License',
                           'Public Domain'],
-                         find_license_from_classifier(message))
+                         find_license_from_classifier(classifiers))
 
     def test_not_found_license_from_classifier(self):
         metadata_as_no_license = ('Metadata-Version: 2.0\r\n'
@@ -426,8 +441,8 @@ class TestGetLicenses(CommandLineTestCase):
     @unittest.skipIf(sys.version_info < (3, 6, 0),
                      "To unsupport Python 3.5 in the near future")
     def test_format_rst_without_filter(self):
-        piplicenses.get_installed_distributions = \
-            get_installed_distributions_mocked
+        piplicenses.importlib_metadata.distributions = \
+            importlib_metadata_distributions_mocked
         format_rst_args = ['--format=rst']
         args = self.parser.parse_args(format_rst_args)
         table = create_licenses_table(args)
@@ -439,12 +454,12 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertEqual(RULE_ALL, table.hrules)
         with self.assertRaises(docutils.utils.SystemMessage):
             self.check_rst(str(table))
-        piplicenses.get_installed_distributions = \
-            get_installed_distributions_orig
+        piplicenses.importlib_metadata.distributions = \
+            importlib_metadata_distributions_orig
 
     def test_format_rst_default_filter(self):
-        piplicenses.get_installed_distributions = \
-            get_installed_distributions_mocked
+        piplicenses.importlib_metadata.distributions = \
+            importlib_metadata_distributions_mocked
         format_rst_args = ['--format=rst', '--filter-strings']
         args = self.parser.parse_args(format_rst_args)
         table = create_licenses_table(args)
@@ -455,8 +470,8 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertEqual('+', table.junction_char)
         self.assertEqual(RULE_ALL, table.hrules)
         self.check_rst(str(table))
-        piplicenses.get_installed_distributions = \
-            get_installed_distributions_orig
+        piplicenses.importlib_metadata.distributions = \
+            importlib_metadata_distributions_orig
 
     def test_format_confluence(self):
         format_confluence_args = ['--format=confluence']
@@ -562,32 +577,32 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertTrue(actual.endswith('\033[0m'))
 
     def test_without_filter(self):
-        piplicenses.get_installed_distributions = \
-            get_installed_distributions_mocked
+        piplicenses.importlib_metadata.distributions = \
+            importlib_metadata_distributions_mocked
         args = self.parser.parse_args([])
         packages = list(piplicenses.get_packages(args))
         self.assertIn(UNICODE_APPENDIX, packages[-1]["name"])
-        piplicenses.get_installed_distributions = \
-            get_installed_distributions_orig
+        piplicenses.importlib_metadata.distributions = \
+            importlib_metadata_distributions_orig
 
     def test_with_default_filter(self):
-        piplicenses.get_installed_distributions = \
-            get_installed_distributions_mocked
+        piplicenses.importlib_metadata.distributions = \
+            importlib_metadata_distributions_mocked
         args = self.parser.parse_args(["--filter-strings"])
         packages = list(piplicenses.get_packages(args))
-        piplicenses.get_installed_distributions = \
-            get_installed_distributions_orig
+        piplicenses.importlib_metadata.distributions = \
+            importlib_metadata_distributions_orig
         self.assertNotIn(UNICODE_APPENDIX, packages[-1]["name"])
 
     def test_with_specified_filter(self):
-        piplicenses.get_installed_distributions = \
-            get_installed_distributions_mocked
+        piplicenses.importlib_metadata.distributions = \
+            importlib_metadata_distributions_mocked
         args = self.parser.parse_args(["--filter-strings",
                                        "--filter-code-page=ascii"])
         packages = list(piplicenses.get_packages(args))
         self.assertNotIn(UNICODE_APPENDIX, packages[-1]["summary"])
-        piplicenses.get_installed_distributions = \
-            get_installed_distributions_orig
+        piplicenses.importlib_metadata.distributions = \
+            importlib_metadata_distributions_orig
 
 
 class MockStdStream(object):
