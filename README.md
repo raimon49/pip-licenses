@@ -62,6 +62,16 @@ Install it via PyPI using `pip` command.
 $ pip install -U pip-licenses
 ```
 
+**Note for Python 3.11 users:** There is a Release Candidate version available for support. Please send feedback to issue [#128](https://github.com/raimon49/pip-licenses/issues/128).
+
+```bash
+# Using the RC version for the Python 3.11 environment
+$ pip install 'pip-licenses==4.0.0rc1'
+
+# If upgrading from pip-licenses 3.x, remove PTable
+$ pip uninstall -y PTable
+```
+
 **Note:** If you are still using Python 2.7, install version less than 2.0. No new features will be provided for version 1.x.
 
 ```bash
