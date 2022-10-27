@@ -45,7 +45,7 @@ from prettytable import NONE as RULE_NONE
 open = open  # allow monkey patching
 
 __pkgname__ = 'pip-licenses'
-__version__ = '3.5.5'
+__version__ = '4.0.0rc1'
 __author__ = 'raimon'
 __license__ = 'MIT'
 __summary__ = ('Dump the software license list of '
