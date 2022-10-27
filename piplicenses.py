@@ -33,24 +33,14 @@ import sys
 from collections import Counter
 from enum import Enum, auto
 from functools import partial
+from importlib import metadata as importlib_metadata
 from typing import List, Optional, Sequence, Text
 
 from prettytable import PrettyTable
-
-try:
-    from prettytable.prettytable import ALL as RULE_ALL
-    from prettytable.prettytable import FRAME as RULE_FRAME
-    from prettytable.prettytable import HEADER as RULE_HEADER
-    from prettytable.prettytable import NONE as RULE_NONE
-    PTABLE = True
-except ImportError:  # pragma: no cover
-    from prettytable import ALL as RULE_ALL
-    from prettytable import FRAME as RULE_FRAME
-    from prettytable import HEADER as RULE_HEADER
-    from prettytable import NONE as RULE_NONE
-    PTABLE = False
-
-from importlib import metadata as importlib_metadata
+from prettytable import ALL as RULE_ALL
+from prettytable import FRAME as RULE_FRAME
+from prettytable import HEADER as RULE_HEADER
+from prettytable import NONE as RULE_NONE
 
 open = open  # allow monkey patching
 
@@ -115,7 +105,8 @@ FIELDS_TO_METADATA_KEYS = {
 SYSTEM_PACKAGES = (
     __pkgname__,
     'pip',
-    'PTable' if PTABLE else 'prettytable',
+    'prettytable',
+    'wcwidth',
     'setuptools',
     'wheel',
 )
@@ -294,12 +285,9 @@ def create_summary_table(args: "CustomNamespace"):
 class JsonPrettyTable(PrettyTable):
     """PrettyTable-like class exporting to JSON"""
 
-    def _format_row(self, row, options):
+    def _format_row(self, row):
         resrow = {}
         for (field, value) in zip(self._field_names, row):
-            if field not in options["fields"]:
-                continue
-
             resrow[field] = value
 
         return resrow
@@ -312,7 +300,7 @@ class JsonPrettyTable(PrettyTable):
 
         options = self._get_options(kwargs)
         rows = self._get_rows(options)
-        formatted_rows = self._format_rows(rows, options)
+        formatted_rows = self._format_rows(rows)
 
         lines = []
         for row in formatted_rows:
@@ -322,7 +310,7 @@ class JsonPrettyTable(PrettyTable):
 
 
 class JsonLicenseFinderTable(JsonPrettyTable):
-    def _format_row(self, row, options):
+    def _format_row(self, row):
         resrow = {}
         for (field, value) in zip(self._field_names, row):
             if field == 'Name':
@@ -344,7 +332,7 @@ class JsonLicenseFinderTable(JsonPrettyTable):
 
         options = self._get_options(kwargs)
         rows = self._get_rows(options)
-        formatted_rows = self._format_rows(rows, options)
+        formatted_rows = self._format_rows(rows)
 
         lines = []
         for row in formatted_rows:
@@ -372,7 +360,7 @@ class CSVPrettyTable(PrettyTable):
 
         options = self._get_options(kwargs)
         rows = self._get_rows(options)
-        formatted_rows = self._format_rows(rows, options)
+        formatted_rows = self._format_rows(rows)
 
         lines = []
         formatted_header = ','.join(['"%s"' % (esc_quotes(val), )
