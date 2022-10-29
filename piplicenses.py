@@ -441,7 +441,9 @@ def select_license_by_source(from_source, license_classifier, license_meta):
         license_classifier = [license_classifier]
     license_classifier_set = set(license_classifier) or {LICENSE_UNKNOWN}
     if (from_source == FromArg.CLASSIFIER or
-            from_source == FromArg.MIXED and len(license_classifier) > 0 and LICENSE_UNKNOWN not in license_classifier):
+            from_source == FromArg.MIXED and
+            len(license_classifier) > 0 and
+            LICENSE_UNKNOWN not in license_classifier):
         return license_classifier_set
     else:
         return {license_meta}
