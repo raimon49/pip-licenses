@@ -237,6 +237,10 @@ class TestGetLicenses(CommandLineTestCase):
                          select_license_by_source(FromArg.MIXED,
                                                   [],
                                                   'MIT'))
+        self.assertEqual({'Apache License 2.0'},
+                         select_license_by_source(FromArg.MIXED,
+                                                  'Apache License 2.0',
+                                                  'Apache-2.0'))
 
     def test_with_system(self):
         with_system_args = ['--with-system']
