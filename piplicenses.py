@@ -166,10 +166,9 @@ def get_packages(args: "CustomNamespace"):
         for key in METADATA_KEYS:
             pkg_info[key] = metadata.get(key, LICENSE_UNKNOWN)
 
-        classifiers = metadata.get_all("classifier")
-        if classifiers:
-            pkg_info['license_classifier'] = \
-                find_license_from_classifier(classifiers)
+        classifiers = metadata.get_all("classifier", [])
+        pkg_info['license_classifier'] = \
+            find_license_from_classifier(classifiers)
 
         if args.filter_strings:
             for k in pkg_info:
@@ -437,13 +436,10 @@ def find_license_from_classifier(classifiers):
 
 
 def select_license_by_source(from_source, license_classifier, license_meta):
-    if isinstance(license_classifier, str):
-        license_classifier = [license_classifier]
     license_classifier_set = set(license_classifier) or {LICENSE_UNKNOWN}
     if (from_source == FromArg.CLASSIFIER or
             from_source == FromArg.MIXED and
-            len(license_classifier) > 0 and
-            LICENSE_UNKNOWN not in license_classifier):
+            len(license_classifier) > 0):
         return license_classifier_set
     else:
         return {license_meta}
