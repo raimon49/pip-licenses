@@ -36,11 +36,11 @@ from functools import partial
 from importlib import metadata as importlib_metadata
 from typing import List, Optional, Sequence, Text
 
-from prettytable import PrettyTable
 from prettytable import ALL as RULE_ALL
 from prettytable import FRAME as RULE_FRAME
 from prettytable import HEADER as RULE_HEADER
 from prettytable import NONE as RULE_NONE
+from prettytable import PrettyTable
 
 open = open  # allow monkey patching
 

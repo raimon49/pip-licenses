@@ -27,19 +27,17 @@ SOFTWARE.
 """
 
 import os
-from setuptools import setup
 from codecs import open
 from os import path
 
-from piplicenses import (
-    __pkgname__ as PKG_NAME,
-    __version__ as VERSION,
-    __author__ as AUTHOR,
-    __license__ as LICENSE,
-    __summary__ as SUMMARY,
-    __url__ as URL,
-)
+from setuptools import setup
 
+from piplicenses import __author__ as AUTHOR
+from piplicenses import __license__ as LICENSE
+from piplicenses import __pkgname__ as PKG_NAME
+from piplicenses import __summary__ as SUMMARY
+from piplicenses import __url__ as URL
+from piplicenses import __version__ as VERSION
 
 here = path.abspath(path.dirname(__file__))
 
