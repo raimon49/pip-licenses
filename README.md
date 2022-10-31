@@ -66,7 +66,7 @@ $ pip install -U pip-licenses
 
 ```bash
 # Using the RC version for the Python 3.11 environment
-$ pip install 'pip-licenses==4.0.0rc2'
+$ pip install 'pip-licenses==4.0.0rc3'
 
 # If upgrading from pip-licenses 3.x, remove PTable
 $ pip uninstall -y PTable
