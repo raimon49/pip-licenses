@@ -16,22 +16,38 @@ from _pytest.capture import CaptureFixture
 
 import piplicenses
 from piplicenses import (
-    DEFAULT_OUTPUT_FIELDS, LICENSE_UNKNOWN, RULE_ALL, RULE_FRAME,
-    RULE_HEADER, RULE_NONE, SYSTEM_PACKAGES, CompatibleArgumentParser,
-    FromArg, __pkgname__, create_licenses_table, create_output_string,
-    create_parser, create_warn_string, enum_key_to_value,
-    factory_styled_table_with_args, find_license_from_classifier,
-    get_output_fields, get_sortby, output_colored, save_if_needs,
-    select_license_by_source, value_to_enum_key)
+    DEFAULT_OUTPUT_FIELDS,
+    LICENSE_UNKNOWN,
+    RULE_ALL,
+    RULE_FRAME,
+    RULE_HEADER,
+    RULE_NONE,
+    SYSTEM_PACKAGES,
+    CompatibleArgumentParser,
+    FromArg,
+    __pkgname__,
+    create_licenses_table,
+    create_output_string,
+    create_parser,
+    create_warn_string,
+    enum_key_to_value,
+    factory_styled_table_with_args,
+    find_license_from_classifier,
+    get_output_fields,
+    get_sortby,
+    output_colored,
+    save_if_needs,
+    select_license_by_source,
+    value_to_enum_key,
+)
 
 UNICODE_APPENDIX = ""
-with open('tests/fixtures/unicode_characters.txt', encoding='utf-8') as f:
+with open("tests/fixtures/unicode_characters.txt", encoding="utf-8") as f:
     # Read from external file considering a terminal that cannot handle "emoji"
     UNICODE_APPENDIX = f.readline().replace("\n", "")
 
 
 def importlib_metadata_distributions_mocked(*args, **kwargs):
-
     class DistributionMocker(piplicenses.importlib_metadata.Distribution):
         def __init__(self, orig_dist):
             self.__dist = orig_dist
@@ -57,8 +73,9 @@ def importlib_metadata_distributions_mocked(*args, **kwargs):
     return packages
 
 
-importlib_metadata_distributions_orig = \
+importlib_metadata_distributions_orig = (
     piplicenses.importlib_metadata.distributions
+)
 
 
 class CommandLineTestCase(unittest.TestCase):
@@ -68,9 +85,8 @@ class CommandLineTestCase(unittest.TestCase):
 
 
 class TestGetLicenses(CommandLineTestCase):
-
     def _create_pkg_name_columns(self, table):
-        index = DEFAULT_OUTPUT_FIELDS.index('Name')
+        index = DEFAULT_OUTPUT_FIELDS.index("Name")
 
         # XXX: access to private API
         rows = copy.deepcopy(table._rows)
@@ -81,7 +97,7 @@ class TestGetLicenses(CommandLineTestCase):
         return pkg_name_columns
 
     def _create_license_columns(self, table, output_fields):
-        index = output_fields.index('License')
+        index = output_fields.index("License")
 
         # XXX: access to private API
         rows = copy.deepcopy(table._rows)
@@ -97,10 +113,11 @@ class TestGetLicenses(CommandLineTestCase):
     def check_rst(text: str):
         parser = docutils.parsers.rst.Parser()
         components = (docutils.parsers.rst.Parser,)
-        settings = docutils.frontend.\
-            OptionParser(components=components).get_default_values()
+        settings = docutils.frontend.OptionParser(
+            components=components
+        ).get_default_values()
         settings.halt_level = 3
-        document = docutils.utils.new_document('<rst-doc>', settings=settings)
+        document = docutils.utils.new_document("<rst-doc>", settings=settings)
         parser.parse(text, document)
 
     def test_with_empty_args(self):
@@ -108,142 +125,155 @@ class TestGetLicenses(CommandLineTestCase):
         args = self.parser.parse_args(empty_args)
         table = create_licenses_table(args)
 
-        self.assertIn('l', table.align.values())
+        self.assertIn("l", table.align.values())
         self.assertFalse(table.border)
         self.assertTrue(table.header)
-        self.assertEqual('+', table.junction_char)
+        self.assertEqual("+", table.junction_char)
         self.assertEqual(RULE_FRAME, table.hrules)
 
         output_fields = get_output_fields(args)
-        self.assertEqual(output_fields,
-                         list(DEFAULT_OUTPUT_FIELDS) + ['License'])
-        self.assertNotIn('Author', output_fields)
-        self.assertNotIn('URL', output_fields)
+        self.assertEqual(
+            output_fields, list(DEFAULT_OUTPUT_FIELDS) + ["License"]
+        )
+        self.assertNotIn("Author", output_fields)
+        self.assertNotIn("URL", output_fields)
 
         pkg_name_columns = self._create_pkg_name_columns(table)
         for sys_pkg in SYSTEM_PACKAGES:
             self.assertNotIn(sys_pkg, pkg_name_columns)
 
         sortby = get_sortby(args)
-        self.assertEqual('Name', sortby)
+        self.assertEqual("Name", sortby)
 
         output_string = create_output_string(args)
-        self.assertNotIn('<table>', output_string)
+        self.assertNotIn("<table>", output_string)
 
     def test_from_meta(self):
-        from_args = ['--from=meta']
+        from_args = ["--from=meta"]
         args = self.parser.parse_args(from_args)
 
         output_fields = get_output_fields(args)
-        self.assertIn('License', output_fields)
+        self.assertIn("License", output_fields)
 
         table = create_licenses_table(args, output_fields)
         license_columns = self._create_license_columns(table, output_fields)
-        license_notation_as_meta = 'MIT'
+        license_notation_as_meta = "MIT"
         self.assertIn(license_notation_as_meta, license_columns)
 
     def test_from_classifier(self):
-        from_args = ['--from=classifier']
+        from_args = ["--from=classifier"]
         args = self.parser.parse_args(from_args)
         output_fields = get_output_fields(args)
         table = create_licenses_table(args, output_fields)
 
-        self.assertIn('License', output_fields)
+        self.assertIn("License", output_fields)
 
         license_columns = self._create_license_columns(table, output_fields)
-        license_notation_as_classifier = 'MIT License'
+        license_notation_as_classifier = "MIT License"
         self.assertIn(license_notation_as_classifier, license_columns)
 
     def test_from_mixed(self):
-        from_args = ['--from=mixed']
+        from_args = ["--from=mixed"]
         args = self.parser.parse_args(from_args)
         output_fields = get_output_fields(args)
         table = create_licenses_table(args, output_fields)
 
-        self.assertIn('License', output_fields)
+        self.assertIn("License", output_fields)
 
         license_columns = self._create_license_columns(table, output_fields)
         # Depending on the condition "MIT" or "BSD" etc.
-        license_notation_as_classifier = 'MIT License'
+        license_notation_as_classifier = "MIT License"
         self.assertIn(license_notation_as_classifier, license_columns)
 
     def test_from_all(self):
-        from_args = ['--from=all']
+        from_args = ["--from=all"]
         args = self.parser.parse_args(from_args)
         output_fields = get_output_fields(args)
         table = create_licenses_table(args, output_fields)
 
-        self.assertIn('License-Metadata', output_fields)
-        self.assertIn('License-Classifier', output_fields)
+        self.assertIn("License-Metadata", output_fields)
+        self.assertIn("License-Classifier", output_fields)
 
-        index_license_meta = output_fields.index('License-Metadata')
+        index_license_meta = output_fields.index("License-Metadata")
         license_meta = []
         for row in table._rows:
             license_meta.append(row[index_license_meta])
 
-        index_license_classifier = output_fields.index('License-Classifier')
+        index_license_classifier = output_fields.index("License-Classifier")
         license_classifier = []
         for row in table._rows:
             license_classifier.append(row[index_license_classifier])
 
-        for license in ('BSD', 'MIT', 'Apache 2.0'):
+        for license in ("BSD", "MIT", "Apache 2.0"):
             self.assertIn(license, license_meta)
-        for license in ('BSD License', 'MIT License',
-                        'Apache Software License'):
+        for license in (
+            "BSD License",
+            "MIT License",
+            "Apache Software License",
+        ):
             self.assertIn(license, license_classifier)
 
     def test_find_license_from_classifier(self):
-        classifiers = ['License :: OSI Approved :: MIT License']
-        self.assertEqual(['MIT License'],
-                         find_license_from_classifier(classifiers))
+        classifiers = ["License :: OSI Approved :: MIT License"]
+        self.assertEqual(
+            ["MIT License"], find_license_from_classifier(classifiers)
+        )
 
     def test_display_multiple_license_from_classifier(self):
         classifiers = [
-            'License :: OSI Approved',
-            'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
-            'License :: OSI Approved :: MIT License',
-            'License :: Public Domain'
+            "License :: OSI Approved",
+            "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+            "License :: OSI Approved :: MIT License",
+            "License :: Public Domain",
         ]
-        self.assertEqual(['GNU General Public License v3 (GPLv3)',
-                          'MIT License',
-                          'Public Domain'],
-                         find_license_from_classifier(classifiers))
+        self.assertEqual(
+            [
+                "GNU General Public License v3 (GPLv3)",
+                "MIT License",
+                "Public Domain",
+            ],
+            find_license_from_classifier(classifiers),
+        )
 
     def test_not_found_license_from_classifier(self):
-        metadata_as_no_license = ('Metadata-Version: 2.0\r\n'
-                                  'Name: pip-licenses\r\n'
-                                  'Version: 1.0.0\r\n')
+        metadata_as_no_license = (
+            "Metadata-Version: 2.0\r\n"
+            "Name: pip-licenses\r\n"
+            "Version: 1.0.0\r\n"
+        )
         message = message_from_string(metadata_as_no_license)
-        self.assertEqual([],
-                         find_license_from_classifier(message))
+        self.assertEqual([], find_license_from_classifier(message))
 
     def test_select_license_by_source(self):
-        self.assertEqual({'MIT License'},
-                         select_license_by_source(FromArg.CLASSIFIER,
-                                                  ['MIT License'],
-                                                  'MIT'))
+        self.assertEqual(
+            {"MIT License"},
+            select_license_by_source(
+                FromArg.CLASSIFIER, ["MIT License"], "MIT"
+            ),
+        )
 
-        self.assertEqual({LICENSE_UNKNOWN},
-                         select_license_by_source(FromArg.CLASSIFIER,
-                                                  [],
-                                                  'MIT'))
+        self.assertEqual(
+            {LICENSE_UNKNOWN},
+            select_license_by_source(FromArg.CLASSIFIER, [], "MIT"),
+        )
 
-        self.assertEqual({'MIT License'},
-                         select_license_by_source(FromArg.MIXED,
-                                                  ['MIT License'],
-                                                  'MIT'))
+        self.assertEqual(
+            {"MIT License"},
+            select_license_by_source(FromArg.MIXED, ["MIT License"], "MIT"),
+        )
 
-        self.assertEqual({'MIT'},
-                         select_license_by_source(FromArg.MIXED,
-                                                  [],
-                                                  'MIT'))
-        self.assertEqual({'Apache License 2.0'},
-                         select_license_by_source(FromArg.MIXED,
-                                                  ['Apache License 2.0'],
-                                                  'Apache-2.0'))
+        self.assertEqual(
+            {"MIT"}, select_license_by_source(FromArg.MIXED, [], "MIT")
+        )
+        self.assertEqual(
+            {"Apache License 2.0"},
+            select_license_by_source(
+                FromArg.MIXED, ["Apache License 2.0"], "Apache-2.0"
+            ),
+        )
 
     def test_with_system(self):
-        with_system_args = ['--with-system']
+        with_system_args = ["--with-system"]
         args = self.parser.parse_args(with_system_args)
         table = create_licenses_table(args)
 
@@ -254,103 +284,106 @@ class TestGetLicenses(CommandLineTestCase):
             self.assertIn(sys_pkg, pkg_name_columns)
 
     def test_with_authors(self):
-        with_authors_args = ['--with-authors']
+        with_authors_args = ["--with-authors"]
         args = self.parser.parse_args(with_authors_args)
 
         output_fields = get_output_fields(args)
         self.assertNotEqual(output_fields, list(DEFAULT_OUTPUT_FIELDS))
-        self.assertIn('Author', output_fields)
+        self.assertIn("Author", output_fields)
 
         output_string = create_output_string(args)
-        self.assertIn('Author', output_string)
+        self.assertIn("Author", output_string)
 
     def test_with_urls(self):
-        with_urls_args = ['--with-urls']
+        with_urls_args = ["--with-urls"]
         args = self.parser.parse_args(with_urls_args)
 
         output_fields = get_output_fields(args)
         self.assertNotEqual(output_fields, list(DEFAULT_OUTPUT_FIELDS))
-        self.assertIn('URL', output_fields)
+        self.assertIn("URL", output_fields)
 
         output_string = create_output_string(args)
-        self.assertIn('URL', output_string)
+        self.assertIn("URL", output_string)
 
     def test_with_description(self):
-        with_description_args = ['--with-description']
+        with_description_args = ["--with-description"]
         args = self.parser.parse_args(with_description_args)
 
         output_fields = get_output_fields(args)
         self.assertNotEqual(output_fields, list(DEFAULT_OUTPUT_FIELDS))
-        self.assertIn('Description', output_fields)
+        self.assertIn("Description", output_fields)
 
         output_string = create_output_string(args)
-        self.assertIn('Description', output_string)
+        self.assertIn("Description", output_string)
 
     def test_with_license_file(self):
-        with_license_file_args = ['--with-license-file']
+        with_license_file_args = ["--with-license-file"]
         args = self.parser.parse_args(with_license_file_args)
 
         output_fields = get_output_fields(args)
         self.assertNotEqual(output_fields, list(DEFAULT_OUTPUT_FIELDS))
-        self.assertIn('LicenseFile', output_fields)
-        self.assertIn('LicenseText', output_fields)
-        self.assertNotIn('NoticeFile', output_fields)
-        self.assertNotIn('NoticeText', output_fields)
+        self.assertIn("LicenseFile", output_fields)
+        self.assertIn("LicenseText", output_fields)
+        self.assertNotIn("NoticeFile", output_fields)
+        self.assertNotIn("NoticeText", output_fields)
 
         output_string = create_output_string(args)
-        self.assertIn('LicenseFile', output_string)
-        self.assertIn('LicenseText', output_string)
-        self.assertNotIn('NoticeFile', output_string)
-        self.assertNotIn('NoticeText', output_string)
+        self.assertIn("LicenseFile", output_string)
+        self.assertIn("LicenseText", output_string)
+        self.assertNotIn("NoticeFile", output_string)
+        self.assertNotIn("NoticeText", output_string)
 
     def test_with_notice_file(self):
-        with_license_file_args = ['--with-license-file', '--with-notice-file']
+        with_license_file_args = ["--with-license-file", "--with-notice-file"]
         args = self.parser.parse_args(with_license_file_args)
 
         output_fields = get_output_fields(args)
         self.assertNotEqual(output_fields, list(DEFAULT_OUTPUT_FIELDS))
-        self.assertIn('LicenseFile', output_fields)
-        self.assertIn('LicenseText', output_fields)
-        self.assertIn('NoticeFile', output_fields)
-        self.assertIn('NoticeText', output_fields)
+        self.assertIn("LicenseFile", output_fields)
+        self.assertIn("LicenseText", output_fields)
+        self.assertIn("NoticeFile", output_fields)
+        self.assertIn("NoticeText", output_fields)
 
         output_string = create_output_string(args)
-        self.assertIn('LicenseFile', output_string)
-        self.assertIn('LicenseText', output_string)
-        self.assertIn('NoticeFile', output_string)
-        self.assertIn('NoticeText', output_string)
+        self.assertIn("LicenseFile", output_string)
+        self.assertIn("LicenseText", output_string)
+        self.assertIn("NoticeFile", output_string)
+        self.assertIn("NoticeText", output_string)
 
     def test_with_license_file_no_path(self):
-        with_license_file_args = ['--with-license-file', '--with-notice-file',
-                                  '--no-license-path']
+        with_license_file_args = [
+            "--with-license-file",
+            "--with-notice-file",
+            "--no-license-path",
+        ]
         args = self.parser.parse_args(with_license_file_args)
 
         output_fields = get_output_fields(args)
         self.assertNotEqual(output_fields, list(DEFAULT_OUTPUT_FIELDS))
-        self.assertNotIn('LicenseFile', output_fields)
-        self.assertIn('LicenseText', output_fields)
-        self.assertNotIn('NoticeFile', output_fields)
-        self.assertIn('NoticeText', output_fields)
+        self.assertNotIn("LicenseFile", output_fields)
+        self.assertIn("LicenseText", output_fields)
+        self.assertNotIn("NoticeFile", output_fields)
+        self.assertIn("NoticeText", output_fields)
 
         output_string = create_output_string(args)
-        self.assertNotIn('LicenseFile', output_string)
-        self.assertIn('LicenseText', output_string)
-        self.assertNotIn('NoticeFile', output_string)
-        self.assertIn('NoticeText', output_string)
+        self.assertNotIn("LicenseFile", output_string)
+        self.assertIn("LicenseText", output_string)
+        self.assertNotIn("NoticeFile", output_string)
+        self.assertIn("NoticeText", output_string)
 
     def test_with_license_file_warning(self):
-        with_license_file_args = ['--with-license-file', '--format=markdown']
+        with_license_file_args = ["--with-license-file", "--format=markdown"]
         args = self.parser.parse_args(with_license_file_args)
 
         warn_string = create_warn_string(args)
-        self.assertIn('best paired with --format=json', warn_string)
+        self.assertIn("best paired with --format=json", warn_string)
 
     def test_ignore_packages(self):
-        if 'PTable' in SYSTEM_PACKAGES:
-            ignore_pkg_name = 'PTable'
+        if "PTable" in SYSTEM_PACKAGES:
+            ignore_pkg_name = "PTable"
         else:
-            ignore_pkg_name = 'prettytable'
-        ignore_packages_args = ['--ignore-package=' + ignore_pkg_name]
+            ignore_pkg_name = "prettytable"
+        ignore_packages_args = ["--ignore-package=" + ignore_pkg_name]
         args = self.parser.parse_args(ignore_packages_args)
         table = create_licenses_table(args)
 
@@ -358,8 +391,8 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertNotIn(ignore_pkg_name, pkg_name_columns)
 
     def test_with_packages(self):
-        pkg_name = 'py'
-        only_packages_args = ['--packages=' + pkg_name]
+        pkg_name = "py"
+        only_packages_args = ["--packages=" + pkg_name]
         args = self.parser.parse_args(only_packages_args)
         table = create_licenses_table(args)
 
@@ -367,11 +400,11 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertListEqual([pkg_name], pkg_name_columns)
 
     def test_with_packages_with_system(self):
-        if 'PTable' in SYSTEM_PACKAGES:
-            pkg_name = 'PTable'
+        if "PTable" in SYSTEM_PACKAGES:
+            pkg_name = "PTable"
         else:
-            pkg_name = 'prettytable'
-        only_packages_args = ['--packages=' + pkg_name, "--with-system"]
+            pkg_name = "prettytable"
+        only_packages_args = ["--packages=" + pkg_name, "--with-system"]
         args = self.parser.parse_args(only_packages_args)
         table = create_licenses_table(args)
 
@@ -379,124 +412,131 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertListEqual([pkg_name], pkg_name_columns)
 
     def test_order_name(self):
-        order_name_args = ['--order=name']
+        order_name_args = ["--order=name"]
         args = self.parser.parse_args(order_name_args)
 
         sortby = get_sortby(args)
-        self.assertEqual('Name', sortby)
+        self.assertEqual("Name", sortby)
 
     def test_order_license(self):
-        order_license_args = ['--order=license']
+        order_license_args = ["--order=license"]
         args = self.parser.parse_args(order_license_args)
 
         sortby = get_sortby(args)
-        self.assertEqual('License', sortby)
+        self.assertEqual("License", sortby)
 
     def test_order_author(self):
-        order_author_args = ['--order=author', '--with-authors']
+        order_author_args = ["--order=author", "--with-authors"]
         args = self.parser.parse_args(order_author_args)
 
         sortby = get_sortby(args)
-        self.assertEqual('Author', sortby)
+        self.assertEqual("Author", sortby)
 
     def test_order_url(self):
-        order_url_args = ['--order=url', '--with-urls']
+        order_url_args = ["--order=url", "--with-urls"]
         args = self.parser.parse_args(order_url_args)
 
         sortby = get_sortby(args)
-        self.assertEqual('URL', sortby)
+        self.assertEqual("URL", sortby)
 
     def test_order_url_no_effect(self):
-        order_url_args = ['--order=url']
+        order_url_args = ["--order=url"]
         args = self.parser.parse_args(order_url_args)
 
         sortby = get_sortby(args)
-        self.assertEqual('Name', sortby)
+        self.assertEqual("Name", sortby)
 
     def test_format_plain(self):
-        format_plain_args = ['--format=plain']
+        format_plain_args = ["--format=plain"]
         args = self.parser.parse_args(format_plain_args)
         table = factory_styled_table_with_args(args)
 
-        self.assertIn('l', table.align.values())
+        self.assertIn("l", table.align.values())
         self.assertFalse(table.border)
         self.assertTrue(table.header)
-        self.assertEqual('+', table.junction_char)
+        self.assertEqual("+", table.junction_char)
         self.assertEqual(RULE_FRAME, table.hrules)
 
     def test_format_plain_vertical(self):
-        format_plain_args = ['--format=plain-vertical', '--from=classifier']
+        format_plain_args = ["--format=plain-vertical", "--from=classifier"]
         args = self.parser.parse_args(format_plain_args)
         output_string = create_output_string(args)
         self.assertIsNotNone(
-            re.search(r'pytest\n\d\.\d\.\d\nMIT License\n', output_string))
+            re.search(r"pytest\n\d\.\d\.\d\nMIT License\n", output_string)
+        )
 
     def test_format_markdown(self):
-        format_markdown_args = ['--format=markdown']
+        format_markdown_args = ["--format=markdown"]
         args = self.parser.parse_args(format_markdown_args)
         table = create_licenses_table(args)
 
-        self.assertIn('l', table.align.values())
+        self.assertIn("l", table.align.values())
         self.assertTrue(table.border)
         self.assertTrue(table.header)
-        self.assertEqual('|', table.junction_char)
+        self.assertEqual("|", table.junction_char)
         self.assertEqual(RULE_HEADER, table.hrules)
 
-    @unittest.skipIf(sys.version_info < (3, 6, 0),
-                     "To unsupport Python 3.5 in the near future")
+    @unittest.skipIf(
+        sys.version_info < (3, 6, 0),
+        "To unsupport Python 3.5 in the near future",
+    )
     def test_format_rst_without_filter(self):
-        piplicenses.importlib_metadata.distributions = \
+        piplicenses.importlib_metadata.distributions = (
             importlib_metadata_distributions_mocked
-        format_rst_args = ['--format=rst']
+        )
+        format_rst_args = ["--format=rst"]
         args = self.parser.parse_args(format_rst_args)
         table = create_licenses_table(args)
 
-        self.assertIn('l', table.align.values())
+        self.assertIn("l", table.align.values())
         self.assertTrue(table.border)
         self.assertTrue(table.header)
-        self.assertEqual('+', table.junction_char)
+        self.assertEqual("+", table.junction_char)
         self.assertEqual(RULE_ALL, table.hrules)
         with self.assertRaises(docutils.utils.SystemMessage):
             self.check_rst(str(table))
-        piplicenses.importlib_metadata.distributions = \
+        piplicenses.importlib_metadata.distributions = (
             importlib_metadata_distributions_orig
+        )
 
     def test_format_rst_default_filter(self):
-        piplicenses.importlib_metadata.distributions = \
+        piplicenses.importlib_metadata.distributions = (
             importlib_metadata_distributions_mocked
-        format_rst_args = ['--format=rst', '--filter-strings']
+        )
+        format_rst_args = ["--format=rst", "--filter-strings"]
         args = self.parser.parse_args(format_rst_args)
         table = create_licenses_table(args)
 
-        self.assertIn('l', table.align.values())
+        self.assertIn("l", table.align.values())
         self.assertTrue(table.border)
         self.assertTrue(table.header)
-        self.assertEqual('+', table.junction_char)
+        self.assertEqual("+", table.junction_char)
         self.assertEqual(RULE_ALL, table.hrules)
         self.check_rst(str(table))
-        piplicenses.importlib_metadata.distributions = \
+        piplicenses.importlib_metadata.distributions = (
             importlib_metadata_distributions_orig
+        )
 
     def test_format_confluence(self):
-        format_confluence_args = ['--format=confluence']
+        format_confluence_args = ["--format=confluence"]
         args = self.parser.parse_args(format_confluence_args)
         table = create_licenses_table(args)
 
-        self.assertIn('l', table.align.values())
+        self.assertIn("l", table.align.values())
         self.assertTrue(table.border)
         self.assertTrue(table.header)
-        self.assertEqual('|', table.junction_char)
+        self.assertEqual("|", table.junction_char)
         self.assertEqual(RULE_NONE, table.hrules)
 
     def test_format_html(self):
-        format_html_args = ['--format=html']
+        format_html_args = ["--format=html"]
         args = self.parser.parse_args(format_html_args)
         output_string = create_output_string(args)
 
-        self.assertIn('<table>', output_string)
+        self.assertIn("<table>", output_string)
 
     def test_format_json(self):
-        format_json_args = ['--format=json', '--with-authors']
+        format_json_args = ["--format=json", "--with-authors"]
         args = self.parser.parse_args(format_json_args)
         output_string = create_output_string(args)
 
@@ -504,7 +544,7 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertNotIn('"URL":', output_string)
 
     def test_format_json_license_manager(self):
-        format_json_args = ['--format=json-license-finder']
+        format_json_args = ["--format=json-license-finder"]
         args = self.parser.parse_args(format_json_args)
         output_string = create_output_string(args)
 
@@ -514,105 +554,115 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertIn('"licenses":', output_string)
 
     def test_format_csv(self):
-        format_csv_args = ['--format=csv', '--with-authors']
+        format_csv_args = ["--format=csv", "--with-authors"]
         args = self.parser.parse_args(format_csv_args)
         output_string = create_output_string(args)
 
-        obtained_header = output_string.split('\n', 1)[0]
+        obtained_header = output_string.split("\n", 1)[0]
         expected_header = '"Name","Version","License","Author"'
         self.assertEqual(obtained_header, expected_header)
 
     def test_summary(self):
-        summary_args = ['--summary']
+        summary_args = ["--summary"]
         args = self.parser.parse_args(summary_args)
         output_string = create_output_string(args)
 
-        self.assertIn('Count', output_string)
-        self.assertNotIn('Name', output_string)
+        self.assertIn("Count", output_string)
+        self.assertNotIn("Name", output_string)
 
         warn_string = create_warn_string(args)
         self.assertTrue(len(warn_string) == 0)
 
     def test_summary_sort_by_count(self):
-        summary_args = ['--summary', '--order=count']
+        summary_args = ["--summary", "--order=count"]
         args = self.parser.parse_args(summary_args)
 
         sortby = get_sortby(args)
-        self.assertEqual('Count', sortby)
+        self.assertEqual("Count", sortby)
 
     def test_summary_sort_by_name(self):
-        summary_args = ['--summary', '--order=name']
+        summary_args = ["--summary", "--order=name"]
         args = self.parser.parse_args(summary_args)
 
         sortby = get_sortby(args)
-        self.assertEqual('License', sortby)
+        self.assertEqual("License", sortby)
 
     def test_summary_warning(self):
-        summary_args = ['--summary', '--with-authors']
+        summary_args = ["--summary", "--with-authors"]
         args = self.parser.parse_args(summary_args)
 
         warn_string = create_warn_string(args)
-        self.assertIn('using --with-authors and --with-urls will be ignored.',
-                      warn_string)
+        self.assertIn(
+            "using --with-authors and --with-urls will be ignored.",
+            warn_string,
+        )
 
-        summary_args = ['--summary', '--with-urls']
+        summary_args = ["--summary", "--with-urls"]
         args = self.parser.parse_args(summary_args)
 
         warn_string = create_warn_string(args)
-        self.assertIn('using --with-authors and --with-urls will be ignored.',
-                      warn_string)
+        self.assertIn(
+            "using --with-authors and --with-urls will be ignored.",
+            warn_string,
+        )
 
     def test_output_colored_normal(self):
-        color_code = '32'
+        color_code = "32"
         text = __pkgname__
         actual = output_colored(color_code, text)
 
-        self.assertTrue(actual.startswith('\033[32'))
+        self.assertTrue(actual.startswith("\033[32"))
         self.assertIn(text, actual)
-        self.assertTrue(actual.endswith('\033[0m'))
+        self.assertTrue(actual.endswith("\033[0m"))
 
     def test_output_colored_bold(self):
-        color_code = '32'
+        color_code = "32"
         text = __pkgname__
         actual = output_colored(color_code, text, is_bold=True)
 
-        self.assertTrue(actual.startswith('\033[1;32'))
+        self.assertTrue(actual.startswith("\033[1;32"))
         self.assertIn(text, actual)
-        self.assertTrue(actual.endswith('\033[0m'))
+        self.assertTrue(actual.endswith("\033[0m"))
 
     def test_without_filter(self):
-        piplicenses.importlib_metadata.distributions = \
+        piplicenses.importlib_metadata.distributions = (
             importlib_metadata_distributions_mocked
+        )
         args = self.parser.parse_args([])
         packages = list(piplicenses.get_packages(args))
         self.assertIn(UNICODE_APPENDIX, packages[-1]["name"])
-        piplicenses.importlib_metadata.distributions = \
+        piplicenses.importlib_metadata.distributions = (
             importlib_metadata_distributions_orig
+        )
 
     def test_with_default_filter(self):
-        piplicenses.importlib_metadata.distributions = \
+        piplicenses.importlib_metadata.distributions = (
             importlib_metadata_distributions_mocked
+        )
         args = self.parser.parse_args(["--filter-strings"])
         packages = list(piplicenses.get_packages(args))
-        piplicenses.importlib_metadata.distributions = \
+        piplicenses.importlib_metadata.distributions = (
             importlib_metadata_distributions_orig
+        )
         self.assertNotIn(UNICODE_APPENDIX, packages[-1]["name"])
 
     def test_with_specified_filter(self):
-        piplicenses.importlib_metadata.distributions = \
+        piplicenses.importlib_metadata.distributions = (
             importlib_metadata_distributions_mocked
-        args = self.parser.parse_args(["--filter-strings",
-                                       "--filter-code-page=ascii"])
+        )
+        args = self.parser.parse_args(
+            ["--filter-strings", "--filter-code-page=ascii"]
+        )
         packages = list(piplicenses.get_packages(args))
         self.assertNotIn(UNICODE_APPENDIX, packages[-1]["summary"])
-        piplicenses.importlib_metadata.distributions = \
+        piplicenses.importlib_metadata.distributions = (
             importlib_metadata_distributions_orig
+        )
 
 
 class MockStdStream(object):
-
     def __init__(self):
-        self.printed = ''
+        self.printed = ""
 
     def write(self, p):
         self.printed = p
@@ -621,18 +671,19 @@ class MockStdStream(object):
 def test_output_file_success(monkeypatch):
     def mocked_open(*args, **kwargs):
         import tempfile
-        return tempfile.TemporaryFile('w')
+
+        return tempfile.TemporaryFile("w")
 
     mocked_stdout = MockStdStream()
     mocked_stderr = MockStdStream()
-    monkeypatch.setattr(piplicenses, 'open', mocked_open)
-    monkeypatch.setattr(sys.stdout, 'write', mocked_stdout.write)
-    monkeypatch.setattr(sys.stderr, 'write', mocked_stderr.write)
-    monkeypatch.setattr(sys, 'exit', lambda n: None)
+    monkeypatch.setattr(piplicenses, "open", mocked_open)
+    monkeypatch.setattr(sys.stdout, "write", mocked_stdout.write)
+    monkeypatch.setattr(sys.stderr, "write", mocked_stderr.write)
+    monkeypatch.setattr(sys, "exit", lambda n: None)
 
-    save_if_needs('/foo/bar.txt', 'license list')
-    assert 'created path: ' in mocked_stdout.printed
-    assert '' == mocked_stderr.printed
+    save_if_needs("/foo/bar.txt", "license list")
+    assert "created path: " in mocked_stdout.printed
+    assert "" == mocked_stderr.printed
 
 
 def test_output_file_error(monkeypatch):
@@ -641,26 +692,26 @@ def test_output_file_error(monkeypatch):
 
     mocked_stdout = MockStdStream()
     mocked_stderr = MockStdStream()
-    monkeypatch.setattr(piplicenses, 'open', mocked_open)
-    monkeypatch.setattr(sys.stdout, 'write', mocked_stdout.write)
-    monkeypatch.setattr(sys.stderr, 'write', mocked_stderr.write)
-    monkeypatch.setattr(sys, 'exit', lambda n: None)
+    monkeypatch.setattr(piplicenses, "open", mocked_open)
+    monkeypatch.setattr(sys.stdout, "write", mocked_stdout.write)
+    monkeypatch.setattr(sys.stderr, "write", mocked_stderr.write)
+    monkeypatch.setattr(sys, "exit", lambda n: None)
 
-    save_if_needs('/foo/bar.txt', 'license list')
-    assert '' == mocked_stdout.printed
-    assert 'check path: ' in mocked_stderr.printed
+    save_if_needs("/foo/bar.txt", "license list")
+    assert "" == mocked_stdout.printed
+    assert "check path: " in mocked_stderr.printed
 
 
 def test_output_file_none(monkeypatch):
     mocked_stdout = MockStdStream()
     mocked_stderr = MockStdStream()
-    monkeypatch.setattr(sys.stdout, 'write', mocked_stdout.write)
-    monkeypatch.setattr(sys.stderr, 'write', mocked_stderr.write)
+    monkeypatch.setattr(sys.stdout, "write", mocked_stdout.write)
+    monkeypatch.setattr(sys.stderr, "write", mocked_stderr.write)
 
-    save_if_needs(None, 'license list')
+    save_if_needs(None, "license list")
     # stdout and stderr are expected not to be called
-    assert '' == mocked_stdout.printed
-    assert '' == mocked_stderr.printed
+    assert "" == mocked_stdout.printed
+    assert "" == mocked_stderr.printed
 
 
 def test_allow_only(monkeypatch):
@@ -673,36 +724,38 @@ def test_allow_only(monkeypatch):
         "GNU General Public License (GPL)",
         "GNU Library or Lesser General Public License (LGPL)",
     )
-    allow_only_args = ['--allow-only={}'.format(";".join(licenses))]
+    allow_only_args = ["--allow-only={}".format(";".join(licenses))]
     mocked_stdout = MockStdStream()
     mocked_stderr = MockStdStream()
-    monkeypatch.setattr(sys.stdout, 'write', mocked_stdout.write)
-    monkeypatch.setattr(sys.stderr, 'write', mocked_stderr.write)
-    monkeypatch.setattr(sys, 'exit', lambda n: None)
+    monkeypatch.setattr(sys.stdout, "write", mocked_stdout.write)
+    monkeypatch.setattr(sys.stderr, "write", mocked_stderr.write)
+    monkeypatch.setattr(sys, "exit", lambda n: None)
     args = create_parser().parse_args(allow_only_args)
     create_licenses_table(args)
 
-    assert '' == mocked_stdout.printed
-    assert 'license MIT License not in allow-only licenses was found for ' \
-           'package' in mocked_stderr.printed
+    assert "" == mocked_stdout.printed
+    assert (
+        "license MIT License not in allow-only licenses was found for "
+        "package" in mocked_stderr.printed
+    )
 
 
 def test_fail_on(monkeypatch):
-    licenses = (
-        "MIT License",
-    )
-    allow_only_args = ['--fail-on={}'.format(";".join(licenses))]
+    licenses = ("MIT License",)
+    allow_only_args = ["--fail-on={}".format(";".join(licenses))]
     mocked_stdout = MockStdStream()
     mocked_stderr = MockStdStream()
-    monkeypatch.setattr(sys.stdout, 'write', mocked_stdout.write)
-    monkeypatch.setattr(sys.stderr, 'write', mocked_stderr.write)
-    monkeypatch.setattr(sys, 'exit', lambda n: None)
+    monkeypatch.setattr(sys.stdout, "write", mocked_stdout.write)
+    monkeypatch.setattr(sys.stderr, "write", mocked_stderr.write)
+    monkeypatch.setattr(sys, "exit", lambda n: None)
     args = create_parser().parse_args(allow_only_args)
     create_licenses_table(args)
 
-    assert '' == mocked_stdout.printed
-    assert 'fail-on license MIT License was found for ' \
-           'package' in mocked_stderr.printed
+    assert "" == mocked_stdout.printed
+    assert (
+        "fail-on license MIT License was found for "
+        "package" in mocked_stderr.printed
+    )
 
 
 def test_enums():
@@ -711,46 +764,48 @@ def test_enums():
         JSON_LICENSE_FINDER = JLF = auto()
 
     assert TestEnum.PLAIN == TestEnum.P
-    assert getattr(TestEnum, value_to_enum_key('jlf')) == \
-        TestEnum.JSON_LICENSE_FINDER
-    assert value_to_enum_key('jlf') == 'JLF'
-    assert value_to_enum_key('json-license-finder') == \
-        'JSON_LICENSE_FINDER'
-    assert enum_key_to_value(TestEnum.JSON_LICENSE_FINDER) == \
-        'json-license-finder'
-    assert enum_key_to_value(TestEnum.PLAIN) == 'plain'
+    assert (
+        getattr(TestEnum, value_to_enum_key("jlf"))
+        == TestEnum.JSON_LICENSE_FINDER
+    )
+    assert value_to_enum_key("jlf") == "JLF"
+    assert value_to_enum_key("json-license-finder") == "JSON_LICENSE_FINDER"
+    assert (
+        enum_key_to_value(TestEnum.JSON_LICENSE_FINDER)
+        == "json-license-finder"
+    )
+    assert enum_key_to_value(TestEnum.PLAIN) == "plain"
 
 
-@pytest.fixture(scope='package')
+@pytest.fixture(scope="package")
 def parser():
     return create_parser()
 
 
-def test_verify_args(
-        parser: CompatibleArgumentParser, capsys: CaptureFixture):
+def test_verify_args(parser: CompatibleArgumentParser, capsys: CaptureFixture):
     # --with-license-file missing
     with pytest.raises(SystemExit) as ex:
-        parser.parse_args(['--no-license-path'])
+        parser.parse_args(["--no-license-path"])
     capture = capsys.readouterr().err
-    for arg in ('--no-license-path', '--with-license-file'):
+    for arg in ("--no-license-path", "--with-license-file"):
         assert arg in capture
 
     with pytest.raises(SystemExit) as ex:
-        parser.parse_args(['--with-notice-file'])
+        parser.parse_args(["--with-notice-file"])
     capture = capsys.readouterr().err
-    for arg in ('--with-notice-file', '--with-license-file'):
+    for arg in ("--with-notice-file", "--with-license-file"):
         assert arg in capture
 
     # --filter-strings missing
     with pytest.raises(SystemExit) as ex:
-        parser.parse_args(['--filter-code-page=utf8'])
+        parser.parse_args(["--filter-code-page=utf8"])
     capture = capsys.readouterr().err
-    for arg in ('--filter-code-page', '--filter-strings'):
+    for arg in ("--filter-code-page", "--filter-strings"):
         assert arg in capture
 
     # invalid code-page
     with pytest.raises(SystemExit) as ex:
-        parser.parse_args(['--filter-strings', '--filter-code-page=XX'])
+        parser.parse_args(["--filter-strings", "--filter-code-page=XX"])
     capture = capsys.readouterr().err
-    for arg in ('invalid code', '--filter-code-page'):
+    for arg in ("invalid code", "--filter-code-page"):
         assert arg in capture
