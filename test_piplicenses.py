@@ -239,7 +239,7 @@ class TestGetLicenses(CommandLineTestCase):
                                                   'MIT'))
         self.assertEqual({'Apache License 2.0'},
                          select_license_by_source(FromArg.MIXED,
-                                                  'Apache License 2.0',
+                                                  ['Apache License 2.0'],
                                                   'Apache-2.0'))
 
     def test_with_system(self):
