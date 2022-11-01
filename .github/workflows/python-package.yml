@@ -33,6 +33,10 @@ jobs:
       - name: Test with pytest
         run: |
           pytest --pycodestyle -v --cov --cov-report=xml
+      - name: Validate static typing with mypy
+        run: |
+          mkdir -p .mypy_cache
+          mypy --install-types --non-interactive .
       - name: Upload code coverage to Codecov
         if: ${{ matrix.python-version==3.8 }}
         uses: codecov/codecov-action@v3
