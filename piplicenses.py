@@ -26,6 +26,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+from __future__ import annotations
+
 import argparse
 import codecs
 import re
@@ -34,13 +36,19 @@ from collections import Counter
 from enum import Enum, auto
 from functools import partial
 from importlib import metadata as importlib_metadata
-from typing import List, Optional, Sequence, Text
+from importlib.metadata import Distribution
+from pathlib import Path
+from typing import TYPE_CHECKING, Iterable, List, Type, cast
 
 from prettytable import ALL as RULE_ALL
 from prettytable import FRAME as RULE_FRAME
 from prettytable import HEADER as RULE_HEADER
 from prettytable import NONE as RULE_NONE
 from prettytable import PrettyTable
+
+if TYPE_CHECKING:
+    from typing import Iterator, Optional, Sequence
+
 
 open = open  # allow monkey patching
 
@@ -91,7 +99,6 @@ METADATA_KEYS = (
     "author",
     "license",
     "summary",
-    "license_classifier",
 )
 
 # Mapping of FIELD_NAMES to METADATA_KEYS where they differ by more than case
@@ -115,8 +122,12 @@ SYSTEM_PACKAGES = (
 LICENSE_UNKNOWN = "UNKNOWN"
 
 
-def get_packages(args: "CustomNamespace"):
-    def get_pkg_included_file(pkg, file_names_rgx):
+def get_packages(
+    args: CustomNamespace,
+) -> Iterator[dict[str, str | list[str]]]:
+    def get_pkg_included_file(
+        pkg: Distribution, file_names_rgx: str
+    ) -> tuple[str, str]:
         """
         Attempt to find the package's included file on disk and return the
         tuple (included_file_path, included_file_contents).
@@ -130,23 +141,23 @@ def get_packages(args: "CustomNamespace"):
             lambda file: pattern.match(file.name), pkg_files
         )
         for rel_path in matched_rel_paths:
-            abs_path = pkg.locate_file(rel_path)
+            abs_path = Path(pkg.locate_file(rel_path))
             if not abs_path.is_file():
                 continue
-            included_file = abs_path
+            included_file = str(abs_path)
             with open(
                 abs_path, encoding="utf-8", errors="backslashreplace"
             ) as included_file_handle:
                 included_text = included_file_handle.read()
             break
-        return (str(included_file), included_text)
+        return (included_file, included_text)
 
-    def get_pkg_info(pkg):
+    def get_pkg_info(pkg: Distribution) -> dict[str, str | list[str]]:
         (license_file, license_text) = get_pkg_included_file(
             pkg, "LICEN[CS]E.*|COPYING.*"
         )
         (notice_file, notice_text) = get_pkg_included_file(pkg, "NOTICE.*")
-        pkg_info = {
+        pkg_info: dict[str, str | list[str]] = {
             "name": pkg.metadata["name"],
             "version": pkg.version,
             "namever": "{} {}".format(pkg.metadata["name"], pkg.version),
@@ -157,26 +168,25 @@ def get_packages(args: "CustomNamespace"):
         }
         metadata = pkg.metadata
         for key in METADATA_KEYS:
-            pkg_info[key] = metadata.get(key, LICENSE_UNKNOWN)
+            pkg_info[key] = metadata.get(key, LICENSE_UNKNOWN)  # type: ignore[attr-defined] # noqa: E501
 
-        classifiers = metadata.get_all("classifier", [])
+        classifiers: list[str] = metadata.get_all("classifier", [])
         pkg_info["license_classifier"] = find_license_from_classifier(
             classifiers
         )
 
         if args.filter_strings:
+
+            def filter_string(item: str) -> str:
+                return item.encode(
+                    args.filter_code_page, errors="ignore"
+                ).decode(args.filter_code_page)
+
             for k in pkg_info:
                 if isinstance(pkg_info[k], list):
-                    for i, item in enumerate(pkg_info[k]):
-                        pkg_info[k][i] = item.encode(
-                            args.filter_code_page, errors="ignore"
-                        ).decode(args.filter_code_page)
+                    pkg_info[k] = list(map(filter_string, pkg_info[k]))
                 else:
-                    pkg_info[k] = (
-                        pkg_info[k]
-                        .encode(args.filter_code_page, errors="ignore")
-                        .decode(args.filter_code_page)
-                    )
+                    pkg_info[k] = filter_string(cast(str, pkg_info[k]))
 
         return pkg_info
 
@@ -207,7 +217,9 @@ def get_packages(args: "CustomNamespace"):
         pkg_info = get_pkg_info(pkg)
 
         license_names = select_license_by_source(
-            args.from_, pkg_info["license_classifier"], pkg_info["license"]
+            args.from_,
+            cast(List[str], pkg_info["license_classifier"]),
+            cast(str, pkg_info["license"]),
         )
 
         if fail_on_licenses:
@@ -240,8 +252,9 @@ def get_packages(args: "CustomNamespace"):
 
 
 def create_licenses_table(
-    args: "CustomNamespace", output_fields=DEFAULT_OUTPUT_FIELDS
-):
+    args: CustomNamespace,
+    output_fields: Iterable[str] = DEFAULT_OUTPUT_FIELDS,
+) -> PrettyTable:
     table = factory_styled_table_with_args(args, output_fields)
 
     for pkg in get_packages(args):
@@ -249,7 +262,9 @@ def create_licenses_table(
         for field in output_fields:
             if field == "License":
                 license_set = select_license_by_source(
-                    args.from_, pkg["license_classifier"], pkg["license"]
+                    args.from_,
+                    cast(List[str], pkg["license_classifier"]),
+                    cast(str, pkg["license"]),
                 )
                 license_str = "; ".join(sorted(license_set))
                 row.append(license_str)
@@ -259,20 +274,22 @@ def create_licenses_table(
                     or LICENSE_UNKNOWN
                 )
             elif field.lower() in pkg:
-                row.append(pkg[field.lower()])
+                row.append(cast(str, pkg[field.lower()]))
             else:
-                row.append(pkg[FIELDS_TO_METADATA_KEYS[field]])
+                row.append(cast(str, pkg[FIELDS_TO_METADATA_KEYS[field]]))
         table.add_row(row)
 
     return table
 
 
-def create_summary_table(args: "CustomNamespace"):
+def create_summary_table(args: CustomNamespace) -> PrettyTable:
     counts = Counter(
         "; ".join(
             sorted(
                 select_license_by_source(
-                    args.from_, pkg["license_classifier"], pkg["license"]
+                    args.from_,
+                    cast(List[str], pkg["license_classifier"]),
+                    cast(str, pkg["license"]),
                 )
             )
         )
@@ -288,14 +305,14 @@ def create_summary_table(args: "CustomNamespace"):
 class JsonPrettyTable(PrettyTable):
     """PrettyTable-like class exporting to JSON"""
 
-    def _format_row(self, row):
-        resrow = {}
+    def _format_row(self, row: Iterable[str]) -> dict[str, str | list[str]]:
+        resrow: dict[str, str | List[str]] = {}
         for (field, value) in zip(self._field_names, row):
             resrow[field] = value
 
         return resrow
 
-    def get_string(self, **kwargs):
+    def get_string(self, **kwargs: str | list[str]) -> str:
         # import included here in order to limit dependencies
         # if not interested in JSON output,
         # then the dependency is not required
@@ -313,8 +330,8 @@ class JsonPrettyTable(PrettyTable):
 
 
 class JsonLicenseFinderTable(JsonPrettyTable):
-    def _format_row(self, row):
-        resrow = {}
+    def _format_row(self, row: Iterable[str]) -> dict[str, str | list[str]]:
+        resrow: dict[str, str | List[str]] = {}
         for (field, value) in zip(self._field_names, row):
             if field == "Name":
                 resrow["name"] = value
@@ -327,7 +344,7 @@ class JsonLicenseFinderTable(JsonPrettyTable):
 
         return resrow
 
-    def get_string(self, **kwargs):
+    def get_string(self, **kwargs: str | list[str]) -> str:
         # import included here in order to limit dependencies
         # if not interested in JSON output,
         # then the dependency is not required
@@ -347,18 +364,20 @@ class JsonLicenseFinderTable(JsonPrettyTable):
 class CSVPrettyTable(PrettyTable):
     """PrettyTable-like class exporting to CSV"""
 
-    def get_string(self, **kwargs):
-        def esc_quotes(val):
+    def get_string(self, **kwargs: str | list[str]) -> str:
+        def esc_quotes(val: bytes | str) -> str:
             """
             Meta-escaping double quotes
             https://tools.ietf.org/html/rfc4180
             """
             try:
-                return val.replace('"', '""')
+                return cast(str, val).replace('"', '""')
             except UnicodeDecodeError:  # pragma: no cover
-                return val.decode("utf-8").replace('"', '""')
+                return cast(bytes, val).decode("utf-8").replace('"', '""')
             except UnicodeEncodeError:  # pragma: no cover
-                return val.encode("unicode_escape").replace('"', '""')
+                return str(
+                    cast(str, val).encode("unicode_escape").replace('"', '""')  # type: ignore[arg-type] # noqa: E501
+                )
 
         options = self._get_options(kwargs)
         rows = self._get_rows(options)
@@ -385,7 +404,7 @@ class PlainVerticalTable(PrettyTable):
     style generated from Angular CLI's --extractLicenses flag.
     """
 
-    def get_string(self, **kwargs):
+    def get_string(self, **kwargs: str | list[str]) -> str:
         options = self._get_options(kwargs)
         rows = self._get_rows(options)
 
@@ -399,10 +418,11 @@ class PlainVerticalTable(PrettyTable):
 
 
 def factory_styled_table_with_args(
-    args: "CustomNamespace", output_fields=DEFAULT_OUTPUT_FIELDS
-):
+    args: CustomNamespace,
+    output_fields: Iterable[str] = DEFAULT_OUTPUT_FIELDS,
+) -> PrettyTable:
     table = PrettyTable()
-    table.field_names = output_fields
+    table.field_names = output_fields  # type: ignore[assignment]
     table.align = "l"
     table.border = args.format_ in (
         FormatArg.MARKDOWN,
@@ -433,7 +453,7 @@ def factory_styled_table_with_args(
     return table
 
 
-def find_license_from_classifier(classifiers):
+def find_license_from_classifier(classifiers: list[str]) -> list[str]:
     licenses = []
     for classifier in filter(lambda c: c.startswith("License"), classifiers):
         license = classifier.split(" :: ")[-1]
@@ -445,7 +465,9 @@ def find_license_from_classifier(classifiers):
     return licenses
 
 
-def select_license_by_source(from_source, license_classifier, license_meta):
+def select_license_by_source(
+    from_source: FromArg, license_classifier: list[str], license_meta: str
+) -> set[str]:
     license_classifier_set = set(license_classifier) or {LICENSE_UNKNOWN}
     if (
         from_source == FromArg.CLASSIFIER
@@ -457,7 +479,7 @@ def select_license_by_source(from_source, license_classifier, license_meta):
         return {license_meta}
 
 
-def get_output_fields(args: "CustomNamespace"):
+def get_output_fields(args: CustomNamespace) -> list[str]:
     if args.summary:
         return list(SUMMARY_OUTPUT_FIELDS)
 
@@ -492,7 +514,7 @@ def get_output_fields(args: "CustomNamespace"):
     return output_fields
 
 
-def get_sortby(args: "CustomNamespace"):
+def get_sortby(args: CustomNamespace) -> str:
     if args.summary and args.order == OrderArg.COUNT:
         return "Count"
     elif args.summary or args.order == OrderArg.LICENSE:
@@ -507,7 +529,7 @@ def get_sortby(args: "CustomNamespace"):
     return "Name"
 
 
-def create_output_string(args: "CustomNamespace"):
+def create_output_string(args: CustomNamespace) -> str:
     output_fields = get_output_fields(args)
 
     if args.summary:
@@ -523,7 +545,7 @@ def create_output_string(args: "CustomNamespace"):
         return table.get_string(fields=output_fields, sortby=sortby)
 
 
-def create_warn_string(args: "CustomNamespace"):
+def create_warn_string(args: CustomNamespace) -> str:
     warn_messages = []
     warn = partial(output_colored, "33")
 
@@ -553,7 +575,7 @@ def create_warn_string(args: "CustomNamespace"):
 class CustomHelpFormatter(argparse.HelpFormatter):  # pragma: no cover
     def __init__(
         self,
-        prog: Text,
+        prog: str,
         indent_increment: int = 2,
         max_help_position: int = 24,
         width: Optional[int] = None,
@@ -581,10 +603,12 @@ class CustomHelpFormatter(argparse.HelpFormatter):  # pragma: no cover
     def _expand_help(self, action: argparse.Action) -> str:
         if isinstance(action.default, Enum):
             default_value = enum_key_to_value(action.default)
-            return self._get_help_string(action) % {"default": default_value}
+            return cast(str, self._get_help_string(action)) % {
+                "default": default_value
+            }
         return super()._expand_help(action)
 
-    def _split_lines(self, text: Text, width: int) -> List[str]:
+    def _split_lines(self, text: str, width: int) -> List[str]:
         separator_pos = text[:3].find("|")
         if separator_pos != -1:
             flag_splitlines: bool = "R" in text[:separator_pos]
@@ -616,16 +640,16 @@ class CustomNamespace(argparse.Namespace):
 
 
 class CompatibleArgumentParser(argparse.ArgumentParser):
-    def parse_args(
+    def parse_args(  # type: ignore[override]
         self,
-        args: Optional[Sequence[Text]] = None,
-        namespace: CustomNamespace = None,
+        args: None | Sequence[str] = None,
+        namespace: None | CustomNamespace = None,
     ) -> CustomNamespace:
-        args = super().parse_args(args, namespace)
-        self._verify_args(args)
-        return args
+        args_ = cast(CustomNamespace, super().parse_args(args, namespace))
+        self._verify_args(args_)
+        return args_
 
-    def _verify_args(self, args: CustomNamespace):
+    def _verify_args(self, args: CustomNamespace) -> None:
         if args.with_license_file is False and (
             args.no_license_path is True or args.with_notice_file is True
         ):
@@ -650,7 +674,7 @@ class CompatibleArgumentParser(argparse.ArgumentParser):
 
 
 class NoValueEnum(Enum):
-    def __repr__(self):  # pragma: no cover
+    def __repr__(self) -> str:  # pragma: no cover
         return "<%s.%s>" % (self.__class__.__name__, self.name)
 
 
@@ -689,7 +713,7 @@ def enum_key_to_value(enum_key: Enum) -> str:
     return enum_key.name.replace("_", "-").lower()
 
 
-def choices_from_enum(enum_cls: NoValueEnum) -> List[str]:
+def choices_from_enum(enum_cls: Type[NoValueEnum]) -> List[str]:
     return [
         key.replace("_", "-").lower() for key in enum_cls.__members__.keys()
     ]
@@ -703,19 +727,19 @@ MAP_DEST_TO_ENUM = {
 
 
 class SelectAction(argparse.Action):
-    def __call__(
+    def __call__(  # type: ignore[override]
         self,
         parser: argparse.ArgumentParser,
         namespace: argparse.Namespace,
-        values: Text,
-        option_string: Optional[Text] = None,
+        values: str,
+        option_string: Optional[str] = None,
     ) -> None:
         enum_cls = MAP_DEST_TO_ENUM[self.dest]
         values = value_to_enum_key(values)
         setattr(namespace, self.dest, getattr(enum_cls, values))
 
 
-def create_parser():
+def create_parser() -> CompatibleArgumentParser:
     parser = CompatibleArgumentParser(
         description=__summary__, formatter_class=CustomHelpFormatter
     )
@@ -884,7 +908,7 @@ def create_parser():
     return parser
 
 
-def output_colored(code, text, is_bold=False):
+def output_colored(code: str, text: str, is_bold: bool = False) -> str:
     """
     Create function to output with color sequence
     """
@@ -894,7 +918,7 @@ def output_colored(code, text, is_bold=False):
     return "\033[%sm%s\033[0m" % (code, text)
 
 
-def save_if_needs(output_file, output_string):
+def save_if_needs(output_file: None | str, output_string: str) -> None:
     """
     Save to path given by args
     """
@@ -911,7 +935,7 @@ def save_if_needs(output_file, output_string):
         sys.exit(1)
 
 
-def main():  # pragma: no cover
+def main() -> None:  # pragma: no cover
     parser = create_parser()
     args = parser.parse_args()
 
