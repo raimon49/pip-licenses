@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 # vim:fenc=utf-8 ff=unix ft=python ts=4 sw=4 sts=4 si et
+from __future__ import annotations
+
 import copy
 import email
 import re
@@ -7,6 +9,8 @@ import sys
 import unittest
 from email import message_from_string
 from enum import Enum, auto
+from importlib.metadata import Distribution
+from typing import TYPE_CHECKING, Any
 
 import docutils.frontend
 import docutils.parsers.rst
@@ -41,35 +45,41 @@ from piplicenses import (
     value_to_enum_key,
 )
 
+if TYPE_CHECKING:
+    from importlib.metadata._meta import PackageMetadata
+
+
 UNICODE_APPENDIX = ""
 with open("tests/fixtures/unicode_characters.txt", encoding="utf-8") as f:
     # Read from external file considering a terminal that cannot handle "emoji"
     UNICODE_APPENDIX = f.readline().replace("\n", "")
 
 
-def importlib_metadata_distributions_mocked(*args, **kwargs):
-    class DistributionMocker(piplicenses.importlib_metadata.Distribution):
-        def __init__(self, orig_dist):
+def importlib_metadata_distributions_mocked(
+    *args: Any, **kwargs: Any
+) -> list[Distribution]:
+    class DistributionMocker(Distribution):
+        def __init__(self, orig_dist: Distribution) -> None:
             self.__dist = orig_dist
 
         @property
-        def metadata(self):
+        def metadata(self) -> PackageMetadata:
             return EmailMessageMocker(self.__dist.metadata)
 
     class EmailMessageMocker(email.message.Message):
-        def __init__(self, orig_msg):
+        def __init__(self, orig_msg: PackageMetadata) -> None:
             self.__msg = orig_msg
 
-        def __getattr__(self, attr):
+        def __getattr__(self, attr: str) -> Any:
             return getattr(self.__msg, attr)
 
-        def __getitem__(self, key):
+        def __getitem__(self, key: str) -> Any:
             if key.lower() == "name":
                 return self.__msg["name"] + " " + UNICODE_APPENDIX
             return self.__msg[key]
 
     packages = list(importlib_metadata_distributions_orig(*args, **kwargs))
-    packages[-1] = DistributionMocker(packages[-1])
+    packages[-1] = DistributionMocker(packages[-1])  # type: ignore[abstract]
     return packages
 
 
@@ -79,8 +89,10 @@ importlib_metadata_distributions_orig = (
 
 
 class CommandLineTestCase(unittest.TestCase):
+    parser = create_parser()
+
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         cls.parser = create_parser()
 
 
@@ -89,7 +101,7 @@ class TestGetLicenses(CommandLineTestCase):
         index = DEFAULT_OUTPUT_FIELDS.index("Name")
 
         # XXX: access to private API
-        rows = copy.deepcopy(table._rows)
+        rows = copy.deepcopy(table.rows)
         pkg_name_columns = []
         for row in rows:
             pkg_name_columns.append(row[index])
@@ -100,7 +112,7 @@ class TestGetLicenses(CommandLineTestCase):
         index = output_fields.index("License")
 
         # XXX: access to private API
-        rows = copy.deepcopy(table._rows)
+        rows = copy.deepcopy(table.rows)
         pkg_name_columns = []
         for row in rows:
             pkg_name_columns.append(row[index])
@@ -110,7 +122,7 @@ class TestGetLicenses(CommandLineTestCase):
     # from https://stackoverflow.com/questions/12883428/ ...
     # ... how-to-parse-restructuredtext-in-python
     @staticmethod
-    def check_rst(text: str):
+    def check_rst(text: str) -> None:
         parser = docutils.parsers.rst.Parser()
         components = (docutils.parsers.rst.Parser,)
         settings = docutils.frontend.OptionParser(
@@ -120,8 +132,8 @@ class TestGetLicenses(CommandLineTestCase):
         document = docutils.utils.new_document("<rst-doc>", settings=settings)
         parser.parse(text, document)
 
-    def test_with_empty_args(self):
-        empty_args = []
+    def test_with_empty_args(self) -> None:
+        empty_args: list[str] = []
         args = self.parser.parse_args(empty_args)
         table = create_licenses_table(args)
 
@@ -148,7 +160,7 @@ class TestGetLicenses(CommandLineTestCase):
         output_string = create_output_string(args)
         self.assertNotIn("<table>", output_string)
 
-    def test_from_meta(self):
+    def test_from_meta(self) -> None:
         from_args = ["--from=meta"]
         args = self.parser.parse_args(from_args)
 
@@ -160,7 +172,7 @@ class TestGetLicenses(CommandLineTestCase):
         license_notation_as_meta = "MIT"
         self.assertIn(license_notation_as_meta, license_columns)
 
-    def test_from_classifier(self):
+    def test_from_classifier(self) -> None:
         from_args = ["--from=classifier"]
         args = self.parser.parse_args(from_args)
         output_fields = get_output_fields(args)
@@ -172,7 +184,7 @@ class TestGetLicenses(CommandLineTestCase):
         license_notation_as_classifier = "MIT License"
         self.assertIn(license_notation_as_classifier, license_columns)
 
-    def test_from_mixed(self):
+    def test_from_mixed(self) -> None:
         from_args = ["--from=mixed"]
         args = self.parser.parse_args(from_args)
         output_fields = get_output_fields(args)
@@ -185,7 +197,7 @@ class TestGetLicenses(CommandLineTestCase):
         license_notation_as_classifier = "MIT License"
         self.assertIn(license_notation_as_classifier, license_columns)
 
-    def test_from_all(self):
+    def test_from_all(self) -> None:
         from_args = ["--from=all"]
         args = self.parser.parse_args(from_args)
         output_fields = get_output_fields(args)
@@ -196,12 +208,12 @@ class TestGetLicenses(CommandLineTestCase):
 
         index_license_meta = output_fields.index("License-Metadata")
         license_meta = []
-        for row in table._rows:
+        for row in table.rows:
             license_meta.append(row[index_license_meta])
 
         index_license_classifier = output_fields.index("License-Classifier")
         license_classifier = []
-        for row in table._rows:
+        for row in table.rows:
             license_classifier.append(row[index_license_classifier])
 
         for license in ("BSD", "MIT", "Apache 2.0"):
@@ -213,13 +225,13 @@ class TestGetLicenses(CommandLineTestCase):
         ):
             self.assertIn(license, license_classifier)
 
-    def test_find_license_from_classifier(self):
+    def test_find_license_from_classifier(self) -> None:
         classifiers = ["License :: OSI Approved :: MIT License"]
         self.assertEqual(
             ["MIT License"], find_license_from_classifier(classifiers)
         )
 
-    def test_display_multiple_license_from_classifier(self):
+    def test_display_multiple_license_from_classifier(self) -> None:
         classifiers = [
             "License :: OSI Approved",
             "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
@@ -235,7 +247,7 @@ class TestGetLicenses(CommandLineTestCase):
             find_license_from_classifier(classifiers),
         )
 
-    def test_not_found_license_from_classifier(self):
+    def test_not_found_license_from_classifier(self) -> None:
         metadata_as_no_license = (
             "Metadata-Version: 2.0\r\n"
             "Name: pip-licenses\r\n"
@@ -244,7 +256,7 @@ class TestGetLicenses(CommandLineTestCase):
         message = message_from_string(metadata_as_no_license)
         self.assertEqual([], find_license_from_classifier(message))
 
-    def test_select_license_by_source(self):
+    def test_select_license_by_source(self) -> None:
         self.assertEqual(
             {"MIT License"},
             select_license_by_source(
@@ -272,7 +284,7 @@ class TestGetLicenses(CommandLineTestCase):
             ),
         )
 
-    def test_with_system(self):
+    def test_with_system(self) -> None:
         with_system_args = ["--with-system"]
         args = self.parser.parse_args(with_system_args)
         table = create_licenses_table(args)
@@ -283,7 +295,7 @@ class TestGetLicenses(CommandLineTestCase):
         for sys_pkg in external_sys_pkgs:
             self.assertIn(sys_pkg, pkg_name_columns)
 
-    def test_with_authors(self):
+    def test_with_authors(self) -> None:
         with_authors_args = ["--with-authors"]
         args = self.parser.parse_args(with_authors_args)
 
@@ -294,7 +306,7 @@ class TestGetLicenses(CommandLineTestCase):
         output_string = create_output_string(args)
         self.assertIn("Author", output_string)
 
-    def test_with_urls(self):
+    def test_with_urls(self) -> None:
         with_urls_args = ["--with-urls"]
         args = self.parser.parse_args(with_urls_args)
 
@@ -305,7 +317,7 @@ class TestGetLicenses(CommandLineTestCase):
         output_string = create_output_string(args)
         self.assertIn("URL", output_string)
 
-    def test_with_description(self):
+    def test_with_description(self) -> None:
         with_description_args = ["--with-description"]
         args = self.parser.parse_args(with_description_args)
 
@@ -316,7 +328,7 @@ class TestGetLicenses(CommandLineTestCase):
         output_string = create_output_string(args)
         self.assertIn("Description", output_string)
 
-    def test_with_license_file(self):
+    def test_with_license_file(self) -> None:
         with_license_file_args = ["--with-license-file"]
         args = self.parser.parse_args(with_license_file_args)
 
@@ -333,7 +345,7 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertNotIn("NoticeFile", output_string)
         self.assertNotIn("NoticeText", output_string)
 
-    def test_with_notice_file(self):
+    def test_with_notice_file(self) -> None:
         with_license_file_args = ["--with-license-file", "--with-notice-file"]
         args = self.parser.parse_args(with_license_file_args)
 
@@ -350,7 +362,7 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertIn("NoticeFile", output_string)
         self.assertIn("NoticeText", output_string)
 
-    def test_with_license_file_no_path(self):
+    def test_with_license_file_no_path(self) -> None:
         with_license_file_args = [
             "--with-license-file",
             "--with-notice-file",
@@ -371,14 +383,14 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertNotIn("NoticeFile", output_string)
         self.assertIn("NoticeText", output_string)
 
-    def test_with_license_file_warning(self):
+    def test_with_license_file_warning(self) -> None:
         with_license_file_args = ["--with-license-file", "--format=markdown"]
         args = self.parser.parse_args(with_license_file_args)
 
         warn_string = create_warn_string(args)
         self.assertIn("best paired with --format=json", warn_string)
 
-    def test_ignore_packages(self):
+    def test_ignore_packages(self) -> None:
         if "PTable" in SYSTEM_PACKAGES:
             ignore_pkg_name = "PTable"
         else:
@@ -390,7 +402,7 @@ class TestGetLicenses(CommandLineTestCase):
         pkg_name_columns = self._create_pkg_name_columns(table)
         self.assertNotIn(ignore_pkg_name, pkg_name_columns)
 
-    def test_with_packages(self):
+    def test_with_packages(self) -> None:
         pkg_name = "py"
         only_packages_args = ["--packages=" + pkg_name]
         args = self.parser.parse_args(only_packages_args)
@@ -399,7 +411,7 @@ class TestGetLicenses(CommandLineTestCase):
         pkg_name_columns = self._create_pkg_name_columns(table)
         self.assertListEqual([pkg_name], pkg_name_columns)
 
-    def test_with_packages_with_system(self):
+    def test_with_packages_with_system(self) -> None:
         if "PTable" in SYSTEM_PACKAGES:
             pkg_name = "PTable"
         else:
@@ -411,42 +423,42 @@ class TestGetLicenses(CommandLineTestCase):
         pkg_name_columns = self._create_pkg_name_columns(table)
         self.assertListEqual([pkg_name], pkg_name_columns)
 
-    def test_order_name(self):
+    def test_order_name(self) -> None:
         order_name_args = ["--order=name"]
         args = self.parser.parse_args(order_name_args)
 
         sortby = get_sortby(args)
         self.assertEqual("Name", sortby)
 
-    def test_order_license(self):
+    def test_order_license(self) -> None:
         order_license_args = ["--order=license"]
         args = self.parser.parse_args(order_license_args)
 
         sortby = get_sortby(args)
         self.assertEqual("License", sortby)
 
-    def test_order_author(self):
+    def test_order_author(self) -> None:
         order_author_args = ["--order=author", "--with-authors"]
         args = self.parser.parse_args(order_author_args)
 
         sortby = get_sortby(args)
         self.assertEqual("Author", sortby)
 
-    def test_order_url(self):
+    def test_order_url(self) -> None:
         order_url_args = ["--order=url", "--with-urls"]
         args = self.parser.parse_args(order_url_args)
 
         sortby = get_sortby(args)
         self.assertEqual("URL", sortby)
 
-    def test_order_url_no_effect(self):
+    def test_order_url_no_effect(self) -> None:
         order_url_args = ["--order=url"]
         args = self.parser.parse_args(order_url_args)
 
         sortby = get_sortby(args)
         self.assertEqual("Name", sortby)
 
-    def test_format_plain(self):
+    def test_format_plain(self) -> None:
         format_plain_args = ["--format=plain"]
         args = self.parser.parse_args(format_plain_args)
         table = factory_styled_table_with_args(args)
@@ -457,7 +469,7 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertEqual("+", table.junction_char)
         self.assertEqual(RULE_FRAME, table.hrules)
 
-    def test_format_plain_vertical(self):
+    def test_format_plain_vertical(self) -> None:
         format_plain_args = ["--format=plain-vertical", "--from=classifier"]
         args = self.parser.parse_args(format_plain_args)
         output_string = create_output_string(args)
@@ -465,7 +477,7 @@ class TestGetLicenses(CommandLineTestCase):
             re.search(r"pytest\n\d\.\d\.\d\nMIT License\n", output_string)
         )
 
-    def test_format_markdown(self):
+    def test_format_markdown(self) -> None:
         format_markdown_args = ["--format=markdown"]
         args = self.parser.parse_args(format_markdown_args)
         table = create_licenses_table(args)
@@ -480,7 +492,7 @@ class TestGetLicenses(CommandLineTestCase):
         sys.version_info < (3, 6, 0),
         "To unsupport Python 3.5 in the near future",
     )
-    def test_format_rst_without_filter(self):
+    def test_format_rst_without_filter(self) -> None:
         piplicenses.importlib_metadata.distributions = (
             importlib_metadata_distributions_mocked
         )
@@ -499,7 +511,7 @@ class TestGetLicenses(CommandLineTestCase):
             importlib_metadata_distributions_orig
         )
 
-    def test_format_rst_default_filter(self):
+    def test_format_rst_default_filter(self) -> None:
         piplicenses.importlib_metadata.distributions = (
             importlib_metadata_distributions_mocked
         )
@@ -517,7 +529,7 @@ class TestGetLicenses(CommandLineTestCase):
             importlib_metadata_distributions_orig
         )
 
-    def test_format_confluence(self):
+    def test_format_confluence(self) -> None:
         format_confluence_args = ["--format=confluence"]
         args = self.parser.parse_args(format_confluence_args)
         table = create_licenses_table(args)
@@ -528,14 +540,14 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertEqual("|", table.junction_char)
         self.assertEqual(RULE_NONE, table.hrules)
 
-    def test_format_html(self):
+    def test_format_html(self) -> None:
         format_html_args = ["--format=html"]
         args = self.parser.parse_args(format_html_args)
         output_string = create_output_string(args)
 
         self.assertIn("<table>", output_string)
 
-    def test_format_json(self):
+    def test_format_json(self) -> None:
         format_json_args = ["--format=json", "--with-authors"]
         args = self.parser.parse_args(format_json_args)
         output_string = create_output_string(args)
@@ -543,7 +555,7 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertIn('"Author":', output_string)
         self.assertNotIn('"URL":', output_string)
 
-    def test_format_json_license_manager(self):
+    def test_format_json_license_manager(self) -> None:
         format_json_args = ["--format=json-license-finder"]
         args = self.parser.parse_args(format_json_args)
         output_string = create_output_string(args)
@@ -553,7 +565,7 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertIn('"version":', output_string)
         self.assertIn('"licenses":', output_string)
 
-    def test_format_csv(self):
+    def test_format_csv(self) -> None:
         format_csv_args = ["--format=csv", "--with-authors"]
         args = self.parser.parse_args(format_csv_args)
         output_string = create_output_string(args)
@@ -562,7 +574,7 @@ class TestGetLicenses(CommandLineTestCase):
         expected_header = '"Name","Version","License","Author"'
         self.assertEqual(obtained_header, expected_header)
 
-    def test_summary(self):
+    def test_summary(self) -> None:
         summary_args = ["--summary"]
         args = self.parser.parse_args(summary_args)
         output_string = create_output_string(args)
@@ -573,21 +585,21 @@ class TestGetLicenses(CommandLineTestCase):
         warn_string = create_warn_string(args)
         self.assertTrue(len(warn_string) == 0)
 
-    def test_summary_sort_by_count(self):
+    def test_summary_sort_by_count(self) -> None:
         summary_args = ["--summary", "--order=count"]
         args = self.parser.parse_args(summary_args)
 
         sortby = get_sortby(args)
         self.assertEqual("Count", sortby)
 
-    def test_summary_sort_by_name(self):
+    def test_summary_sort_by_name(self) -> None:
         summary_args = ["--summary", "--order=name"]
         args = self.parser.parse_args(summary_args)
 
         sortby = get_sortby(args)
         self.assertEqual("License", sortby)
 
-    def test_summary_warning(self):
+    def test_summary_warning(self) -> None:
         summary_args = ["--summary", "--with-authors"]
         args = self.parser.parse_args(summary_args)
 
@@ -606,7 +618,7 @@ class TestGetLicenses(CommandLineTestCase):
             warn_string,
         )
 
-    def test_output_colored_normal(self):
+    def test_output_colored_normal(self) -> None:
         color_code = "32"
         text = __pkgname__
         actual = output_colored(color_code, text)
@@ -615,7 +627,7 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertIn(text, actual)
         self.assertTrue(actual.endswith("\033[0m"))
 
-    def test_output_colored_bold(self):
+    def test_output_colored_bold(self) -> None:
         color_code = "32"
         text = __pkgname__
         actual = output_colored(color_code, text, is_bold=True)
@@ -624,7 +636,7 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertIn(text, actual)
         self.assertTrue(actual.endswith("\033[0m"))
 
-    def test_without_filter(self):
+    def test_without_filter(self) -> None:
         piplicenses.importlib_metadata.distributions = (
             importlib_metadata_distributions_mocked
         )
@@ -635,7 +647,7 @@ class TestGetLicenses(CommandLineTestCase):
             importlib_metadata_distributions_orig
         )
 
-    def test_with_default_filter(self):
+    def test_with_default_filter(self) -> None:
         piplicenses.importlib_metadata.distributions = (
             importlib_metadata_distributions_mocked
         )
@@ -646,7 +658,7 @@ class TestGetLicenses(CommandLineTestCase):
         )
         self.assertNotIn(UNICODE_APPENDIX, packages[-1]["name"])
 
-    def test_with_specified_filter(self):
+    def test_with_specified_filter(self) -> None:
         piplicenses.importlib_metadata.distributions = (
             importlib_metadata_distributions_mocked
         )
@@ -661,14 +673,14 @@ class TestGetLicenses(CommandLineTestCase):
 
 
 class MockStdStream(object):
-    def __init__(self):
+    def __init__(self) -> None:
         self.printed = ""
 
-    def write(self, p):
+    def write(self, p) -> None:
         self.printed = p
 
 
-def test_output_file_success(monkeypatch):
+def test_output_file_success(monkeypatch) -> None:
     def mocked_open(*args, **kwargs):
         import tempfile
 
@@ -686,7 +698,7 @@ def test_output_file_success(monkeypatch):
     assert "" == mocked_stderr.printed
 
 
-def test_output_file_error(monkeypatch):
+def test_output_file_error(monkeypatch) -> None:
     def mocked_open(*args, **kwargs):
         raise IOError
 
@@ -702,7 +714,7 @@ def test_output_file_error(monkeypatch):
     assert "check path: " in mocked_stderr.printed
 
 
-def test_output_file_none(monkeypatch):
+def test_output_file_none(monkeypatch) -> None:
     mocked_stdout = MockStdStream()
     mocked_stderr = MockStdStream()
     monkeypatch.setattr(sys.stdout, "write", mocked_stdout.write)
@@ -714,7 +726,7 @@ def test_output_file_none(monkeypatch):
     assert "" == mocked_stderr.printed
 
 
-def test_allow_only(monkeypatch):
+def test_allow_only(monkeypatch) -> None:
     licenses = (
         "BSD License",
         "Apache Software License",
@@ -740,7 +752,7 @@ def test_allow_only(monkeypatch):
     )
 
 
-def test_fail_on(monkeypatch):
+def test_fail_on(monkeypatch) -> None:
     licenses = ("MIT License",)
     allow_only_args = ["--fail-on={}".format(";".join(licenses))]
     mocked_stdout = MockStdStream()
@@ -758,7 +770,7 @@ def test_fail_on(monkeypatch):
     )
 
 
-def test_enums():
+def test_enums() -> None:
     class TestEnum(Enum):
         PLAIN = P = auto()
         JSON_LICENSE_FINDER = JLF = auto()
@@ -778,11 +790,13 @@ def test_enums():
 
 
 @pytest.fixture(scope="package")
-def parser():
+def parser() -> CompatibleArgumentParser:
     return create_parser()
 
 
-def test_verify_args(parser: CompatibleArgumentParser, capsys: CaptureFixture):
+def test_verify_args(
+    parser: CompatibleArgumentParser, capsys: CaptureFixture
+) -> None:
     # --with-license-file missing
     with pytest.raises(SystemExit) as ex:
         parser.parse_args(["--no-license-path"])

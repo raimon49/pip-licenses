@@ -423,7 +423,7 @@ def factory_styled_table_with_args(
 ) -> PrettyTable:
     table = PrettyTable()
     table.field_names = output_fields  # type: ignore[assignment]
-    table.align = "l"
+    table.align = "l"  # type: ignore[assignment]
     table.border = args.format_ in (
         FormatArg.MARKDOWN,
         FormatArg.RST,
