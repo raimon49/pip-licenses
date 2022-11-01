@@ -7,10 +7,9 @@ import email
 import re
 import sys
 import unittest
-from email import message_from_string
 from enum import Enum, auto
 from importlib.metadata import Distribution
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, List
 
 import docutils.frontend
 import docutils.parsers.rst
@@ -250,14 +249,9 @@ class TestGetLicenses(CommandLineTestCase):
             find_license_from_classifier(classifiers),
         )
 
-    def test_not_found_license_from_classifier(self) -> None:
-        metadata_as_no_license = (
-            "Metadata-Version: 2.0\r\n"
-            "Name: pip-licenses\r\n"
-            "Version: 1.0.0\r\n"
-        )
-        message = message_from_string(metadata_as_no_license)
-        self.assertEqual([], find_license_from_classifier(message))
+    def test_if_no_classifiers_then_no_licences_found(self) -> None:
+        classifiers: List[str] = []
+        self.assertEqual([], find_license_from_classifier(classifiers))
 
     def test_select_license_by_source(self) -> None:
         self.assertEqual(
