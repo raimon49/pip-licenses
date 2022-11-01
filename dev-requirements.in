@@ -5,6 +5,7 @@ codecov
 docutils
 isort
 wheel
+mypy
 pip-tools
 pypandoc
 pytest-cov
