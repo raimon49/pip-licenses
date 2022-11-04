@@ -28,7 +28,7 @@ coverage[toml]==6.5.0
     # via
     #   codecov
     #   pytest-cov
-cryptography==38.0.1
+cryptography==38.0.3
     # via secretstorage
 docutils==0.19
     # via
