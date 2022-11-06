@@ -524,19 +524,16 @@ $ docker run --rm myapp-licenses --help
 
 **Note:** This Docker image can not check package licenses with C and C ++ Extensions. It only works with pure Python package dependencies.
 
-If you want to resolve build environment issues, try adding `build-base` packages and more.
+If you want to resolve build environment issues, try using not slim image and more.
 
 ```diff
+diff --git a/Dockerfile b/Dockerfile
+index bfc4edc..175e968 100644
 --- a/Dockerfile
 +++ b/Dockerfile
-@@ -7,6 +7,8 @@ WORKDIR ${APPDIR}
-
- COPY ./docker/requirements.txt ${APPDIR}
-
-+RUN set -ex && apk add --no-cache --update --virtual .py-deps \
-+        build-base
- RUN python3 -m venv ${APPDIR}/myapp \
-         && source ${APPDIR}/myapp/bin/activate
+@@ -1,4 +1,4 @@
+-FROM python:3.11-slim-bullseye
++FROM python:3.11-bullseye
 ```
 
 ## About UnicodeEncodeError
