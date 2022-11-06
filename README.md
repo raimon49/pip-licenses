@@ -335,9 +335,10 @@ Package names of arguments can be separated by spaces.
 ```bash
 (venv) $ pip-licenses --with-system --ignore-packages django pip pip-licenses
  Name        Version  License
- PTable      0.9.2    BSD (3 clause)
+ prettytable 3.5.0    BSD License
  pytz        2017.3   MIT
  setuptools  38.5.0   UNKNOWN
+ wcwidth     0.2.5    MIT License
 ```
 
 #### Option: packages
@@ -353,9 +354,9 @@ When executed with the `packages` option, look at the package specified by argum
 Package names of arguments can be separated by spaces.
 
 ```bash
-(venv) $ pip-licenses --with-system --packages PTable pytz
+(venv) $ pip-licenses --with-system --packages prettytable pytz
  Name        Version  License
- PTable      0.9.2    BSD (3 clause)
+ prettytable 3.5.0    BSD License
  pytz        2017.3   MIT
 ```
 
@@ -365,7 +366,7 @@ Package names of arguments can be separated by spaces.
 
 By default, system packages such as `pip` and `setuptools` are ignored.
 
-And `pip-licenses` and the implicit dependency `PTable` will also be ignored.
+And `pip-licenses` and the implicit dependency `prettytable` and `wcwidth` will also be ignored.
 
 If you want to output all including system package, use the `--with-system` option.
 
@@ -373,11 +374,12 @@ If you want to output all including system package, use the `--with-system` opti
 (venv) $ pip-licenses --with-system
  Name          Version  License
  Django        2.0.2    BSD
- PTable        0.9.2    BSD (3 clause)
  pip           9.0.1    MIT
  pip-licenses  1.0.0    MIT License
+ prettytable   3.5.0    BSD License
  pytz          2017.3   MIT
  setuptools    38.5.0   UNKNOWN
+ wcwidth       0.2.5    MIT License
 ```
 
 #### Option: with-authors
@@ -553,8 +555,8 @@ See useful reports:
 
 ### Dependencies
 
-* [PTable](https://pypi.org/project/PTable/) by Luke Maurits and maintainer of fork version Kane Blueriver under the BSD-3-Clause License
-    * **Note:** Alternatively, it works fine with the [PrettyTable](https://pypi.org/project/PrettyTable/) package. (See also): [Allow using prettytable #52](https://github.com/raimon49/pip-licenses/pull/52)
+* [prettytable](https://pypi.org/project/prettytable/) by Luke Maurits and maintainer of fork version Jazzband team under the BSD-3-Clause License
+    * **Note:** This package implicitly requires [wcwidth](https://pypi.org/project/wcwidth/).
 
 `pip-licenses` has been implemented in the policy to minimize the dependence on external package.
 
@@ -563,7 +565,7 @@ See useful reports:
 Uninstall package and dependent package with `pip` command.
 
 ```bash
-$ pip uninstall pip-licenses PTable
+$ pip uninstall pip-licenses prettytable wcwidth
 ```
 
 ## Contributing
