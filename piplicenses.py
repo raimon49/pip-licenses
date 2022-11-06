@@ -28,60 +28,24 @@ SOFTWARE.
 """
 import argparse
 import codecs
-import glob
-import os
+import re
 import sys
 from collections import Counter
-from email import message_from_string
-from email.parser import FeedParser
 from enum import Enum, auto
 from functools import partial
+from importlib import metadata as importlib_metadata
 from typing import List, Optional, Sequence, Text
 
-try:
-    from pip._internal.utils.misc import get_installed_distributions
-except ImportError:  # pragma: no cover
-    try:
-        from pip import get_installed_distributions
-    except ImportError:
-        def get_installed_distributions():
-            from pip._internal.metadata import (
-                get_default_environment, get_environment,
-            )
-            from pip._internal.metadata.pkg_resources import (
-                Distribution as _Dist,
-            )
-            from pip._internal.utils.compat import stdlib_pkgs
-
-            env = get_default_environment()
-            dists = env.iter_installed_distributions(
-                local_only=True,
-                skip=stdlib_pkgs,
-                include_editables=True,
-                editables_only=False,
-                user_only=False,
-            )
-            return [dist._dist for dist in dists]
-
 from prettytable import PrettyTable
-
-try:
-    from prettytable.prettytable import ALL as RULE_ALL
-    from prettytable.prettytable import FRAME as RULE_FRAME
-    from prettytable.prettytable import HEADER as RULE_HEADER
-    from prettytable.prettytable import NONE as RULE_NONE
-    PTABLE = True
-except ImportError:  # pragma: no cover
-    from prettytable import ALL as RULE_ALL
-    from prettytable import FRAME as RULE_FRAME
-    from prettytable import HEADER as RULE_HEADER
-    from prettytable import NONE as RULE_NONE
-    PTABLE = False
+from prettytable import ALL as RULE_ALL
+from prettytable import FRAME as RULE_FRAME
+from prettytable import HEADER as RULE_HEADER
+from prettytable import NONE as RULE_NONE
 
 open = open  # allow monkey patching
 
 __pkgname__ = 'pip-licenses'
-__version__ = '3.5.5'
+__version__ = '4.0.0rc4'
 __author__ = 'raimon'
 __license__ = 'MIT'
 __summary__ = ('Dump the software license list of '
@@ -141,7 +105,8 @@ FIELDS_TO_METADATA_KEYS = {
 SYSTEM_PACKAGES = (
     __pkgname__,
     'pip',
-    'PTable' if PTABLE else 'prettytable',
+    'prettytable',
+    'wcwidth',
     'setuptools',
     'wheel',
 )
@@ -151,78 +116,59 @@ LICENSE_UNKNOWN = 'UNKNOWN'
 
 def get_packages(args: "CustomNamespace"):
 
-    def get_pkg_included_file(pkg, file_names):
+    def get_pkg_included_file(pkg, file_names_rgx):
         """
         Attempt to find the package's included file on disk and return the
         tuple (included_file_path, included_file_contents).
         """
         included_file = LICENSE_UNKNOWN
         included_text = LICENSE_UNKNOWN
-        pkg_dirname = "{}-{}.dist-info".format(
-            pkg.project_name.replace("-", "_"), pkg.version)
-        patterns = []
-        [patterns.extend(sorted(glob.glob(os.path.join(pkg.location,
-                                                       pkg_dirname,
-                                                       f))))
-         for f in file_names]
-        # Search for path defined in PEP 639 https://peps.python.org/pep-0639/
-        [patterns.extend(sorted(glob.glob(os.path.join(pkg.location,
-                                                       pkg_dirname,
-                                                       "licenses",
-                                                       f))))
-         for f in file_names]
-        for test_file in patterns:
-            if os.path.exists(test_file) and \
-                    os.path.isdir(test_file) is not True:
-                included_file = test_file
-                with open(test_file, encoding='utf-8',
-                          errors='backslashreplace') as included_file_handle:
-                    included_text = included_file_handle.read()
-                break
-        return (included_file, included_text)
+
+        pkg_files = pkg.files or ()
+        pattern = re.compile(file_names_rgx)
+        matched_rel_paths = filter(
+            lambda file: pattern.match(file.name),
+            pkg_files
+        )
+        for rel_path in matched_rel_paths:
+            abs_path = pkg.locate_file(rel_path)
+            if not abs_path.is_file():
+                continue
+            included_file = abs_path
+            with open(
+                abs_path,
+                encoding='utf-8',
+                errors='backslashreplace'
+            ) as included_file_handle:
+                included_text = included_file_handle.read()
+            break
+        return (str(included_file), included_text)
 
     def get_pkg_info(pkg):
         (license_file, license_text) = get_pkg_included_file(
             pkg,
-            ('LICENSE*', 'LICENCE*', 'COPYING*')
+            "LICEN[CS]E.*|COPYING.*"
         )
         (notice_file, notice_text) = get_pkg_included_file(
             pkg,
-            ('NOTICE*',)
+            "NOTICE.*"
         )
         pkg_info = {
-            'name': pkg.project_name,
+            'name': pkg.metadata["name"],
             'version': pkg.version,
-            'namever': str(pkg),
+            'namever': "{} {}".format(pkg.metadata["name"], pkg.version),
             'licensefile': license_file,
             'licensetext': license_text,
             'noticefile': notice_file,
             'noticetext': notice_text,
         }
-        metadata = None
-        if pkg.has_metadata('METADATA'):
-            metadata = pkg.get_metadata('METADATA')
-
-        if pkg.has_metadata('PKG-INFO') and metadata is None:
-            metadata = pkg.get_metadata('PKG-INFO')
-
-        if metadata is None:
-            for key in METADATA_KEYS:
-                pkg_info[key] = LICENSE_UNKNOWN
-
-            return pkg_info
-
-        feed_parser = FeedParser()
-        feed_parser.feed(metadata)
-        parsed_metadata = feed_parser.close()
-
+        metadata = pkg.metadata
         for key in METADATA_KEYS:
-            pkg_info[key] = parsed_metadata.get(key, LICENSE_UNKNOWN)
+            pkg_info[key] = metadata.get(key, LICENSE_UNKNOWN)
 
-        if metadata is not None:
-            message = message_from_string(metadata)
-            pkg_info['license_classifier'] = \
-                find_license_from_classifier(message)
+        classifiers = metadata.get_all("classifier", [])
+        pkg_info['license_classifier'] = \
+            find_license_from_classifier(classifiers)
 
         if args.filter_strings:
             for k in pkg_info:
@@ -238,7 +184,10 @@ def get_packages(args: "CustomNamespace"):
 
         return pkg_info
 
-    pkgs = get_installed_distributions()
+    pkgs = filter(
+        lambda pkg: pkg.metadata["name"] != "pip-licenses",
+        importlib_metadata.distributions()
+    )
     ignore_pkgs_as_lower = [pkg.lower() for pkg in args.ignore_packages]
     pkgs_as_lower = [pkg.lower() for pkg in args.packages]
 
@@ -251,7 +200,7 @@ def get_packages(args: "CustomNamespace"):
         allow_only_licenses = set(map(str.strip, args.allow_only.split(";")))
 
     for pkg in pkgs:
-        pkg_name = pkg.project_name
+        pkg_name = pkg.metadata["name"]
 
         if pkg_name.lower() in ignore_pkgs_as_lower:
             continue
@@ -335,12 +284,9 @@ def create_summary_table(args: "CustomNamespace"):
 class JsonPrettyTable(PrettyTable):
     """PrettyTable-like class exporting to JSON"""
 
-    def _format_row(self, row, options):
+    def _format_row(self, row):
         resrow = {}
         for (field, value) in zip(self._field_names, row):
-            if field not in options["fields"]:
-                continue
-
             resrow[field] = value
 
         return resrow
@@ -353,7 +299,7 @@ class JsonPrettyTable(PrettyTable):
 
         options = self._get_options(kwargs)
         rows = self._get_rows(options)
-        formatted_rows = self._format_rows(rows, options)
+        formatted_rows = self._format_rows(rows)
 
         lines = []
         for row in formatted_rows:
@@ -363,7 +309,7 @@ class JsonPrettyTable(PrettyTable):
 
 
 class JsonLicenseFinderTable(JsonPrettyTable):
-    def _format_row(self, row, options):
+    def _format_row(self, row):
         resrow = {}
         for (field, value) in zip(self._field_names, row):
             if field == 'Name':
@@ -385,7 +331,7 @@ class JsonLicenseFinderTable(JsonPrettyTable):
 
         options = self._get_options(kwargs)
         rows = self._get_rows(options)
-        formatted_rows = self._format_rows(rows, options)
+        formatted_rows = self._format_rows(rows)
 
         lines = []
         for row in formatted_rows:
@@ -413,7 +359,7 @@ class CSVPrettyTable(PrettyTable):
 
         options = self._get_options(kwargs)
         rows = self._get_rows(options)
-        formatted_rows = self._format_rows(rows, options)
+        formatted_rows = self._format_rows(rows)
 
         lines = []
         formatted_header = ','.join(['"%s"' % (esc_quotes(val), )
@@ -477,15 +423,14 @@ def factory_styled_table_with_args(
     return table
 
 
-def find_license_from_classifier(message):
+def find_license_from_classifier(classifiers):
     licenses = []
-    for k, v in message.items():
-        if k == 'Classifier' and v.startswith('License'):
-            license = v.split(' :: ')[-1]
+    for classifier in filter(lambda c: c.startswith("License"), classifiers):
+        license = classifier.split(' :: ')[-1]
 
-            # Through the declaration of 'Classifier: License :: OSI Approved'
-            if license != 'OSI Approved':
-                licenses.append(license)
+        # Through the declaration of 'Classifier: License :: OSI Approved'
+        if license != 'OSI Approved':
+            licenses.append(license)
 
     return licenses
 
@@ -493,7 +438,8 @@ def find_license_from_classifier(message):
 def select_license_by_source(from_source, license_classifier, license_meta):
     license_classifier_set = set(license_classifier) or {LICENSE_UNKNOWN}
     if (from_source == FromArg.CLASSIFIER or
-            from_source == FromArg.MIXED and len(license_classifier) > 0):
+            from_source == FromArg.MIXED and
+            len(license_classifier) > 0):
         return license_classifier_set
     else:
         return {license_meta}

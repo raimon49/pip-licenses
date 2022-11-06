@@ -5,9 +5,9 @@
 The design policy of `pip-licenses` is as follows.
 
 * Focus only on outputting license information of Python packages installed in user's environment.
-* Support Python 3.6 or later.
-* External packages that depend on runtime are [PTable](https://pypi.org/project/PTable/) only.
-    * Expect that pip and setuptools are implicitly installed.
+* Support Python 3.8 or later.
+* External packages that depend on runtime are [prettytable](https://pypi.org/project/prettytable/) only.
+    * Expect to be able to use [importlib\_metadata](https://importlib_metadata.readthedocs.io/) APIs.
 
 ## Setup
 

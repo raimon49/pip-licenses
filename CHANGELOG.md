@@ -1,8 +1,17 @@
 ## CHANGELOG
 
+### 4.0.0
+
+* Support for Python 3.11
+* Dropped support Python 3.7
+* Migrate Docker base image from Alpine to Debian 11-slim
+* Breaking changes
+    * Does not work with PTable and depends on prettytable
+    * Depend on importlib\_metadata rather than pip
+
 ### 3.5.5
 
-* Search for path defined in [PEP 639](https://peps.python.org/pep-0639/)
+* Search for path defined in [PEP 639](https://peps.python.org/pep-0639/) with `--with-license-file` option
 * Dropped support Python 3.6
 
 ### 3.5.4
