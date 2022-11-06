@@ -1,4 +1,4 @@
-FROM python:3.11.0-slim-bullseye
+FROM python:3.11-slim-bullseye
 LABEL maintainer="raimon <raimon49@hotmail.com>"
 
 ARG APPDIR=/opt/piplicenses
