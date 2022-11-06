@@ -4,6 +4,7 @@
 
 * Support for Python 3.11
 * Dropped support Python 3.7
+* Migrate Docker base image from Alpine to Debian 11-slim
 * Breaking changes
     * Does not work with PTable and depends on prettytable
     * Depend on importlib\_metadata rather than pip
