@@ -184,10 +184,7 @@ def get_packages(args: "CustomNamespace"):
 
         return pkg_info
 
-    pkgs = filter(
-        lambda pkg: pkg.metadata["name"] != "pip-licenses",
-        importlib_metadata.distributions()
-    )
+    pkgs = importlib_metadata.distributions()
     ignore_pkgs_as_lower = [pkg.lower() for pkg in args.ignore_packages]
     pkgs_as_lower = [pkg.lower() for pkg in args.packages]
 
