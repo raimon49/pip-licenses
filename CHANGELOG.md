@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+### 4.0.1
+
+* Fix "pip-licenses" is missing in output of `pip-licenses --with-system` option
+
 ### 4.0.0
 
 * Support for Python 3.11
