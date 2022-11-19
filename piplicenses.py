@@ -45,7 +45,7 @@ from prettytable import NONE as RULE_NONE
 open = open  # allow monkey patching
 
 __pkgname__ = 'pip-licenses'
-__version__ = '4.0.0'
+__version__ = '4.0.1'
 __author__ = 'raimon'
 __license__ = 'MIT'
 __summary__ = ('Dump the software license list of '
@@ -184,10 +184,7 @@ def get_packages(args: "CustomNamespace"):
 
         return pkg_info
 
-    pkgs = filter(
-        lambda pkg: pkg.metadata["name"] != "pip-licenses",
-        importlib_metadata.distributions()
-    )
+    pkgs = importlib_metadata.distributions()
     ignore_pkgs_as_lower = [pkg.lower() for pkg in args.ignore_packages]
     pkgs_as_lower = [pkg.lower() for pkg in args.packages]
 
