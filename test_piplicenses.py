@@ -46,7 +46,10 @@ from piplicenses import (
 )
 
 if TYPE_CHECKING:
-    from importlib.metadata._meta import PackageMetadata
+    if sys.version_info >= (3, 10):
+        from importlib.metadata._meta import PackageMetadata
+    else:
+        from email.message import Message as PackageMetadata
 
 
 UNICODE_APPENDIX = ""
