@@ -26,38 +26,40 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-import os
-from setuptools import setup
 from codecs import open
 from os import path
 
-from piplicenses import (__pkgname__ as PKG_NAME, __version__ as VERSION,
-                         __author__ as AUTHOR, __license__ as LICENSE,
-                         __summary__ as SUMMARY, __url__ as URL)
+from setuptools import setup
 
+from piplicenses import __author__ as AUTHOR
+from piplicenses import __license__ as LICENSE
+from piplicenses import __pkgname__ as PKG_NAME
+from piplicenses import __summary__ as SUMMARY
+from piplicenses import __url__ as URL
+from piplicenses import __version__ as VERSION
 
 here = path.abspath(path.dirname(__file__))
 
 
 def read_file(filename):
-    content = ''
-    with open(path.join(here, filename), encoding='utf-8') as f:
+    content = ""
+    with open(path.join(here, filename), encoding="utf-8") as f:
         content = f.read()
 
     return content
 
 
-LONG_DESC = ''
+LONG_DESC = ""
 try:
     from pypandoc import convert_file
 
-    about_this = convert_file('README.md', 'rst', format='markdown_github')
-    separate = '\n\n'
-    change_log = convert_file('CHANGELOG.md', 'rst', format='markdown_github')
+    about_this = convert_file("README.md", "rst", format="markdown_github")
+    separate = "\n\n"
+    change_log = convert_file("CHANGELOG.md", "rst", format="markdown_github")
 
     LONG_DESC = about_this + separate + change_log
 except (IOError, ImportError):
-    LONG_DESC = read_file('README.md')
+    LONG_DESC = read_file("README.md")
 
 
 setup(
@@ -69,8 +71,8 @@ setup(
     author=AUTHOR,
     license=LICENSE,
     entry_points={
-        'console_scripts': [
-            PKG_NAME + '=piplicenses:main',
+        "console_scripts": [
+            PKG_NAME + "=piplicenses:main",
         ],
     },
 )

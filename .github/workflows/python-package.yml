@@ -2,39 +2,46 @@ name: Python package
 
 on:
   push:
-    branches: [ master ]
+    branches: [master]
   pull_request:
     branches:
       - master
-      - 'dev*'
-      - 'release*'
+      - "dev*"
+      - "release*"
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.11']
+        python-version: ["3.8", "3.9", "3.10", "3.11"]
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        if [ -f dev-requirements.txt ]; then pip install -r dev-requirements.txt; fi
-    - name: Test with pytest
-      run: |
-        pytest --pycodestyle -v --cov --cov-report=xml
-    - name: Upload code coverage to Codecov
-      if: ${{ matrix.python-version==3.8 }}
-      uses: codecov/codecov-action@v3
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
-        file: ./coverage.xml
-        name: codecov-umbrella
-        fail_ci_if_error: true
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Lint with black
+        uses: psf/black@stable
+        with:
+          options: "--check --diff --line-length=79"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f dev-requirements.txt ]; then pip install -r dev-requirements.txt; fi
+      - name: Test with pytest
+        run: |
+          pytest --pycodestyle -v --cov --cov-report=xml
+      - name: Validate static typing with mypy
+        run: |
+          mkdir -p .mypy_cache
+          mypy --install-types --non-interactive .
+      - name: Upload code coverage to Codecov
+        if: ${{ matrix.python-version==3.8 }}
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
+          file: ./coverage.xml
+          name: codecov-umbrella
+          fail_ci_if_error: true
