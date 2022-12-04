@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+### 4.0.2
+
+* Add type annotations and code formatter
+
 ### 4.0.1
 
 * Fix "pip-licenses" is missing in output of `pip-licenses --with-system` option
