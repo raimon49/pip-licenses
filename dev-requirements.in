@@ -1,6 +1,7 @@
 -r requirements.in
 
 autopep8
+black
 codecov
 docutils
 isort
