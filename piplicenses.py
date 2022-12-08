@@ -540,7 +540,8 @@ def create_output_string(args: CustomNamespace) -> str:
     sortby = get_sortby(args)
 
     if args.format_ == FormatArg.HTML:
-        return table.get_html_string(fields=output_fields, sortby=sortby)
+        html = table.get_html_string(fields=output_fields, sortby=sortby)
+        return html.encode('ascii', errors='xmlcharrefreplace').decode('ascii')
     else:
         return table.get_string(fields=output_fields, sortby=sortby)
 
