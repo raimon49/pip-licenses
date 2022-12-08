@@ -538,11 +538,12 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertEqual(RULE_NONE, table.hrules)
 
     def test_format_html(self) -> None:
-        format_html_args = ["--format=html"]
+        format_html_args = ["--format=html", "--with-authors"]
         args = self.parser.parse_args(format_html_args)
         output_string = create_output_string(args)
 
         self.assertIn("<table>", output_string)
+        self.assertIn("Filipe La&#237;ns", output_string)  # author of "build"
 
     def test_format_json(self) -> None:
         format_json_args = ["--format=json", "--with-authors"]
