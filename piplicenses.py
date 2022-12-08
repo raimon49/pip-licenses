@@ -53,7 +53,7 @@ if TYPE_CHECKING:
 open = open  # allow monkey patching
 
 __pkgname__ = "pip-licenses"
-__version__ = "4.0.2"
+__version__ = "4.0.3"
 __author__ = "raimon"
 __license__ = "MIT"
 __summary__ = (

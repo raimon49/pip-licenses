@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+### 4.0.3
+
+* Escape unicode output (to e.g. `&#123;`) in the html output
+
 ### 4.0.2
 
 * Add type annotations and code formatter
