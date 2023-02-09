@@ -307,7 +307,7 @@ class JsonPrettyTable(PrettyTable):
 
     def _format_row(self, row: Iterable[str]) -> dict[str, str | list[str]]:
         resrow: dict[str, str | List[str]] = {}
-        for (field, value) in zip(self._field_names, row):
+        for field, value in zip(self._field_names, row):
             resrow[field] = value
 
         return resrow
@@ -332,7 +332,7 @@ class JsonPrettyTable(PrettyTable):
 class JsonLicenseFinderTable(JsonPrettyTable):
     def _format_row(self, row: Iterable[str]) -> dict[str, str | list[str]]:
         resrow: dict[str, str | List[str]] = {}
-        for (field, value) in zip(self._field_names, row):
+        for field, value in zip(self._field_names, row):
             if field == "Name":
                 resrow["name"] = value
 

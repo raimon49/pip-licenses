@@ -32,14 +32,12 @@ coverage[toml]==6.5.0
     # via
     #   codecov
     #   pytest-cov
-cryptography==38.0.4
+cryptography==39.0.1
     # via secretstorage
 docutils==0.19
     # via
     #   -r dev-requirements.in
     #   readme-renderer
-exceptiongroup==1.0.4
-    # via pytest
 idna==3.4
     # via requests
 importlib-metadata==5.1.0
@@ -126,21 +124,11 @@ secretstorage==3.3.3
 six==1.16.0
     # via bleach
 tomli==2.0.1
-    # via
-    #   autopep8
-    #   black
-    #   build
-    #   coverage
-    #   mypy
-    #   pep517
-    #   pytest
+    # via autopep8
 twine==4.0.2
     # via -r dev-requirements.in
 typing-extensions==4.4.0
-    # via
-    #   black
-    #   mypy
-    #   rich
+    # via mypy
 urllib3==1.26.13
     # via
     #   requests
