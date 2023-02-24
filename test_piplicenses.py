@@ -726,7 +726,7 @@ def test_output_file_none(monkeypatch) -> None:
 
 def test_allow_only(monkeypatch) -> None:
     licenses = (
-        "BSD License",
+        "Bsd License",
         "Apache Software License",
         "Mozilla Public License 2.0 (MPL 2.0)",
         "Python Software Foundation License",
@@ -751,7 +751,7 @@ def test_allow_only(monkeypatch) -> None:
 
 
 def test_fail_on(monkeypatch) -> None:
-    licenses = ("MIT License",)
+    licenses = ("MIT license",)
     allow_only_args = ["--fail-on={}".format(";".join(licenses))]
     mocked_stdout = MockStdStream()
     mocked_stderr = MockStdStream()
