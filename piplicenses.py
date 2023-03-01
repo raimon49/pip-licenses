@@ -190,24 +190,6 @@ def get_packages(
 
         return pkg_info
 
-    def case_insensitive_set_intersect(set_a, set_b):
-        """Same as set.intersection() but case-insensitive"""
-        common_items = set()
-        set_b_lower = {item.lower() for item in set_b}
-        for elem in set_a:
-            if elem.lower() in set_b_lower:
-                common_items.add(elem)
-        return common_items
-
-    def case_insensitive_set_diff(set_a, set_b):
-        """Same as set.difference() but case-insensitive"""
-        uncommon_items = set()
-        set_b_lower = {item.lower() for item in set_b}
-        for elem in set_a:
-            if not elem.lower() in set_b_lower:
-                uncommon_items.add(elem)
-        return uncommon_items
-
     pkgs = importlib_metadata.distributions()
     ignore_pkgs_as_lower = [pkg.lower() for pkg in args.ignore_packages]
     pkgs_as_lower = [pkg.lower() for pkg in args.packages]
@@ -322,6 +304,26 @@ def create_summary_table(args: CustomNamespace) -> PrettyTable:
     for license, count in counts.items():
         table.add_row([count, license])
     return table
+
+
+def case_insensitive_set_intersect(set_a, set_b):
+    """Same as set.intersection() but case-insensitive"""
+    common_items = set()
+    set_b_lower = {item.lower() for item in set_b}
+    for elem in set_a:
+        if elem.lower() in set_b_lower:
+            common_items.add(elem)
+    return common_items
+
+
+def case_insensitive_set_diff(set_a, set_b):
+    """Same as set.difference() but case-insensitive"""
+    uncommon_items = set()
+    set_b_lower = {item.lower() for item in set_b}
+    for elem in set_a:
+        if not elem.lower() in set_b_lower:
+            uncommon_items.add(elem)
+    return uncommon_items
 
 
 class JsonPrettyTable(PrettyTable):

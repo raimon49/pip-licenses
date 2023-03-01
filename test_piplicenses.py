@@ -29,6 +29,8 @@ from piplicenses import (
     CompatibleArgumentParser,
     FromArg,
     __pkgname__,
+    case_insensitive_set_diff,
+    case_insensitive_set_intersect,
     create_licenses_table,
     create_output_string,
     create_parser,
@@ -668,6 +670,34 @@ class TestGetLicenses(CommandLineTestCase):
         piplicenses.importlib_metadata.distributions = (
             importlib_metadata_distributions_orig
         )
+
+    def test_case_insensitive_set_diff(self) -> None:
+        set_a = {"MIT License"}
+        set_b = {"Mit License", "BSD License"}
+        set_c = {"mit license"}
+        a_diff_b = case_insensitive_set_diff(set_a, set_b)
+        a_diff_c = case_insensitive_set_diff(set_a, set_c)
+        b_diff_c = case_insensitive_set_diff(set_b, set_c)
+        a_diff_empty = case_insensitive_set_diff(set_a, set())
+
+        self.assertTrue(len(a_diff_b) == 0)
+        self.assertTrue(len(a_diff_c) == 0)
+        self.assertIn("BSD License", b_diff_c)
+        self.assertIn("MIT License", a_diff_empty)
+
+    def test_case_insensitive_set_intersect(self) -> None:
+        set_a = {"Revised BSD"}
+        set_b = {"Apache License", "revised BSD"}
+        set_c = {"revised bsd"}
+        a_intersect_b = case_insensitive_set_intersect(set_a, set_b)
+        a_intersect_c = case_insensitive_set_intersect(set_a, set_c)
+        b_intersect_c = case_insensitive_set_intersect(set_b, set_c)
+        a_intersect_empty = case_insensitive_set_intersect(set_a, set())
+
+        self.assertTrue(set_a == a_intersect_b)
+        self.assertTrue(set_a == a_intersect_c)
+        self.assertTrue({"revised BSD"} == b_intersect_c)
+        self.assertTrue(len(a_intersect_empty) == 0)
 
 
 class MockStdStream(object):
