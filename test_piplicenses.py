@@ -220,14 +220,14 @@ class TestGetLicenses(CommandLineTestCase):
         for row in table.rows:
             license_classifier.append(row[index_license_classifier])
 
-        for license in ("BSD", "MIT", "Apache 2.0"):
-            self.assertIn(license, license_meta)
-        for license in (
+        for license_name in ("BSD", "MIT", "Apache 2.0"):
+            self.assertIn(license_name, license_meta)
+        for license_name in (
             "BSD License",
             "MIT License",
             "Apache Software License",
         ):
-            self.assertIn(license, license_classifier)
+            self.assertIn(license_name, license_classifier)
 
     def test_find_license_from_classifier(self) -> None:
         classifiers = ["License :: OSI Approved :: MIT License"]
