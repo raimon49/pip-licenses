@@ -223,7 +223,9 @@ def get_packages(
         )
 
         if fail_on_licenses:
-            failed_licenses = license_names.intersection(fail_on_licenses)
+            failed_licenses = case_insensitive_set_intersect(
+                license_names, fail_on_licenses
+            )
             if failed_licenses:
                 sys.stderr.write(
                     "fail-on license {} was found for package "
@@ -236,7 +238,9 @@ def get_packages(
                 sys.exit(1)
 
         if allow_only_licenses:
-            uncommon_licenses = license_names.difference(allow_only_licenses)
+            uncommon_licenses = case_insensitive_set_diff(
+                license_names, allow_only_licenses
+            )
             if len(uncommon_licenses) == len(license_names):
                 sys.stderr.write(
                     "license {} not in allow-only licenses was found"
@@ -300,6 +304,26 @@ def create_summary_table(args: CustomNamespace) -> PrettyTable:
     for license, count in counts.items():
         table.add_row([count, license])
     return table
+
+
+def case_insensitive_set_intersect(set_a, set_b):
+    """Same as set.intersection() but case-insensitive"""
+    common_items = set()
+    set_b_lower = {item.lower() for item in set_b}
+    for elem in set_a:
+        if elem.lower() in set_b_lower:
+            common_items.add(elem)
+    return common_items
+
+
+def case_insensitive_set_diff(set_a, set_b):
+    """Same as set.difference() but case-insensitive"""
+    uncommon_items = set()
+    set_b_lower = {item.lower() for item in set_b}
+    for elem in set_a:
+        if not elem.lower() in set_b_lower:
+            uncommon_items.add(elem)
+    return uncommon_items
 
 
 class JsonPrettyTable(PrettyTable):

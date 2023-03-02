@@ -446,7 +446,8 @@ If the input strings are filtered (see `--filter-strings`), you can specify the 
 
 #### Option: fail\-on
 
-Fail (exit with code 1) on the first occurrence of the licenses of the semicolon-separated list
+Fail (exit with code 1) on the first occurrence of the licenses of the semicolon-separated list. The license name
+matching is case-insensitive.
 
 If `--from=all`, the option will apply to the metadata license field.
 
@@ -456,18 +457,23 @@ If `--from=all`, the option will apply to the metadata license field.
 **Note:** Packages with multiple licenses will fail if at least one license is included in the fail-on list. For example:
 ```
 # keyring library has 2 licenses
-$ pip-licenses | grep keyring
- keyring             21.4.0     Python Software Foundation License, MIT License
+$ pip-licenses --package keyring
+ Name     Version  License                                         
+ keyring  23.0.1   MIT License; Python Software Foundation License
 
 # If just "Python Software Foundation License" is specified, it will fail.
-$ pip-licenses --fail-on="Python Software Foundation License;"
+$ pip-licenses --package keyring --fail-on="Python Software Foundation License;"
 $ echo $?
 1
+
+# Matching is case-insensitive. Following check will fail:
+$ pip-licenses --fail-on="mit license"
 ```
 
 #### Option: allow\-only
 
-Fail (exit with code 1) if none of the package licenses are in the semicolon-separated list
+Fail (exit with code 1) if none of the package licenses are in the semicolon-separated list. The license name
+matching is case-insensitive.
 
 If `--from=all`, the option will apply to the metadata license field.
 
@@ -481,8 +487,9 @@ $ pip-licenses --package keyring
  Name     Version  License                                         
  keyring  23.0.1   MIT License; Python Software Foundation License
 
-# One or both licenses must be specified (order does not matter). Following checks will pass:
+# One or both licenses must be specified (order and case does not matter). Following checks will pass:
 $ pip-licenses --package keyring --allow-only="MIT License"
+$ pip-licenses --package keyring --allow-only="mit License"
 $ pip-licenses --package keyring --allow-only="BSD License;MIT License"
 $ pip-licenses --package keyring --allow-only="Python Software Foundation License"
 $ pip-licenses --package keyring --allow-only="Python Software Foundation License;MIT License"

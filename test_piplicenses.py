@@ -29,6 +29,8 @@ from piplicenses import (
     CompatibleArgumentParser,
     FromArg,
     __pkgname__,
+    case_insensitive_set_diff,
+    case_insensitive_set_intersect,
     create_licenses_table,
     create_output_string,
     create_parser,
@@ -218,14 +220,14 @@ class TestGetLicenses(CommandLineTestCase):
         for row in table.rows:
             license_classifier.append(row[index_license_classifier])
 
-        for license in ("BSD", "MIT", "Apache 2.0"):
-            self.assertIn(license, license_meta)
-        for license in (
+        for license_name in ("BSD", "MIT", "Apache 2.0"):
+            self.assertIn(license_name, license_meta)
+        for license_name in (
             "BSD License",
             "MIT License",
             "Apache Software License",
         ):
-            self.assertIn(license, license_classifier)
+            self.assertIn(license_name, license_classifier)
 
     def test_find_license_from_classifier(self) -> None:
         classifiers = ["License :: OSI Approved :: MIT License"]
@@ -669,6 +671,34 @@ class TestGetLicenses(CommandLineTestCase):
             importlib_metadata_distributions_orig
         )
 
+    def test_case_insensitive_set_diff(self) -> None:
+        set_a = {"MIT License"}
+        set_b = {"Mit License", "BSD License"}
+        set_c = {"mit license"}
+        a_diff_b = case_insensitive_set_diff(set_a, set_b)
+        a_diff_c = case_insensitive_set_diff(set_a, set_c)
+        b_diff_c = case_insensitive_set_diff(set_b, set_c)
+        a_diff_empty = case_insensitive_set_diff(set_a, set())
+
+        self.assertTrue(len(a_diff_b) == 0)
+        self.assertTrue(len(a_diff_c) == 0)
+        self.assertIn("BSD License", b_diff_c)
+        self.assertIn("MIT License", a_diff_empty)
+
+    def test_case_insensitive_set_intersect(self) -> None:
+        set_a = {"Revised BSD"}
+        set_b = {"Apache License", "revised BSD"}
+        set_c = {"revised bsd"}
+        a_intersect_b = case_insensitive_set_intersect(set_a, set_b)
+        a_intersect_c = case_insensitive_set_intersect(set_a, set_c)
+        b_intersect_c = case_insensitive_set_intersect(set_b, set_c)
+        a_intersect_empty = case_insensitive_set_intersect(set_a, set())
+
+        self.assertTrue(set_a == a_intersect_b)
+        self.assertTrue(set_a == a_intersect_c)
+        self.assertTrue({"revised BSD"} == b_intersect_c)
+        self.assertTrue(len(a_intersect_empty) == 0)
+
 
 class MockStdStream(object):
     def __init__(self) -> None:
@@ -726,7 +756,7 @@ def test_output_file_none(monkeypatch) -> None:
 
 def test_allow_only(monkeypatch) -> None:
     licenses = (
-        "BSD License",
+        "Bsd License",
         "Apache Software License",
         "Mozilla Public License 2.0 (MPL 2.0)",
         "Python Software Foundation License",
@@ -751,7 +781,7 @@ def test_allow_only(monkeypatch) -> None:
 
 
 def test_fail_on(monkeypatch) -> None:
-    licenses = ("MIT License",)
+    licenses = ("MIT license",)
     allow_only_args = ["--fail-on={}".format(";".join(licenses))]
     mocked_stdout = MockStdStream()
     mocked_stderr = MockStdStream()
