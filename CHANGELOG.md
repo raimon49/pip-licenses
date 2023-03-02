@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+### 4.1.0
+
+* Support case-insensitive license name matching around `--fail-on` and `--allow-only` parameters
+
 ### 4.0.3
 
 * Escape unicode output (to e.g. `&#123;`) in the html output
