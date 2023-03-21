@@ -190,7 +190,7 @@ def get_packages(
 
         return pkg_info
 
-    pkgs = importlib_metadata.distributions()
+    pkgs = importlib_metadata.distributions(path=args.path)
     ignore_pkgs_as_lower = [pkg.lower() for pkg in args.ignore_packages]
     pkgs_as_lower = [pkg.lower() for pkg in args.packages]
 
@@ -777,6 +777,16 @@ def create_parser() -> CompatibleArgumentParser:
         "-v", "--version", action="version", version="%(prog)s " + __version__
     )
 
+    common_options.add_argument(
+        "--path",
+        nargs="*",
+        type=str,
+        default=sys.path,
+        metavar="PATH",
+        help="R|folders where to find packages\n"
+        "By default, will search packages for current environment"
+        "(default: sys.path)",
+    )
     common_options.add_argument(
         "--from",
         dest="from_",
