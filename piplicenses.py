@@ -204,8 +204,12 @@ def get_packages(
 
     for pkg in pkgs:
         pkg_name = pkg.metadata["name"]
+        pkg_name_and_version = pkg_name + ":" + pkg.metadata["version"]
 
-        if pkg_name.lower() in ignore_pkgs_as_lower:
+        if (
+            pkg_name.lower() in ignore_pkgs_as_lower
+            or pkg_name_and_version.lower() in ignore_pkgs_as_lower
+        ):
             continue
 
         if pkgs_as_lower and pkg_name.lower() not in pkgs_as_lower:
