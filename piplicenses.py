@@ -93,11 +93,11 @@ SUMMARY_OUTPUT_FIELDS = (
     "License",
 )
 
-METADATA_KEYS: dict[str, tuple[str, ...]] = {
-    "home-page": "home-page",
+METADATA_KEYS: dict[str, list[str]] = {
+    "home-page": ["home-page"],
     "author": ["author", "author-email"],
-    "license": "license",
-    "summary": "summary",
+    "license": ["license"],
+    "summary": ["summary"],
 }
 
 # Mapping of FIELD_NAMES to METADATA_KEYS where they differ by more than case
