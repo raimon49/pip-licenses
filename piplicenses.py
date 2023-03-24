@@ -93,13 +93,12 @@ SUMMARY_OUTPUT_FIELDS = (
     "License",
 )
 
-
-METADATA_KEYS = (
-    "home-page",
-    "author",
-    "license",
-    "summary",
-)
+METADATA_KEYS: dict[str, tuple[str, ...]] = {
+    "home-page": "home-page",
+    "author": ["author", "author-email"],
+    "license": "license",
+    "summary": "summary",
+}
 
 # Mapping of FIELD_NAMES to METADATA_KEYS where they differ by more than case
 FIELDS_TO_METADATA_KEYS = {
@@ -167,8 +166,13 @@ def get_packages(
             "noticetext": notice_text,
         }
         metadata = pkg.metadata
-        for key in METADATA_KEYS:
-            pkg_info[key] = metadata.get(key, LICENSE_UNKNOWN)  # type: ignore[attr-defined] # noqa: E501
+        for field_name, field_selectors in METADATA_KEYS.items():
+            value = None
+            for selector in field_selectors:
+                value = metadata.get(selector, None)  # type: ignore[attr-defined] # noqa: E501
+                if value:
+                    break
+            pkg_info[field_name] = value or LICENSE_UNKNOWN
 
         classifiers: list[str] = metadata.get_all("classifier", [])
         pkg_info["license_classifier"] = find_license_from_classifier(
