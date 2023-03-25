@@ -93,7 +93,7 @@ SUMMARY_OUTPUT_FIELDS = (
     "License",
 )
 
-METADATA_KEYS: dict[str, list[str]] = {
+METADATA_KEYS = {
     "home-page": ["home-page"],
     "author": ["author", "author-email"],
     "license": ["license"],
