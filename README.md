@@ -351,6 +351,16 @@ Package names of arguments can be separated by spaces.
  wcwidth     0.2.5    MIT License
 ```
 
+Packages can also be specified with a version, only ignoring that specific version.
+
+```bash
+(venv) $ pip-licenses --with-system --ignore-packages django pytz:2017.3
+ Name        Version  License
+ prettytable 3.5.0    BSD License
+ setuptools  38.5.0   UNKNOWN
+ wcwidth     0.2.5    MIT License
+```
+
 #### Option: packages
 
 When executed with the `packages` option, look at the package specified by argument from list output.
@@ -458,7 +468,7 @@ If `--from=all`, the option will apply to the metadata license field.
 ```
 # keyring library has 2 licenses
 $ pip-licenses --package keyring
- Name     Version  License                                         
+ Name     Version  License
  keyring  23.0.1   MIT License; Python Software Foundation License
 
 # If just "Python Software Foundation License" is specified, it will fail.
@@ -484,7 +494,7 @@ If `--from=all`, the option will apply to the metadata license field.
 ```
 # keyring library has 2 licenses
 $ pip-licenses --package keyring
- Name     Version  License                                         
+ Name     Version  License
  keyring  23.0.1   MIT License; Python Software Foundation License
 
 # One or both licenses must be specified (order and case does not matter). Following checks will pass:
