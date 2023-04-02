@@ -1,5 +1,11 @@
 ## CHANGELOG
 
+### 4.2.0
+
+* Implement new option `--with-maintainers`
+* Allow version spec in `--ignore-packages` parameters
+* When the `Author` field is `UNKNOWN`, the output is automatically completed from `Author-email`
+
 ### 4.1.0
 
 * Support case-insensitive license name matching around `--fail-on` and `--allow-only` parameters
