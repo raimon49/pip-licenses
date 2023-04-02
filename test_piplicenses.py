@@ -309,6 +309,17 @@ class TestGetLicenses(CommandLineTestCase):
         output_string = create_output_string(args)
         self.assertIn("Author", output_string)
 
+    def test_with_maintainers(self) -> None:
+        with_maintainers_args = ["--with-maintainers"]
+        args = self.parser.parse_args(with_maintainers_args)
+
+        output_fields = get_output_fields(args)
+        self.assertNotEqual(output_fields, list(DEFAULT_OUTPUT_FIELDS))
+        self.assertIn("Maintainer", output_fields)
+
+        output_string = create_output_string(args)
+        self.assertIn("Maintainer", output_string)
+
     def test_with_urls(self) -> None:
         with_urls_args = ["--with-urls"]
         args = self.parser.parse_args(with_urls_args)
