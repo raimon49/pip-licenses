@@ -73,6 +73,7 @@ FIELD_NAMES = (
     "NoticeFile",
     "NoticeText",
     "Author",
+    "Maintainer",
     "Description",
     "URL",
 )
@@ -98,6 +99,7 @@ SUMMARY_OUTPUT_FIELDS = (
 METADATA_KEYS = {
     "home-page": ["home-page"],
     "author": ["author", "author-email"],
+    "maintainer": ["maintainer", "maintainer-email"],
     "license": ["license"],
     "summary": ["summary"],
 }
@@ -542,6 +544,9 @@ def get_output_fields(args: CustomNamespace) -> list[str]:
     if args.with_authors:
         output_fields.append("Author")
 
+    if args.with_maintainers:
+        output_fields.append("Maintainer")
+
     if args.with_urls:
         output_fields.append("URL")
 
@@ -896,6 +901,12 @@ def create_parser() -> CompatibleArgumentParser:
         action="store_true",
         default=False,
         help="dump with package authors",
+    )
+    format_options.add_argument(
+        "--with-maintainers",
+        action="store_true",
+        default=False,
+        help="dump with package maintainers",
     )
     format_options.add_argument(
         "-u",
