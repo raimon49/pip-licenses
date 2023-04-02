@@ -576,6 +576,8 @@ def get_sortby(args: CustomNamespace) -> str:
         return "Name"
     elif args.order == OrderArg.AUTHOR and args.with_authors:
         return "Author"
+    elif args.order == OrderArg.MAINTAINER and args.with_maintainers:
+        return "Maintainer"
     elif args.order == OrderArg.URL and args.with_urls:
         return "URL"
 
@@ -744,6 +746,7 @@ class OrderArg(NoValueEnum):
     LICENSE = L = auto()
     NAME = N = auto()
     AUTHOR = A = auto()
+    MAINTAINER = M = auto()
     URL = U = auto()
 
 

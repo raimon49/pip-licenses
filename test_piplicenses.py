@@ -470,6 +470,13 @@ class TestGetLicenses(CommandLineTestCase):
         sortby = get_sortby(args)
         self.assertEqual("Author", sortby)
 
+    def test_order_maintainer(self) -> None:
+        order_maintainer_args = ["--order=maintainer", "--with-maintainers"]
+        args = self.parser.parse_args(order_maintainer_args)
+
+        sortby = get_sortby(args)
+        self.assertEqual("Maintainer", sortby)
+
     def test_order_url(self) -> None:
         order_url_args = ["--order=url", "--with-urls"]
         args = self.parser.parse_args(order_url_args)
