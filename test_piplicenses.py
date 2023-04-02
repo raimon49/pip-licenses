@@ -394,10 +394,7 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertIn("best paired with --format=json", warn_string)
 
     def test_ignore_packages(self) -> None:
-        if "PTable" in SYSTEM_PACKAGES:
-            ignore_pkg_name = "PTable"
-        else:
-            ignore_pkg_name = "prettytable"
+        ignore_pkg_name = "prettytable"
         ignore_packages_args = ["--ignore-package=" + ignore_pkg_name]
         args = self.parser.parse_args(ignore_packages_args)
         table = create_licenses_table(args)
@@ -415,10 +412,7 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertListEqual([pkg_name], pkg_name_columns)
 
     def test_with_packages_with_system(self) -> None:
-        if "PTable" in SYSTEM_PACKAGES:
-            pkg_name = "PTable"
-        else:
-            pkg_name = "prettytable"
+        pkg_name = "prettytable"
         only_packages_args = ["--packages=" + pkg_name, "--with-system"]
         args = self.parser.parse_args(only_packages_args)
         table = create_licenses_table(args)
