@@ -395,12 +395,26 @@ class TestGetLicenses(CommandLineTestCase):
 
     def test_ignore_packages(self) -> None:
         ignore_pkg_name = "prettytable"
-        ignore_packages_args = ["--ignore-package=" + ignore_pkg_name]
+        ignore_packages_args = ["--ignore-package=" + ignore_pkg_name,
+                                "--with-system"]
         args = self.parser.parse_args(ignore_packages_args)
         table = create_licenses_table(args)
 
         pkg_name_columns = self._create_pkg_name_columns(table)
         self.assertNotIn(ignore_pkg_name, pkg_name_columns)
+
+    def test_ignore_packages_and_version(self) -> None:
+        # Fictitious version that does not exist
+        ignore_pkg_name = "prettytable"
+        ignore_pkg_spec = ignore_pkg_name + ":1.99.99"
+        ignore_packages_args = ["--ignore-package=" + ignore_pkg_spec,
+                                "--with-system"]
+        args = self.parser.parse_args(ignore_packages_args)
+        table = create_licenses_table(args)
+
+        pkg_name_columns = self._create_pkg_name_columns(table)
+        # It is expected that prettytable will include
+        self.assertIn(ignore_pkg_name, pkg_name_columns)
 
     def test_with_packages(self) -> None:
         pkg_name = "py"
