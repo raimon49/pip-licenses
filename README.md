@@ -97,9 +97,9 @@ Execute the command with your venv (or virtualenv) environment.
 
 ### Common options
 
-#### Option: path
+#### Option: python
 
-By default, this tools finds the packages from the environment pip-licenses is launched from, by searching in `sys.path` folders. In the case you want to search for packages in an other environment (e.g. if you want to run pip-licenses from its own isolated environment), you can specify a list of folders where to search from.
+By default, this tools finds the packages from the environment pip-licenses is launched from, by searching in current python's `sys.path` folders. In the case you want to search for packages in an other environment (e.g. if you want to run pip-licenses from its own isolated environment), you can specify a path to a python executable. The packages will be searched for in the given python's `sys.path`, free of pip-licenses dependencies.
 
 ```bash
 (venv) $ pip-licenses --with-system | grep pip
@@ -108,7 +108,7 @@ By default, this tools finds the packages from the environment pip-licenses is l
 ```
 
 ```bash
-(venv) $ pip-licenses --path=</path/to/other/env>/lib/<python_version>/site-packages --with-system | grep pip
+(venv) $ pip-licenses --python=</path/to/other/env>/bin/python --with-system | grep pip
  pip                       23.0.1       MIT License 
 ```
 

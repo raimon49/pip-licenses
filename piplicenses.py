@@ -31,6 +31,7 @@ from __future__ import annotations
 import argparse
 import codecs
 import re
+import subprocess
 import sys
 from collections import Counter
 from enum import Enum, auto
@@ -190,7 +191,19 @@ def get_packages(
 
         return pkg_info
 
-    pkgs = importlib_metadata.distributions(path=args.path)
+    def get_python_sys_path(executable: str) -> list[str]:
+        script = "import sys; print(' '.join(filter(bool, sys.path)))"
+        output = subprocess.run(
+            [executable, "-c", script], capture_output=True
+        )
+        return output.stdout.decode().strip().split()
+
+    if args.python == sys.executable:
+        search_paths = sys.path
+    else:
+        search_paths = get_python_sys_path(args.python)
+
+    pkgs = importlib_metadata.distributions(path=search_paths)
     ignore_pkgs_as_lower = [pkg.lower() for pkg in args.ignore_packages]
     pkgs_as_lower = [pkg.lower() for pkg in args.packages]
 
@@ -778,15 +791,16 @@ def create_parser() -> CompatibleArgumentParser:
     )
 
     common_options.add_argument(
-        "--path",
-        nargs="*",
+        "--python",
         type=str,
-        default=sys.path,
-        metavar="PATH",
-        help="R|folders where to find packages\n"
-        "By default, will search packages for current environment"
-        "(default: sys.path)",
+        default=sys.executable,
+        metavar="PYTHON_EXEC",
+        help="R| path to python executable to search distributions from\n"
+        "Package will be searched in the selected python's sys.path\n"
+        "By default, will search packages for current env executable\n"
+        "(default: sys.executable)",
     )
+
     common_options.add_argument(
         "--from",
         dest="from_",
