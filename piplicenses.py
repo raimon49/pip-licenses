@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import argparse
 import codecs
+import os
 import re
 import subprocess
 import sys
@@ -194,7 +195,9 @@ def get_packages(
     def get_python_sys_path(executable: str) -> list[str]:
         script = "import sys; print(' '.join(filter(bool, sys.path)))"
         output = subprocess.run(
-            [executable, "-c", script], capture_output=True, env={}
+            [executable, "-c", script],
+            capture_output=True,
+            env={**os.environ, "PYTHONPATH": "", "VIRTUAL_ENV": ""},
         )
         return output.stdout.decode().strip().split()
 
