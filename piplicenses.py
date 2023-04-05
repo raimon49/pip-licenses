@@ -194,7 +194,7 @@ def get_packages(
     def get_python_sys_path(executable: str) -> list[str]:
         script = "import sys; print(' '.join(filter(bool, sys.path)))"
         output = subprocess.run(
-            [executable, "-c", script], capture_output=True
+            [executable, "-c", script], capture_output=True, env={}
         )
         return output.stdout.decode().strip().split()
 
