@@ -11,6 +11,7 @@ import unittest
 import venv
 from enum import Enum, auto
 from importlib.metadata import Distribution
+from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, List
 
 import docutils.frontend
@@ -787,7 +788,7 @@ def test_different_python() -> None:
     import tempfile
 
     class TempEnvBuild(venv.EnvBuilder):
-        def post_setup(self, context: venv.SimpleNamespace) -> None:
+        def post_setup(self, context: SimpleNamespace) -> None:
             self.context = context
 
     with tempfile.TemporaryDirectory() as target_dir_path:
