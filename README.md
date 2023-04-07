@@ -11,6 +11,7 @@ Dump the software license list of Python packages installed with pip.
 * [Usage](#usage)
 * [Command\-Line Options](#command-line-options)
     * [Common options](#common-options)
+        * [Option: python](#option-python)
         * [Option: from](#option-from)
         * [Option: order](#option-order)
         * [Option: format](#option-format)
