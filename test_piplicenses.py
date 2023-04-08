@@ -4,11 +4,14 @@ from __future__ import annotations
 
 import copy
 import email
+import json
 import re
 import sys
 import unittest
+import venv
 from enum import Enum, auto
 from importlib.metadata import Distribution
+from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, List
 
 import docutils.frontend
@@ -39,6 +42,7 @@ from piplicenses import (
     factory_styled_table_with_args,
     find_license_from_classifier,
     get_output_fields,
+    get_packages,
     get_sortby,
     output_colored,
     save_if_needs,
@@ -778,6 +782,26 @@ def test_allow_only(monkeypatch) -> None:
         "license MIT License not in allow-only licenses was found for "
         "package" in mocked_stderr.printed
     )
+
+
+def test_different_python() -> None:
+    import tempfile
+
+    class TempEnvBuild(venv.EnvBuilder):
+        def post_setup(self, context: SimpleNamespace) -> None:
+            self.context = context
+
+    with tempfile.TemporaryDirectory() as target_dir_path:
+        venv_builder = TempEnvBuild(with_pip=True)
+        venv_builder.create(str(target_dir_path))
+        python_exec = venv_builder.context.env_exe
+        python_arg = f"--python={python_exec}"
+        args = create_parser().parse_args([python_arg, "-s", "-f=json"])
+        pkgs = get_packages(args)
+        package_names = sorted(p["name"] for p in pkgs)
+        print(package_names)
+
+    assert package_names == ["pip", "setuptools"]
 
 
 def test_fail_on(monkeypatch) -> None:

@@ -11,6 +11,7 @@ Dump the software license list of Python packages installed with pip.
 * [Usage](#usage)
 * [Command\-Line Options](#command-line-options)
     * [Common options](#common-options)
+        * [Option: python](#option-python)
         * [Option: from](#option-from)
         * [Option: order](#option-order)
         * [Option: format](#option-format)
@@ -96,6 +97,21 @@ Execute the command with your venv (or virtualenv) environment.
 ## Command-Line Options
 
 ### Common options
+
+#### Option: python
+
+By default, this tools finds the packages from the environment pip-licenses is launched from, by searching in current python's `sys.path` folders. In the case you want to search for packages in an other environment (e.g. if you want to run pip-licenses from its own isolated environment), you can specify a path to a python executable. The packages will be searched for in the given python's `sys.path`, free of pip-licenses dependencies.
+
+```bash
+(venv) $ pip-licenses --with-system | grep pip
+ pip                       22.3.1       MIT License
+ pip-licenses              4.1.0        MIT License
+```
+
+```bash
+(venv) $ pip-licenses --python=</path/to/other/env>/bin/python --with-system | grep pip
+ pip                       23.0.1       MIT License 
+```
 
 #### Option: from
 
