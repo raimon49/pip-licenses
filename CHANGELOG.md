@@ -3,6 +3,7 @@
 ### 4.2.0
 
 * Implement new option `--with-maintainers`
+* Implement new option `--python`
 * Allow version spec in `--ignore-packages` parameters
 * When the `Author` field is `UNKNOWN`, the output is automatically completed from `Author-email`
 
