@@ -49,7 +49,8 @@ from prettytable import NONE as RULE_NONE
 from prettytable import PrettyTable
 
 if TYPE_CHECKING:
-    from typing import Iterator, Optional, Sequence
+    from email.message import Message
+    from typing import Callable, Dict, Iterator, Optional, Sequence
 
 
 open = open  # allow monkey patching
@@ -96,12 +97,50 @@ SUMMARY_OUTPUT_FIELDS = (
     "License",
 )
 
-METADATA_KEYS = {
-    "home-page": ["home-page"],
-    "author": ["author", "author-email"],
-    "maintainer": ["maintainer", "maintainer-email"],
-    "license": ["license"],
-    "summary": ["summary"],
+
+def extract_homepage(metadata: Message) -> Optional[str]:
+    """Extracts the homepage attribute from the package metadata.
+
+    Not all python packages have defined a home-page attribute.
+    As a fallback, the `Project-URL` metadata can be used.
+    The python core metadata supports multiple (free text) values for
+    the `Project-URL` field that are comma separated.
+
+    Args:
+        metadata: The package metadata to extract the homepage from.
+
+    Returns:
+        The home page if applicable, None otherwise.
+    """
+    homepage = metadata.get("home-page", None)
+    if homepage is not None:
+        return homepage
+
+    candidates: Dict[str, str] = {}
+
+    for entry in metadata.get_all("Project-URL", []):
+        key, value = entry.split(",", 1)
+        candidates[key.strip()] = value.strip()
+
+    for priority_key in ["Homepage", "Source", "Changelog", "Bug Tracker"]:
+        if priority_key in candidates:
+            return candidates[priority_key]
+
+    return None
+
+
+METADATA_KEYS: Dict[str, List[Callable[[Message], Optional[str]]]] = {
+    "home-page": [extract_homepage],
+    "author": [
+        lambda metadata: metadata.get("author"),
+        lambda metadata: metadata.get("author-email"),
+    ],
+    "maintainer": [
+        lambda metadata: metadata.get("maintainer"),
+        lambda metadata: metadata.get("maintainer-email"),
+    ],
+    "license": [lambda metadata: metadata.get("license")],
+    "summary": [lambda metadata: metadata.get("summary")],
 }
 
 # Mapping of FIELD_NAMES to METADATA_KEYS where they differ by more than case
@@ -170,10 +209,12 @@ def get_packages(
             "noticetext": notice_text,
         }
         metadata = pkg.metadata
-        for field_name, field_selectors in METADATA_KEYS.items():
+        for field_name, field_selector_fns in METADATA_KEYS.items():
             value = None
-            for selector in field_selectors:
-                value = metadata.get(selector, None)  # type: ignore[attr-defined] # noqa: E501
+            for field_selector_fn in field_selector_fns:
+                # Type hint of `Distribution.metadata` states `PackageMetadata`
+                # but it's actually of type `email.Message`
+                value = field_selector_fn(metadata)  # type: ignore
                 if value:
                     break
             pkg_info[field_name] = value or LICENSE_UNKNOWN
