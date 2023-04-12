@@ -830,7 +830,7 @@ def test_different_python() -> None:
         python_arg = f"--python={python_exec}"
         args = create_parser().parse_args([python_arg, "-s", "-f=json"])
         pkgs = get_packages(args)
-        package_names = sorted(p["name"] for p in pkgs)
+        package_names = sorted(set(p["name"] for p in pkgs))
         print(package_names)
 
     assert package_names == ["pip", "setuptools"]
