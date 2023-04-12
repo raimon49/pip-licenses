@@ -13,6 +13,7 @@ from enum import Enum, auto
 from importlib.metadata import Distribution
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, List
+from unittest.mock import MagicMock
 
 import docutils.frontend
 import docutils.parsers.rst
@@ -39,6 +40,7 @@ from piplicenses import (
     create_parser,
     create_warn_string,
     enum_key_to_value,
+    extract_homepage,
     factory_styled_table_with_args,
     find_license_from_classifier,
     get_output_fields,
@@ -905,3 +907,56 @@ def test_verify_args(
     capture = capsys.readouterr().err
     for arg in ("invalid code", "--filter-code-page"):
         assert arg in capture
+
+
+def test_extract_homepage_home_page_set() -> None:
+    metadata = MagicMock()
+    metadata.get.return_value = "Foobar"
+
+    assert "Foobar" == extract_homepage(metadata=metadata)  # type: ignore
+
+    metadata.get.assert_called_once_with("home-page", None)
+
+
+def test_extract_homepage_project_url_fallback() -> None:
+    metadata = MagicMock()
+    metadata.get.return_value = None
+
+    # `Homepage` is prioritized higher than `Source`
+    metadata.get_all.return_value = [
+        "Source, source",
+        "Homepage, homepage",
+    ]
+
+    assert "homepage" == extract_homepage(metadata=metadata)  # type: ignore
+
+    metadata.get_all.assert_called_once_with("Project-URL", [])
+
+
+def test_extract_homepage_project_url_fallback_multiple_parts() -> None:
+    metadata = MagicMock()
+    metadata.get.return_value = None
+
+    # `Homepage` is prioritized higher than `Source`
+    metadata.get_all.return_value = [
+        "Source, source",
+        "Homepage, homepage, foo, bar",
+    ]
+
+    assert "homepage, foo, bar" == extract_homepage(
+        metadata=metadata  # type: ignore
+    )
+
+    metadata.get_all.assert_called_once_with("Project-URL", [])
+
+
+def test_extract_homepage_empty() -> None:
+    metadata = MagicMock()
+
+    metadata.get.return_value = None
+    metadata.get_all.return_value = []
+
+    assert None is extract_homepage(metadata=metadata)  # type: ignore
+
+    metadata.get.assert_called_once_with("home-page", None)
+    metadata.get_all.assert_called_once_with("Project-URL", [])
