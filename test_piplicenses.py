@@ -13,6 +13,7 @@ from enum import Enum, auto
 from importlib.metadata import Distribution
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, List
+from unittest.mock import MagicMock
 
 import docutils.frontend
 import docutils.parsers.rst
@@ -39,6 +40,7 @@ from piplicenses import (
     create_parser,
     create_warn_string,
     enum_key_to_value,
+    extract_homepage,
     factory_styled_table_with_args,
     find_license_from_classifier,
     get_output_fields,
@@ -309,6 +311,17 @@ class TestGetLicenses(CommandLineTestCase):
         output_string = create_output_string(args)
         self.assertIn("Author", output_string)
 
+    def test_with_maintainers(self) -> None:
+        with_maintainers_args = ["--with-maintainers"]
+        args = self.parser.parse_args(with_maintainers_args)
+
+        output_fields = get_output_fields(args)
+        self.assertNotEqual(output_fields, list(DEFAULT_OUTPUT_FIELDS))
+        self.assertIn("Maintainer", output_fields)
+
+        output_string = create_output_string(args)
+        self.assertIn("Maintainer", output_string)
+
     def test_with_urls(self) -> None:
         with_urls_args = ["--with-urls"]
         args = self.parser.parse_args(with_urls_args)
@@ -394,16 +407,31 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertIn("best paired with --format=json", warn_string)
 
     def test_ignore_packages(self) -> None:
-        if "PTable" in SYSTEM_PACKAGES:
-            ignore_pkg_name = "PTable"
-        else:
-            ignore_pkg_name = "prettytable"
-        ignore_packages_args = ["--ignore-package=" + ignore_pkg_name]
+        ignore_pkg_name = "prettytable"
+        ignore_packages_args = [
+            "--ignore-package=" + ignore_pkg_name,
+            "--with-system",
+        ]
         args = self.parser.parse_args(ignore_packages_args)
         table = create_licenses_table(args)
 
         pkg_name_columns = self._create_pkg_name_columns(table)
         self.assertNotIn(ignore_pkg_name, pkg_name_columns)
+
+    def test_ignore_packages_and_version(self) -> None:
+        # Fictitious version that does not exist
+        ignore_pkg_name = "prettytable"
+        ignore_pkg_spec = ignore_pkg_name + ":1.99.99"
+        ignore_packages_args = [
+            "--ignore-package=" + ignore_pkg_spec,
+            "--with-system",
+        ]
+        args = self.parser.parse_args(ignore_packages_args)
+        table = create_licenses_table(args)
+
+        pkg_name_columns = self._create_pkg_name_columns(table)
+        # It is expected that prettytable will include
+        self.assertIn(ignore_pkg_name, pkg_name_columns)
 
     def test_with_packages(self) -> None:
         pkg_name = "py"
@@ -415,10 +443,7 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertListEqual([pkg_name], pkg_name_columns)
 
     def test_with_packages_with_system(self) -> None:
-        if "PTable" in SYSTEM_PACKAGES:
-            pkg_name = "PTable"
-        else:
-            pkg_name = "prettytable"
+        pkg_name = "prettytable"
         only_packages_args = ["--packages=" + pkg_name, "--with-system"]
         args = self.parser.parse_args(only_packages_args)
         table = create_licenses_table(args)
@@ -446,6 +471,13 @@ class TestGetLicenses(CommandLineTestCase):
 
         sortby = get_sortby(args)
         self.assertEqual("Author", sortby)
+
+    def test_order_maintainer(self) -> None:
+        order_maintainer_args = ["--order=maintainer", "--with-maintainers"]
+        args = self.parser.parse_args(order_maintainer_args)
+
+        sortby = get_sortby(args)
+        self.assertEqual("Maintainer", sortby)
 
     def test_order_url(self) -> None:
         order_url_args = ["--order=url", "--with-urls"]
@@ -875,3 +907,56 @@ def test_verify_args(
     capture = capsys.readouterr().err
     for arg in ("invalid code", "--filter-code-page"):
         assert arg in capture
+
+
+def test_extract_homepage_home_page_set() -> None:
+    metadata = MagicMock()
+    metadata.get.return_value = "Foobar"
+
+    assert "Foobar" == extract_homepage(metadata=metadata)  # type: ignore
+
+    metadata.get.assert_called_once_with("home-page", None)
+
+
+def test_extract_homepage_project_url_fallback() -> None:
+    metadata = MagicMock()
+    metadata.get.return_value = None
+
+    # `Homepage` is prioritized higher than `Source`
+    metadata.get_all.return_value = [
+        "Source, source",
+        "Homepage, homepage",
+    ]
+
+    assert "homepage" == extract_homepage(metadata=metadata)  # type: ignore
+
+    metadata.get_all.assert_called_once_with("Project-URL", [])
+
+
+def test_extract_homepage_project_url_fallback_multiple_parts() -> None:
+    metadata = MagicMock()
+    metadata.get.return_value = None
+
+    # `Homepage` is prioritized higher than `Source`
+    metadata.get_all.return_value = [
+        "Source, source",
+        "Homepage, homepage, foo, bar",
+    ]
+
+    assert "homepage, foo, bar" == extract_homepage(
+        metadata=metadata  # type: ignore
+    )
+
+    metadata.get_all.assert_called_once_with("Project-URL", [])
+
+
+def test_extract_homepage_empty() -> None:
+    metadata = MagicMock()
+
+    metadata.get.return_value = None
+    metadata.get_all.return_value = []
+
+    assert None is extract_homepage(metadata=metadata)  # type: ignore
+
+    metadata.get.assert_called_once_with("home-page", None)
+    metadata.get_all.assert_called_once_with("Project-URL", [])

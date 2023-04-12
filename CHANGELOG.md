@@ -1,5 +1,13 @@
 ## CHANGELOG
 
+### 4.2.0
+
+* Implement new option `--with-maintainers`
+* Implement new option `--python`
+* Allow version spec in `--ignore-packages` parameters
+* When the `Author` field is `UNKNOWN`, the output is automatically completed from `Author-email`
+* When the `home-page` field is `UNKNOWN`, the output is automatically completed from `Project-URL`
+
 ### 4.1.0
 
 * Support case-insensitive license name matching around `--fail-on` and `--allow-only` parameters

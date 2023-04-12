@@ -30,6 +30,7 @@ Dump the software license list of Python packages installed with pip.
     * [Format options](#format-options)
         * [Option: with\-system](#option-with-system)
         * [Option: with\-authors](#option-with-authors)
+        * [Option: with\-maintainers](#option-with-maintainers)
         * [Option: with\-urls](#option-with-urls)
         * [Option: with\-description](#option-with-description)
         * [Option: with\-license\-file](#option-with-license-file)
@@ -428,6 +429,12 @@ When executed with the `--with-authors` option, output with author of the packag
  Django  2.0.2    BSD      Django Software Foundation
  pytz    2017.3   MIT      Stuart Bishop
 ```
+
+#### Option: with-maintainers
+
+When executed with the `--with-maintainers` option, output with maintainer of the package.
+
+**Note:** This option is available for users who want information about the maintainer as well as the author. See [#144](https://github.com/raimon49/pip-licenses/issues/144)
 
 #### Option: with-urls
 
