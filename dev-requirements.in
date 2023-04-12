@@ -2,7 +2,6 @@
 
 autopep8
 black
-codecov
 docutils
 isort
 wheel
