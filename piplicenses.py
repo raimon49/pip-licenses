@@ -594,6 +594,9 @@ def get_output_fields(args: CustomNamespace) -> list[str]:
     if args.with_description:
         output_fields.append("Description")
 
+    if args.no_version:
+        output_fields.remove("Version")
+
     if args.with_license_file:
         if not args.no_license_path:
             output_fields.append("LicenseFile")
@@ -965,6 +968,13 @@ def create_parser() -> CompatibleArgumentParser:
         action="store_true",
         default=False,
         help="dump with short package description",
+    )
+    format_options.add_argument(
+        "-nv",
+        "--no-version",
+        action="store_true",
+        default=False,
+        help="dump without package version",
     )
     format_options.add_argument(
         "-l",

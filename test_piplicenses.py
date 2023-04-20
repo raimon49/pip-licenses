@@ -344,6 +344,17 @@ class TestGetLicenses(CommandLineTestCase):
         output_string = create_output_string(args)
         self.assertIn("Description", output_string)
 
+    def test_without_version(self) -> None:
+        without_version_args = ["--no-version"]
+        args = self.parser.parse_args(without_version_args)
+
+        output_fields = get_output_fields(args)
+        self.assertNotEqual(output_fields, list(DEFAULT_OUTPUT_FIELDS))
+        self.assertNotIn("Version", output_fields)
+
+        output_string = create_output_string(args)
+        self.assertNotIn("Version", output_string)
+
     def test_with_license_file(self) -> None:
         with_license_file_args = ["--with-license-file"]
         args = self.parser.parse_args(with_license_file_args)
