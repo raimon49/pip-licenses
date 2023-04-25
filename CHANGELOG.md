@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+### 4.3.0
+
+* Implement new option `--no-version`
+
 ### 4.2.0
 
 * Implement new option `--with-maintainers`
