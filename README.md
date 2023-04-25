@@ -33,6 +33,7 @@ Dump the software license list of Python packages installed with pip.
         * [Option: with\-maintainers](#option-with-maintainers)
         * [Option: with\-urls](#option-with-urls)
         * [Option: with\-description](#option-with-description)
+        * [Option: no\-version](#option-no-version)
         * [Option: with\-license\-file](#option-with-license-file)
         * [Option: filter\-strings](#option-filter-strings)
         * [Option: filter\-code\-page](#option-filter-code-page)
@@ -456,6 +457,17 @@ When executed with the `--with-description` option, output with short descriptio
  Name    Version  License  Description
  Django  2.0.2    BSD      A high-level Python Web framework that encourages rapid development and clean, pragmatic design.
  pytz    2017.3   MIT      World timezone definitions, modern and historical
+```
+
+#### Option: no-version
+
+When executed with the `--no-version` option, output without the version number.
+
+```bash
+(venv) $ pip-licenses --no-version
+ Name    License
+ Django  BSD
+ pytz    MIT
 ```
 
 #### Option: with-license-file
