@@ -430,6 +430,18 @@ class TestGetLicenses(CommandLineTestCase):
         pkg_name_columns = self._create_pkg_name_columns(table)
         self.assertNotIn(ignore_pkg_name, pkg_name_columns)
 
+    def test_ignore_normalized_packages(self) -> None:
+        ignore_pkg_name = "pip-licenses"
+        ignore_packages_args = [
+            "--ignore-package=pip_licenses",
+            "--with-system",
+        ]
+        args = self.parser.parse_args(ignore_packages_args)
+        table = create_licenses_table(args)
+
+        pkg_name_columns = self._create_pkg_name_columns(table)
+        self.assertNotIn(ignore_pkg_name, pkg_name_columns)
+
     def test_ignore_packages_and_version(self) -> None:
         # Fictitious version that does not exist
         ignore_pkg_name = "prettytable"
@@ -448,6 +460,18 @@ class TestGetLicenses(CommandLineTestCase):
     def test_with_packages(self) -> None:
         pkg_name = "py"
         only_packages_args = ["--packages=" + pkg_name]
+        args = self.parser.parse_args(only_packages_args)
+        table = create_licenses_table(args)
+
+        pkg_name_columns = self._create_pkg_name_columns(table)
+        self.assertListEqual([pkg_name], pkg_name_columns)
+
+    def test_with_normalized_packages(self) -> None:
+        pkg_name = "typing_extensions"
+        only_packages_args = [
+            "--package=typing-extensions",
+            "--with-system",
+        ]
         args = self.parser.parse_args(only_packages_args)
         table = create_licenses_table(args)
 

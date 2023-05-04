@@ -272,8 +272,10 @@ def get_packages(
         search_paths = get_python_sys_path(args.python)
 
     pkgs = importlib_metadata.distributions(path=search_paths)
-    ignore_pkgs_as_lower = [pkg.lower() for pkg in args.ignore_packages]
-    pkgs_as_lower = [pkg.lower() for pkg in args.packages]
+    ignore_pkgs_as_normalize = [
+        normalize_pkg_name(pkg) for pkg in args.ignore_packages
+    ]
+    pkgs_as_normalize = [normalize_pkg_name(pkg) for pkg in args.packages]
 
     fail_on_licenses = set()
     if args.fail_on:
@@ -284,16 +286,16 @@ def get_packages(
         allow_only_licenses = set(map(str.strip, args.allow_only.split(";")))
 
     for pkg in pkgs:
-        pkg_name = pkg.metadata["name"]
+        pkg_name = normalize_pkg_name(pkg.metadata["name"])
         pkg_name_and_version = pkg_name + ":" + pkg.metadata["version"]
 
         if (
-            pkg_name.lower() in ignore_pkgs_as_lower
-            or pkg_name_and_version.lower() in ignore_pkgs_as_lower
+            pkg_name.lower() in ignore_pkgs_as_normalize
+            or pkg_name_and_version.lower() in ignore_pkgs_as_normalize
         ):
             continue
 
-        if pkgs_as_lower and pkg_name.lower() not in pkgs_as_lower:
+        if pkgs_as_normalize and pkg_name.lower() not in pkgs_as_normalize:
             continue
 
         if not args.with_system and pkg_name in SYSTEM_PACKAGES:
