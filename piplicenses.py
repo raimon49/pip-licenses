@@ -129,6 +129,24 @@ def extract_homepage(metadata: Message) -> Optional[str]:
     return None
 
 
+PATTERN_DELIMITER = re.compile(r"[-_.]+")
+
+
+def normalize_pkg_name(pkg_name: str) -> str:
+    """Return normalized name according to PEP specification
+
+    See here: https://peps.python.org/pep-0503/#normalized-names
+
+    Args:
+        pkg_name: Package name it is extracted from the package metadata
+                  or specified in the CLI
+
+    Returns:
+        normalized packege name
+    """
+    return PATTERN_DELIMITER.sub("-", pkg_name).lower()
+
+
 METADATA_KEYS: Dict[str, List[Callable[[Message], Optional[str]]]] = {
     "home-page": [extract_homepage],
     "author": [

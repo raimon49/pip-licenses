@@ -46,6 +46,7 @@ from piplicenses import (
     get_output_fields,
     get_packages,
     get_sortby,
+    normalize_pkg_name,
     output_colored,
     save_if_needs,
     select_license_by_source,
@@ -918,6 +919,14 @@ def test_verify_args(
     capture = capsys.readouterr().err
     for arg in ("invalid code", "--filter-code-page"):
         assert arg in capture
+
+
+def test_normalize_pkg_name() -> None:
+    expected_normalized_name = "pip-licenses"
+
+    assert normalize_pkg_name("pip_licenses") == expected_normalized_name
+    assert normalize_pkg_name("pip.licenses") == expected_normalized_name
+    assert normalize_pkg_name("Pip-Licenses") == expected_normalized_name
 
 
 def test_extract_homepage_home_page_set() -> None:
