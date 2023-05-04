@@ -56,7 +56,7 @@ if TYPE_CHECKING:
 open = open  # allow monkey patching
 
 __pkgname__ = "pip-licenses"
-__version__ = "4.3.0"
+__version__ = "4.3.1"
 __author__ = "raimon"
 __license__ = "MIT"
 __summary__ = (
@@ -127,6 +127,24 @@ def extract_homepage(metadata: Message) -> Optional[str]:
             return candidates[priority_key]
 
     return None
+
+
+PATTERN_DELIMITER = re.compile(r"[-_.]+")
+
+
+def normalize_pkg_name(pkg_name: str) -> str:
+    """Return normalized name according to PEP specification
+
+    See here: https://peps.python.org/pep-0503/#normalized-names
+
+    Args:
+        pkg_name: Package name it is extracted from the package metadata
+                  or specified in the CLI
+
+    Returns:
+        normalized packege name
+    """
+    return PATTERN_DELIMITER.sub("-", pkg_name).lower()
 
 
 METADATA_KEYS: Dict[str, List[Callable[[Message], Optional[str]]]] = {
@@ -254,8 +272,10 @@ def get_packages(
         search_paths = get_python_sys_path(args.python)
 
     pkgs = importlib_metadata.distributions(path=search_paths)
-    ignore_pkgs_as_lower = [pkg.lower() for pkg in args.ignore_packages]
-    pkgs_as_lower = [pkg.lower() for pkg in args.packages]
+    ignore_pkgs_as_normalize = [
+        normalize_pkg_name(pkg) for pkg in args.ignore_packages
+    ]
+    pkgs_as_normalize = [normalize_pkg_name(pkg) for pkg in args.packages]
 
     fail_on_licenses = set()
     if args.fail_on:
@@ -266,16 +286,16 @@ def get_packages(
         allow_only_licenses = set(map(str.strip, args.allow_only.split(";")))
 
     for pkg in pkgs:
-        pkg_name = pkg.metadata["name"]
+        pkg_name = normalize_pkg_name(pkg.metadata["name"])
         pkg_name_and_version = pkg_name + ":" + pkg.metadata["version"]
 
         if (
-            pkg_name.lower() in ignore_pkgs_as_lower
-            or pkg_name_and_version.lower() in ignore_pkgs_as_lower
+            pkg_name.lower() in ignore_pkgs_as_normalize
+            or pkg_name_and_version.lower() in ignore_pkgs_as_normalize
         ):
             continue
 
-        if pkgs_as_lower and pkg_name.lower() not in pkgs_as_lower:
+        if pkgs_as_normalize and pkg_name.lower() not in pkgs_as_normalize:
             continue
 
         if not args.with_system and pkg_name in SYSTEM_PACKAGES:

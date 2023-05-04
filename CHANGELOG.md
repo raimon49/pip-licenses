@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+### 4.3.1
+
+* Fix to treat package names as normalized as in [PEP 503](https://peps.python.org/pep-0503/) with `--packages` and `--ignore-packages` option
+
 ### 4.3.0
 
 * Implement new option `--no-version`

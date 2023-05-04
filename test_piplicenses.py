@@ -46,6 +46,7 @@ from piplicenses import (
     get_output_fields,
     get_packages,
     get_sortby,
+    normalize_pkg_name,
     output_colored,
     save_if_needs,
     select_license_by_source,
@@ -429,6 +430,18 @@ class TestGetLicenses(CommandLineTestCase):
         pkg_name_columns = self._create_pkg_name_columns(table)
         self.assertNotIn(ignore_pkg_name, pkg_name_columns)
 
+    def test_ignore_normalized_packages(self) -> None:
+        ignore_pkg_name = "pip-licenses"
+        ignore_packages_args = [
+            "--ignore-package=pip_licenses",
+            "--with-system",
+        ]
+        args = self.parser.parse_args(ignore_packages_args)
+        table = create_licenses_table(args)
+
+        pkg_name_columns = self._create_pkg_name_columns(table)
+        self.assertNotIn(ignore_pkg_name, pkg_name_columns)
+
     def test_ignore_packages_and_version(self) -> None:
         # Fictitious version that does not exist
         ignore_pkg_name = "prettytable"
@@ -447,6 +460,18 @@ class TestGetLicenses(CommandLineTestCase):
     def test_with_packages(self) -> None:
         pkg_name = "py"
         only_packages_args = ["--packages=" + pkg_name]
+        args = self.parser.parse_args(only_packages_args)
+        table = create_licenses_table(args)
+
+        pkg_name_columns = self._create_pkg_name_columns(table)
+        self.assertListEqual([pkg_name], pkg_name_columns)
+
+    def test_with_normalized_packages(self) -> None:
+        pkg_name = "typing_extensions"
+        only_packages_args = [
+            "--package=typing-extensions",
+            "--with-system",
+        ]
         args = self.parser.parse_args(only_packages_args)
         table = create_licenses_table(args)
 
@@ -918,6 +943,14 @@ def test_verify_args(
     capture = capsys.readouterr().err
     for arg in ("invalid code", "--filter-code-page"):
         assert arg in capture
+
+
+def test_normalize_pkg_name() -> None:
+    expected_normalized_name = "pip-licenses"
+
+    assert normalize_pkg_name("pip_licenses") == expected_normalized_name
+    assert normalize_pkg_name("pip.licenses") == expected_normalized_name
+    assert normalize_pkg_name("Pip-Licenses") == expected_normalized_name
 
 
 def test_extract_homepage_home_page_set() -> None:
