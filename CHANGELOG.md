@@ -2,7 +2,7 @@
 
 ### 4.3.2
 
-* Better Handling extracting URLs from `Project-URL`
+* Better handling extracting URLs from `Project-URL`
 
 ### 4.3.1
 
