@@ -1004,3 +1004,18 @@ def test_extract_homepage_empty() -> None:
 
     metadata.get.assert_called_once_with("home-page", None)
     metadata.get_all.assert_called_once_with("Project-URL", [])
+
+
+def test_extract_homepage_project_uprl_fallback_capitalisation() -> None:
+    metadata = MagicMock()
+    metadata.get.return_value = None
+
+    # `homepage` is still prioritized higher than `Source` (capitalisation)
+    metadata.get_all.return_value = [
+        "Source, source",
+        "homepage, homepage",
+    ]
+
+    assert "homepage" == extract_homepage(metadata=metadata)  # type: ignore
+
+    metadata.get_all.assert_called_once_with("Project-URL", [])

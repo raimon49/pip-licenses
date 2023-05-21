@@ -120,9 +120,15 @@ def extract_homepage(metadata: Message) -> Optional[str]:
 
     for entry in metadata.get_all("Project-URL", []):
         key, value = entry.split(",", 1)
-        candidates[key.strip()] = value.strip()
+        candidates[key.strip().lower()] = value.strip()
 
-    for priority_key in ["Homepage", "Source", "Changelog", "Bug Tracker"]:
+    for priority_key in [
+        "homepage",
+        "source",
+        "repository",
+        "changelog",
+        "bug tracker",
+    ]:
         if priority_key in candidates:
             return candidates[priority_key]
 
