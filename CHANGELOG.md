@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+### 4.3.2
+
+* Better Handling extracting URLs from `Project-URL`
+
 ### 4.3.1
 
 * Fix to treat package names as normalized as in [PEP 503](https://peps.python.org/pep-0503/) with `--packages` and `--ignore-packages` option
