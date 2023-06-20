@@ -602,7 +602,7 @@ index bfc4edc..175e968 100644
 
 ## About UnicodeEncodeError
 
-If a `UnicodeEncodeError` occurs, check your environment variables `LANG` and `LC_TYPE`.
+If a `UnicodeEncodeError` occurs, check your environment variables `LANG` and `LC_TYPE`. Additionally, you can set `PYTHONIOENCODING` to override the encoding used for `stdout`.
 
 Often occurs in isolated environments such as Docker and tox.
 
