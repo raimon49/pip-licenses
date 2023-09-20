@@ -56,7 +56,7 @@ if TYPE_CHECKING:
 open = open  # allow monkey patching
 
 __pkgname__ = "pip-licenses"
-__version__ = "4.3.2"
+__version__ = "4.3.3"
 __author__ = "raimon"
 __license__ = "MIT"
 __summary__ = (
@@ -322,7 +322,7 @@ def get_packages(
             if failed_licenses:
                 sys.stderr.write(
                     "fail-on license {} was found for package "
-                    "{}:{}".format(
+                    "{}:{}\n".format(
                         "; ".join(sorted(failed_licenses)),
                         pkg_info["name"],
                         pkg_info["version"],
@@ -337,7 +337,7 @@ def get_packages(
             if len(uncommon_licenses) == len(license_names):
                 sys.stderr.write(
                     "license {} not in allow-only licenses was found"
-                    " for package {}:{}".format(
+                    " for package {}:{}\n".format(
                         "; ".join(sorted(uncommon_licenses)),
                         pkg_info["name"],
                         pkg_info["version"],
@@ -1079,6 +1079,10 @@ def save_if_needs(output_file: None | str, output_string: str) -> None:
     try:
         with open(output_file, "w", encoding="utf-8") as f:
             f.write(output_string)
+            if not output_string.endswith("\n"):
+                # Always end output files with a new line
+                f.write("\n")
+
         sys.stdout.write("created path: " + output_file + "\n")
         sys.exit(0)
     except IOError:

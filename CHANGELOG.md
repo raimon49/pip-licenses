@@ -1,5 +1,10 @@
 ## CHANGELOG
 
+### 4.3.3
+
+* Always terminate `--allow-only` and `--fail-on` messages with a newline
+* Always terminate files created with `--output-file` with a newline
+
 ### 4.3.2
 
 * Better handling extracting URLs from `Project-URL`
