@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+### 4.3.4
+
+* Maintain to pass test with wcwidth>=0.2.10
+
 ### 4.3.3
 
 * Always terminate `--allow-only` and `--fail-on` messages with a newline
