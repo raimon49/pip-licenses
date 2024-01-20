@@ -80,7 +80,7 @@ platformdirs==2.6.0
     # via black
 pluggy==1.0.0
     # via pytest
-prettytable==3.5.0
+prettytable==3.9.0
     # via -r requirements.in
 py==1.11.0
     # via pytest-pycodestyle
@@ -142,7 +142,7 @@ urllib3==1.26.18
     # via
     #   requests
     #   twine
-wcwidth==0.2.5
+wcwidth==0.2.13
     # via prettytable
 webencodings==0.5.1
     # via bleach
