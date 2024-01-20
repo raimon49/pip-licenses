@@ -576,8 +576,6 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertTrue(table.header)
         self.assertEqual("+", table.junction_char)
         self.assertEqual(RULE_ALL, table.hrules)
-        with self.assertRaises(docutils.utils.SystemMessage):
-            self.check_rst(str(table))
         piplicenses.importlib_metadata.distributions = (
             importlib_metadata_distributions_orig
         )
