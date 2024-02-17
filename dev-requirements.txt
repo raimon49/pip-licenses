@@ -30,7 +30,7 @@ coverage[toml]==6.5.0
     # via
     #   coverage
     #   pytest-cov
-cryptography==42.0.0
+cryptography==42.0.2
     # via secretstorage
 docutils==0.19
     # via
