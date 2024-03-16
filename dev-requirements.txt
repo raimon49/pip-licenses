@@ -133,7 +133,7 @@ tomli==2.0.1
     #   pytest
 twine==4.0.2
     # via -r dev-requirements.in
-typing-extensions==4.4.0
+typing-extensions==4.10.0
     # via
     #   black
     #   mypy
