@@ -867,7 +867,10 @@ def test_different_python() -> None:
         package_names = sorted(set(p["name"] for p in pkgs))
         print(package_names)
 
-    assert package_names == ["pip", "setuptools"]
+    expected_packages = ["pip"]
+    if sys.version_info < (3, 12, 0):
+        expected_packages.append("setuptools")
+    assert package_names == expected_packages
 
 
 def test_fail_on(monkeypatch) -> None:
