@@ -316,9 +316,15 @@ def get_packages(
         )
 
         if fail_on_licenses:
-            failed_licenses = case_insensitive_set_intersect(
-                license_names, fail_on_licenses
-            )
+            failed_licenses = set()
+            if not args.partial_match:
+                failed_licenses = case_insensitive_set_intersect(
+                    license_names, fail_on_licenses
+                )
+            else:
+                failed_licenses = case_insensitive_partial_match_set_intersect(
+                    license_names, fail_on_licenses
+                )
             if failed_licenses:
                 sys.stderr.write(
                     "fail-on license {} was found for package "
@@ -331,9 +337,16 @@ def get_packages(
                 sys.exit(1)
 
         if allow_only_licenses:
-            uncommon_licenses = case_insensitive_set_diff(
-                license_names, allow_only_licenses
-            )
+            uncommon_licenses = set()
+            if not args.partial_match:
+                uncommon_licenses = case_insensitive_set_diff(
+                    license_names, allow_only_licenses
+                )
+            else:
+                uncommon_licenses = case_insensitive_partial_match_set_diff(
+                    license_names, allow_only_licenses
+                )
+
             if len(uncommon_licenses) == len(license_names):
                 sys.stderr.write(
                     "license {} not in allow-only licenses was found"
@@ -407,6 +420,24 @@ def case_insensitive_set_intersect(set_a, set_b):
         if elem.lower() in set_b_lower:
             common_items.add(elem)
     return common_items
+
+
+def case_insensitive_partial_match_set_intersect(set_a, set_b):
+    common_items = set()
+    for item_a in set_a:
+        for item_b in set_b:
+            if item_b.lower() in item_a.lower():
+                common_items.add(item_a)
+    return common_items
+
+
+def case_insensitive_partial_match_set_diff(set_a, set_b):
+    uncommon_items = set_a.copy()
+    for item_a in set_a:
+        for item_b in set_b:
+            if item_b.lower() in item_a.lower():
+                uncommon_items.remove(item_a)
+    return uncommon_items
 
 
 def case_insensitive_set_diff(set_a, set_b):
@@ -761,6 +792,7 @@ class CustomNamespace(argparse.Namespace):
     with_notice_file: bool
     filter_strings: bool
     filter_code_page: str
+    partial_match: bool
     fail_on: Optional[str]
     allow_only: Optional[str]
 
@@ -1054,6 +1086,12 @@ def create_parser() -> CompatibleArgumentParser:
         default=None,
         help="fail (exit with code 1) on the first occurrence "
         "of the licenses not in the semicolon-separated list",
+    )
+    verify_options.add_argument(
+        "--partial-match",
+        action="store_true",
+        default=False,
+        help="enables partial matching for --allow-only/--fail-on",
     )
 
     return parser
