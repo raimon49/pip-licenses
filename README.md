@@ -40,6 +40,7 @@ Dump the software license list of Python packages installed with pip.
     * [Verify options](#verify-options)
         * [Option: fail\-on](#option-fail-on)
         * [Option: allow\-only](#option-allow-only)
+        * [Option: partial\-match](#option-partial-match)
     * [More Information](#more-information)
 * [Dockerfile](#dockerfile)
 * [About UnicodeEncodeError](#about-unicodeencodeerror)
@@ -543,6 +544,49 @@ $ pip-licenses --package keyring --allow-only="Python Software Foundation Licens
 $ pip-licenses --package keyring  --allow-only="BSD License"
 $ echo $?
 1
+```
+
+#### Option: partial\-match
+
+If set, enables partial (substring) matching for `--fail-on` or `--allow-only`. Default is unset (False).
+
+Usage:
+
+```bash
+(venv) $ pip-licenses --partial-match --allow-only="MIT License;BSD License"
+(venv) $ pip-licenses --partial-match --fail-on="MIT License;BSD License"
+
+```
+
+**Note:** Semantics are the same as with `--fail-on` or `--allow-only`. This only enables substring matching.
+```
+# keyring library has 2 licenses
+$ pip-licenses --package keyring
+ Name     Version  License
+ keyring  23.0.1   MIT License; Python Software Foundation License
+
+# One or both licenses must be specified (order and case does not matter). Following checks will pass:
+$ pip-licenses --package keyring --allow-only="MIT License"
+$ pip-licenses --package keyring --allow-only="mit License"
+$ pip-licenses --package keyring --allow-only="BSD License;MIT License"
+$ pip-licenses --package keyring --allow-only="Python Software Foundation License"
+$ pip-licenses --package keyring --allow-only="Python Software Foundation License;MIT License"
+
+# These won't pass, as they're not a full match against one of the licenses
+$ pip-licenses --package keyring --allow-only="MIT"
+$ echo $?
+1
+$ pip-licenses --package keyring --allow-only="mit"
+$ echo $?
+1
+
+# with --partial-match, they pass
+$ pip-licenses --package keyring --partial-match --allow-only="MIT"
+$ echo $?
+0
+$ pip-licenses --package keyring --partial-match --allow-only="mit"
+$ echo $?
+0
 ```
 
 
