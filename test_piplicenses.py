@@ -33,6 +33,8 @@ from piplicenses import (
     CompatibleArgumentParser,
     FromArg,
     __pkgname__,
+    case_insensitive_partial_match_set_diff,
+    case_insensitive_partial_match_set_intersect,
     case_insensitive_set_diff,
     case_insensitive_set_intersect,
     create_licenses_table,
@@ -769,6 +771,42 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertTrue({"revised BSD"} == b_intersect_c)
         self.assertTrue(len(a_intersect_empty) == 0)
 
+    def test_case_insensitive_partial_match_set_diff(self) -> None:
+        set_a = {"MIT License"}
+        set_b = {"Mit", "BSD License"}
+        set_c = {"mit license"}
+        a_diff_b = case_insensitive_partial_match_set_diff(set_a, set_b)
+        a_diff_c = case_insensitive_partial_match_set_diff(set_a, set_c)
+        b_diff_c = case_insensitive_partial_match_set_diff(set_b, set_c)
+        a_diff_empty = case_insensitive_partial_match_set_diff(set_a, set())
+
+        self.assertTrue(len(a_diff_b) == 0)
+        self.assertTrue(len(a_diff_c) == 0)
+        self.assertIn("BSD License", b_diff_c)
+        self.assertIn("MIT License", a_diff_empty)
+
+    def test_case_insensitive_partial_match_set_intersect(self) -> None:
+        set_a = {"Revised BSD"}
+        set_b = {"Apache License", "revised BSD"}
+        set_c = {"bsd"}
+        a_intersect_b = case_insensitive_partial_match_set_intersect(
+            set_a, set_b
+        )
+        a_intersect_c = case_insensitive_partial_match_set_intersect(
+            set_a, set_c
+        )
+        b_intersect_c = case_insensitive_partial_match_set_intersect(
+            set_b, set_c
+        )
+        a_intersect_empty = case_insensitive_partial_match_set_intersect(
+            set_a, set()
+        )
+
+        self.assertTrue(set_a == a_intersect_b)
+        self.assertTrue(set_a == a_intersect_c)
+        self.assertTrue({"revised BSD"} == b_intersect_c)
+        self.assertTrue(len(a_intersect_empty) == 0)
+
 
 class MockStdStream(object):
     def __init__(self) -> None:
@@ -850,6 +888,35 @@ def test_allow_only(monkeypatch) -> None:
     )
 
 
+def test_allow_only_partial(monkeypatch) -> None:
+    licenses = (
+        "Bsd",
+        "Apache",
+        "Mozilla Public License 2.0 (MPL 2.0)",
+        "Python Software Foundation License",
+        "Public Domain",
+        "GNU General Public License (GPL)",
+        "GNU Library or Lesser General Public License (LGPL)",
+    )
+    allow_only_args = [
+        "--partial-match",
+        "--allow-only={}".format(";".join(licenses)),
+    ]
+    mocked_stdout = MockStdStream()
+    mocked_stderr = MockStdStream()
+    monkeypatch.setattr(sys.stdout, "write", mocked_stdout.write)
+    monkeypatch.setattr(sys.stderr, "write", mocked_stderr.write)
+    monkeypatch.setattr(sys, "exit", lambda n: None)
+    args = create_parser().parse_args(allow_only_args)
+    create_licenses_table(args)
+
+    assert "" == mocked_stdout.printed
+    assert (
+        "license MIT License not in allow-only licenses was found for "
+        "package" in mocked_stderr.printed
+    )
+
+
 def test_different_python() -> None:
     import tempfile
 
@@ -876,6 +943,27 @@ def test_different_python() -> None:
 def test_fail_on(monkeypatch) -> None:
     licenses = ("MIT license",)
     allow_only_args = ["--fail-on={}".format(";".join(licenses))]
+    mocked_stdout = MockStdStream()
+    mocked_stderr = MockStdStream()
+    monkeypatch.setattr(sys.stdout, "write", mocked_stdout.write)
+    monkeypatch.setattr(sys.stderr, "write", mocked_stderr.write)
+    monkeypatch.setattr(sys, "exit", lambda n: None)
+    args = create_parser().parse_args(allow_only_args)
+    create_licenses_table(args)
+
+    assert "" == mocked_stdout.printed
+    assert (
+        "fail-on license MIT License was found for "
+        "package" in mocked_stderr.printed
+    )
+
+
+def test_fail_on_partial_match(monkeypatch) -> None:
+    licenses = ("MIT",)
+    allow_only_args = [
+        "--partial-match",
+        "--fail-on={}".format(";".join(licenses)),
+    ]
     mocked_stdout = MockStdStream()
     mocked_stderr = MockStdStream()
     monkeypatch.setattr(sys.stdout, "write", mocked_stdout.write)
