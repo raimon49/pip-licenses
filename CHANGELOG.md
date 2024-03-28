@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+### 4.4.0
+
+* Implement new option `--partial-match`
+
 ### 4.3.4
 
 * Maintain to pass test with wcwidth>=0.2.10
