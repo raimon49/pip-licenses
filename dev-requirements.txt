@@ -36,7 +36,7 @@ docutils==0.19
     #   readme-renderer
 exceptiongroup==1.2.0
     # via pytest
-idna==3.4
+idna==3.7
     # via requests
 importlib-metadata==5.1.0
     # via
