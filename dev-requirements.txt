@@ -107,7 +107,7 @@ pytest-runner==6.0.0
     # via -r dev-requirements.in
 readme-renderer==37.3
     # via twine
-requests==2.31.0
+requests==2.32.0
     # via
     #   requests-toolbelt
     #   twine
