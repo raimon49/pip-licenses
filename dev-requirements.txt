@@ -36,7 +36,7 @@ docutils==0.19
     #   readme-renderer
 exceptiongroup==1.2.0
     # via pytest
-idna==3.4
+idna==3.7
     # via requests
 importlib-metadata==5.1.0
     # via
@@ -107,7 +107,7 @@ pytest-runner==6.0.0
     # via -r dev-requirements.in
 readme-renderer==37.3
     # via twine
-requests==2.31.0
+requests==2.32.0
     # via
     #   requests-toolbelt
     #   twine

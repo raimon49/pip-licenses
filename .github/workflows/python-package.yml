@@ -39,9 +39,10 @@ jobs:
           mypy --install-types --non-interactive .
       - name: Upload code coverage to Codecov
         if: ${{ matrix.python-version==3.8 }}
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
-          file: ./coverage.xml
+          files: ./coverage.xml
           name: codecov-umbrella
           fail_ci_if_error: true
+          verbose: true
