@@ -137,7 +137,7 @@ typing-extensions==4.10.0
     #   black
     #   mypy
     #   rich
-urllib3==1.26.18
+urllib3==1.26.19
     # via
     #   requests
     #   twine
