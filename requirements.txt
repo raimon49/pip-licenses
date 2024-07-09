@@ -6,5 +6,7 @@
 #
 prettytable==3.9.0
     # via -r requirements.in
+tomli==2.0.1
+    # via -r requirements.in
 wcwidth==0.2.13
     # via prettytable
