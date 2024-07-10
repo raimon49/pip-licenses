@@ -41,6 +41,7 @@ Dump the software license list of Python packages installed with pip.
         * [Option: fail\-on](#option-fail-on)
         * [Option: allow\-only](#option-allow-only)
         * [Option: partial\-match](#option-partial-match)
+    * [pyproject.toml support](#pyproject-toml-support)
     * [More Information](#more-information)
 * [Dockerfile](#dockerfile)
 * [About UnicodeEncodeError](#about-unicodeencodeerror)
@@ -589,7 +590,7 @@ $ echo $?
 0
 ```
 
-#### pyproject.toml support
+### pyproject.toml support
 
 All command-line options for `pip-licenses` can be configured using the `pyproject.toml` file under the `[tool.pip-licenses]` section. 
 The `pyproject.toml` file is searched in the directory where the `pip-licenses` script is executed.
