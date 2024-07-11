@@ -42,6 +42,7 @@ from importlib.metadata import Distribution
 from pathlib import Path
 from typing import TYPE_CHECKING, Iterable, List, Type, cast
 
+import tomli
 from prettytable import ALL as RULE_ALL
 from prettytable import FRAME as RULE_FRAME
 from prettytable import HEADER as RULE_HEADER
@@ -878,6 +879,12 @@ def choices_from_enum(enum_cls: Type[NoValueEnum]) -> List[str]:
     ]
 
 
+def get_value_from_enum(
+    enum_cls: Type[NoValueEnum], value: str
+) -> NoValueEnum:
+    return getattr(enum_cls, value_to_enum_key(value))
+
+
 MAP_DEST_TO_ENUM = {
     "from_": FromArg,
     "order": OrderArg,
@@ -894,14 +901,24 @@ class SelectAction(argparse.Action):
         option_string: Optional[str] = None,
     ) -> None:
         enum_cls = MAP_DEST_TO_ENUM[self.dest]
-        values = value_to_enum_key(values)
-        setattr(namespace, self.dest, getattr(enum_cls, values))
+        setattr(namespace, self.dest, get_value_from_enum(enum_cls, values))
 
 
-def create_parser() -> CompatibleArgumentParser:
+def load_config_from_file(pyproject_path: str):
+    if Path(pyproject_path).exists():
+        with open(pyproject_path, "rb") as f:
+            return tomli.load(f).get("tool", {}).get(__pkgname__, {})
+    return {}
+
+
+def create_parser(
+    pyproject_path: str = "pyproject.toml",
+) -> CompatibleArgumentParser:
     parser = CompatibleArgumentParser(
         description=__summary__, formatter_class=CustomHelpFormatter
     )
+
+    config_from_file = load_config_from_file(pyproject_path)
 
     common_options = parser.add_argument_group("Common options")
     format_options = parser.add_argument_group("Format options")
@@ -914,7 +931,7 @@ def create_parser() -> CompatibleArgumentParser:
     common_options.add_argument(
         "--python",
         type=str,
-        default=sys.executable,
+        default=config_from_file.get("python", sys.executable),
         metavar="PYTHON_EXEC",
         help="R| path to python executable to search distributions from\n"
         "Package will be searched in the selected python's sys.path\n"
@@ -927,7 +944,9 @@ def create_parser() -> CompatibleArgumentParser:
         dest="from_",
         action=SelectAction,
         type=str,
-        default=FromArg.MIXED,
+        default=get_value_from_enum(
+            FromArg, config_from_file.get("from", "mixed")
+        ),
         metavar="SOURCE",
         choices=choices_from_enum(FromArg),
         help="R|where to find license information\n"
@@ -939,7 +958,9 @@ def create_parser() -> CompatibleArgumentParser:
         "--order",
         action=SelectAction,
         type=str,
-        default=OrderArg.NAME,
+        default=get_value_from_enum(
+            OrderArg, config_from_file.get("order", "name")
+        ),
         metavar="COL",
         choices=choices_from_enum(OrderArg),
         help="R|order by column\n"
@@ -952,7 +973,9 @@ def create_parser() -> CompatibleArgumentParser:
         dest="format_",
         action=SelectAction,
         type=str,
-        default=FormatArg.PLAIN,
+        default=get_value_from_enum(
+            FormatArg, config_from_file.get("format", "plain")
+        ),
         metavar="STYLE",
         choices=choices_from_enum(FormatArg),
         help="R|dump as set format style\n"
@@ -964,12 +987,13 @@ def create_parser() -> CompatibleArgumentParser:
     common_options.add_argument(
         "--summary",
         action="store_true",
-        default=False,
+        default=config_from_file.get("summary", False),
         help="dump summary of each license",
     )
     common_options.add_argument(
         "--output-file",
         action="store",
+        default=config_from_file.get("output-file"),
         type=str,
         help="save license list to file",
     )
@@ -980,7 +1004,7 @@ def create_parser() -> CompatibleArgumentParser:
         type=str,
         nargs="+",
         metavar="PKG",
-        default=[],
+        default=config_from_file.get("ignore-packages", []),
         help="ignore package name in dumped list",
     )
     common_options.add_argument(
@@ -990,83 +1014,83 @@ def create_parser() -> CompatibleArgumentParser:
         type=str,
         nargs="+",
         metavar="PKG",
-        default=[],
+        default=config_from_file.get("packages", []),
         help="only include selected packages in output",
     )
     format_options.add_argument(
         "-s",
         "--with-system",
         action="store_true",
-        default=False,
+        default=config_from_file.get("with-system", False),
         help="dump with system packages",
     )
     format_options.add_argument(
         "-a",
         "--with-authors",
         action="store_true",
-        default=False,
+        default=config_from_file.get("with-authors", False),
         help="dump with package authors",
     )
     format_options.add_argument(
         "--with-maintainers",
         action="store_true",
-        default=False,
+        default=config_from_file.get("with-maintainers", False),
         help="dump with package maintainers",
     )
     format_options.add_argument(
         "-u",
         "--with-urls",
         action="store_true",
-        default=False,
+        default=config_from_file.get("with-urls", False),
         help="dump with package urls",
     )
     format_options.add_argument(
         "-d",
         "--with-description",
         action="store_true",
-        default=False,
+        default=config_from_file.get("with-description", False),
         help="dump with short package description",
     )
     format_options.add_argument(
         "-nv",
         "--no-version",
         action="store_true",
-        default=False,
+        default=config_from_file.get("no-version", False),
         help="dump without package version",
     )
     format_options.add_argument(
         "-l",
         "--with-license-file",
         action="store_true",
-        default=False,
+        default=config_from_file.get("with-license-file", False),
         help="dump with location of license file and "
         "contents, most useful with JSON output",
     )
     format_options.add_argument(
         "--no-license-path",
         action="store_true",
-        default=False,
+        default=config_from_file.get("no-license-path", False),
         help="I|when specified together with option -l, "
         "suppress location of license file output",
     )
     format_options.add_argument(
         "--with-notice-file",
         action="store_true",
-        default=False,
+        default=config_from_file.get("with-notice-file", False),
         help="I|when specified together with option -l, "
         "dump with location of license file and contents",
     )
     format_options.add_argument(
         "--filter-strings",
         action="store_true",
-        default=False,
+        default=config_from_file.get("filter-strings", False),
         help="filter input according to code page",
     )
     format_options.add_argument(
         "--filter-code-page",
         action="store",
         type=str,
-        default="latin1",
+        default=config_from_file.get("filter-code-page", "latin1"),
         metavar="CODE",
         help="I|specify code page for filtering " "(default: %(default)s)",
     )
@@ -1075,7 +1099,7 @@ def create_parser() -> CompatibleArgumentParser:
         "--fail-on",
         action="store",
         type=str,
-        default=None,
+        default=config_from_file.get("fail-on", None),
         help="fail (exit with code 1) on the first occurrence "
         "of the licenses of the semicolon-separated list",
     )
@@ -1083,14 +1107,14 @@ def create_parser() -> CompatibleArgumentParser:
         "--allow-only",
         action="store",
         type=str,
-        default=None,
+        default=config_from_file.get("allow-only", None),
         help="fail (exit with code 1) on the first occurrence "
         "of the licenses not in the semicolon-separated list",
     )
     verify_options.add_argument(
         "--partial-match",
         action="store_true",
-        default=False,
+        default=config_from_file.get("partial-match", False),
         help="enables partial matching for --allow-only/--fail-on",
     )
 

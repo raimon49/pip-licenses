@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import copy
 import email
-import json
+import os
 import re
 import sys
+import tempfile
 import unittest
 import venv
 from enum import Enum, auto
@@ -19,6 +20,7 @@ import docutils.frontend
 import docutils.parsers.rst
 import docutils.utils
 import pytest
+import tomli_w
 from _pytest.capture import CaptureFixture
 
 import piplicenses
@@ -1108,3 +1110,53 @@ def test_extract_homepage_project_uprl_fallback_capitalisation() -> None:
     assert "homepage" == extract_homepage(metadata=metadata)  # type: ignore
 
     metadata.get_all.assert_called_once_with("Project-URL", [])
+
+
+def test_pyproject_toml_args_parsed_correctly():
+    # we test that parameters of different types are deserialized correctly
+    pyptoject_conf = {
+        "tool": {
+            __pkgname__: {
+                # choices_from_enum
+                "from": "classifier",
+                # bool
+                "summary": True,
+                # list[str]
+                "ignore-packages": ["package1", "package2"],
+                # str
+                "fail-on": "LIC1;LIC2",
+            }
+        }
+    }
+
+    toml_str = tomli_w.dumps(pyptoject_conf)
+
+    # Create a temporary file and write the TOML string to it
+    with tempfile.NamedTemporaryFile(
+        suffix=".toml", delete=False
+    ) as temp_file:
+        temp_file.write(toml_str.encode("utf-8"))
+
+    parser = create_parser(temp_file.name)
+    args = parser.parse_args([])
+
+    tool_conf = pyptoject_conf["tool"][__pkgname__]
+
+    # assert values are correctly parsed from toml
+    assert args.from_ == FromArg.CLASSIFIER
+    assert args.summary == tool_conf["summary"]
+    assert args.ignore_packages == tool_conf["ignore-packages"]
+    assert args.fail_on == tool_conf["fail-on"]
+
+    # assert args are rewritable using cli
+    args = parser.parse_args(["--from=meta"])
+
+    assert args.from_ != FromArg.CLASSIFIER
+    assert args.from_ == FromArg.META
+
+    # all other are parsed from toml
+    assert args.summary == tool_conf["summary"]
+    assert args.ignore_packages == tool_conf["ignore-packages"]
+    assert args.fail_on == tool_conf["fail-on"]
+
+    os.unlink(temp_file.name)

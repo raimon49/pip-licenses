@@ -130,6 +130,8 @@ tomli==2.0.1
     #   mypy
     #   pep517
     #   pytest
+tomli-w==1.0.0
+    # via -r dev-requirements.in
 twine==4.0.2
     # via -r dev-requirements.in
 typing-extensions==4.10.0

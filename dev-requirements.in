@@ -12,3 +12,4 @@ pytest-cov
 pytest-pycodestyle
 pytest-runner
 twine
+tomli-w

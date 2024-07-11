@@ -41,6 +41,7 @@ Dump the software license list of Python packages installed with pip.
         * [Option: fail\-on](#option-fail-on)
         * [Option: allow\-only](#option-allow-only)
         * [Option: partial\-match](#option-partial-match)
+    * [pyproject.toml support](#pyproject-toml-support)
     * [More Information](#more-information)
 * [Dockerfile](#dockerfile)
 * [About UnicodeEncodeError](#about-unicodeencodeerror)
@@ -589,6 +590,25 @@ $ echo $?
 0
 ```
 
+### pyproject.toml support
+
+All command-line options for `pip-licenses` can be configured using the `pyproject.toml` file under the `[tool.pip-licenses]` section. 
+The `pyproject.toml` file is searched in the directory where the `pip-licenses` script is executed.
+Command-line options specified during execution will override the corresponding options in `pyproject.toml`.
+
+Example `pyproject.toml` configuration:
+
+```toml
+[tool.pip-licences]
+from = "classifier"
+ignore-packages = [
+  "scipy"
+]
+fail-on = "MIT;"
+```
+
+If you run `pip-licenses` without any command-line options, all options will be taken from the `pyproject.toml` file. 
+For instance, if you run `pip-licenses --from=mixed`, the `from` option will be overridden to `mixed`, while all other options will be sourced from `pyproject.toml`.
 
 ### More Information
 
@@ -663,6 +683,8 @@ See useful reports:
 
 * [prettytable](https://pypi.org/project/prettytable/) by Luke Maurits and maintainer of fork version Jazzband team under the BSD-3-Clause License
     * **Note:** This package implicitly requires [wcwidth](https://pypi.org/project/wcwidth/).
+
+* [tomli](https://pypi.org/project/tomli/) by Taneli Hukkinen under the MIT License
 
 `pip-licenses` has been implemented in the policy to minimize the dependence on external package.
 
