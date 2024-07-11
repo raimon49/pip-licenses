@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+### 4.5.0
+
+* Implement new feature pyproject.toml support
+
 ### 4.4.0
 
 * Implement new option `--partial-match`
