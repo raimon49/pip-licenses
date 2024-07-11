@@ -41,7 +41,7 @@ Dump the software license list of Python packages installed with pip.
         * [Option: fail\-on](#option-fail-on)
         * [Option: allow\-only](#option-allow-only)
         * [Option: partial\-match](#option-partial-match)
-    * [pyproject.toml support](#pyproject-toml-support)
+    * [pyproject.toml support](#pyprojecttoml-support)
     * [More Information](#more-information)
 * [Dockerfile](#dockerfile)
 * [About UnicodeEncodeError](#about-unicodeencodeerror)
