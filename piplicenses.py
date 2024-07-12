@@ -58,12 +58,9 @@ open = open  # allow monkey patching
 
 __pkgname__ = "pip-licenses"
 __version__ = "4.5.0"
-__author__ = "raimon"
-__license__ = "MIT"
 __summary__ = (
     "Dump the software license list of Python packages installed with pip."
 )
-__url__ = "https://github.com/raimon49/pip-licenses"
 
 
 FIELD_NAMES = (

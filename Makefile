@@ -34,16 +34,17 @@ local-uninstall:
 
 .PHONY: update-depends
 update-depends:
-	pip-compile -U $(DEV_DEPENDS).in
+	pip-compile --extra dev -o dev-requirements.txt -U pyproject.toml
 
 .PHONY: lint
 lint:
-	black . --line-length=79
+	black .
 	isort .
+	mypy --install-types --non-interactive .
 
 .PHONY: test
 test:
-	python setup.py test
+	pytest
 
 .PHONY: deploy
 deploy: build
@@ -55,7 +56,7 @@ test-deploy: build
 
 .PHONY: build
 build: clean
-	python setup.py sdist bdist_wheel
+	python -m build
 
 .PHONY: clean
 clean:

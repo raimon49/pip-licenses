@@ -25,7 +25,7 @@ jobs:
       - name: Lint with black
         uses: psf/black@stable
         with:
-          options: "--check --diff --line-length=79"
+          options: "--check --diff"
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
