@@ -183,6 +183,7 @@ SYSTEM_PACKAGES = (
     "prettytable",
     "wcwidth",
     "setuptools",
+    "tomli",
     "wheel",
 )
 
