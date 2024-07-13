@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+### 4.5.1
+
+* Fixes "tomli" to be output only with `--with-system` option
+
 ### 4.5.0
 
 * Implement new feature pyproject.toml support

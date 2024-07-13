@@ -57,7 +57,7 @@ if TYPE_CHECKING:
 open = open  # allow monkey patching
 
 __pkgname__ = "pip-licenses"
-__version__ = "4.5.0"
+__version__ = "4.5.1"
 __author__ = "raimon"
 __license__ = "MIT"
 __summary__ = (
@@ -183,6 +183,7 @@ SYSTEM_PACKAGES = (
     "prettytable",
     "wcwidth",
     "setuptools",
+    "tomli",
     "wheel",
 )
 
