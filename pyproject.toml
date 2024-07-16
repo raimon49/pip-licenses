@@ -4,9 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pip-licenses"
-version = "4.4.0"
 description = "Dump the software license list of Python packages installed with pip."
-readme = "README.md"
+dynamic = ["version", "readme"]
 requires-python = ">=3.8"
 license = {text = "MIT"}
 authors = [
@@ -59,6 +58,10 @@ pip-licenses = "piplicenses:main"
 
 [tool.setuptools]
 py-modules = ["piplicenses"]
+
+[tool.setuptools.dynamic]
+version = {attr = "piplicenses.__version__"}
+readme = {file = ["README.md", "CHANGELOG.md"]}
 
 [tool.pytest.ini_options]
 addopts = "--pycodestyle -v --cov --cov-report term-missing"
