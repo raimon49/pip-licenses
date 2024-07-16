@@ -57,7 +57,7 @@ if TYPE_CHECKING:
 open = open  # allow monkey patching
 
 __pkgname__ = "pip-licenses"
-__version__ = "4.5.0"
+__version__ = "4.5.1"
 __summary__ = (
     "Dump the software license list of Python packages installed with pip."
 )
@@ -180,6 +180,7 @@ SYSTEM_PACKAGES = (
     "prettytable",
     "wcwidth",
     "setuptools",
+    "tomli",
     "wheel",
 )
 
