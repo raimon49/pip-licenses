@@ -7,7 +7,7 @@ name = "pip-licenses"
 description = "Dump the software license list of Python packages installed with pip."
 dynamic = ["version", "readme"]
 requires-python = ">=3.8"
-license = {file = "LICENSE"}
+license = {text = "MIT"}
 authors = [
     {name = "raimon", email = "raimon49@hotmail.com"}
 ]
