@@ -61,7 +61,7 @@ py-modules = ["piplicenses"]
 
 [tool.setuptools.dynamic]
 version = {attr = "piplicenses.__version__"}
-readme = {file = ["README.md", "CHANGELOG.md"]}
+readme = {file = ["README.md", "CHANGELOG.md"], content-type = "text/markdown"}
 
 [tool.pytest.ini_options]
 addopts = "--pycodestyle -v --cov --cov-report term-missing"
