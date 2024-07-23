@@ -1,5 +1,13 @@
 ## CHANGELOG
 
+### 5.0.0
+
+* Dropped support Python 3.8
+* Clarified support for Python 3.12
+* Migration pyproject.toml about this package
+* Breaking changes
+    * Implicitly depends on tomli library since version 4.5.0
+
 ### 4.5.1
 
 * Fixes "tomli" to be output only with `--with-system` option
