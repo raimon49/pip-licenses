@@ -5,7 +5,7 @@
 The design policy of `pip-licenses` is as follows.
 
 * Focus only on outputting license information of Python packages installed in user's environment.
-* Support Python 3.8 or later.
+* Support Python 3.9 or later.
 * External packages that depend on runtime are [prettytable](https://pypi.org/project/prettytable/) and [tomli](https://pypi.org/project/tomli/) only.
     * Expect to be able to use [importlib\_metadata](https://importlib_metadata.readthedocs.io/) APIs.
 
