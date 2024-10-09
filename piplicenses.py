@@ -43,7 +43,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Iterable, List, Type, cast
 
 import tomli
-from prettytable import  as RULE_
+from prettytable import  as RULE_ALL
 from prettytable import FRAME as RULE_FRAME
 from prettytable import HEADER as RULE_HEADER
 from prettytable import NONE as RULE_NONE
@@ -619,6 +619,7 @@ def select_license_by_source(
     if (
         from_source == FromArg.CLASSIFIER
         or from_source == FromArg.MIXED
+        or from_source == FromArg.ALL
         and len(license_classifier) > 0
     ):
         return license_classifier_set
@@ -632,7 +633,7 @@ def get_output_fields(args: CustomNamespace) -> list[str]:
 
     output_fields = list(DEFAULT_OUTPUT_FIELDS)
 
-    if (args.from_ == FromArg.ALL) or (args.from_ == FromArg.MIXED):
+    if args.from_ == FromArg.ALL:
         output_fields.append("License-Metadata")
         output_fields.append("License-Classifier")
     else:
