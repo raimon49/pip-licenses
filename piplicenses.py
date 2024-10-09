@@ -43,7 +43,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Iterable, List, Type, cast
 
 import tomli
-from prettytable import  as RULE_ALL
+from prettytable import ALL as RULE_ALL
 from prettytable import FRAME as RULE_FRAME
 from prettytable import HEADER as RULE_HEADER
 from prettytable import NONE as RULE_NONE
