@@ -13,7 +13,7 @@ import venv
 from enum import Enum, auto
 from importlib.metadata import Distribution
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, Any, List
+from typing import TYPE_CHECKING, Any
 from unittest.mock import MagicMock
 
 import docutils.frontend
@@ -263,7 +263,7 @@ class TestGetLicenses(CommandLineTestCase):
         )
 
     def test_if_no_classifiers_then_no_licences_found(self) -> None:
-        classifiers: List[str] = []
+        classifiers: list[str] = []
         self.assertEqual([], find_license_from_classifier(classifiers))
 
     def test_select_license_by_source(self) -> None:

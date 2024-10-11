@@ -50,8 +50,8 @@ from prettytable import NONE as RULE_NONE
 from prettytable import PrettyTable
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Iterator, Sequence
     from email.message import Message
-    from typing import Callable, Dict, Iterator, Optional, Sequence
 
 
 open = open  # allow monkey patching
@@ -96,7 +96,7 @@ SUMMARY_OUTPUT_FIELDS = (
 )
 
 
-def extract_homepage(metadata: Message) -> Optional[str]:
+def extract_homepage(metadata: Message) -> str | None:
     """Extracts the homepage attribute from the package metadata.
 
     Not all python packages have defined a home-page attribute.
@@ -114,7 +114,7 @@ def extract_homepage(metadata: Message) -> Optional[str]:
     if homepage is not None:
         return homepage
 
-    candidates: Dict[str, str] = {}
+    candidates: dict[str, str] = {}
 
     for entry in metadata.get_all("Project-URL", []):
         key, value = entry.split(",", 1)
@@ -151,7 +151,7 @@ def normalize_pkg_name(pkg_name: str) -> str:
     return PATTERN_DELIMITER.sub("-", pkg_name).lower()
 
 
-METADATA_KEYS: Dict[str, List[Callable[[Message], Optional[str]]]] = {
+METADATA_KEYS: dict[str, List[Callable[[Message], str | None]]] = {
     "home-page": [extract_homepage],
     "author": [
         lambda metadata: metadata.get("author"),
@@ -734,7 +734,7 @@ class CustomHelpFormatter(argparse.HelpFormatter):  # pragma: no cover
         prog: str,
         indent_increment: int = 2,
         max_help_position: int = 24,
-        width: Optional[int] = None,
+        width: int | None = None,
     ) -> None:
         max_help_position = 30
         super().__init__(
@@ -775,9 +775,9 @@ class CustomHelpFormatter(argparse.HelpFormatter):  # pragma: no cover
 
 
 class CustomNamespace(argparse.Namespace):
-    from_: "FromArg"
-    order: "OrderArg"
-    format_: "FormatArg"
+    from_: FromArg
+    order: OrderArg
+    format_: FormatArg
     summary: bool
     output_file: str
     ignore_packages: List[str]
@@ -792,8 +792,8 @@ class CustomNamespace(argparse.Namespace):
     filter_strings: bool
     filter_code_page: str
     partial_match: bool
-    fail_on: Optional[str]
-    allow_only: Optional[str]
+    fail_on: str | None
+    allow_only: str | None
 
 
 class CompatibleArgumentParser(argparse.ArgumentParser):
@@ -896,7 +896,7 @@ class SelectAction(argparse.Action):
         parser: argparse.ArgumentParser,
         namespace: argparse.Namespace,
         values: str,
-        option_string: Optional[str] = None,
+        option_string: str | None = None,
     ) -> None:
         enum_cls = MAP_DEST_TO_ENUM[self.dest]
         setattr(namespace, self.dest, get_value_from_enum(enum_cls, values))
