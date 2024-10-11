@@ -49,7 +49,7 @@ from prettytable import HEADER as RULE_HEADER
 from prettytable import NONE as RULE_NONE
 from prettytable import PrettyTable
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from collections.abc import Callable, Iterator, Sequence
     from email.message import Message
 
