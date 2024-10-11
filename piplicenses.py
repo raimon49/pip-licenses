@@ -42,12 +42,16 @@ from importlib.metadata import Distribution
 from pathlib import Path
 from typing import TYPE_CHECKING, Iterable, List, Type, cast
 
-import tomli
 from prettytable import ALL as RULE_ALL
 from prettytable import FRAME as RULE_FRAME
 from prettytable import HEADER as RULE_HEADER
 from prettytable import NONE as RULE_NONE
 from prettytable import PrettyTable
+
+if sys.version_info >= (3, 11):
+    import tomllib
+else:
+    import tomli as tomllib
 
 if TYPE_CHECKING:
     from email.message import Message
@@ -174,15 +178,16 @@ FIELDS_TO_METADATA_KEYS = {
 }
 
 
-SYSTEM_PACKAGES = (
+SYSTEM_PACKAGES = [
     __pkgname__,
     "pip",
     "prettytable",
     "wcwidth",
     "setuptools",
-    "tomli",
     "wheel",
-)
+]
+if sys.version_info < (3, 11):
+    SYSTEM_PACKAGES.append("tomli")
 
 LICENSE_UNKNOWN = "UNKNOWN"
 
@@ -905,7 +910,7 @@ class SelectAction(argparse.Action):
 def load_config_from_file(pyproject_path: str):
     if Path(pyproject_path).exists():
         with open(pyproject_path, "rb") as f:
-            return tomli.load(f).get("tool", {}).get(__pkgname__, {})
+            return tomllib.load(f).get("tool", {}).get(__pkgname__, {})
     return {}
 
 

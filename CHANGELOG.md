@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+### 6.0.0
+
+* Replace dependency on `tomli` with builtin `tomllib` for Python 3.11+
+
 ### 5.0.0
 
 * Dropped support Python 3.8
