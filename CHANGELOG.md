@@ -1,5 +1,11 @@
 ## CHANGELOG
 
+### 6.0.0
+
+* Added support for `License-Expression` metadata field, see [PEP 639](https://peps.python.org/pep-0639/)
+* Added `--from=expression` option
+* Breaking change: The `--from=all` output now includes the `License-Expression` value
+
 ### 5.0.0
 
 * Dropped support Python 3.8

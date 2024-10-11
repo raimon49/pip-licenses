@@ -162,6 +162,9 @@ METADATA_KEYS: Dict[str, List[Callable[[Message], Optional[str]]]] = {
         lambda metadata: metadata.get("maintainer-email"),
     ],
     "license": [lambda metadata: metadata.get("license")],
+    "license_expression": [
+        lambda metadata: metadata.get("license-expression")
+    ],
     "summary": [lambda metadata: metadata.get("summary")],
 }
 
@@ -171,6 +174,7 @@ FIELDS_TO_METADATA_KEYS = {
     "Description": "summary",
     "License-Metadata": "license",
     "License-Classifier": "license_classifier",
+    "License-Expression": "license_expression",
 }
 
 
@@ -312,6 +316,7 @@ def get_packages(
             args.from_,
             cast(List[str], pkg_info["license_classifier"]),
             cast(str, pkg_info["license"]),
+            cast(str, pkg_info["license_expression"]),
         )
 
         if fail_on_licenses:
@@ -374,6 +379,7 @@ def create_licenses_table(
                     args.from_,
                     cast(List[str], pkg["license_classifier"]),
                     cast(str, pkg["license"]),
+                    cast(str, pkg["license_expression"]),
                 )
                 license_str = "; ".join(sorted(license_set))
                 row.append(license_str)
@@ -399,6 +405,7 @@ def create_summary_table(args: CustomNamespace) -> PrettyTable:
                     args.from_,
                     cast(List[str], pkg["license_classifier"]),
                     cast(str, pkg["license"]),
+                    cast(str, pkg["license_expression"]),
                 )
             )
         )
@@ -613,7 +620,10 @@ def find_license_from_classifier(classifiers: list[str]) -> list[str]:
 
 
 def select_license_by_source(
-    from_source: FromArg, license_classifier: list[str], license_meta: str
+    from_source: FromArg,
+    license_classifier: list[str],
+    license_meta: str,
+    license_expression: str,
 ) -> set[str]:
     license_classifier_set = set(license_classifier) or {LICENSE_UNKNOWN}
     if (
@@ -622,8 +632,14 @@ def select_license_by_source(
         and len(license_classifier) > 0
     ):
         return license_classifier_set
-    else:
+    elif (
+        from_source == FromArg.META
+        or from_source == FromArg.MIXED
+        and license_meta != LICENSE_UNKNOWN
+    ):
         return {license_meta}
+    else:
+        return {license_expression}
 
 
 def get_output_fields(args: CustomNamespace) -> list[str]:
@@ -635,6 +651,7 @@ def get_output_fields(args: CustomNamespace) -> list[str]:
     if args.from_ == FromArg.ALL:
         output_fields.append("License-Metadata")
         output_fields.append("License-Classifier")
+        output_fields.append("License-Expression")
     else:
         output_fields.append("License")
 
@@ -839,6 +856,7 @@ class FromArg(NoValueEnum):
     META = M = auto()
     CLASSIFIER = C = auto()
     MIXED = MIX = auto()
+    EXPRESSION = EXPR = auto()
     ALL = auto()
 
 
