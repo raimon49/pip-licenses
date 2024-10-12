@@ -619,6 +619,7 @@ def select_license_by_source(
     if (
         from_source == FromArg.CLASSIFIER
         or from_source == FromArg.MIXED
+        or from_source == FromArg.ALL
         and len(license_classifier) > 0
     ):
         return license_classifier_set
