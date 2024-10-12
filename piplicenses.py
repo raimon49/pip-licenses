@@ -35,12 +35,13 @@ import re
 import subprocess
 import sys
 from collections import Counter
+from collections.abc import Callable, Iterable, Iterator, Sequence
 from enum import Enum, auto
 from functools import partial
 from importlib import metadata as importlib_metadata
 from importlib.metadata import Distribution
 from pathlib import Path
-from typing import TYPE_CHECKING, Iterable, List, Type, cast
+from typing import TYPE_CHECKING, cast
 
 import tomli
 from prettytable import ALL as RULE_ALL
@@ -50,7 +51,6 @@ from prettytable import NONE as RULE_NONE
 from prettytable import PrettyTable
 
 if TYPE_CHECKING:  # pragma: no cover
-    from collections.abc import Callable, Iterator, Sequence
     from email.message import Message
 
 
@@ -151,7 +151,7 @@ def normalize_pkg_name(pkg_name: str) -> str:
     return PATTERN_DELIMITER.sub("-", pkg_name).lower()
 
 
-METADATA_KEYS: dict[str, List[Callable[[Message], str | None]]] = {
+METADATA_KEYS: dict[str, list[Callable[[Message], str | None]]] = {
     "home-page": [extract_homepage],
     "author": [
         lambda metadata: metadata.get("author"),
@@ -310,7 +310,7 @@ def get_packages(
 
         license_names = select_license_by_source(
             args.from_,
-            cast(List[str], pkg_info["license_classifier"]),
+            cast(list[str], pkg_info["license_classifier"]),
             cast(str, pkg_info["license"]),
         )
 
@@ -372,7 +372,7 @@ def create_licenses_table(
             if field == "License":
                 license_set = select_license_by_source(
                     args.from_,
-                    cast(List[str], pkg["license_classifier"]),
+                    cast(list[str], pkg["license_classifier"]),
                     cast(str, pkg["license"]),
                 )
                 license_str = "; ".join(sorted(license_set))
@@ -397,7 +397,7 @@ def create_summary_table(args: CustomNamespace) -> PrettyTable:
             sorted(
                 select_license_by_source(
                     args.from_,
-                    cast(List[str], pkg["license_classifier"]),
+                    cast(list[str], pkg["license_classifier"]),
                     cast(str, pkg["license"]),
                 )
             )
@@ -453,7 +453,7 @@ class JsonPrettyTable(PrettyTable):
     """PrettyTable-like class exporting to JSON"""
 
     def _format_row(self, row: Iterable[str]) -> dict[str, str | list[str]]:
-        resrow: dict[str, str | List[str]] = {}
+        resrow: dict[str, str | list[str]] = {}
         for field, value in zip(self._field_names, row):
             resrow[field] = value
 
@@ -478,7 +478,7 @@ class JsonPrettyTable(PrettyTable):
 
 class JsonLicenseFinderTable(JsonPrettyTable):
     def _format_row(self, row: Iterable[str]) -> dict[str, str | list[str]]:
-        resrow: dict[str, str | List[str]] = {}
+        resrow: dict[str, str | list[str]] = {}
         for field, value in zip(self._field_names, row):
             if field == "Name":
                 resrow["name"] = value
@@ -764,7 +764,7 @@ class CustomHelpFormatter(argparse.HelpFormatter):  # pragma: no cover
             }
         return super()._expand_help(action)
 
-    def _split_lines(self, text: str, width: int) -> List[str]:
+    def _split_lines(self, text: str, width: int) -> list[str]:
         separator_pos = text[:3].find("|")
         if separator_pos != -1:
             flag_splitlines: bool = "R" in text[:separator_pos]
@@ -780,8 +780,8 @@ class CustomNamespace(argparse.Namespace):
     format_: FormatArg
     summary: bool
     output_file: str
-    ignore_packages: List[str]
-    packages: List[str]
+    ignore_packages: list[str]
+    packages: list[str]
     with_system: bool
     with_authors: bool
     with_urls: bool
@@ -871,14 +871,14 @@ def enum_key_to_value(enum_key: Enum) -> str:
     return enum_key.name.replace("_", "-").lower()
 
 
-def choices_from_enum(enum_cls: Type[NoValueEnum]) -> List[str]:
+def choices_from_enum(enum_cls: type[NoValueEnum]) -> list[str]:
     return [
         key.replace("_", "-").lower() for key in enum_cls.__members__.keys()
     ]
 
 
 def get_value_from_enum(
-    enum_cls: Type[NoValueEnum], value: str
+    enum_cls: type[NoValueEnum], value: str
 ) -> NoValueEnum:
     return getattr(enum_cls, value_to_enum_key(value))
 
