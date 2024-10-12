@@ -75,7 +75,6 @@ known_first_party = ["piplicenses"]
 profile = "black"
 
 [tool.mypy]
-mypy_path = "stubs/"
 exclude = ["venv"]
 
 [tool.coverage.run]
