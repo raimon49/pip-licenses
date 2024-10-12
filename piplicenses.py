@@ -435,6 +435,8 @@ def case_insensitive_partial_match_set_diff(set_a, set_b):
     for item_a in set_a:
         for item_b in set_b:
             if item_b.lower() in item_a.lower():
+                if item_a not in uncommon_items:
+                    continue
                 uncommon_items.remove(item_a)
     return uncommon_items
 
