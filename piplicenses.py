@@ -210,7 +210,9 @@ def get_packages(
             lambda file: pattern.match(file.name), pkg_files
         )
         for rel_path in matched_rel_paths:
-            abs_path = Path(pkg.locate_file(rel_path))
+            abs_path = Path(
+                pkg.locate_file(rel_path)  # type: ignore[arg-type]
+            )
             if not abs_path.is_file():
                 continue
             included_file = str(abs_path)
