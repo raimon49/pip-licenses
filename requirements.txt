@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements.txt pyproject.toml
 #
-prettytable==3.9.0
+prettytable==3.12.0
     # via pip-licenses (pyproject.toml)
 tomli==2.0.1
     # via pip-licenses (pyproject.toml)

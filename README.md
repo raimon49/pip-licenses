@@ -365,7 +365,7 @@ Package names of arguments can be separated by spaces.
 ```bash
 (venv) $ pip-licenses --with-system --ignore-packages django pip pip-licenses
  Name        Version  License
- prettytable 3.5.0    BSD License
+ prettytable 3.12.0   BSD License
  pytz        2017.3   MIT
  setuptools  38.5.0   UNKNOWN
  wcwidth     0.2.5    MIT License
@@ -376,7 +376,7 @@ Packages can also be specified with a version, only ignoring that specific versi
 ```bash
 (venv) $ pip-licenses --with-system --ignore-packages django pytz:2017.3
  Name        Version  License
- prettytable 3.5.0    BSD License
+ prettytable 3.12.0   BSD License
  setuptools  38.5.0   UNKNOWN
  wcwidth     0.2.5    MIT License
 ```
@@ -396,7 +396,7 @@ Package names of arguments can be separated by spaces.
 ```bash
 (venv) $ pip-licenses --with-system --packages prettytable pytz
  Name        Version  License
- prettytable 3.5.0    BSD License
+ prettytable 3.12.0   BSD License
  pytz        2017.3   MIT
 ```
 

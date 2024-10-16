@@ -79,7 +79,7 @@ platformdirs==2.6.0
     # via black
 pluggy==1.0.0
     # via pytest
-prettytable==3.9.0
+prettytable==3.12.0
     # via -r requirements.in
 py==1.11.0
     # via pytest-pycodestyle
