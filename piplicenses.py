@@ -625,6 +625,9 @@ def select_license_by_source(
     license_meta: str,
     license_expression: str,
 ) -> set[str]:
+    if license_expression != LICENSE_UNKNOWN:
+        return {license_expression}
+
     license_classifier_set = set(license_classifier) or {LICENSE_UNKNOWN}
     if (
         from_source == FromArg.CLASSIFIER
@@ -632,14 +635,8 @@ def select_license_by_source(
         and len(license_classifier) > 0
     ):
         return license_classifier_set
-    elif (
-        from_source == FromArg.META
-        or from_source == FromArg.MIXED
-        and license_meta != LICENSE_UNKNOWN
-    ):
-        return {license_meta}
     else:
-        return {license_expression}
+        return {license_meta}
 
 
 def get_output_fields(args: CustomNamespace) -> list[str]:

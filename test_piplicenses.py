@@ -337,6 +337,15 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertEqual(
             {"Apache-2.0"},
             select_license_by_source(
+                FromArg.MIXED,
+                ["Apache License 2.0"],
+                "Apache",
+                "Apache-2.0",
+            ),
+        )
+        self.assertEqual(
+            {"Apache-2.0"},
+            select_license_by_source(
                 FromArg.EXPRESSION,
                 ["Apache License 2.0"],
                 "Apache",
