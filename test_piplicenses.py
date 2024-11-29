@@ -1160,3 +1160,54 @@ def test_pyproject_toml_args_parsed_correctly():
     assert args.fail_on == tool_conf["fail-on"]
 
     os.unlink(temp_file.name)
+
+
+def test_case_insensitive_partial_match_set_diff():
+    set_a = {"Python", "Java", "C++"}
+    set_b = {"Ruby", "JavaScript"}
+    result = case_insensitive_partial_match_set_diff(set_a, set_b)
+    assert (
+        result == set_a
+    ), "When no overlap, the result should be the same as set_a."
+
+    set_a = {"Hello", "World"}
+    set_b = {"hello", "world"}
+    result = case_insensitive_partial_match_set_diff(set_a, set_b)
+    assert (
+        result == set()
+    ), "When all items overlap, the result should be an empty set."
+
+    set_a = {"HelloWorld", "Python", "JavaScript"}
+    set_b = {"hello", "script"}
+    result = case_insensitive_partial_match_set_diff(set_a, set_b)
+    assert result == {
+        "Python"
+    }, "Only 'Python' should remain as it has no overlap with set_b."
+
+    set_a = {"HELLO", "world"}
+    set_b = {"hello"}
+    result = case_insensitive_partial_match_set_diff(set_a, set_b)
+    assert result == {
+        "world"
+    }, "The function should handle case-insensitive matches correctly."
+
+    set_a = set()
+    set_b = set()
+    result = case_insensitive_partial_match_set_diff(set_a, set_b)
+    assert (
+        result == set()
+    ), "When both sets are empty, the result should also be empty."
+
+    set_a = {"Python", "Java"}
+    set_b = set()
+    result = case_insensitive_partial_match_set_diff(set_a, set_b)
+    assert (
+        result == set_a
+    ), "If set_b is empty, result should be the same as set_a."
+
+    set_a = set()
+    set_b = {"Ruby"}
+    result = case_insensitive_partial_match_set_diff(set_a, set_b)
+    assert (
+        result == set()
+    ), "If set_a is empty, result should be empty regardless of set_b."
