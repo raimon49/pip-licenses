@@ -28,7 +28,7 @@ commonmark==0.9.1
     # via rich
 coverage[toml]==6.5.0
     # via pytest-cov
-cryptography==42.0.4
+cryptography==44.0.0
     # via secretstorage
 docutils==0.19
     # via
