@@ -206,7 +206,7 @@ def get_packages(
             lambda file: pattern.match(file.name), pkg_files
         )
         for rel_path in matched_rel_paths:
-            abs_path = Path(pkg.locate_file(rel_path))
+            abs_path = Path(str(pkg.locate_file(rel_path)))
             if not abs_path.is_file():
                 continue
             included_file = str(abs_path)
@@ -284,11 +284,19 @@ def get_packages(
 
     fail_on_licenses = set()
     if args.fail_on:
-        fail_on_licenses = {license.strip() for license in args.fail_on.split(";") if license.strip()}
+        fail_on_licenses = {
+            license.strip()
+            for license in args.fail_on.split(";")
+            if license.strip()
+        }
 
     allow_only_licenses = set()
     if args.allow_only:
-        allow_only_licenses = {license.strip() for license in args.allow_only.split(";") if license.strip()}
+        allow_only_licenses = {
+            license.strip()
+            for license in args.allow_only.split(";")
+            if license.strip()
+        }
 
     for pkg in pkgs:
         pkg_name = normalize_pkg_name(pkg.metadata["name"])

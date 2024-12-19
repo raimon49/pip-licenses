@@ -52,7 +52,7 @@ deploy: build
 
 .PHONY: test-deploy
 test-deploy: build
-	twine upload -r pypitest dist/*
+	twine upload -r testpypi dist/*
 
 .PHONY: build
 build: clean

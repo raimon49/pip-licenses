@@ -42,7 +42,6 @@ dev = [
     "pip-tools",
     "pypandoc",
     "pytest-cov",
-    "pytest-pycodestyle",
     "pytest-runner",
     "twine",
     "tomli-w"
@@ -64,7 +63,7 @@ version = {attr = "piplicenses.__version__"}
 readme = {file = ["README.md", "CHANGELOG.md"], content-type = "text/markdown"}
 
 [tool.pytest.ini_options]
-addopts = "--pycodestyle -v --cov --cov-report term-missing"
+addopts = "-v --cov --cov-report term-missing"
 
 [tool.black]
 line-length = 79
