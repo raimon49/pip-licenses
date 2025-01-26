@@ -219,12 +219,18 @@ class TestGetLicenses(CommandLineTestCase):
         table = create_licenses_table(args, output_fields)
 
         self.assertIn("License-Metadata", output_fields)
+        self.assertIn("License-Expression-Metadata", output_fields)
         self.assertIn("License-Classifier", output_fields)
 
         index_license_meta = output_fields.index("License-Metadata")
         license_meta = []
         for row in table.rows:
             license_meta.append(row[index_license_meta])
+
+        index_license_expression_meta = output_fields.index("License-Expression-Metadata")
+        license_expression_meta = []
+        for row in table.rows:
+            license_expression_meta.append(row[index_license_expression_meta])
 
         index_license_classifier = output_fields.index("License-Classifier")
         license_classifier = []
@@ -233,6 +239,9 @@ class TestGetLicenses(CommandLineTestCase):
 
         for license_name in ("BSD", "MIT", "Apache 2.0"):
             self.assertIn(license_name, license_meta)
+        # FIXME: The test is limited to MIT ot all packages are following PEP 639 yet.
+        for license_name in ("MIT",):
+            self.assertIn(license_name, license_expression_meta)
         for license_name in (
             "BSD License",
             "MIT License",
@@ -270,28 +279,35 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertEqual(
             {"MIT License"},
             select_license_by_source(
-                FromArg.CLASSIFIER, ["MIT License"], "MIT"
+                FromArg.CLASSIFIER, ["MIT License"], "MIT", LICENSE_UNKNOWN
             ),
         )
 
         self.assertEqual(
             {LICENSE_UNKNOWN},
-            select_license_by_source(FromArg.CLASSIFIER, [], "MIT"),
+            select_license_by_source(FromArg.CLASSIFIER, [], "MIT", LICENSE_UNKNOWN),
         )
 
         self.assertEqual(
             {"MIT License"},
-            select_license_by_source(FromArg.MIXED, ["MIT License"], "MIT"),
+            select_license_by_source(FromArg.MIXED, ["MIT License"], "MIT", LICENSE_UNKNOWN),
         )
 
         self.assertEqual(
-            {"MIT"}, select_license_by_source(FromArg.MIXED, [], "MIT")
+            {"MIT"}, select_license_by_source(FromArg.MIXED, [], "MIT", LICENSE_UNKNOWN)
         )
         self.assertEqual(
             {"Apache License 2.0"},
             select_license_by_source(
-                FromArg.MIXED, ["Apache License 2.0"], "Apache-2.0"
+                FromArg.MIXED, ["Apache License 2.0"], "Apache-2.0", ""
             ),
+        )
+
+        self.assertEqual(
+            {"MIT"}, select_license_by_source(FromArg.MIXED, [], LICENSE_UNKNOWN, "MIT")
+        )
+        self.assertEqual(
+            {"MIT"}, select_license_by_source(FromArg.META, [], LICENSE_UNKNOWN, "MIT")
         )
 
     def test_with_system(self) -> None:
