@@ -161,7 +161,10 @@ METADATA_KEYS: Dict[str, List[Callable[[Message], Optional[str]]]] = {
         lambda metadata: metadata.get("maintainer"),
         lambda metadata: metadata.get("maintainer-email"),
     ],
-    "license": [lambda metadata: metadata.get("license")],
+    "license": [
+        lambda metadata: metadata.get("license"),
+        lambda metadata: metadata.get("license-expression"),
+    ],
     "summary": [lambda metadata: metadata.get("summary")],
 }
 
