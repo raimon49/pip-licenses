@@ -51,6 +51,7 @@ from piplicenses import (
     get_packages,
     get_sortby,
     normalize_pkg_name,
+    normalize_pkg_name_and_version,
     output_colored,
     save_if_needs,
     select_license_by_source,
@@ -1042,6 +1043,14 @@ def test_normalize_pkg_name() -> None:
     assert normalize_pkg_name("pip_licenses") == expected_normalized_name
     assert normalize_pkg_name("pip.licenses") == expected_normalized_name
     assert normalize_pkg_name("Pip-Licenses") == expected_normalized_name
+
+
+def test_normalize_pkg_name_and_version() -> None:
+    assert (
+        normalize_pkg_name_and_version("pip_licenses:5.0.0")
+        == "pip-licenses:5.0.0"
+    )
+    assert normalize_pkg_name_and_version("pip_licenses") == "pip-licenses"
 
 
 def test_extract_homepage_home_page_set() -> None:

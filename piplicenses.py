@@ -151,6 +151,19 @@ def normalize_pkg_name(pkg_name: str) -> str:
     return PATTERN_DELIMITER.sub("-", pkg_name).lower()
 
 
+def normalize_pkg_name_and_version(pkg_name_version: str) -> str:
+    """Return normalized name according to PEP specification
+
+    Args:
+        pkg_name_version: Package name optionally include version
+
+    Returns:
+        normalized package name and version
+    """
+    pkg_name, sep, version = pkg_name_version.partition(":")
+    return normalize_pkg_name(pkg_name) + sep + version
+
+
 METADATA_KEYS: Dict[str, List[Callable[[Message], Optional[str]]]] = {
     "home-page": [extract_homepage],
     "author": [
@@ -278,7 +291,7 @@ def get_packages(
 
     pkgs = importlib_metadata.distributions(path=search_paths)
     ignore_pkgs_as_normalize = [
-        normalize_pkg_name(pkg) for pkg in args.ignore_packages
+        normalize_pkg_name_and_version(pkg) for pkg in args.ignore_packages
     ]
     pkgs_as_normalize = [normalize_pkg_name(pkg) for pkg in args.packages]
 
