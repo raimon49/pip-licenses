@@ -212,6 +212,20 @@ class TestGetLicenses(CommandLineTestCase):
         license_notation_as_classifier = "MIT License"
         self.assertIn(license_notation_as_classifier, license_columns)
 
+    def test_from_expression(self) -> None:
+        from_args = ["--from=expression"]
+        args = self.parser.parse_args(from_args)
+        output_fields = get_output_fields(args)
+        table = create_licenses_table(args, output_fields)
+
+        self.assertIn("License", output_fields)
+
+        license_columns = self._create_license_columns(table, output_fields)
+        license_notation_as_expression = "MIT"
+        # TODO enable assert once a dependency uses 'License-Expression'
+        # TODO (maybe black)
+        # self.assertIn(license_notation_as_expression, license_columns)
+
     def test_from_all(self) -> None:
         from_args = ["--from=all"]
         args = self.parser.parse_args(from_args)
@@ -220,6 +234,7 @@ class TestGetLicenses(CommandLineTestCase):
 
         self.assertIn("License-Metadata", output_fields)
         self.assertIn("License-Classifier", output_fields)
+        self.assertIn("License-Expression", output_fields)
 
         index_license_meta = output_fields.index("License-Metadata")
         license_meta = []
@@ -231,6 +246,11 @@ class TestGetLicenses(CommandLineTestCase):
         for row in table.rows:
             license_classifier.append(row[index_license_classifier])
 
+        index_license_expression = output_fields.index("License-Expression")
+        license_expression = [
+            row[index_license_expression] for row in table.rows
+        ]
+
         for license_name in ("BSD", "MIT", "Apache 2.0"):
             self.assertIn(license_name, license_meta)
         for license_name in (
@@ -239,6 +259,10 @@ class TestGetLicenses(CommandLineTestCase):
             "Apache Software License",
         ):
             self.assertIn(license_name, license_classifier)
+        # TODO enable assert once a dependency uses 'License-Expression'
+        # TODO (maybe black)
+        # for license_name in ("MIT",):
+        #     self.assertIn(license_name, license_expression)
 
     def test_find_license_from_classifier(self) -> None:
         classifiers = ["License :: OSI Approved :: MIT License"]
@@ -270,27 +294,62 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertEqual(
             {"MIT License"},
             select_license_by_source(
-                FromArg.CLASSIFIER, ["MIT License"], "MIT"
+                FromArg.CLASSIFIER, ["MIT License"], "MIT", LICENSE_UNKNOWN
             ),
         )
 
         self.assertEqual(
             {LICENSE_UNKNOWN},
-            select_license_by_source(FromArg.CLASSIFIER, [], "MIT"),
+            select_license_by_source(
+                FromArg.CLASSIFIER, [], "MIT", LICENSE_UNKNOWN
+            ),
         )
 
         self.assertEqual(
             {"MIT License"},
-            select_license_by_source(FromArg.MIXED, ["MIT License"], "MIT"),
+            select_license_by_source(
+                FromArg.MIXED, ["MIT License"], "MIT", LICENSE_UNKNOWN
+            ),
         )
 
         self.assertEqual(
-            {"MIT"}, select_license_by_source(FromArg.MIXED, [], "MIT")
+            {"MIT"},
+            select_license_by_source(
+                FromArg.MIXED, [], "MIT", LICENSE_UNKNOWN
+            ),
         )
         self.assertEqual(
             {"Apache License 2.0"},
             select_license_by_source(
-                FromArg.MIXED, ["Apache License 2.0"], "Apache-2.0"
+                FromArg.MIXED,
+                ["Apache License 2.0"],
+                "Apache-2.0",
+                LICENSE_UNKNOWN,
+            ),
+        )
+
+        self.assertEqual(
+            {"MIT"},
+            select_license_by_source(
+                FromArg.MIXED, [], LICENSE_UNKNOWN, "MIT"
+            ),
+        )
+        self.assertEqual(
+            {"Apache-2.0"},
+            select_license_by_source(
+                FromArg.MIXED,
+                ["Apache License 2.0"],
+                "Apache",
+                "Apache-2.0",
+            ),
+        )
+        self.assertEqual(
+            {"Apache-2.0"},
+            select_license_by_source(
+                FromArg.EXPRESSION,
+                ["Apache License 2.0"],
+                "Apache",
+                "Apache-2.0",
             ),
         )
 
