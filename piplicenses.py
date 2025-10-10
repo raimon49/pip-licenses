@@ -35,12 +35,13 @@ import re
 import subprocess
 import sys
 from collections import Counter
+from collections.abc import Callable, Iterable, Iterator, Sequence
 from enum import Enum, auto
 from functools import partial
 from importlib import metadata as importlib_metadata
 from importlib.metadata import Distribution
 from pathlib import Path
-from typing import TYPE_CHECKING, Iterable, List, Type, cast
+from typing import TYPE_CHECKING, cast
 
 from prettytable import ALL as RULE_ALL
 from prettytable import FRAME as RULE_FRAME
@@ -48,14 +49,14 @@ from prettytable import HEADER as RULE_HEADER
 from prettytable import NONE as RULE_NONE
 from prettytable import PrettyTable
 
+
 if sys.version_info >= (3, 11):
     import tomllib
 else:
     import tomli as tomllib
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from email.message import Message
-    from typing import Callable, Dict, Iterator, Optional, Sequence
 
 
 open = open  # allow monkey patching
@@ -100,7 +101,7 @@ SUMMARY_OUTPUT_FIELDS = (
 )
 
 
-def extract_homepage(metadata: Message) -> Optional[str]:
+def extract_homepage(metadata: Message) -> str | None:
     """Extracts the homepage attribute from the package metadata.
 
     Not all python packages have defined a home-page attribute.
@@ -118,7 +119,7 @@ def extract_homepage(metadata: Message) -> Optional[str]:
     if homepage is not None:
         return homepage
 
-    candidates: Dict[str, str] = {}
+    candidates: dict[str, str] = {}
 
     for entry in metadata.get_all("Project-URL", []):
         key, value = entry.split(",", 1)
@@ -155,7 +156,7 @@ def normalize_pkg_name(pkg_name: str) -> str:
     return PATTERN_DELIMITER.sub("-", pkg_name).lower()
 
 
-METADATA_KEYS: Dict[str, List[Callable[[Message], Optional[str]]]] = {
+METADATA_KEYS: dict[str, list[Callable[[Message], str | None]]] = {
     "home-page": [extract_homepage],
     "author": [
         lambda metadata: metadata.get("author"),
@@ -166,6 +167,9 @@ METADATA_KEYS: Dict[str, List[Callable[[Message], Optional[str]]]] = {
         lambda metadata: metadata.get("maintainer-email"),
     ],
     "license": [lambda metadata: metadata.get("license")],
+    "license_expression": [
+        lambda metadata: metadata.get("license-expression")
+    ],
     "summary": [lambda metadata: metadata.get("summary")],
 }
 
@@ -175,6 +179,7 @@ FIELDS_TO_METADATA_KEYS = {
     "Description": "summary",
     "License-Metadata": "license",
     "License-Classifier": "license_classifier",
+    "License-Expression": "license_expression",
 }
 
 
@@ -315,8 +320,9 @@ def get_packages(
 
         license_names = select_license_by_source(
             args.from_,
-            cast(List[str], pkg_info["license_classifier"]),
+            cast(list[str], pkg_info["license_classifier"]),
             cast(str, pkg_info["license"]),
+            cast(str, pkg_info["license_expression"]),
         )
 
         if fail_on_licenses:
@@ -377,8 +383,9 @@ def create_licenses_table(
             if field == "License":
                 license_set = select_license_by_source(
                     args.from_,
-                    cast(List[str], pkg["license_classifier"]),
+                    cast(list[str], pkg["license_classifier"]),
                     cast(str, pkg["license"]),
+                    cast(str, pkg["license_expression"]),
                 )
                 license_str = "; ".join(sorted(license_set))
                 row.append(license_str)
@@ -402,8 +409,9 @@ def create_summary_table(args: CustomNamespace) -> PrettyTable:
             sorted(
                 select_license_by_source(
                     args.from_,
-                    cast(List[str], pkg["license_classifier"]),
+                    cast(list[str], pkg["license_classifier"]),
                     cast(str, pkg["license"]),
+                    cast(str, pkg["license_expression"]),
                 )
             )
         )
@@ -458,7 +466,7 @@ class JsonPrettyTable(PrettyTable):
     """PrettyTable-like class exporting to JSON"""
 
     def _format_row(self, row: Iterable[str]) -> dict[str, str | list[str]]:
-        resrow: dict[str, str | List[str]] = {}
+        resrow: dict[str, str | list[str]] = {}
         for field, value in zip(self._field_names, row):
             resrow[field] = value
 
@@ -483,7 +491,7 @@ class JsonPrettyTable(PrettyTable):
 
 class JsonLicenseFinderTable(JsonPrettyTable):
     def _format_row(self, row: Iterable[str]) -> dict[str, str | list[str]]:
-        resrow: dict[str, str | List[str]] = {}
+        resrow: dict[str, str | list[str]] = {}
         for field, value in zip(self._field_names, row):
             if field == "Name":
                 resrow["name"] = value
@@ -618,8 +626,14 @@ def find_license_from_classifier(classifiers: list[str]) -> list[str]:
 
 
 def select_license_by_source(
-    from_source: FromArg, license_classifier: list[str], license_meta: str
+    from_source: FromArg,
+    license_classifier: list[str],
+    license_meta: str,
+    license_expression: str,
 ) -> set[str]:
+    if not license_expression or license_expression != LICENSE_UNKNOWN:
+        return {license_expression}
+
     license_classifier_set = set(license_classifier) or {LICENSE_UNKNOWN}
     if (
         from_source == FromArg.CLASSIFIER
@@ -640,6 +654,7 @@ def get_output_fields(args: CustomNamespace) -> list[str]:
     if args.from_ == FromArg.ALL:
         output_fields.append("License-Metadata")
         output_fields.append("License-Classifier")
+        output_fields.append("License-Expression")
     else:
         output_fields.append("License")
 
@@ -739,7 +754,7 @@ class CustomHelpFormatter(argparse.HelpFormatter):  # pragma: no cover
         prog: str,
         indent_increment: int = 2,
         max_help_position: int = 24,
-        width: Optional[int] = None,
+        width: int | None = None,
     ) -> None:
         max_help_position = 30
         super().__init__(
@@ -769,7 +784,7 @@ class CustomHelpFormatter(argparse.HelpFormatter):  # pragma: no cover
             }
         return super()._expand_help(action)
 
-    def _split_lines(self, text: str, width: int) -> List[str]:
+    def _split_lines(self, text: str, width: int) -> list[str]:
         separator_pos = text[:3].find("|")
         if separator_pos != -1:
             flag_splitlines: bool = "R" in text[:separator_pos]
@@ -780,13 +795,13 @@ class CustomHelpFormatter(argparse.HelpFormatter):  # pragma: no cover
 
 
 class CustomNamespace(argparse.Namespace):
-    from_: "FromArg"
-    order: "OrderArg"
-    format_: "FormatArg"
+    from_: FromArg
+    order: OrderArg
+    format_: FormatArg
     summary: bool
     output_file: str
-    ignore_packages: List[str]
-    packages: List[str]
+    ignore_packages: list[str]
+    packages: list[str]
     with_system: bool
     with_authors: bool
     with_urls: bool
@@ -797,8 +812,8 @@ class CustomNamespace(argparse.Namespace):
     filter_strings: bool
     filter_code_page: str
     partial_match: bool
-    fail_on: Optional[str]
-    allow_only: Optional[str]
+    fail_on: str | None
+    allow_only: str | None
 
 
 class CompatibleArgumentParser(argparse.ArgumentParser):
@@ -844,6 +859,7 @@ class FromArg(NoValueEnum):
     META = M = auto()
     CLASSIFIER = C = auto()
     MIXED = MIX = auto()
+    EXPRESSION = EXPR = auto()
     ALL = auto()
 
 
@@ -876,14 +892,14 @@ def enum_key_to_value(enum_key: Enum) -> str:
     return enum_key.name.replace("_", "-").lower()
 
 
-def choices_from_enum(enum_cls: Type[NoValueEnum]) -> List[str]:
+def choices_from_enum(enum_cls: type[NoValueEnum]) -> list[str]:
     return [
         key.replace("_", "-").lower() for key in enum_cls.__members__.keys()
     ]
 
 
 def get_value_from_enum(
-    enum_cls: Type[NoValueEnum], value: str
+    enum_cls: type[NoValueEnum], value: str
 ) -> NoValueEnum:
     return getattr(enum_cls, value_to_enum_key(value))
 
@@ -901,7 +917,7 @@ class SelectAction(argparse.Action):
         parser: argparse.ArgumentParser,
         namespace: argparse.Namespace,
         values: str,
-        option_string: Optional[str] = None,
+        option_string: str | None = None,
     ) -> None:
         enum_cls = MAP_DEST_TO_ENUM[self.dest]
         setattr(namespace, self.dest, get_value_from_enum(enum_cls, values))
