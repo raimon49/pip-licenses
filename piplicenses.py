@@ -625,7 +625,7 @@ def select_license_by_source(
     license_meta: str,
     license_expression: str,
 ) -> set[str]:
-    if license_expression != LICENSE_UNKNOWN:
+    if not license_expression or license_expression != LICENSE_UNKNOWN:
         return {license_expression}
 
     license_classifier_set = set(license_classifier) or {LICENSE_UNKNOWN}
