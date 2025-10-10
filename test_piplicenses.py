@@ -521,7 +521,7 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertIn(ignore_pkg_name, pkg_name_columns)
 
     def test_with_packages(self) -> None:
-        pkg_name = "py"
+        pkg_name = "pytest"
         only_packages_args = ["--packages=" + pkg_name]
         args = self.parser.parse_args(only_packages_args)
         table = create_licenses_table(args)
