@@ -52,7 +52,7 @@ from prettytable import PrettyTable
 
 if sys.version_info >= (3, 11):
     import tomllib
-else:  # pragma: no cover
+else:
     import tomli as tomllib
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -191,7 +191,7 @@ SYSTEM_PACKAGES = [
     "setuptools",
     "wheel",
 ]
-if sys.version_info < (3, 11):  # pragma: no cover
+if sys.version_info < (3, 11):
     SYSTEM_PACKAGES.append("tomli")
 
 LICENSE_UNKNOWN = "UNKNOWN"
