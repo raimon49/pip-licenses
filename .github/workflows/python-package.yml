@@ -37,11 +37,24 @@ jobs:
         run: |
           mkdir -p .mypy_cache
           mypy --install-types --non-interactive .
+      - name: Update coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.python-version }}
+          path: coverage.xml
+
+  coverage:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download all coverage artifacts
+        uses: actions/download-artifact@v5
+        with:
+          pattern: coverage-*
       - name: Upload code coverage to Codecov
-        if: ${{ matrix.python-version==3.11 }}
         uses: codecov/codecov-action@v4
         with:
-          files: ./coverage.xml
           name: codecov-umbrella
           fail_ci_if_error: true
           verbose: true
