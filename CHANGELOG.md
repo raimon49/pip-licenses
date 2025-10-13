@@ -6,6 +6,7 @@
 * Added support for `License-Expression` metadata field, see [PEP 639](https://peps.python.org/pep-0639/)
 * Added `--from=expression` option
 * Breaking change: The `--from=all` output now includes the `License-Expression` value
+* Fixed KeyError with `--partial` and `--allow-only` if a license matches multiple allowed licenses.
 
 ### 5.0.0
 

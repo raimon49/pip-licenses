@@ -440,11 +440,62 @@ def case_insensitive_partial_match_set_intersect(set_a, set_b):
 
 
 def case_insensitive_partial_match_set_diff(set_a, set_b):
+    """
+    Returns items from set_a without case-insensitive partial matches in set_b.
+
+    Namely returns the set of items from set_a that do not have any
+    case-insensitive partial matches in set_b.
+
+    Args:
+        set_a (set): A set of strings to compare.
+        set_b (set): A set of strings to check for partial matches.
+
+    Returns:
+        set: A set of items from set_a that do not match any items in set_b.
+
+    Example:
+        >>> case_insensitive_partial_match_set_diff(
+        ...     {'BSD License', 'MIT License'}, {'BSD'}
+        ... )
+        {'MIT License'}
+        
+        >>> case_insensitive_partial_match_set_diff(
+        ...     {'BSD', 'BSD License'}, {'BSD'}
+        ... )
+        set()
+
+        >>> case_insensitive_partial_match_set_diff(
+        ...     {'Hello', 'World'}, {'hello'}
+        ... )
+        {'World'}
+
+        >>> sorted(case_insensitive_partial_match_set_diff(
+        ...     {'Duplicate', 'duplicate', 'Unique'}, {'unique'}
+        ... ))
+        ['Duplicate', 'duplicate']
+
+        >>> case_insensitive_partial_match_set_diff(
+        ...     {'Test', 'Example'}, {'Sample', 'Test'}
+        ... )
+        {'Example'}
+
+        >>> case_insensitive_partial_match_set_diff(set(), {'Empty'})
+        set()
+
+        >>> sorted(case_insensitive_partial_match_set_diff(
+        ...     {'A', 'B', 'C'}, {'D', 'E'}
+        ... ))
+        ['A', 'B', 'C']
+
+    """
     uncommon_items = set_a.copy()
+    to_remove = set()  # Create a set to track items to remove
     for item_a in set_a:
+        item_a_lower = item_a.lower()  # change case once & use for sub loop
         for item_b in set_b:
-            if item_b.lower() in item_a.lower():
-                uncommon_items.remove(item_a)
+            if item_b.lower() in item_a_lower:
+                to_remove.add(item_a)  # Add to the removal set
+    uncommon_items.difference_update(to_remove)  # Remove all at once
     return uncommon_items
 
 
