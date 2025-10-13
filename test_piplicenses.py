@@ -1223,14 +1223,14 @@ def test_case_insensitive_partial_match_set_diff():
     set_b = {"Ruby", "JavaScript"}
     result = case_insensitive_partial_match_set_diff(set_a, set_b)
     assert (
-            result == set_a
+        result == set_a
     ), "When no overlap, the result should be the same as set_a."
 
     set_a = {"Hello", "World"}
     set_b = {"hello", "world"}
     result = case_insensitive_partial_match_set_diff(set_a, set_b)
     assert (
-            result == set()
+        result == set()
     ), "When all items overlap, the result should be an empty set."
 
     set_a = {"HelloWorld", "Python", "JavaScript"}
@@ -1251,60 +1251,54 @@ def test_case_insensitive_partial_match_set_diff():
     set_b = set()
     result = case_insensitive_partial_match_set_diff(set_a, set_b)
     assert (
-            result == set()
+        result == set()
     ), "When both sets are empty, the result should also be empty."
 
     set_a = {"Python", "Java"}
     set_b = set()
     result = case_insensitive_partial_match_set_diff(set_a, set_b)
     assert (
-            result == set_a
+        result == set_a
     ), "If set_b is empty, result should be the same as set_a."
 
     set_a = set()
     set_b = {"Ruby"}
     result = case_insensitive_partial_match_set_diff(set_a, set_b)
     assert (
-            result == set()
+        result == set()
     ), "If set_a is empty, result should be empty regardless of set_b."
 
     set_a = {"BSD License", "MIT License"}
     set_b = {"BSD"}
     result = case_insensitive_partial_match_set_diff(set_a, set_b)
-    assert (
-            result == {"MIT License"}
-    ), "The function should match partials (exclusively)."
+    assert result == {
+        "MIT License"
+    }, "The function should match partials (exclusively)."
 
     set_a = {"BSD", "BSD License"}
     set_b = {"BSD"}
     result = case_insensitive_partial_match_set_diff(set_a, set_b)
-    assert (
-            result == set()
-    ), "The function should match partials (inclusively)."
+    assert result == set(), "The function should match partials (inclusively)."
 
     set_a = {"Duplicate", "duplicate", "Unique"}
     set_b = {"unique"}
-    result = sorted(
-        case_insensitive_partial_match_set_diff(set_a, set_b)
-    )
+    result = sorted(case_insensitive_partial_match_set_diff(set_a, set_b))
     expected_order = sorted({"Duplicate", "duplicate"})
     assert (
-            result == expected_order
+        result == expected_order
     ), "The function should still preserve case of set_a (order-insensitive)."
 
     set_a = {"Test", "Example"}
     set_b = {"Sample", "Test"}
     result = case_insensitive_partial_match_set_diff(set_a, set_b)
-    assert (
-            result == {"Example"}
-    ), "If only part of set_b matches set_a non-matches should have no impact."
+    assert result == {
+        "Example"
+    }, "If only part of set_b matches set_a non-matches should have no impact."
 
     set_a = {"A", "B", "C"}
     set_b = {"D", "E"}
-    result = sorted(
-        case_insensitive_partial_match_set_diff(set_a, set_b)
-    )
+    result = sorted(case_insensitive_partial_match_set_diff(set_a, set_b))
     expected_order = sorted({"A", "B", "C"})
     assert (
-            result == expected_order
+        result == expected_order
     ), "Non-overlapping sets should preserve all of set_a (order-insensitive)."

@@ -458,7 +458,7 @@ def case_insensitive_partial_match_set_diff(set_a, set_b):
         ...     {'BSD License', 'MIT License'}, {'BSD'}
         ... )
         {'MIT License'}
-        
+
         >>> case_insensitive_partial_match_set_diff(
         ...     {'BSD', 'BSD License'}, {'BSD'}
         ... )
