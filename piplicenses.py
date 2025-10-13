@@ -43,12 +43,13 @@ from importlib.metadata import Distribution
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
-import tomli
-from prettytable import ALL as RULE_ALL
-from prettytable import FRAME as RULE_FRAME
-from prettytable import HEADER as RULE_HEADER
-from prettytable import NONE as RULE_NONE
-from prettytable import PrettyTable
+from prettytable import HRuleStyle, PrettyTable, RowType
+
+
+if sys.version_info >= (3, 11):
+    import tomllib
+else:
+    import tomli as tomllib
 
 if TYPE_CHECKING:  # pragma: no cover
     from email.message import Message
@@ -178,15 +179,16 @@ FIELDS_TO_METADATA_KEYS = {
 }
 
 
-SYSTEM_PACKAGES = (
+SYSTEM_PACKAGES = [
     __pkgname__,
     "pip",
     "prettytable",
     "wcwidth",
     "setuptools",
-    "tomli",
     "wheel",
-)
+]
+if sys.version_info < (3, 11):
+    SYSTEM_PACKAGES.append("tomli")
 
 LICENSE_UNKNOWN = "UNKNOWN"
 
@@ -210,9 +212,7 @@ def get_packages(
             lambda file: pattern.match(file.name), pkg_files
         )
         for rel_path in matched_rel_paths:
-            abs_path = Path(
-                pkg.locate_file(rel_path)  # type: ignore[arg-type]
-            )
+            abs_path = Path(str(pkg.locate_file(rel_path)))
             if not abs_path.is_file():
                 continue
             included_file = str(abs_path)
@@ -369,7 +369,7 @@ def get_packages(
 
 def create_licenses_table(
     args: CustomNamespace,
-    output_fields: Iterable[str] = DEFAULT_OUTPUT_FIELDS,
+    output_fields: Sequence[str] = DEFAULT_OUTPUT_FIELDS,
 ) -> PrettyTable:
     table = factory_styled_table_with_args(args, output_fields)
 
@@ -463,7 +463,7 @@ def case_insensitive_set_diff(set_a, set_b):
 class JsonPrettyTable(PrettyTable):
     """PrettyTable-like class exporting to JSON"""
 
-    def _format_row(self, row: Iterable[str]) -> dict[str, str | list[str]]:
+    def format_row(self, row: RowType) -> dict[str, str | list[str]]:
         resrow: dict[str, str | list[str]] = {}
         for field, value in zip(self._field_names, row):
             resrow[field] = value
@@ -478,17 +478,12 @@ class JsonPrettyTable(PrettyTable):
 
         options = self._get_options(kwargs)
         rows = self._get_rows(options)
-        formatted_rows = self._format_rows(rows)
-
-        lines = []
-        for row in formatted_rows:
-            lines.append(row)
-
+        lines = [self.format_row(row) for row in rows]
         return json.dumps(lines, indent=2, sort_keys=True)
 
 
 class JsonLicenseFinderTable(JsonPrettyTable):
-    def _format_row(self, row: Iterable[str]) -> dict[str, str | list[str]]:
+    def format_row(self, row: RowType) -> dict[str, str | list[str]]:
         resrow: dict[str, str | list[str]] = {}
         for field, value in zip(self._field_names, row):
             if field == "Name":
@@ -510,12 +505,7 @@ class JsonLicenseFinderTable(JsonPrettyTable):
 
         options = self._get_options(kwargs)
         rows = self._get_rows(options)
-        formatted_rows = self._format_rows(rows)
-
-        lines = []
-        for row in formatted_rows:
-            lines.append(row)
-
+        lines = [self.format_row(row) for row in rows]
         return json.dumps(lines, sort_keys=True)
 
 
@@ -541,16 +531,17 @@ class CSVPrettyTable(PrettyTable):
         rows = self._get_rows(options)
         formatted_rows = self._format_rows(rows)
 
-        lines = []
+        lines: list[str] = []
         formatted_header = ",".join(
             ['"%s"' % (esc_quotes(val),) for val in self._field_names]
         )
         lines.append(formatted_header)
-        for row in formatted_rows:
-            formatted_row = ",".join(
-                ['"%s"' % (esc_quotes(val),) for val in row]
-            )
-            lines.append(formatted_row)
+        lines.extend(
+            [
+                ",".join(['"%s"' % (esc_quotes(val),) for val in row])
+                for row in formatted_rows
+            ]
+        )
 
         return "\n".join(lines)
 
@@ -577,7 +568,7 @@ class PlainVerticalTable(PrettyTable):
 
 def factory_styled_table_with_args(
     args: CustomNamespace,
-    output_fields: Iterable[str] = DEFAULT_OUTPUT_FIELDS,
+    output_fields: Sequence[str] = DEFAULT_OUTPUT_FIELDS,
 ) -> PrettyTable:
     table = PrettyTable()
     table.field_names = output_fields  # type: ignore[assignment]
@@ -592,13 +583,13 @@ def factory_styled_table_with_args(
 
     if args.format_ == FormatArg.MARKDOWN:
         table.junction_char = "|"
-        table.hrules = RULE_HEADER
+        table.hrules = HRuleStyle.HEADER
     elif args.format_ == FormatArg.RST:
         table.junction_char = "+"
-        table.hrules = RULE_ALL
+        table.hrules = HRuleStyle.ALL
     elif args.format_ == FormatArg.CONFLUENCE:
         table.junction_char = "|"
-        table.hrules = RULE_NONE
+        table.hrules = HRuleStyle.NONE
     elif args.format_ == FormatArg.JSON:
         table = JsonPrettyTable(table.field_names)
     elif args.format_ == FormatArg.JSON_LICENSE_FINDER:
@@ -924,7 +915,7 @@ class SelectAction(argparse.Action):
 def load_config_from_file(pyproject_path: str):
     if Path(pyproject_path).exists():
         with open(pyproject_path, "rb") as f:
-            return tomli.load(f).get("tool", {}).get(__pkgname__, {})
+            return tomllib.load(f).get("tool", {}).get(__pkgname__, {})
     return {}
 
 

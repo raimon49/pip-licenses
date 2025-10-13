@@ -1,7 +1,8 @@
 ## CHANGELOG
 
-### 6.0.0
+### 5.5.0
 
+* Replace dependency on `tomli` with builtin `tomllib` for Python 3.11
 * Added support for `License-Expression` metadata field, see [PEP 639](https://peps.python.org/pep-0639/)
 * Added `--from=expression` option
 * Breaking change: The `--from=all` output now includes the `License-Expression` value
