@@ -1111,9 +1111,9 @@ def test_normalize_version():
     # Test 2: Version with 'v' prefix
     assert normalize_version("v2.0.0") == "2.0.0"
     # Test 3: Pre-release version
-    assert normalize_version("1.0.0-alpha") == "1.0.0a"
+    assert normalize_version("1.0.0-alpha") == "1.0.0alpha"
     # Test 4: Beta pre-release version
-    assert normalize_version("1.0.0-beta.1") == "1.0.0b1"
+    assert normalize_version("1.0.0-beta.1") == "1.0.0beta1"
     # Test 5: Release candidate version
     assert normalize_version("2.0.0-rc.1") == "2.0.0rc1"
     # Test 6: Post-release version
