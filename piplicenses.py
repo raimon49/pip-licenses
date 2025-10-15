@@ -222,11 +222,11 @@ def normalize_version(version_string):
     # Building the normalized version string
     normalized_version = f"{epoch}!{release}" if epoch != "0" else release
     if pre:
-        normalized_version += f"{pre}"
+        normalized_version += f"{pre}".strip(".")
     if post:
-        normalized_version += f"{post}"
+        normalized_version += f"{post}".strip(".")
     if dev:
-        normalized_version += f"{dev}"
+        normalized_version += f"{dev}".strip(".")
     if match.group("local"):
         normalized_version += f"+{match.group('local')}"
     return normalized_version
