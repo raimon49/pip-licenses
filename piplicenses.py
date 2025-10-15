@@ -149,7 +149,7 @@ def normalize_pkg_name(pkg_name: str) -> str:
     Returns:
         normalized packege name
     """
-    return PATTERN_DELIMITER.sub("-", pkg_name).lower()
+    return PATTERN_DELIMITER.sub("-", pkg_name).lower().strip()
 
 
 def normalize_pkg_name_and_version(pkg_name_version: str) -> str:
