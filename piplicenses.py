@@ -152,6 +152,86 @@ def normalize_pkg_name(pkg_name: str) -> str:
     return PATTERN_DELIMITER.sub("-", pkg_name).lower().strip()
 
 
+# from PEP-440
+VERSION_PATTERN = r"""
+    v?
+    (?:
+        (?:(?P<epoch>[0-9]+)!)?                           # epoch
+        (?P<release>[0-9]+(?:\.[0-9]+)*)                  # release segment
+        (?P<pre>                                          # pre-release
+            [-_\.]?
+            (?P<pre_l>alpha|a|beta|b|preview|pre|c|rc)
+            [-_\.]?
+            (?P<pre_n>[0-9]+)?
+        )?
+        (?P<post>                                         # post release
+            (?:-(?P<post_n1>[0-9]+))
+            |
+            (?:
+                [-_\.]?
+                (?P<post_l>post|rev|r)
+                [-_\.]?
+                (?P<post_n2>[0-9]+)?
+            )
+        )?
+        (?P<dev>                                          # dev release
+            [-_\.]?
+            (?P<dev_l>dev)
+            [-_\.]?
+            (?P<dev_n>[0-9]+)?
+        )?
+    )
+    (?:\+(?P<local>[a-z0-9]+(?:[-_\.][a-z0-9]+)*))?       # local version
+"""
+
+
+def normalize_version(version_string):
+    """
+    Normalize a version string to a PEP 440 compliant format.
+
+    Args:
+        version_string (str): The version string to normalize.
+
+    Returns:
+        str: A normalized version string in PEP 440 format or empty if invalid.
+    """
+    _regex = re.compile(
+        r"^\s*" + VERSION_PATTERN + r"\s*$",
+        re.VERBOSE | re.IGNORECASE,
+    )
+    match = _regex.match(version_string)
+    if not match:
+        return ""
+    epoch = match.group("epoch") or "0"
+    release = match.group("release") or "0.0"
+    pre = (
+        f"{match.group('pre_l')}.{match.group('pre_n')}"
+        if match.group("pre_n")
+        else match.group("pre_l")
+    )
+    post = (
+        f"{match.group('post_l')}.{match.group('post_n2')}"
+        if match.group("post_n2")
+        else match.group("post_n1")
+    )
+    dev = (
+        f"{match.group('dev_l')}.{match.group('dev_n')}"
+        if match.group("dev_n")
+        else match.group("dev_l")
+    )
+    # Building the normalized version string
+    normalized_version = f"{epoch}!{release}" if epoch != "0" else release
+    if pre:
+        normalized_version += f"{pre}"
+    if post:
+        normalized_version += f"{post}"
+    if dev:
+        normalized_version += f"{dev}"
+    if match.group("local"):
+        normalized_version += f"+{match.group('local')}"
+    return normalized_version
+
+
 def normalize_pkg_name_and_version(pkg_name_version: str) -> str:
     """Return normalized name according to PEP specification
 
@@ -162,7 +242,7 @@ def normalize_pkg_name_and_version(pkg_name_version: str) -> str:
         normalized package name and version
     """
     pkg_name, sep, version = pkg_name_version.partition(":")
-    return normalize_pkg_name(pkg_name) + sep + version
+    return normalize_pkg_name(pkg_name) + sep + normalize_version(version)
 
 
 METADATA_KEYS: dict[str, list[Callable[[Message], str | None]]] = {
