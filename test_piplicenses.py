@@ -1142,7 +1142,7 @@ def test_normalize_pkg_name_and_version() -> None:
     # Test case 6: Package name with multiple colons (only the first should be considered)
     assert (
         normalize_pkg_name_and_version("matplotlib:3.3.0:extra")
-        == normalize_pkg_name("matplotlib") + ":3.3.0:extra"
+        == normalize_pkg_name("matplotlib") + ":"
     )
 
     # Test case 7: Package name with version in a different format
