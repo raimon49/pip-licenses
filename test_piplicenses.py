@@ -13,7 +13,7 @@ import venv
 from enum import Enum, auto
 from importlib.metadata import Distribution
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, Any, List
+from typing import TYPE_CHECKING, Any
 from unittest.mock import MagicMock
 
 import docutils.frontend
@@ -27,10 +27,6 @@ import piplicenses
 from piplicenses import (
     DEFAULT_OUTPUT_FIELDS,
     LICENSE_UNKNOWN,
-    RULE_ALL,
-    RULE_FRAME,
-    RULE_HEADER,
-    RULE_NONE,
     SYSTEM_PACKAGES,
     CompatibleArgumentParser,
     FromArg,
@@ -57,6 +53,7 @@ from piplicenses import (
     select_license_by_source,
     value_to_enum_key,
 )
+from prettytable import HRuleStyle
 
 if TYPE_CHECKING:
     if sys.version_info >= (3, 10):
@@ -157,7 +154,7 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertFalse(table.border)
         self.assertTrue(table.header)
         self.assertEqual("+", table.junction_char)
-        self.assertEqual(RULE_FRAME, table.hrules)
+        self.assertEqual(HRuleStyle.FRAME, table.hrules)
 
         output_fields = get_output_fields(args)
         self.assertEqual(
@@ -213,6 +210,20 @@ class TestGetLicenses(CommandLineTestCase):
         license_notation_as_classifier = "MIT License"
         self.assertIn(license_notation_as_classifier, license_columns)
 
+    def test_from_expression(self) -> None:
+        from_args = ["--from=expression"]
+        args = self.parser.parse_args(from_args)
+        output_fields = get_output_fields(args)
+        table = create_licenses_table(args, output_fields)
+
+        self.assertIn("License", output_fields)
+
+        license_columns = self._create_license_columns(table, output_fields)
+        license_notation_as_expression = "MIT"
+        # TODO enable assert once a dependency uses 'License-Expression'
+        # TODO (maybe black)
+        # self.assertIn(license_notation_as_expression, license_columns)
+
     def test_from_all(self) -> None:
         from_args = ["--from=all"]
         args = self.parser.parse_args(from_args)
@@ -221,6 +232,7 @@ class TestGetLicenses(CommandLineTestCase):
 
         self.assertIn("License-Metadata", output_fields)
         self.assertIn("License-Classifier", output_fields)
+        self.assertIn("License-Expression", output_fields)
 
         index_license_meta = output_fields.index("License-Metadata")
         license_meta = []
@@ -232,6 +244,11 @@ class TestGetLicenses(CommandLineTestCase):
         for row in table.rows:
             license_classifier.append(row[index_license_classifier])
 
+        index_license_expression = output_fields.index("License-Expression")
+        license_expression = [
+            row[index_license_expression] for row in table.rows
+        ]
+
         for license_name in ("BSD", "MIT", "Apache 2.0"):
             self.assertIn(license_name, license_meta)
         for license_name in (
@@ -240,6 +257,10 @@ class TestGetLicenses(CommandLineTestCase):
             "Apache Software License",
         ):
             self.assertIn(license_name, license_classifier)
+        # TODO enable assert once a dependency uses 'License-Expression'
+        # TODO (maybe black)
+        # for license_name in ("MIT",):
+        #     self.assertIn(license_name, license_expression)
 
     def test_find_license_from_classifier(self) -> None:
         classifiers = ["License :: OSI Approved :: MIT License"]
@@ -264,34 +285,69 @@ class TestGetLicenses(CommandLineTestCase):
         )
 
     def test_if_no_classifiers_then_no_licences_found(self) -> None:
-        classifiers: List[str] = []
+        classifiers: list[str] = []
         self.assertEqual([], find_license_from_classifier(classifiers))
 
     def test_select_license_by_source(self) -> None:
         self.assertEqual(
             {"MIT License"},
             select_license_by_source(
-                FromArg.CLASSIFIER, ["MIT License"], "MIT"
+                FromArg.CLASSIFIER, ["MIT License"], "MIT", LICENSE_UNKNOWN
             ),
         )
 
         self.assertEqual(
             {LICENSE_UNKNOWN},
-            select_license_by_source(FromArg.CLASSIFIER, [], "MIT"),
+            select_license_by_source(
+                FromArg.CLASSIFIER, [], "MIT", LICENSE_UNKNOWN
+            ),
         )
 
         self.assertEqual(
             {"MIT License"},
-            select_license_by_source(FromArg.MIXED, ["MIT License"], "MIT"),
+            select_license_by_source(
+                FromArg.MIXED, ["MIT License"], "MIT", LICENSE_UNKNOWN
+            ),
         )
 
         self.assertEqual(
-            {"MIT"}, select_license_by_source(FromArg.MIXED, [], "MIT")
+            {"MIT"},
+            select_license_by_source(
+                FromArg.MIXED, [], "MIT", LICENSE_UNKNOWN
+            ),
         )
         self.assertEqual(
             {"Apache License 2.0"},
             select_license_by_source(
-                FromArg.MIXED, ["Apache License 2.0"], "Apache-2.0"
+                FromArg.MIXED,
+                ["Apache License 2.0"],
+                "Apache-2.0",
+                LICENSE_UNKNOWN,
+            ),
+        )
+
+        self.assertEqual(
+            {"MIT"},
+            select_license_by_source(
+                FromArg.MIXED, [], LICENSE_UNKNOWN, "MIT"
+            ),
+        )
+        self.assertEqual(
+            {"Apache-2.0"},
+            select_license_by_source(
+                FromArg.MIXED,
+                ["Apache License 2.0"],
+                "Apache",
+                "Apache-2.0",
+            ),
+        )
+        self.assertEqual(
+            {"Apache-2.0"},
+            select_license_by_source(
+                FromArg.EXPRESSION,
+                ["Apache License 2.0"],
+                "Apache",
+                "Apache-2.0",
             ),
         )
 
@@ -543,7 +599,7 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertFalse(table.border)
         self.assertTrue(table.header)
         self.assertEqual("+", table.junction_char)
-        self.assertEqual(RULE_FRAME, table.hrules)
+        self.assertEqual(HRuleStyle.FRAME, table.hrules)
 
     def test_format_plain_vertical(self) -> None:
         format_plain_args = ["--format=plain-vertical", "--from=classifier"]
@@ -562,7 +618,7 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertTrue(table.border)
         self.assertTrue(table.header)
         self.assertEqual("|", table.junction_char)
-        self.assertEqual(RULE_HEADER, table.hrules)
+        self.assertEqual(HRuleStyle.HEADER, table.hrules)
 
     @unittest.skipIf(
         sys.version_info < (3, 6, 0),
@@ -580,7 +636,7 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertTrue(table.border)
         self.assertTrue(table.header)
         self.assertEqual("+", table.junction_char)
-        self.assertEqual(RULE_ALL, table.hrules)
+        self.assertEqual(HRuleStyle.ALL, table.hrules)
         piplicenses.importlib_metadata.distributions = (
             importlib_metadata_distributions_orig
         )
@@ -597,7 +653,7 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertTrue(table.border)
         self.assertTrue(table.header)
         self.assertEqual("+", table.junction_char)
-        self.assertEqual(RULE_ALL, table.hrules)
+        self.assertEqual(HRuleStyle.ALL, table.hrules)
         self.check_rst(str(table))
         piplicenses.importlib_metadata.distributions = (
             importlib_metadata_distributions_orig
@@ -612,7 +668,7 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertTrue(table.border)
         self.assertTrue(table.header)
         self.assertEqual("|", table.junction_char)
-        self.assertEqual(RULE_NONE, table.hrules)
+        self.assertEqual(HRuleStyle.NONE, table.hrules)
 
     def test_format_html(self) -> None:
         format_html_args = ["--format=html", "--with-authors"]
