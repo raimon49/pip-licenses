@@ -1050,7 +1050,49 @@ def test_normalize_pkg_name_and_version() -> None:
         normalize_pkg_name_and_version("pip_licenses:5.0.0")
         == "pip-licenses:5.0.0"
     )
+    # Test case 0: Standard package name without version
     assert normalize_pkg_name_and_version("pip_licenses") == "pip-licenses"
+
+    # Test case 1: Standard package name with version
+    assert (
+        normalize_pkg_name_and_version("requests:2.25.1")
+        == normalize_pkg_name("requests") + ":2.25.1"
+    )
+
+    # Test case 2: Package name without version
+    assert normalize_pkg_name_and_version("flask") == normalize_pkg_name("flask") + ""
+
+    # Test case 3: Package name with leading/trailing spaces
+    assert (
+        normalize_pkg_name_and_version("  numpy : 1.19.5  ")
+        == normalize_pkg_name("numpy") + ":1.19.5"
+    )
+
+    # Test case 4: Package name with special characters
+    assert (
+        normalize_pkg_name_and_version("Pillow:8.0.1")
+        == normalize_pkg_name("Pillow") + ":8.0.1"
+    )
+
+    # Test case 5: Package name with no version and special characters
+    assert (
+        normalize_pkg_name_and_version("  SciPy  ") == normalize_pkg_name("SciPy") + ""
+    )
+
+    # Test case 6: Package name with multiple colons (only the first should be considered)
+    assert (
+        normalize_pkg_name_and_version("matplotlib:3.3.0:extra")
+        == normalize_pkg_name("matplotlib") + ":3.3.0:extra"
+    )
+
+    # Test case 7: Package name with version in a different format
+    assert (
+        normalize_pkg_name_and_version("setuptools:56.0.0")
+        == normalize_pkg_name("setuptools") + ":56.0.0"
+    )
+
+    # Test case 8: Empty input
+    assert normalize_pkg_name_and_version("") == ""
 
 
 def test_extract_homepage_home_page_set() -> None:
