@@ -205,28 +205,28 @@ def normalize_version(version_string):
     epoch = match.group("epoch") or "0"
     release = match.group("release") or "0.0"
     pre = (
-        f"{match.group('pre_l')}.{match.group('pre_n')}"
+        f"{match.group('pre_l')}{match.group('pre_n')}"
         if match.group("pre_n")
         else match.group("pre_l")
     )
     post = (
-        f"{match.group('post_l')}.{match.group('post_n2')}"
+        f"{match.group('post_l')}{match.group('post_n2')}"
         if match.group("post_n2")
         else match.group("post_n1")
     )
     dev = (
-        f"{match.group('dev_l')}.{match.group('dev_n')}"
+        f"{match.group('dev_l')}{match.group('dev_n')}"
         if match.group("dev_n")
         else match.group("dev_l")
     )
     # Building the normalized version string
     normalized_version = f"{epoch}!{release}" if epoch != "0" else release
     if pre:
-        normalized_version += f"{pre}".strip(".")
+        normalized_version += f"{pre}"
     if post:
-        normalized_version += f"{post}".strip(".")
+        normalized_version += f"{post}"
     if dev:
-        normalized_version += f"{dev}".strip(".")
+        normalized_version += f"{dev}"
     if match.group("local"):
         normalized_version += f"+{match.group('local')}"
     return normalized_version

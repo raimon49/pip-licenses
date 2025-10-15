@@ -1125,7 +1125,7 @@ def test_normalize_version():
     # Test 9: Pre-release with local version
     assert normalize_version("1.0.0-alpha.1+local") == "1.0.0a1+local"
     # Test 10: Complex version with all match groups
-    assert normalize_version("2.0.0-beta.3.post2.dev1") == "2.0.0b3post.2dev1"
+    assert normalize_version("2.0.0-beta.3.post2.dev1") == "2.0.0b3post2dev1"
 
 
 def test_normalize_pkg_name_and_version() -> None:
