@@ -533,11 +533,17 @@ def case_insensitive_partial_match_set_intersect(set_a, set_b):
 
 
 def case_insensitive_partial_match_set_diff(set_a, set_b):
+    """
+    Return items from set_a without case-insensitive partial matches
+    from items in set_b.
+    """
     uncommon_items = set_a.copy()
     for item_a in set_a:
+        item_a_lower = item_a.lower()  # change case once & use for sub loop
         for item_b in set_b:
-            if item_b.lower() in item_a.lower():
-                uncommon_items.remove(item_a)
+            if item_b.lower() in item_a_lower:
+                uncommon_items.discard(item_a)
+                break
     return uncommon_items
 
 
