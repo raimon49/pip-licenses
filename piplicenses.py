@@ -441,7 +441,8 @@ def case_insensitive_partial_match_set_intersect(set_a, set_b):
 
 def case_insensitive_partial_match_set_diff(set_a, set_b):
     """
-    Return items from set_a without case-insensitive partial matches from items in set_b.
+    Return items from set_a without case-insensitive partial matches
+    from items in set_b.
     """
     uncommon_items = set_a.copy()
     for item_a in set_a:
