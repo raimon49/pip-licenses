@@ -1369,6 +1369,7 @@ def test_case_insensitive_partial_match_set_diff():
     set_b = {"BSD", "Apache"}
     result = case_insensitive_partial_match_set_diff(set_a, set_b)
     assert result == set(), "Multiple matches shouldn't crash."
+
     set_a = {"Duplicate", "duplicate", "Unique"}
     set_b = {"unique"}
     result = sorted(case_insensitive_partial_match_set_diff(set_a, set_b))

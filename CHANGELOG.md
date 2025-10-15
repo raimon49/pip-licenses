@@ -7,6 +7,7 @@
 * Added `--from=expression` option
 * Breaking change: The `--from=all` output now includes the `License-Expression` value
 * Fixed KeyError with `--partial` and `--allow-only` if a license matches multiple allowed licenses.
+* Declare support for Python 3.13 and 3.14
 
 ### 5.0.0
 
