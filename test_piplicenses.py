@@ -47,6 +47,7 @@ from piplicenses import (
     get_packages,
     get_sortby,
     normalize_pkg_name,
+    normalize_version,
     normalize_pkg_name_and_version,
     output_colored,
     save_if_needs,
@@ -1099,6 +1100,32 @@ def test_normalize_pkg_name() -> None:
     assert normalize_pkg_name("pip_licenses") == expected_normalized_name
     assert normalize_pkg_name("pip.licenses") == expected_normalized_name
     assert normalize_pkg_name("Pip-Licenses") == expected_normalized_name
+
+
+def test_normalize_version():
+    """
+    Test normalize_version function with various version strings.
+    """
+    # Test 1: Simple release version
+    assert normalize_version("1.0.0") == "1.0.0"
+    # Test 2: Version with 'v' prefix
+    assert normalize_version("v2.0.0") == "2.0.0"
+    # Test 3: Pre-release version
+    assert normalize_version("1.0.0-alpha") == "1.0.0a"
+    # Test 4: Beta pre-release version
+    assert normalize_version("1.0.0-beta.1") == "1.0.0b1"
+    # Test 5: Release candidate version
+    assert normalize_version("2.0.0-rc.1") == "2.0.0rc1"
+    # Test 6: Post-release version
+    assert normalize_version("1.0.0.post1") == "1.0.0post.1"
+    # Test 7: Development release version
+    assert normalize_version("1.0.0.dev3") == "1.0.0dev3"
+    # Test 8: Local version
+    assert normalize_version("1.2.3+local") == "1.2.3+local"
+    # Test 9: Pre-release with local version
+    assert normalize_version("1.0.0-alpha.1+local") == "1.0.0a1+local"
+    # Test 10: Complex version with all match groups
+    assert normalize_version("2.0.0-beta.3.post2.dev1") == "2.0.0b3post.2dev1"
 
 
 def test_normalize_pkg_name_and_version() -> None:
