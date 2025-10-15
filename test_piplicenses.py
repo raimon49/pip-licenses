@@ -1116,7 +1116,10 @@ def test_normalize_pkg_name_and_version() -> None:
     )
 
     # Test case 2: Package name without version
-    assert normalize_pkg_name_and_version("flask") == normalize_pkg_name("flask") + ""
+    assert (
+        normalize_pkg_name_and_version("flask")
+        == normalize_pkg_name("flask") + ""
+    )
 
     # Test case 3: Package name with leading/trailing spaces
     assert (
@@ -1132,7 +1135,8 @@ def test_normalize_pkg_name_and_version() -> None:
 
     # Test case 5: Package name with no version and special characters
     assert (
-        normalize_pkg_name_and_version("  SciPy  ") == normalize_pkg_name("SciPy") + ""
+        normalize_pkg_name_and_version("  SciPy  ")
+        == normalize_pkg_name("SciPy") + ""
     )
 
     # Test case 6: Package name with multiple colons (only the first should be considered)
