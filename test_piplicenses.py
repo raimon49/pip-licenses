@@ -47,6 +47,8 @@ from piplicenses import (
     get_packages,
     get_sortby,
     normalize_pkg_name,
+    normalize_version,
+    normalize_pkg_name_and_version,
     output_colored,
     save_if_needs,
     select_license_by_source,
@@ -1098,6 +1100,89 @@ def test_normalize_pkg_name() -> None:
     assert normalize_pkg_name("pip_licenses") == expected_normalized_name
     assert normalize_pkg_name("pip.licenses") == expected_normalized_name
     assert normalize_pkg_name("Pip-Licenses") == expected_normalized_name
+
+
+def test_normalize_version():
+    """
+    Test normalize_version function with various version strings.
+    """
+    # Test 1: Simple release version
+    assert normalize_version("1.0.0") == "1.0.0"
+    # Test 2: Version with 'v' prefix
+    assert normalize_version("v2.0.0") == "2.0.0"
+    # Test 3: Pre-release version
+    assert normalize_version("1.0.0-alpha") == "1.0.0alpha"
+    # Test 4: Beta pre-release version
+    assert normalize_version("1.0.0-beta.1") == "1.0.0beta1"
+    # Test 5: Release candidate version
+    assert normalize_version("2.0.0-rc.1") == "2.0.0rc1"
+    # Test 6: Post-release version
+    assert normalize_version("1.0.0.post1") == "1.0.0post1"
+    # Test 7: Development release version
+    assert normalize_version("1.0.0.dev3") == "1.0.0dev3"
+    # Test 8: Local version
+    assert normalize_version("1.2.3+local") == "1.2.3+local"
+    # Test 9: Pre-release with local version
+    assert normalize_version("1.0.0-alpha.1+local") == "1.0.0alpha1+local"
+    # Test 10: Complex version with all match groups
+    assert (
+        normalize_version("2.0.0-beta.3.post2.dev1") == "2.0.0beta3post2dev1"
+    )
+
+
+def test_normalize_pkg_name_and_version() -> None:
+    assert (
+        normalize_pkg_name_and_version("pip_licenses:5.0.0")
+        == "pip-licenses:5.0.0"
+    )
+    # Test case 0: Standard package name without version
+    assert normalize_pkg_name_and_version("pip_licenses") == "pip-licenses"
+
+    # Test case 1: Standard package name with version
+    assert (
+        normalize_pkg_name_and_version("requests:2.25.1")
+        == normalize_pkg_name("requests") + ":2.25.1"
+    )
+
+    # Test case 2: Package name without version
+    assert (
+        normalize_pkg_name_and_version("flask")
+        == normalize_pkg_name("flask") + ""
+    )
+
+    # Test case 3: Package name with leading/trailing spaces
+    assert (
+        normalize_pkg_name_and_version("  numpy : 1.19.5  ")
+        == normalize_pkg_name("numpy") + ":1.19.5"
+    )
+
+    # Test case 4: Package name with special characters
+    assert (
+        normalize_pkg_name_and_version("Pillow:8.0.1")
+        == normalize_pkg_name("Pillow") + ":8.0.1"
+    )
+
+    # Test case 5: Package name with no version and special characters
+    assert (
+        normalize_pkg_name_and_version("  SciPy  ")
+        == normalize_pkg_name("SciPy") + ""
+    )
+
+    # Test case 6: Package name with multiple colons
+    # (e.g., only the first : should be considered)
+    assert (
+        normalize_pkg_name_and_version("matplotlib:3.3.0:extra")
+        == normalize_pkg_name("matplotlib") + ":"
+    )
+
+    # Test case 7: Package name with version in a different format
+    assert (
+        normalize_pkg_name_and_version("setuptools:56.0.0")
+        == normalize_pkg_name("setuptools") + ":56.0.0"
+    )
+
+    # Test case 8: Empty input
+    assert normalize_pkg_name_and_version("") == ""
 
 
 def test_extract_homepage_home_page_set() -> None:
