@@ -1117,7 +1117,7 @@ def test_normalize_version():
     # Test 5: Release candidate version
     assert normalize_version("2.0.0-rc.1") == "2.0.0rc1"
     # Test 6: Post-release version
-    assert normalize_version("1.0.0.post1") == "1.0.0post.1"
+    assert normalize_version("1.0.0.post1") == "1.0.0post1"
     # Test 7: Development release version
     assert normalize_version("1.0.0.dev3") == "1.0.0dev3"
     # Test 8: Local version
