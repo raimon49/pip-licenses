@@ -1132,8 +1132,8 @@ def test_normalize_version():
 
 def test_normalize_pkg_name_and_version() -> None:
     assert (
-        normalize_pkg_name_and_version("pip_licenses:5.0.0")
-        == "pip-licenses:5.0.0"
+        normalize_pkg_name_and_version("pip_licenses:5.5.0")
+        == "pip-licenses:5.5.0"
     )
     # Test case 0: Standard package name without version
     assert normalize_pkg_name_and_version("pip_licenses") == "pip-licenses"
