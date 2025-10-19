@@ -13,7 +13,7 @@ import venv
 from enum import Enum, auto
 from importlib.metadata import Distribution
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, Any, List
+from typing import TYPE_CHECKING, Any
 from unittest.mock import MagicMock
 
 import docutils.frontend
@@ -27,10 +27,6 @@ import piplicenses
 from piplicenses import (
     DEFAULT_OUTPUT_FIELDS,
     LICENSE_UNKNOWN,
-    RULE_ALL,
-    RULE_FRAME,
-    RULE_HEADER,
-    RULE_NONE,
     SYSTEM_PACKAGES,
     CompatibleArgumentParser,
     FromArg,
@@ -51,11 +47,14 @@ from piplicenses import (
     get_packages,
     get_sortby,
     normalize_pkg_name,
+    normalize_version,
+    normalize_pkg_name_and_version,
     output_colored,
     save_if_needs,
     select_license_by_source,
     value_to_enum_key,
 )
+from prettytable import HRuleStyle
 
 if TYPE_CHECKING:
     if sys.version_info >= (3, 10):
@@ -156,7 +155,7 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertFalse(table.border)
         self.assertTrue(table.header)
         self.assertEqual("+", table.junction_char)
-        self.assertEqual(RULE_FRAME, table.hrules)
+        self.assertEqual(HRuleStyle.FRAME, table.hrules)
 
         output_fields = get_output_fields(args)
         self.assertEqual(
@@ -212,6 +211,20 @@ class TestGetLicenses(CommandLineTestCase):
         license_notation_as_classifier = "MIT License"
         self.assertIn(license_notation_as_classifier, license_columns)
 
+    def test_from_expression(self) -> None:
+        from_args = ["--from=expression"]
+        args = self.parser.parse_args(from_args)
+        output_fields = get_output_fields(args)
+        table = create_licenses_table(args, output_fields)
+
+        self.assertIn("License", output_fields)
+
+        license_columns = self._create_license_columns(table, output_fields)
+        license_notation_as_expression = "MIT"
+        # TODO enable assert once a dependency uses 'License-Expression'
+        # TODO (maybe black)
+        # self.assertIn(license_notation_as_expression, license_columns)
+
     def test_from_all(self) -> None:
         from_args = ["--from=all"]
         args = self.parser.parse_args(from_args)
@@ -220,6 +233,7 @@ class TestGetLicenses(CommandLineTestCase):
 
         self.assertIn("License-Metadata", output_fields)
         self.assertIn("License-Classifier", output_fields)
+        self.assertIn("License-Expression", output_fields)
 
         index_license_meta = output_fields.index("License-Metadata")
         license_meta = []
@@ -231,6 +245,11 @@ class TestGetLicenses(CommandLineTestCase):
         for row in table.rows:
             license_classifier.append(row[index_license_classifier])
 
+        index_license_expression = output_fields.index("License-Expression")
+        license_expression = [
+            row[index_license_expression] for row in table.rows
+        ]
+
         for license_name in ("BSD", "MIT", "Apache 2.0"):
             self.assertIn(license_name, license_meta)
         for license_name in (
@@ -239,6 +258,10 @@ class TestGetLicenses(CommandLineTestCase):
             "Apache Software License",
         ):
             self.assertIn(license_name, license_classifier)
+        # TODO enable assert once a dependency uses 'License-Expression'
+        # TODO (maybe black)
+        # for license_name in ("MIT",):
+        #     self.assertIn(license_name, license_expression)
 
     def test_find_license_from_classifier(self) -> None:
         classifiers = ["License :: OSI Approved :: MIT License"]
@@ -263,34 +286,69 @@ class TestGetLicenses(CommandLineTestCase):
         )
 
     def test_if_no_classifiers_then_no_licences_found(self) -> None:
-        classifiers: List[str] = []
+        classifiers: list[str] = []
         self.assertEqual([], find_license_from_classifier(classifiers))
 
     def test_select_license_by_source(self) -> None:
         self.assertEqual(
             {"MIT License"},
             select_license_by_source(
-                FromArg.CLASSIFIER, ["MIT License"], "MIT"
+                FromArg.CLASSIFIER, ["MIT License"], "MIT", LICENSE_UNKNOWN
             ),
         )
 
         self.assertEqual(
             {LICENSE_UNKNOWN},
-            select_license_by_source(FromArg.CLASSIFIER, [], "MIT"),
+            select_license_by_source(
+                FromArg.CLASSIFIER, [], "MIT", LICENSE_UNKNOWN
+            ),
         )
 
         self.assertEqual(
             {"MIT License"},
-            select_license_by_source(FromArg.MIXED, ["MIT License"], "MIT"),
+            select_license_by_source(
+                FromArg.MIXED, ["MIT License"], "MIT", LICENSE_UNKNOWN
+            ),
         )
 
         self.assertEqual(
-            {"MIT"}, select_license_by_source(FromArg.MIXED, [], "MIT")
+            {"MIT"},
+            select_license_by_source(
+                FromArg.MIXED, [], "MIT", LICENSE_UNKNOWN
+            ),
         )
         self.assertEqual(
             {"Apache License 2.0"},
             select_license_by_source(
-                FromArg.MIXED, ["Apache License 2.0"], "Apache-2.0"
+                FromArg.MIXED,
+                ["Apache License 2.0"],
+                "Apache-2.0",
+                LICENSE_UNKNOWN,
+            ),
+        )
+
+        self.assertEqual(
+            {"MIT"},
+            select_license_by_source(
+                FromArg.MIXED, [], LICENSE_UNKNOWN, "MIT"
+            ),
+        )
+        self.assertEqual(
+            {"Apache-2.0"},
+            select_license_by_source(
+                FromArg.MIXED,
+                ["Apache License 2.0"],
+                "Apache",
+                "Apache-2.0",
+            ),
+        )
+        self.assertEqual(
+            {"Apache-2.0"},
+            select_license_by_source(
+                FromArg.EXPRESSION,
+                ["Apache License 2.0"],
+                "Apache",
+                "Apache-2.0",
             ),
         )
 
@@ -462,7 +520,7 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertIn(ignore_pkg_name, pkg_name_columns)
 
     def test_with_packages(self) -> None:
-        pkg_name = "py"
+        pkg_name = "pytest"
         only_packages_args = ["--packages=" + pkg_name]
         args = self.parser.parse_args(only_packages_args)
         table = create_licenses_table(args)
@@ -542,7 +600,7 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertFalse(table.border)
         self.assertTrue(table.header)
         self.assertEqual("+", table.junction_char)
-        self.assertEqual(RULE_FRAME, table.hrules)
+        self.assertEqual(HRuleStyle.FRAME, table.hrules)
 
     def test_format_plain_vertical(self) -> None:
         format_plain_args = ["--format=plain-vertical", "--from=classifier"]
@@ -561,7 +619,7 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertTrue(table.border)
         self.assertTrue(table.header)
         self.assertEqual("|", table.junction_char)
-        self.assertEqual(RULE_HEADER, table.hrules)
+        self.assertEqual(HRuleStyle.HEADER, table.hrules)
 
     @unittest.skipIf(
         sys.version_info < (3, 6, 0),
@@ -579,7 +637,7 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertTrue(table.border)
         self.assertTrue(table.header)
         self.assertEqual("+", table.junction_char)
-        self.assertEqual(RULE_ALL, table.hrules)
+        self.assertEqual(HRuleStyle.ALL, table.hrules)
         piplicenses.importlib_metadata.distributions = (
             importlib_metadata_distributions_orig
         )
@@ -596,7 +654,7 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertTrue(table.border)
         self.assertTrue(table.header)
         self.assertEqual("+", table.junction_char)
-        self.assertEqual(RULE_ALL, table.hrules)
+        self.assertEqual(HRuleStyle.ALL, table.hrules)
         self.check_rst(str(table))
         piplicenses.importlib_metadata.distributions = (
             importlib_metadata_distributions_orig
@@ -611,7 +669,7 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertTrue(table.border)
         self.assertTrue(table.header)
         self.assertEqual("|", table.junction_char)
-        self.assertEqual(RULE_NONE, table.hrules)
+        self.assertEqual(HRuleStyle.NONE, table.hrules)
 
     def test_format_html(self) -> None:
         format_html_args = ["--format=html", "--with-authors"]
@@ -1044,6 +1102,89 @@ def test_normalize_pkg_name() -> None:
     assert normalize_pkg_name("Pip-Licenses") == expected_normalized_name
 
 
+def test_normalize_version():
+    """
+    Test normalize_version function with various version strings.
+    """
+    # Test 1: Simple release version
+    assert normalize_version("1.0.0") == "1.0.0"
+    # Test 2: Version with 'v' prefix
+    assert normalize_version("v2.0.0") == "2.0.0"
+    # Test 3: Pre-release version
+    assert normalize_version("1.0.0-alpha") == "1.0.0alpha"
+    # Test 4: Beta pre-release version
+    assert normalize_version("1.0.0-beta.1") == "1.0.0beta1"
+    # Test 5: Release candidate version
+    assert normalize_version("2.0.0-rc.1") == "2.0.0rc1"
+    # Test 6: Post-release version
+    assert normalize_version("1.0.0.post1") == "1.0.0post1"
+    # Test 7: Development release version
+    assert normalize_version("1.0.0.dev3") == "1.0.0dev3"
+    # Test 8: Local version
+    assert normalize_version("1.2.3+local") == "1.2.3+local"
+    # Test 9: Pre-release with local version
+    assert normalize_version("1.0.0-alpha.1+local") == "1.0.0alpha1+local"
+    # Test 10: Complex version with all match groups
+    assert (
+        normalize_version("2.0.0-beta.3.post2.dev1") == "2.0.0beta3post2dev1"
+    )
+
+
+def test_normalize_pkg_name_and_version() -> None:
+    assert (
+        normalize_pkg_name_and_version("pip_licenses:5.5.0")
+        == "pip-licenses:5.5.0"
+    )
+    # Test case 0: Standard package name without version
+    assert normalize_pkg_name_and_version("pip_licenses") == "pip-licenses"
+
+    # Test case 1: Standard package name with version
+    assert (
+        normalize_pkg_name_and_version("requests:2.25.1")
+        == normalize_pkg_name("requests") + ":2.25.1"
+    )
+
+    # Test case 2: Package name without version
+    assert (
+        normalize_pkg_name_and_version("flask")
+        == normalize_pkg_name("flask") + ""
+    )
+
+    # Test case 3: Package name with leading/trailing spaces
+    assert (
+        normalize_pkg_name_and_version("  numpy : 1.19.5  ")
+        == normalize_pkg_name("numpy") + ":1.19.5"
+    )
+
+    # Test case 4: Package name with special characters
+    assert (
+        normalize_pkg_name_and_version("Pillow:8.0.1")
+        == normalize_pkg_name("Pillow") + ":8.0.1"
+    )
+
+    # Test case 5: Package name with no version and special characters
+    assert (
+        normalize_pkg_name_and_version("  SciPy  ")
+        == normalize_pkg_name("SciPy") + ""
+    )
+
+    # Test case 6: Package name with multiple colons
+    # (e.g., only the first : should be considered)
+    assert (
+        normalize_pkg_name_and_version("matplotlib:3.3.0:extra")
+        == normalize_pkg_name("matplotlib") + ":"
+    )
+
+    # Test case 7: Package name with version in a different format
+    assert (
+        normalize_pkg_name_and_version("setuptools:56.0.0")
+        == normalize_pkg_name("setuptools") + ":56.0.0"
+    )
+
+    # Test case 8: Empty input
+    assert normalize_pkg_name_and_version("") == ""
+
+
 def test_extract_homepage_home_page_set() -> None:
     metadata = MagicMock()
     metadata.get.return_value = "Foobar"
@@ -1160,3 +1301,94 @@ def test_pyproject_toml_args_parsed_correctly():
     assert args.fail_on == tool_conf["fail-on"]
 
     os.unlink(temp_file.name)
+
+
+def test_case_insensitive_partial_match_set_diff():
+    set_a = {"Python", "Java", "C++"}
+    set_b = {"Ruby", "JavaScript"}
+    result = case_insensitive_partial_match_set_diff(set_a, set_b)
+    assert (
+        result == set_a
+    ), "When no overlap, the result should be the same as set_a."
+
+    set_a = {"Hello", "World"}
+    set_b = {"hello", "world"}
+    result = case_insensitive_partial_match_set_diff(set_a, set_b)
+    assert (
+        result == set()
+    ), "When all items overlap, the result should be an empty set."
+
+    set_a = {"HelloWorld", "Python", "JavaScript"}
+    set_b = {"hello", "script"}
+    result = case_insensitive_partial_match_set_diff(set_a, set_b)
+    assert result == {
+        "Python"
+    }, "Only 'Python' should remain as it has no overlap with set_b."
+
+    set_a = {"HELLO", "world"}
+    set_b = {"hello"}
+    result = case_insensitive_partial_match_set_diff(set_a, set_b)
+    assert result == {
+        "world"
+    }, "The function should handle case-insensitive matches correctly."
+
+    set_a = set()
+    set_b = set()
+    result = case_insensitive_partial_match_set_diff(set_a, set_b)
+    assert (
+        result == set()
+    ), "When both sets are empty, the result should also be empty."
+
+    set_a = {"Python", "Java"}
+    set_b = set()
+    result = case_insensitive_partial_match_set_diff(set_a, set_b)
+    assert (
+        result == set_a
+    ), "If set_b is empty, result should be the same as set_a."
+
+    set_a = set()
+    set_b = {"Ruby"}
+    result = case_insensitive_partial_match_set_diff(set_a, set_b)
+    assert (
+        result == set()
+    ), "If set_a is empty, result should be empty regardless of set_b."
+
+    set_a = {"BSD License", "MIT License"}
+    set_b = {"BSD"}
+    result = case_insensitive_partial_match_set_diff(set_a, set_b)
+    assert result == {
+        "MIT License"
+    }, "The function should match partials (exclusively)."
+
+    set_a = {"BSD", "BSD License"}
+    set_b = {"BSD"}
+    result = case_insensitive_partial_match_set_diff(set_a, set_b)
+    assert result == set(), "The function should match partials (inclusively)."
+
+    set_a = {"Apache-2.0 OR BSD-3-Clause"}
+    set_b = {"BSD", "Apache"}
+    result = case_insensitive_partial_match_set_diff(set_a, set_b)
+    assert result == set(), "Multiple matches shouldn't crash."
+
+    set_a = {"Duplicate", "duplicate", "Unique"}
+    set_b = {"unique"}
+    result = sorted(case_insensitive_partial_match_set_diff(set_a, set_b))
+    expected_order = sorted({"Duplicate", "duplicate"})
+    assert (
+        result == expected_order
+    ), "The function should still preserve case of set_a (order-insensitive)."
+
+    set_a = {"Test", "Example"}
+    set_b = {"Sample", "Test"}
+    result = case_insensitive_partial_match_set_diff(set_a, set_b)
+    assert result == {
+        "Example"
+    }, "If only part of set_b matches set_a non-matches should have no impact."
+
+    set_a = {"A", "B", "C"}
+    set_b = {"D", "E"}
+    result = sorted(case_insensitive_partial_match_set_diff(set_a, set_b))
+    expected_order = sorted({"A", "B", "C"})
+    assert (
+        result == expected_order
+    ), "Non-overlapping sets should preserve all of set_a (order-insensitive)."

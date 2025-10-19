@@ -35,29 +35,30 @@ import re
 import subprocess
 import sys
 from collections import Counter
+from collections.abc import Callable, Iterable, Iterator, Sequence
 from enum import Enum, auto
 from functools import partial
 from importlib import metadata as importlib_metadata
 from importlib.metadata import Distribution
 from pathlib import Path
-from typing import TYPE_CHECKING, Iterable, List, Type, cast
+from typing import TYPE_CHECKING, cast
 
-import tomli
-from prettytable import ALL as RULE_ALL
-from prettytable import FRAME as RULE_FRAME
-from prettytable import HEADER as RULE_HEADER
-from prettytable import NONE as RULE_NONE
-from prettytable import PrettyTable
+from prettytable import HRuleStyle, PrettyTable, RowType
 
-if TYPE_CHECKING:
+
+if sys.version_info >= (3, 11):
+    import tomllib
+else:
+    import tomli as tomllib
+
+if TYPE_CHECKING:  # pragma: no cover
     from email.message import Message
-    from typing import Callable, Dict, Iterator, Optional, Sequence
 
 
 open = open  # allow monkey patching
 
 __pkgname__ = "pip-licenses"
-__version__ = "5.0.0"
+__version__ = "5.5.0"
 __summary__ = (
     "Dump the software license list of Python packages installed with pip."
 )
@@ -96,7 +97,7 @@ SUMMARY_OUTPUT_FIELDS = (
 )
 
 
-def extract_homepage(metadata: Message) -> Optional[str]:
+def extract_homepage(metadata: Message) -> str | None:
     """Extracts the homepage attribute from the package metadata.
 
     Not all python packages have defined a home-page attribute.
@@ -114,7 +115,7 @@ def extract_homepage(metadata: Message) -> Optional[str]:
     if homepage is not None:
         return homepage
 
-    candidates: Dict[str, str] = {}
+    candidates: dict[str, str] = {}
 
     for entry in metadata.get_all("Project-URL", []):
         key, value = entry.split(",", 1)
@@ -148,10 +149,103 @@ def normalize_pkg_name(pkg_name: str) -> str:
     Returns:
         normalized packege name
     """
-    return PATTERN_DELIMITER.sub("-", pkg_name).lower()
+    return PATTERN_DELIMITER.sub("-", pkg_name).lower().strip()
 
 
-METADATA_KEYS: Dict[str, List[Callable[[Message], Optional[str]]]] = {
+# from PEP-440
+VERSION_PATTERN = r"""
+    v?
+    (?:
+        (?:(?P<epoch>[0-9]+)!)?                           # epoch
+        (?P<release>[0-9]+(?:\.[0-9]+)*)                  # release segment
+        (?P<pre>                                          # pre-release
+            [-_\.]?
+            (?P<pre_l>alpha|a|beta|b|preview|pre|c|rc)
+            [-_\.]?
+            (?P<pre_n>[0-9]+)?
+        )?
+        (?P<post>                                         # post release
+            (?:-(?P<post_n1>[0-9]+))
+            |
+            (?:
+                [-_\.]?
+                (?P<post_l>post|rev|r)
+                [-_\.]?
+                (?P<post_n2>[0-9]+)?
+            )
+        )?
+        (?P<dev>                                          # dev release
+            [-_\.]?
+            (?P<dev_l>dev)
+            [-_\.]?
+            (?P<dev_n>[0-9]+)?
+        )?
+    )
+    (?:\+(?P<local>[a-z0-9]+(?:[-_\.][a-z0-9]+)*))?       # local version
+"""
+
+
+def normalize_version(version_string):
+    """
+    Normalize a version string to a PEP 440 compliant format.
+
+    Args:
+        version_string (str): The version string to normalize.
+
+    Returns:
+        str: A normalized version string in PEP 440 format or empty if invalid.
+    """
+    _regex = re.compile(
+        r"^\s*" + VERSION_PATTERN + r"\s*$",
+        re.VERBOSE | re.IGNORECASE,
+    )
+    match = _regex.match(version_string)
+    if not match:
+        return ""
+    epoch = match.group("epoch") or "0"
+    release = match.group("release") or "0.0"
+    pre = (
+        f"{match.group('pre_l')}{match.group('pre_n')}"
+        if match.group("pre_n")
+        else match.group("pre_l")
+    )
+    post = (
+        f"{match.group('post_l')}{match.group('post_n2')}"
+        if match.group("post_n2")
+        else match.group("post_n1")
+    )
+    dev = (
+        f"{match.group('dev_l')}{match.group('dev_n')}"
+        if match.group("dev_n")
+        else match.group("dev_l")
+    )
+    # Building the normalized version string
+    normalized_version = f"{epoch}!{release}" if epoch != "0" else release
+    if pre:
+        normalized_version += f"{pre}"
+    if post:
+        normalized_version += f"{post}"
+    if dev:
+        normalized_version += f"{dev}"
+    if match.group("local"):
+        normalized_version += f"+{match.group('local')}"
+    return normalized_version
+
+
+def normalize_pkg_name_and_version(pkg_name_version: str) -> str:
+    """Return normalized name according to PEP specification
+
+    Args:
+        pkg_name_version: Package name optionally include version
+
+    Returns:
+        normalized package name and version
+    """
+    pkg_name, sep, version = pkg_name_version.partition(":")
+    return normalize_pkg_name(pkg_name) + sep + normalize_version(version)
+
+
+METADATA_KEYS: dict[str, list[Callable[[Message], str | None]]] = {
     "home-page": [extract_homepage],
     "author": [
         lambda metadata: metadata.get("author"),
@@ -162,6 +256,9 @@ METADATA_KEYS: Dict[str, List[Callable[[Message], Optional[str]]]] = {
         lambda metadata: metadata.get("maintainer-email"),
     ],
     "license": [lambda metadata: metadata.get("license")],
+    "license_expression": [
+        lambda metadata: metadata.get("license-expression")
+    ],
     "summary": [lambda metadata: metadata.get("summary")],
 }
 
@@ -171,18 +268,20 @@ FIELDS_TO_METADATA_KEYS = {
     "Description": "summary",
     "License-Metadata": "license",
     "License-Classifier": "license_classifier",
+    "License-Expression": "license_expression",
 }
 
 
-SYSTEM_PACKAGES = (
+SYSTEM_PACKAGES = [
     __pkgname__,
     "pip",
     "prettytable",
     "wcwidth",
     "setuptools",
-    "tomli",
     "wheel",
-)
+]
+if sys.version_info < (3, 11):
+    SYSTEM_PACKAGES.append("tomli")
 
 LICENSE_UNKNOWN = "UNKNOWN"
 
@@ -206,7 +305,7 @@ def get_packages(
             lambda file: pattern.match(file.name), pkg_files
         )
         for rel_path in matched_rel_paths:
-            abs_path = Path(pkg.locate_file(rel_path))
+            abs_path = Path(str(pkg.locate_file(rel_path)))
             if not abs_path.is_file():
                 continue
             included_file = str(abs_path)
@@ -278,7 +377,7 @@ def get_packages(
 
     pkgs = importlib_metadata.distributions(path=search_paths)
     ignore_pkgs_as_normalize = [
-        normalize_pkg_name(pkg) for pkg in args.ignore_packages
+        normalize_pkg_name_and_version(pkg) for pkg in args.ignore_packages
     ]
     pkgs_as_normalize = [normalize_pkg_name(pkg) for pkg in args.packages]
 
@@ -310,8 +409,9 @@ def get_packages(
 
         license_names = select_license_by_source(
             args.from_,
-            cast(List[str], pkg_info["license_classifier"]),
+            cast(list[str], pkg_info["license_classifier"]),
             cast(str, pkg_info["license"]),
+            cast(str, pkg_info["license_expression"]),
         )
 
         if fail_on_licenses:
@@ -362,7 +462,7 @@ def get_packages(
 
 def create_licenses_table(
     args: CustomNamespace,
-    output_fields: Iterable[str] = DEFAULT_OUTPUT_FIELDS,
+    output_fields: Sequence[str] = DEFAULT_OUTPUT_FIELDS,
 ) -> PrettyTable:
     table = factory_styled_table_with_args(args, output_fields)
 
@@ -372,8 +472,9 @@ def create_licenses_table(
             if field == "License":
                 license_set = select_license_by_source(
                     args.from_,
-                    cast(List[str], pkg["license_classifier"]),
+                    cast(list[str], pkg["license_classifier"]),
                     cast(str, pkg["license"]),
+                    cast(str, pkg["license_expression"]),
                 )
                 license_str = "; ".join(sorted(license_set))
                 row.append(license_str)
@@ -397,8 +498,9 @@ def create_summary_table(args: CustomNamespace) -> PrettyTable:
             sorted(
                 select_license_by_source(
                     args.from_,
-                    cast(List[str], pkg["license_classifier"]),
+                    cast(list[str], pkg["license_classifier"]),
                     cast(str, pkg["license"]),
+                    cast(str, pkg["license_expression"]),
                 )
             )
         )
@@ -431,11 +533,17 @@ def case_insensitive_partial_match_set_intersect(set_a, set_b):
 
 
 def case_insensitive_partial_match_set_diff(set_a, set_b):
+    """
+    Return items from set_a without case-insensitive partial matches
+    from items in set_b.
+    """
     uncommon_items = set_a.copy()
     for item_a in set_a:
+        item_a_lower = item_a.lower()  # change case once & use for sub loop
         for item_b in set_b:
-            if item_b.lower() in item_a.lower():
-                uncommon_items.remove(item_a)
+            if item_b.lower() in item_a_lower:
+                uncommon_items.discard(item_a)
+                break
     return uncommon_items
 
 
@@ -452,8 +560,8 @@ def case_insensitive_set_diff(set_a, set_b):
 class JsonPrettyTable(PrettyTable):
     """PrettyTable-like class exporting to JSON"""
 
-    def _format_row(self, row: Iterable[str]) -> dict[str, str | list[str]]:
-        resrow: dict[str, str | List[str]] = {}
+    def format_row(self, row: RowType) -> dict[str, str | list[str]]:
+        resrow: dict[str, str | list[str]] = {}
         for field, value in zip(self._field_names, row):
             resrow[field] = value
 
@@ -467,18 +575,13 @@ class JsonPrettyTable(PrettyTable):
 
         options = self._get_options(kwargs)
         rows = self._get_rows(options)
-        formatted_rows = self._format_rows(rows)
-
-        lines = []
-        for row in formatted_rows:
-            lines.append(row)
-
+        lines = [self.format_row(row) for row in rows]
         return json.dumps(lines, indent=2, sort_keys=True)
 
 
 class JsonLicenseFinderTable(JsonPrettyTable):
-    def _format_row(self, row: Iterable[str]) -> dict[str, str | list[str]]:
-        resrow: dict[str, str | List[str]] = {}
+    def format_row(self, row: RowType) -> dict[str, str | list[str]]:
+        resrow: dict[str, str | list[str]] = {}
         for field, value in zip(self._field_names, row):
             if field == "Name":
                 resrow["name"] = value
@@ -499,12 +602,7 @@ class JsonLicenseFinderTable(JsonPrettyTable):
 
         options = self._get_options(kwargs)
         rows = self._get_rows(options)
-        formatted_rows = self._format_rows(rows)
-
-        lines = []
-        for row in formatted_rows:
-            lines.append(row)
-
+        lines = [self.format_row(row) for row in rows]
         return json.dumps(lines, sort_keys=True)
 
 
@@ -530,16 +628,17 @@ class CSVPrettyTable(PrettyTable):
         rows = self._get_rows(options)
         formatted_rows = self._format_rows(rows)
 
-        lines = []
+        lines: list[str] = []
         formatted_header = ",".join(
             ['"%s"' % (esc_quotes(val),) for val in self._field_names]
         )
         lines.append(formatted_header)
-        for row in formatted_rows:
-            formatted_row = ",".join(
-                ['"%s"' % (esc_quotes(val),) for val in row]
-            )
-            lines.append(formatted_row)
+        lines.extend(
+            [
+                ",".join(['"%s"' % (esc_quotes(val),) for val in row])
+                for row in formatted_rows
+            ]
+        )
 
         return "\n".join(lines)
 
@@ -566,7 +665,7 @@ class PlainVerticalTable(PrettyTable):
 
 def factory_styled_table_with_args(
     args: CustomNamespace,
-    output_fields: Iterable[str] = DEFAULT_OUTPUT_FIELDS,
+    output_fields: Sequence[str] = DEFAULT_OUTPUT_FIELDS,
 ) -> PrettyTable:
     table = PrettyTable()
     table.field_names = output_fields  # type: ignore[assignment]
@@ -581,13 +680,13 @@ def factory_styled_table_with_args(
 
     if args.format_ == FormatArg.MARKDOWN:
         table.junction_char = "|"
-        table.hrules = RULE_HEADER
+        table.hrules = HRuleStyle.HEADER
     elif args.format_ == FormatArg.RST:
         table.junction_char = "+"
-        table.hrules = RULE_ALL
+        table.hrules = HRuleStyle.ALL
     elif args.format_ == FormatArg.CONFLUENCE:
         table.junction_char = "|"
-        table.hrules = RULE_NONE
+        table.hrules = HRuleStyle.NONE
     elif args.format_ == FormatArg.JSON:
         table = JsonPrettyTable(table.field_names)
     elif args.format_ == FormatArg.JSON_LICENSE_FINDER:
@@ -613,8 +712,14 @@ def find_license_from_classifier(classifiers: list[str]) -> list[str]:
 
 
 def select_license_by_source(
-    from_source: FromArg, license_classifier: list[str], license_meta: str
+    from_source: FromArg,
+    license_classifier: list[str],
+    license_meta: str,
+    license_expression: str,
 ) -> set[str]:
+    if not license_expression or license_expression != LICENSE_UNKNOWN:
+        return {license_expression}
+
     license_classifier_set = set(license_classifier) or {LICENSE_UNKNOWN}
     if (
         from_source == FromArg.CLASSIFIER
@@ -635,6 +740,7 @@ def get_output_fields(args: CustomNamespace) -> list[str]:
     if args.from_ == FromArg.ALL:
         output_fields.append("License-Metadata")
         output_fields.append("License-Classifier")
+        output_fields.append("License-Expression")
     else:
         output_fields.append("License")
 
@@ -734,7 +840,7 @@ class CustomHelpFormatter(argparse.HelpFormatter):  # pragma: no cover
         prog: str,
         indent_increment: int = 2,
         max_help_position: int = 24,
-        width: Optional[int] = None,
+        width: int | None = None,
     ) -> None:
         max_help_position = 30
         super().__init__(
@@ -764,7 +870,7 @@ class CustomHelpFormatter(argparse.HelpFormatter):  # pragma: no cover
             }
         return super()._expand_help(action)
 
-    def _split_lines(self, text: str, width: int) -> List[str]:
+    def _split_lines(self, text: str, width: int) -> list[str]:
         separator_pos = text[:3].find("|")
         if separator_pos != -1:
             flag_splitlines: bool = "R" in text[:separator_pos]
@@ -775,13 +881,13 @@ class CustomHelpFormatter(argparse.HelpFormatter):  # pragma: no cover
 
 
 class CustomNamespace(argparse.Namespace):
-    from_: "FromArg"
-    order: "OrderArg"
-    format_: "FormatArg"
+    from_: FromArg
+    order: OrderArg
+    format_: FormatArg
     summary: bool
     output_file: str
-    ignore_packages: List[str]
-    packages: List[str]
+    ignore_packages: list[str]
+    packages: list[str]
     with_system: bool
     with_authors: bool
     with_urls: bool
@@ -792,8 +898,8 @@ class CustomNamespace(argparse.Namespace):
     filter_strings: bool
     filter_code_page: str
     partial_match: bool
-    fail_on: Optional[str]
-    allow_only: Optional[str]
+    fail_on: str | None
+    allow_only: str | None
 
 
 class CompatibleArgumentParser(argparse.ArgumentParser):
@@ -839,6 +945,7 @@ class FromArg(NoValueEnum):
     META = M = auto()
     CLASSIFIER = C = auto()
     MIXED = MIX = auto()
+    EXPRESSION = EXPR = auto()
     ALL = auto()
 
 
@@ -871,14 +978,14 @@ def enum_key_to_value(enum_key: Enum) -> str:
     return enum_key.name.replace("_", "-").lower()
 
 
-def choices_from_enum(enum_cls: Type[NoValueEnum]) -> List[str]:
+def choices_from_enum(enum_cls: type[NoValueEnum]) -> list[str]:
     return [
         key.replace("_", "-").lower() for key in enum_cls.__members__.keys()
     ]
 
 
 def get_value_from_enum(
-    enum_cls: Type[NoValueEnum], value: str
+    enum_cls: type[NoValueEnum], value: str
 ) -> NoValueEnum:
     return getattr(enum_cls, value_to_enum_key(value))
 
@@ -896,7 +1003,7 @@ class SelectAction(argparse.Action):
         parser: argparse.ArgumentParser,
         namespace: argparse.Namespace,
         values: str,
-        option_string: Optional[str] = None,
+        option_string: str | None = None,
     ) -> None:
         enum_cls = MAP_DEST_TO_ENUM[self.dest]
         setattr(namespace, self.dest, get_value_from_enum(enum_cls, values))
@@ -905,7 +1012,7 @@ class SelectAction(argparse.Action):
 def load_config_from_file(pyproject_path: str):
     if Path(pyproject_path).exists():
         with open(pyproject_path, "rb") as f:
-            return tomli.load(f).get("tool", {}).get(__pkgname__, {})
+            return tomllib.load(f).get("tool", {}).get(__pkgname__, {})
     return {}
 
 

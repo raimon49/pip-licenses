@@ -1,0 +1,89 @@
+---
+name: CD-PyPi
+description: "Continuous Deployment workflow for PyPi publishing."
+run-name: Build and publish ${{ github.ref_name }} by @${{ github.actor }}
+
+on:
+  release:
+    types:
+      - published
+
+permissions: {}
+
+env:
+  # Define Python versions at the top level -- Expected format: X.Y (e.g., 3.13)
+  PYTHON_DEFAULT: "${{ vars.PYTHON_DEFAULT || '3.13' }}"
+
+jobs:
+  pypi-publish:
+    name: upload release to PyPI
+    if: ${{ github.event_name == 'release' && (github.repository == 'raimon49/pip-licenses') && startsWith(github.ref, 'refs/tags/') }}
+    runs-on: ubuntu-latest
+    # Specifying a GitHub environment is optional, but strongly encouraged
+    # environment: pypi
+    permissions:
+      # IMPORTANT: this permission is mandatory for Build Attestation
+      attestations: write
+      # IMPORTANT: this permission is mandatory for Trusted Publishing
+      id-token: write
+      statuses: write
+      contents: read
+      actions: read
+    defaults:
+      run:
+        shell: bash
+    env:
+      LANG: "en_US.UTF-8"
+    outputs:
+      build_status: ${{ steps.build.outcome }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          persist-credentials: false
+      - id: build-python
+        uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
+        with:
+          python-version: "${{ env.PYTHON_DEFAULT || 3.13 }}"
+      - id: output_python
+        name: "bootstrap Python"
+        shell: bash
+        run: |
+          printf "%s\n" "::group::bootstrap-python-env"
+          printf "python-path=%s\n" "${{ steps.build-python.outputs.python-path }}" >> "$GITHUB_OUTPUT"
+          printf "PYTHON=%s\n" "${{ steps.build-python.outputs.python-path }}" >> "$GITHUB_ENV"
+          printf "python-version=%s\n" "${{ steps.build-python.outputs.python-version }}" >> "$GITHUB_OUTPUT"
+          printf "PYTHON_VERSION=%s\n" "${{ steps.build-python.outputs.python-version }}" >> "$GITHUB_ENV"
+          printf "%s\n" "::endgroup::"
+      - name: Setup build tools
+        id: build_deps
+        shell: bash
+        run: pip install --no-input --user "pip>=25.2" "setuptools>=80.9" "wheel>=0.45" "build>=1.2.1"
+      - name: Pre-Clean
+        id: clean
+        shell: bash
+        run: make -j1 -f Makefile clean 2>/dev/null || true
+      - name: Setup dependencies
+        id: install_deps
+        shell: bash
+        run: pip install --no-input -r requirements.txt
+      - name: Build
+        id: build
+        shell: bash
+        run: make -j1 -f Makefile build
+      - name: Calculate artifact checksums
+        run: |
+          shasum -a 512 dist/* > build.checksums.txt
+      - name: "Attest Build with Checksums"
+        id: multicast-build-chksum-attest
+        if: ${{ !cancelled() && (github.repository == 'raimon49/pip-licenses') && startsWith(github.ref, 'refs/tags/') }}
+        uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3.0.0
+        with:
+          subject-checksums: build.checksums.txt
+          github-token: ${{ github.token }}
+      - name: Publish package distributions to PyPI
+        if: ${{ success() }}
+        uses: pypa/gh-action-pypi-publish@release/v1 # no SHA -- MUST us 'v1' here or PyPi will reject
+        with:
+          skip-existing: true
+          packages-dir: dist/
