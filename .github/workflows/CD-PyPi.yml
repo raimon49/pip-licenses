@@ -53,10 +53,18 @@ jobs:
           printf "python-version=%s\n" "${{ steps.build-python.outputs.python-version }}" >> "$GITHUB_OUTPUT"
           printf "PYTHON_VERSION=%s\n" "${{ steps.build-python.outputs.python-version }}" >> "$GITHUB_ENV"
           printf "%s\n" "::endgroup::"
+      - name: Setup build tools
+        id: clean
+        shell: bash
+        run: pip install --no-input --user "pip>=25.2" "setuptools>=80.9" "wheel>=0.45" "build>=1.2.1"
       - name: Pre-Clean
         id: clean
         shell: bash
         run: make -j1 -f Makefile clean 2>/dev/null || true
+      - name: Setup dependencies
+        id: clean
+        shell: bash
+        run: pip install --no-input -r requirements.txt
       - name: Build
         id: build
         shell: bash
