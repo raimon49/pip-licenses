@@ -1170,7 +1170,8 @@ def create_parser(
         default=config_from_file.get("with-license-file", False),
         help="dump with location of license file and "
         "contents, most useful with JSON output. "
-        "For structured formats (CSV, Markdown, reST), see README for workflow examples.",
+        "For structured formats (CSV, Markdown, reST), "
+        "see README for workflow examples.",
     )
     format_options.add_argument(
         "--no-license-path",
