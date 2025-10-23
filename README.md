@@ -480,6 +480,18 @@ If you also want to output the file `NOTICE` distributed under Apache License et
 
 **Note:** If you want to keep the license file path secret, specify `--no-license-path` option together.
 
+**Note:** When using `--with-license-file` with structured formats like CSV, Markdown, reST, or Confluence, the multi-line license file contents can break the formatting. For documentation workflows (like Sphinx), consider using separate commands:
+
+```bash
+# Generate clean RST table for documentation
+$ pip-licenses --from=mixed --format=rst --output-file summary.rst
+
+# Generate license file contents in plain-vertical format for inclusion
+$ pip-licenses --from=mixed --format=plain-vertical --with-license-file --no-license-path --output-file with_license.txt
+```
+
+The RST file can be rendered nicely in Sphinx, while the plain-vertical format preserves the license file contents as monospace text.
+
 #### Option: filter\-strings
 
 Some package data contains Unicode characters which might cause problems for certain output formats (in particular ReST tables). If this filter is enabled, all characters which cannot be encoded with a given code page (see `--filter-code-page`) will be removed from any input strings (e.g. package name, description).
