@@ -611,7 +611,7 @@ Command-line options specified during execution will override the corresponding 
 Example `pyproject.toml` configuration:
 
 ```toml
-[tool.pip-licences]
+[tool.pip-licenses]
 from = "classifier"
 ignore-packages = [
   "scipy"

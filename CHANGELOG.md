@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+### 5.5.1
+
+* Fixed typographical issue in README examples, closing GHI #209.
+
 ### 5.5.0
 
 * Replace dependency on `tomli` with builtin `tomllib` for Python 3.11
