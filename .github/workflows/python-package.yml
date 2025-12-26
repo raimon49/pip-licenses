@@ -26,6 +26,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Lint with black
+        if: ${{ !cancelled() && matrix.python-version != '3.9' }}  # black GHA fails with v3.9
         uses: psf/black@stable
         with:
           options: "--check --diff"
