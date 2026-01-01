@@ -26,6 +26,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -44,7 +45,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
 from prettytable import HRuleStyle, PrettyTable, RowType
-
 
 if sys.version_info >= (3, 11):
     import tomllib
@@ -317,10 +317,10 @@ def get_packages(
         return (included_file, included_text)
 
     def get_pkg_info(pkg: Distribution) -> dict[str, str | list[str]]:
-        (license_file, license_text) = get_pkg_included_file(
+        license_file, license_text = get_pkg_included_file(
             pkg, "LICEN[CS]E.*|COPYING.*"
         )
-        (notice_file, notice_text) = get_pkg_included_file(pkg, "NOTICE.*")
+        notice_file, notice_text = get_pkg_included_file(pkg, "NOTICE.*")
         pkg_info: dict[str, str | list[str]] = {
             "name": pkg.metadata["name"],
             "version": pkg.version,
