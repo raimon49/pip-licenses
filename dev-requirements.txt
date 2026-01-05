@@ -110,7 +110,7 @@ twine==6.0.1
     # via pip-licenses (pyproject.toml)
 typing-extensions==4.12.2
     # via mypy
-urllib3==2.5.0
+urllib3==2.6.0
     # via
     #   requests
     #   twine
