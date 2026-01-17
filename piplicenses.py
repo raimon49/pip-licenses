@@ -551,7 +551,7 @@ def case_insensitive_set_diff(set_a, set_b):
     uncommon_items = set()
     set_b_lower = {item.lower() for item in set_b}
     for elem in set_a:
-        if not elem.lower() in set_b_lower:
+        if elem.lower() not in set_b_lower:
             uncommon_items.add(elem)
     return uncommon_items
 
