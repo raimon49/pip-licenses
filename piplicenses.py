@@ -36,7 +36,7 @@ import re
 import subprocess
 import sys
 from collections import Counter
-from collections.abc import Callable, Iterable, Iterator, Sequence
+from collections.abc import Callable, Iterator, Sequence
 from enum import Enum, auto
 from functools import partial
 from importlib import metadata as importlib_metadata
