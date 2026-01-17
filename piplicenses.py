@@ -147,7 +147,7 @@ def normalize_pkg_name(pkg_name: str) -> str:
                   or specified in the CLI
 
     Returns:
-        normalized packege name
+        normalized package name
     """
     return PATTERN_DELIMITER.sub("-", pkg_name).lower().strip()
 
