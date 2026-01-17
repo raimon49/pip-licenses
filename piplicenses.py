@@ -1246,7 +1246,7 @@ def save_if_needs(output_file: None | str, output_string: str) -> None:
 
         sys.stdout.write("created path: " + output_file + "\n")
         sys.exit(0)
-    except IOError:
+    except OSError:
         sys.stderr.write("check path: --output-file\n")
         sys.exit(1)
 

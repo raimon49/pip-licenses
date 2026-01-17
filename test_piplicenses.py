@@ -889,7 +889,7 @@ def test_output_file_success(monkeypatch) -> None:
 
 def test_output_file_error(monkeypatch) -> None:
     def mocked_open(*args, **kwargs):
-        raise IOError
+        raise OSError
 
     mocked_stdout = MockStdStream()
     mocked_stderr = MockStdStream()
