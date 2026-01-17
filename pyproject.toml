@@ -51,9 +51,9 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/raimon49/pip-licenses"
+homepage = "https://github.com/raimon49/pip-licenses"
 Releases = "https://github.com/raimon49/pip-licenses/releases"
-Issues = "https://github.com/raimon49/pip-licenses/issues"
+issues = "https://github.com/raimon49/pip-licenses/issues"
 
 [project.scripts]
 pip-licenses = "piplicenses:main"
