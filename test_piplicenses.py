@@ -862,7 +862,7 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertTrue(len(a_intersect_empty) == 0)
 
 
-class MockStdStream(object):
+class MockStdStream:
     def __init__(self) -> None:
         self.printed = ""
 
