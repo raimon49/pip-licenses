@@ -560,11 +560,7 @@ class JsonPrettyTable(PrettyTable):
     """PrettyTable-like class exporting to JSON"""
 
     def format_row(self, row: RowType) -> dict[str, str | list[str]]:
-        resrow: dict[str, str | list[str]] = {}
-        for field, value in zip(self._field_names, row):
-            resrow[field] = value
-
-        return resrow
+        return dict(zip(self._field_names, row))
 
     def get_string(self, **kwargs: str | list[str]) -> str:
         # import included here in order to limit dependencies
