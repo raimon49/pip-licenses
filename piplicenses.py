@@ -807,21 +807,17 @@ def create_warn_string(args: CustomNamespace) -> str:
 
     if args.with_license_file and args.format_ != FormatArg.JSON:
         message = warn(
-            (
-                "Due to the length of these fields, this option is "
-                "best paired with --format=json."
-            )
+            "Due to the length of these fields, this option is "
+            "best paired with --format=json."
         )
         warn_messages.append(message)
 
     if args.summary and (args.with_authors or args.with_urls):
         message = warn(
-            (
-                "When using this option, only --order=count or "
-                "--order=license has an effect for the --order "
-                "option. And using --with-authors and --with-urls "
-                "will be ignored."
-            )
+            "When using this option, only --order=count or "
+            "--order=license has an effect for the --order "
+            "option. And using --with-authors and --with-urls "
+            "will be ignored."
         )
         warn_messages.append(message)
 
