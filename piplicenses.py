@@ -978,9 +978,7 @@ def enum_key_to_value(enum_key: Enum) -> str:
 
 
 def choices_from_enum(enum_cls: type[NoValueEnum]) -> list[str]:
-    return [
-        key.replace("_", "-").lower() for key in enum_cls.__members__.keys()
-    ]
+    return [key.replace("_", "-").lower() for key in enum_cls.__members__]
 
 
 def get_value_from_enum(
