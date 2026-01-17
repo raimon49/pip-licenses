@@ -116,9 +116,7 @@ class TestGetLicenses(CommandLineTestCase):
 
         # XXX: access to private API
         rows = copy.deepcopy(table.rows)
-        pkg_name_columns = []
-        for row in rows:
-            pkg_name_columns.append(row[index])
+        pkg_name_columns = [row[index] for row in rows]
 
         return pkg_name_columns
 
@@ -127,9 +125,7 @@ class TestGetLicenses(CommandLineTestCase):
 
         # XXX: access to private API
         rows = copy.deepcopy(table.rows)
-        pkg_name_columns = []
-        for row in rows:
-            pkg_name_columns.append(row[index])
+        pkg_name_columns = [row[index] for row in rows]
 
         return pkg_name_columns
 
@@ -236,14 +232,12 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertIn("License-Expression", output_fields)
 
         index_license_meta = output_fields.index("License-Metadata")
-        license_meta = []
-        for row in table.rows:
-            license_meta.append(row[index_license_meta])
+        license_meta = [row[index_license_meta] for row in table.rows]
 
         index_license_classifier = output_fields.index("License-Classifier")
-        license_classifier = []
-        for row in table.rows:
-            license_classifier.append(row[index_license_classifier])
+        license_classifier = [
+            row[index_license_classifier] for row in table.rows
+        ]
 
         index_license_expression = output_fields.index("License-Expression")
         license_expression = [
