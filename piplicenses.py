@@ -353,11 +353,11 @@ def get_packages(
                     args.filter_code_page, errors="ignore"
                 ).decode(args.filter_code_page)
 
-            for k in pkg_info:
-                if isinstance(pkg_info[k], list):
-                    pkg_info[k] = list(map(filter_string, pkg_info[k]))
+            for k, v in pkg_info.items():
+                if isinstance(v, list):
+                    pkg_info[k] = list(map(filter_string, v))
                 else:
-                    pkg_info[k] = filter_string(cast(str, pkg_info[k]))
+                    pkg_info[k] = filter_string(cast(str, v))
 
         return pkg_info
 
