@@ -810,7 +810,7 @@ def create_warn_string(args: CustomNamespace) -> str:
     warn_messages = []
     warn = partial(output_colored, "33")
 
-    if args.with_license_file and not args.format_ == FormatArg.JSON:
+    if args.with_license_file and args.format_ != FormatArg.JSON:
         message = warn(
             (
                 "Due to the length of these fields, this option is "
