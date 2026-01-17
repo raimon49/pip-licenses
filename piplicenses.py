@@ -1199,7 +1199,7 @@ def create_parser(
         type=str,
         default=config_from_file.get("filter-code-page", "latin1"),
         metavar="CODE",
-        help="I|specify code page for filtering " "(default: %(default)s)",
+        help="I|specify code page for filtering (default: %(default)s)",
     )
 
     verify_options.add_argument(
