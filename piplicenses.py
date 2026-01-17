@@ -336,7 +336,7 @@ def get_packages(
             for field_selector_fn in field_selector_fns:
                 # Type hint of `Distribution.metadata` states `PackageMetadata`
                 # but it's actually of type `email.Message`
-                value = field_selector_fn(metadata)  # type: ignore
+                value = field_selector_fn(metadata)  # type: ignore[arg-type]
                 if value:
                     break
             pkg_info[field_name] = value or LICENSE_UNKNOWN

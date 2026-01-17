@@ -1183,7 +1183,7 @@ def test_extract_homepage_home_page_set() -> None:
     metadata = MagicMock()
     metadata.get.return_value = "Foobar"
 
-    assert "Foobar" == extract_homepage(metadata=metadata)  # type: ignore
+    assert "Foobar" == extract_homepage(metadata=metadata)
 
     metadata.get.assert_called_once_with("home-page", None)
 
@@ -1198,7 +1198,7 @@ def test_extract_homepage_project_url_fallback() -> None:
         "Homepage, homepage",
     ]
 
-    assert "homepage" == extract_homepage(metadata=metadata)  # type: ignore
+    assert "homepage" == extract_homepage(metadata=metadata)
 
     metadata.get_all.assert_called_once_with("Project-URL", [])
 
@@ -1213,9 +1213,7 @@ def test_extract_homepage_project_url_fallback_multiple_parts() -> None:
         "Homepage, homepage, foo, bar",
     ]
 
-    assert "homepage, foo, bar" == extract_homepage(
-        metadata=metadata  # type: ignore
-    )
+    assert "homepage, foo, bar" == extract_homepage(metadata=metadata)
 
     metadata.get_all.assert_called_once_with("Project-URL", [])
 
@@ -1226,7 +1224,7 @@ def test_extract_homepage_empty() -> None:
     metadata.get.return_value = None
     metadata.get_all.return_value = []
 
-    assert None is extract_homepage(metadata=metadata)  # type: ignore
+    assert None is extract_homepage(metadata=metadata)
 
     metadata.get.assert_called_once_with("home-page", None)
     metadata.get_all.assert_called_once_with("Project-URL", [])
@@ -1242,7 +1240,7 @@ def test_extract_homepage_project_uprl_fallback_capitalisation() -> None:
         "homepage, homepage",
     ]
 
-    assert "homepage" == extract_homepage(metadata=metadata)  # type: ignore
+    assert "homepage" == extract_homepage(metadata=metadata)
 
     metadata.get_all.assert_called_once_with("Project-URL", [])
 
