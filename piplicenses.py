@@ -426,8 +426,7 @@ def get_packages(
                 )
             if failed_licenses:
                 sys.stderr.write(
-                    "fail-on license {} was found for package "
-                    "{}:{}\n".format(
+                    "fail-on license {} was found for package {}:{}\n".format(
                         "; ".join(sorted(failed_licenses)),
                         pkg_info["name"],
                         pkg_info["version"],
