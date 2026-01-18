@@ -624,12 +624,12 @@ class CSVPrettyTable(PrettyTable):
 
         lines: list[str] = []
         formatted_header = ",".join(
-            ['"%s"' % (esc_quotes(val),) for val in self._field_names]
+            ['"{}"'.format(esc_quotes(val)) for val in self._field_names]
         )
         lines.append(formatted_header)
         lines.extend(
             [
-                ",".join(['"%s"' % (esc_quotes(val),) for val in row])
+                ",".join(['"{}"'.format(esc_quotes(val)) for val in row])
                 for row in formatted_rows
             ]
         )
@@ -923,16 +923,15 @@ class CompatibleArgumentParser(argparse.ArgumentParser):
             codecs.lookup(args.filter_code_page)
         except LookupError:
             self.error(
-                "invalid code page '%s' given for '--filter-code-page, "
-                "check https://docs.python.org/3/library/codecs.html"
-                "#standard-encodings for valid code pages"
-                % args.filter_code_page
+                "invalid code page '{}' given for '--filter-code-page, check "
+                "https://docs.python.org/3/library/codecs.html#standard-encodings "  # noqa: E501
+                "for valid code pages".format(args.filter_code_page)
             )
 
 
 class NoValueEnum(Enum):
     def __repr__(self) -> str:  # pragma: no cover
-        return "<%s.%s>" % (self.__class__.__name__, self.name)
+        return "<{}.{}>".format(self.__class__.__name__, self.name)
 
 
 class FromArg(NoValueEnum):
@@ -1225,9 +1224,9 @@ def output_colored(code: str, text: str, is_bold: bool = False) -> str:
     Create function to output with color sequence
     """
     if is_bold:
-        code = "1;%s" % code
+        code = "1;{}".format(code)
 
-    return "\033[%sm%s\033[0m" % (code, text)
+    return "\033[{}m{}\033[0m".format(code, text)
 
 
 def save_if_needs(output_file: None | str, output_string: str) -> None:
