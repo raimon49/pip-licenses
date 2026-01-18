@@ -624,12 +624,12 @@ class CSVPrettyTable(PrettyTable):
 
         lines: list[str] = []
         formatted_header = ",".join(
-            ['"{}"'.format(esc_quotes(val)) for val in self._field_names]
+            [f'"{esc_quotes(val)}"' for val in self._field_names]
         )
         lines.append(formatted_header)
         lines.extend(
             [
-                ",".join(['"{}"'.format(esc_quotes(val)) for val in row])
+                ",".join([f'"{esc_quotes(val)}"' for val in row])
                 for row in formatted_rows
             ]
         )
@@ -651,7 +651,7 @@ class PlainVerticalTable(PrettyTable):
         output = ""
         for row in rows:
             for v in row:
-                output += "{}\n".format(v)
+                output += f"{v}\n"
             output += "\n"
 
         return output
@@ -923,15 +923,16 @@ class CompatibleArgumentParser(argparse.ArgumentParser):
             codecs.lookup(args.filter_code_page)
         except LookupError:
             self.error(
-                "invalid code page '{}' given for '--filter-code-page, check "
+                f"invalid code page '{args.filter_code_page}' given "
+                "for '--filter-code-page, check "
                 "https://docs.python.org/3/library/codecs.html#standard-encodings "  # noqa: E501
-                "for valid code pages".format(args.filter_code_page)
+                "for valid code pages"
             )
 
 
 class NoValueEnum(Enum):
     def __repr__(self) -> str:  # pragma: no cover
-        return "<{}.{}>".format(self.__class__.__name__, self.name)
+        return f"<{self.__class__.__name__}.{self.name}>"
 
 
 class FromArg(NoValueEnum):
@@ -1224,9 +1225,9 @@ def output_colored(code: str, text: str, is_bold: bool = False) -> str:
     Create function to output with color sequence
     """
     if is_bold:
-        code = "1;{}".format(code)
+        code = f"1;{code}"
 
-    return "\033[{}m{}\033[0m".format(code, text)
+    return f"\033[{code}m{text}\033[0m"
 
 
 def save_if_needs(output_file: None | str, output_string: str) -> None:
