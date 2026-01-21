@@ -52,7 +52,7 @@ dev = [
 
 [project.urls]
 homepage = "https://github.com/raimon49/pip-licenses"
-Releases = "https://github.com/raimon49/pip-licenses/releases"
+releasenotes = "https://github.com/raimon49/pip-licenses/releases"
 issues = "https://github.com/raimon49/pip-licenses/issues"
 
 [project.scripts]
