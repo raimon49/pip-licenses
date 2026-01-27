@@ -3,6 +3,12 @@
 ### 5.5.1
 
 * Fixed typographical issue in README examples, closing GHI #209.
+* Fixed typographical issue in docstring found by codespell.
+* Aligned Project URLs in `pyproject.toml` with [PEP 753](https://peps.python.org/pep-0753/)
+* Brought `pyproject.toml` (e.g., packaging metadata) into alignment with [PEP 639](https://peps.python.org/pep-0639/) and related packaging guidance.
+  * Improved `MANIFEST.in` to `setuptools-scm` build logic with better filtering, closing GHI #266
+* Fixed a regression in linting via `black` by deprecating support for python 3.9, closing GHI #264
+  * Applied `black 26.1.0`suggestions to codebase, closing GHI #269
 
 ### 5.5.0
 

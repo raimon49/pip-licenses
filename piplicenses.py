@@ -26,6 +26,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -45,11 +46,10 @@ from typing import TYPE_CHECKING, cast
 
 from prettytable import HRuleStyle, PrettyTable, RowType
 
-
 if sys.version_info >= (3, 11):
     import tomllib
 else:
-    import tomli as tomllib
+    import tomli as tomllib  # type: ignore[import-not-found]
 
 if TYPE_CHECKING:  # pragma: no cover
     from email.message import Message
@@ -58,7 +58,7 @@ if TYPE_CHECKING:  # pragma: no cover
 open = open  # allow monkey patching
 
 __pkgname__ = "pip-licenses"
-__version__ = "5.5.0"
+__version__ = "5.5.1"
 __summary__ = (
     "Dump the software license list of Python packages installed with pip."
 )
@@ -147,7 +147,7 @@ def normalize_pkg_name(pkg_name: str) -> str:
                   or specified in the CLI
 
     Returns:
-        normalized packege name
+        normalized package name
     """
     return PATTERN_DELIMITER.sub("-", pkg_name).lower().strip()
 
@@ -317,10 +317,10 @@ def get_packages(
         return (included_file, included_text)
 
     def get_pkg_info(pkg: Distribution) -> dict[str, str | list[str]]:
-        (license_file, license_text) = get_pkg_included_file(
+        license_file, license_text = get_pkg_included_file(
             pkg, "LICEN[CS]E.*|COPYING.*"
         )
-        (notice_file, notice_text) = get_pkg_included_file(pkg, "NOTICE.*")
+        notice_file, notice_text = get_pkg_included_file(pkg, "NOTICE.*")
         pkg_info: dict[str, str | list[str]] = {
             "name": pkg.metadata["name"],
             "version": pkg.version,
