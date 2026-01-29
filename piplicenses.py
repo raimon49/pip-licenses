@@ -382,11 +382,17 @@ def get_packages(
 
     fail_on_licenses = set()
     if args.fail_on:
-        fail_on_licenses = set(map(str.strip, args.fail_on.split(";")))
+        # filter None types out
+        fail_on_licenses = set(
+            filter(None, map(str.strip, args.fail_on.split(";")))
+        )
 
     allow_only_licenses = set()
     if args.allow_only:
-        allow_only_licenses = set(map(str.strip, args.allow_only.split(";")))
+        # filter None types out
+        allow_only_licenses = set(
+            filter(None, map(str.strip, args.allow_only.split(";")))
+        )
 
     for pkg in pkgs:
         pkg_name = normalize_pkg_name(pkg.metadata["name"])
