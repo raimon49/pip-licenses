@@ -21,17 +21,14 @@ jobs:
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: '3.14'
-      - name: Format with black
-        uses: psf/black@stable
-        with:
-          options: "--check --diff"
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           if [ -f dev-requirements.txt ]; then pip install -r dev-requirements.txt; fi
-      - name: Lint with ruff
+      - name: Lint and format with ruff
         run: |
           ruff check --diff
+          ruff format --diff
       - name: Validate static typing with mypy
         run: | # the target Python version should be the earliest supported version
           mypy --install-types --non-interactive --python-version 3.9 .

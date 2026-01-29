@@ -6,8 +6,6 @@
 #
 backports-tarfile==1.2.0
     # via jaraco-context
-black==25.11.0
-    # via pip-licenses (pyproject.toml)
 build==1.4.0
     # via pip-tools
 certifi==2026.1.4
@@ -17,9 +15,7 @@ cffi==2.0.0
 charset-normalizer==3.4.4
     # via requests
 click==8.1.8
-    # via
-    #   black
-    #   pip-tools
+    # via pip-tools
 coverage[toml]==7.10.7
     # via pytest-cov
 cryptography==46.0.4
@@ -66,26 +62,19 @@ more-itertools==10.8.0
 mypy==1.19.1
     # via pip-licenses (pyproject.toml)
 mypy-extensions==1.1.0
-    # via
-    #   black
-    #   mypy
+    # via mypy
 nh3==0.3.2
     # via readme-renderer
 packaging==26.0
     # via
-    #   black
     #   build
     #   pytest
     #   twine
     #   wheel
 pathspec==1.0.4
-    # via
-    #   black
-    #   mypy
+    # via mypy
 pip-tools==7.5.2
     # via pip-licenses (pyproject.toml)
-platformdirs==4.4.0
-    # via black
 pluggy==1.6.0
     # via
     #   pytest
@@ -111,8 +100,6 @@ pytest-cov==7.0.0
     # via pip-licenses (pyproject.toml)
 pytest-runner==6.0.1
     # via pip-licenses (pyproject.toml)
-pytokens==0.4.0
-    # via black
 readme-renderer==44.0
     # via twine
 requests==2.32.5
@@ -132,7 +119,6 @@ secretstorage==3.3.3
     # via keyring
 tomli==2.4.0 ; python_version < "3.11"
     # via
-    #   black
     #   build
     #   coverage
     #   mypy
@@ -145,7 +131,6 @@ twine==6.2.0
     # via pip-licenses (pyproject.toml)
 typing-extensions==4.15.0
     # via
-    #   black
     #   cryptography
     #   exceptiongroup
     #   mypy

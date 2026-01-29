@@ -35,7 +35,6 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "black",
     "docutils",
     "wheel",
     "mypy",
@@ -65,9 +64,6 @@ readme = {file = ["README.md", "CHANGELOG.md"], content-type = "text/markdown"}
 
 [tool.pytest.ini_options]
 addopts = "-v --cov --cov-report term-missing"
-
-[tool.black]
-line-length = 79
 
 [tool.ruff]
 line-length = 79
