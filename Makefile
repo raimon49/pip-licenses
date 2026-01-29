@@ -12,7 +12,7 @@ help:
 	@echo '    local-install   Install locally'
 	@echo '    local-uninstall Uninstall locally'
 	@echo '    update-depends  Re-compile requirements for development'
-	@echo '    lint            Re-lint by black, isort and mypy'
+	@echo '    lint            Re-lint by black, ruff, isort and mypy'
 	@echo '    test            Run unittests'
 	@echo '    deploy          Release to PyPI server'
 	@echo '    test-deploy     Release to Test PyPI server'
@@ -38,6 +38,7 @@ update-depends:
 
 .PHONY: lint
 lint:
+	ruff check
 	black .
 	isort .
 	mypy --install-types --non-interactive .

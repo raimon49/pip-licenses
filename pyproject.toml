@@ -43,8 +43,8 @@ dev = [
     "pip-tools",
     "pypandoc",
     "pytest-cov",
-    "pytest-pycodestyle",
     "pytest-runner",
+    "ruff",
     "twine",
     "tomli-w"
 ]
@@ -65,7 +65,7 @@ version = {attr = "piplicenses.__version__"}
 readme = {file = ["README.md", "CHANGELOG.md"], content-type = "text/markdown"}
 
 [tool.pytest.ini_options]
-addopts = "--pycodestyle -v --cov --cov-report term-missing"
+addopts = "-v --cov --cov-report term-missing"
 
 [tool.black]
 line-length = 79
@@ -74,6 +74,35 @@ line-length = 79
 line_length = 72
 known_first_party = ["piplicenses"]
 profile = "black"
+
+[tool.ruff]
+line-length = 79
+
+[tool.ruff.lint]
+extend-select = [
+    "B",      # flake8-bugbear
+    "C4",     # flake8-comprehensions
+    "FA",     # flake8-future-annotations
+    "ISC",    # flake8-implicit-str-concat
+    "LOG",    # flake8-logging
+    "G",      # flake8-logging-format
+    "PIE",    # flake8-pie
+    "PYI",    # flake8-pyi
+    "SIM",    # flake8-simplify
+    "FLY",    # flynt
+    "PERF",   # Perflint
+    "PGH",    # pygrep-hooks
+    "UP",     # pyupgrade
+    "FURB",   # refurb
+    "RUF",    # Ruff-specific rules
+]
+ignore = [
+    "C401",   # Unnecessary generator (rewrite as a set comprehension)
+    "F841",   # Local variable is assigned to but never used
+    "SIM300", # Yoda condition detected
+    "RUF005", # Consider unpacking instead of concatenation
+    "RUF021", # Parenthesize `a and b` expressions when chaining `and` and `or` together, to make the precedence clear
+]
 
 [tool.mypy]
 exclude = ["venv"]
