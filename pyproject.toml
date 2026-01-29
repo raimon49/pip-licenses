@@ -35,7 +35,6 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "autopep8",
     "black",
     "docutils",
     "isort",
