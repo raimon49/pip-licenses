@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 # vim:fenc=utf-8 ff=unix ft=python ts=4 sw=4 sts=4 si et
 """
 pip-licenses
@@ -36,7 +35,7 @@ import re
 import subprocess
 import sys
 from collections import Counter
-from collections.abc import Callable, Iterable, Iterator, Sequence
+from collections.abc import Callable, Iterator, Sequence
 from enum import Enum, auto
 from functools import partial
 from importlib import metadata as importlib_metadata
@@ -336,7 +335,7 @@ def get_packages(
             for field_selector_fn in field_selector_fns:
                 # Type hint of `Distribution.metadata` states `PackageMetadata`
                 # but it's actually of type `email.Message`
-                value = field_selector_fn(metadata)  # type: ignore
+                value = field_selector_fn(metadata)  # type: ignore[arg-type]
                 if value:
                     break
             pkg_info[field_name] = value or LICENSE_UNKNOWN
@@ -353,11 +352,11 @@ def get_packages(
                     args.filter_code_page, errors="ignore"
                 ).decode(args.filter_code_page)
 
-            for k in pkg_info:
-                if isinstance(pkg_info[k], list):
-                    pkg_info[k] = list(map(filter_string, pkg_info[k]))
+            for k, v in pkg_info.items():
+                if isinstance(v, list):
+                    pkg_info[k] = list(map(filter_string, v))
                 else:
-                    pkg_info[k] = filter_string(cast(str, pkg_info[k]))
+                    pkg_info[k] = filter_string(cast(str, v))
 
         return pkg_info
 
@@ -426,8 +425,7 @@ def get_packages(
                 )
             if failed_licenses:
                 sys.stderr.write(
-                    "fail-on license {} was found for package "
-                    "{}:{}\n".format(
+                    "fail-on license {} was found for package {}:{}\n".format(
                         "; ".join(sorted(failed_licenses)),
                         pkg_info["name"],
                         pkg_info["version"],
@@ -552,7 +550,7 @@ def case_insensitive_set_diff(set_a, set_b):
     uncommon_items = set()
     set_b_lower = {item.lower() for item in set_b}
     for elem in set_a:
-        if not elem.lower() in set_b_lower:
+        if elem.lower() not in set_b_lower:
             uncommon_items.add(elem)
     return uncommon_items
 
@@ -561,11 +559,7 @@ class JsonPrettyTable(PrettyTable):
     """PrettyTable-like class exporting to JSON"""
 
     def format_row(self, row: RowType) -> dict[str, str | list[str]]:
-        resrow: dict[str, str | list[str]] = {}
-        for field, value in zip(self._field_names, row):
-            resrow[field] = value
-
-        return resrow
+        return dict(zip(self._field_names, row))
 
     def get_string(self, **kwargs: str | list[str]) -> str:
         # import included here in order to limit dependencies
@@ -630,12 +624,12 @@ class CSVPrettyTable(PrettyTable):
 
         lines: list[str] = []
         formatted_header = ",".join(
-            ['"%s"' % (esc_quotes(val),) for val in self._field_names]
+            [f'"{esc_quotes(val)}"' for val in self._field_names]
         )
         lines.append(formatted_header)
         lines.extend(
             [
-                ",".join(['"%s"' % (esc_quotes(val),) for val in row])
+                ",".join([f'"{esc_quotes(val)}"' for val in row])
                 for row in formatted_rows
             ]
         )
@@ -657,7 +651,7 @@ class PlainVerticalTable(PrettyTable):
         output = ""
         for row in rows:
             for v in row:
-                output += "{}\n".format(v)
+                output += f"{v}\n"
             output += "\n"
 
         return output
@@ -811,23 +805,19 @@ def create_warn_string(args: CustomNamespace) -> str:
     warn_messages = []
     warn = partial(output_colored, "33")
 
-    if args.with_license_file and not args.format_ == FormatArg.JSON:
+    if args.with_license_file and args.format_ != FormatArg.JSON:
         message = warn(
-            (
-                "Due to the length of these fields, this option is "
-                "best paired with --format=json."
-            )
+            "Due to the length of these fields, this option is "
+            "best paired with --format=json."
         )
         warn_messages.append(message)
 
     if args.summary and (args.with_authors or args.with_urls):
         message = warn(
-            (
-                "When using this option, only --order=count or "
-                "--order=license has an effect for the --order "
-                "option. And using --with-authors and --with-urls "
-                "will be ignored."
-            )
+            "When using this option, only --order=count or "
+            "--order=license has an effect for the --order "
+            "option. And using --with-authors and --with-urls "
+            "will be ignored."
         )
         warn_messages.append(message)
 
@@ -929,16 +919,16 @@ class CompatibleArgumentParser(argparse.ArgumentParser):
             codecs.lookup(args.filter_code_page)
         except LookupError:
             self.error(
-                "invalid code page '%s' given for '--filter-code-page, "
-                "check https://docs.python.org/3/library/codecs.html"
-                "#standard-encodings for valid code pages"
-                % args.filter_code_page
+                f"invalid code page '{args.filter_code_page}' given "
+                "for '--filter-code-page, check "
+                "https://docs.python.org/3/library/codecs.html#standard-encodings "  # noqa: E501
+                "for valid code pages"
             )
 
 
 class NoValueEnum(Enum):
     def __repr__(self) -> str:  # pragma: no cover
-        return "<%s.%s>" % (self.__class__.__name__, self.name)
+        return f"<{self.__class__.__name__}.{self.name}>"
 
 
 class FromArg(NoValueEnum):
@@ -979,9 +969,7 @@ def enum_key_to_value(enum_key: Enum) -> str:
 
 
 def choices_from_enum(enum_cls: type[NoValueEnum]) -> list[str]:
-    return [
-        key.replace("_", "-").lower() for key in enum_cls.__members__.keys()
-    ]
+    return [key.replace("_", "-").lower() for key in enum_cls.__members__]
 
 
 def get_value_from_enum(
@@ -1199,7 +1187,7 @@ def create_parser(
         type=str,
         default=config_from_file.get("filter-code-page", "latin1"),
         metavar="CODE",
-        help="I|specify code page for filtering " "(default: %(default)s)",
+        help="I|specify code page for filtering (default: %(default)s)",
     )
 
     verify_options.add_argument(
@@ -1233,9 +1221,9 @@ def output_colored(code: str, text: str, is_bold: bool = False) -> str:
     Create function to output with color sequence
     """
     if is_bold:
-        code = "1;%s" % code
+        code = f"1;{code}"
 
-    return "\033[%sm%s\033[0m" % (code, text)
+    return f"\033[{code}m{text}\033[0m"
 
 
 def save_if_needs(output_file: None | str, output_string: str) -> None:
@@ -1254,7 +1242,7 @@ def save_if_needs(output_file: None | str, output_string: str) -> None:
 
         sys.stdout.write("created path: " + output_file + "\n")
         sys.exit(0)
-    except IOError:
+    except OSError:
         sys.stderr.write("check path: --output-file\n")
         sys.exit(1)
 

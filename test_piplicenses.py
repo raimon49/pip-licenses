@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # vim:fenc=utf-8 ff=unix ft=python ts=4 sw=4 sts=4 si et
 from __future__ import annotations
 
@@ -116,9 +115,7 @@ class TestGetLicenses(CommandLineTestCase):
 
         # XXX: access to private API
         rows = copy.deepcopy(table.rows)
-        pkg_name_columns = []
-        for row in rows:
-            pkg_name_columns.append(row[index])
+        pkg_name_columns = [row[index] for row in rows]
 
         return pkg_name_columns
 
@@ -127,9 +124,7 @@ class TestGetLicenses(CommandLineTestCase):
 
         # XXX: access to private API
         rows = copy.deepcopy(table.rows)
-        pkg_name_columns = []
-        for row in rows:
-            pkg_name_columns.append(row[index])
+        pkg_name_columns = [row[index] for row in rows]
 
         return pkg_name_columns
 
@@ -236,14 +231,12 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertIn("License-Expression", output_fields)
 
         index_license_meta = output_fields.index("License-Metadata")
-        license_meta = []
-        for row in table.rows:
-            license_meta.append(row[index_license_meta])
+        license_meta = [row[index_license_meta] for row in table.rows]
 
         index_license_classifier = output_fields.index("License-Classifier")
-        license_classifier = []
-        for row in table.rows:
-            license_classifier.append(row[index_license_classifier])
+        license_classifier = [
+            row[index_license_classifier] for row in table.rows
+        ]
 
         index_license_expression = output_fields.index("License-Expression")
         license_expression = [
@@ -868,7 +861,7 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertTrue(len(a_intersect_empty) == 0)
 
 
-class MockStdStream(object):
+class MockStdStream:
     def __init__(self) -> None:
         self.printed = ""
 
@@ -896,7 +889,7 @@ def test_output_file_success(monkeypatch) -> None:
 
 def test_output_file_error(monkeypatch) -> None:
     def mocked_open(*args, **kwargs):
-        raise IOError
+        raise OSError
 
     mocked_stdout = MockStdStream()
     mocked_stderr = MockStdStream()
@@ -1189,7 +1182,7 @@ def test_extract_homepage_home_page_set() -> None:
     metadata = MagicMock()
     metadata.get.return_value = "Foobar"
 
-    assert "Foobar" == extract_homepage(metadata=metadata)  # type: ignore
+    assert "Foobar" == extract_homepage(metadata=metadata)
 
     metadata.get.assert_called_once_with("home-page", None)
 
@@ -1204,7 +1197,7 @@ def test_extract_homepage_project_url_fallback() -> None:
         "Homepage, homepage",
     ]
 
-    assert "homepage" == extract_homepage(metadata=metadata)  # type: ignore
+    assert "homepage" == extract_homepage(metadata=metadata)
 
     metadata.get_all.assert_called_once_with("Project-URL", [])
 
@@ -1219,9 +1212,7 @@ def test_extract_homepage_project_url_fallback_multiple_parts() -> None:
         "Homepage, homepage, foo, bar",
     ]
 
-    assert "homepage, foo, bar" == extract_homepage(
-        metadata=metadata  # type: ignore
-    )
+    assert "homepage, foo, bar" == extract_homepage(metadata=metadata)
 
     metadata.get_all.assert_called_once_with("Project-URL", [])
 
@@ -1232,7 +1223,7 @@ def test_extract_homepage_empty() -> None:
     metadata.get.return_value = None
     metadata.get_all.return_value = []
 
-    assert None is extract_homepage(metadata=metadata)  # type: ignore
+    assert None is extract_homepage(metadata=metadata)
 
     metadata.get.assert_called_once_with("home-page", None)
     metadata.get_all.assert_called_once_with("Project-URL", [])
@@ -1248,7 +1239,7 @@ def test_extract_homepage_project_uprl_fallback_capitalisation() -> None:
         "homepage, homepage",
     ]
 
-    assert "homepage" == extract_homepage(metadata=metadata)  # type: ignore
+    assert "homepage" == extract_homepage(metadata=metadata)
 
     metadata.get_all.assert_called_once_with("Project-URL", [])
 
