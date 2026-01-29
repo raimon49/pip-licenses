@@ -80,6 +80,7 @@ packaging==25.0
     #   build
     #   pytest
     #   twine
+    #   wheel
 pathspec==0.12.1
     # via
     #   black
