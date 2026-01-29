@@ -615,7 +615,7 @@ class CSVPrettyTable(PrettyTable):
                 return cast(bytes, val).decode("utf-8").replace('"', '""')
             except UnicodeEncodeError:  # pragma: no cover
                 return str(
-                    cast(str, val).encode("unicode_escape").replace('"', '""')  # type: ignore[arg-type] # noqa: E501
+                    cast(str, val).encode("unicode_escape").replace('"', '""')  # type: ignore[arg-type]
                 )
 
         options = self._get_options(kwargs)
@@ -921,7 +921,7 @@ class CompatibleArgumentParser(argparse.ArgumentParser):
             self.error(
                 f"invalid code page '{args.filter_code_page}' given "
                 "for '--filter-code-page, check "
-                "https://docs.python.org/3/library/codecs.html#standard-encodings "  # noqa: E501
+                "https://docs.python.org/3/library/codecs.html#standard-encodings "
                 "for valid code pages"
             )
 
