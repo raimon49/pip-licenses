@@ -970,6 +970,53 @@ def test_allow_only_partial(monkeypatch) -> None:
     )
 
 
+def test_allow_only_with_empty_tokens(monkeypatch) -> None:
+    # same as test_allow_only but with extra semicolons/whitespace
+    licenses = (
+        "Bsd License",
+        "Apache Software License",
+        "Mozilla Public License 2.0 (MPL 2.0)",
+        "Python Software Foundation License",
+        "Public Domain",
+        "GNU General Public License (GPL)",
+        "GNU Library or Lesser General Public License (LGPL)",
+    )
+    # leading/trailing and consecutive semicolons + spaces
+    allow_only_args = ["--allow-only= ; ;{};; ".format(";".join(licenses))]
+    mocked_stdout = MockStdStream()
+    mocked_stderr = MockStdStream()
+    monkeypatch.setattr(sys.stdout, "write", mocked_stdout.write)
+    monkeypatch.setattr(sys.stderr, "write", mocked_stderr.write)
+    monkeypatch.setattr(sys, "exit", lambda n: None)
+    args = create_parser().parse_args(allow_only_args)
+    create_licenses_table(args)
+
+    assert "" == mocked_stdout.printed
+    assert (
+        "license MIT License not in allow-only licenses was found for "
+        "package" in mocked_stderr.printed
+    )
+
+
+def test_fail_on_with_empty_tokens(monkeypatch) -> None:
+    # include extra semicolons/whitespace around the entry
+    licenses = ("MIT license",)
+    fail_on_args = ["--fail-on=;;  {} ;".format(";".join(licenses))]
+    mocked_stdout = MockStdStream()
+    mocked_stderr = MockStdStream()
+    monkeypatch.setattr(sys.stdout, "write", mocked_stdout.write)
+    monkeypatch.setattr(sys.stderr, "write", mocked_stderr.write)
+    monkeypatch.setattr(sys, "exit", lambda n: None)
+    args = create_parser().parse_args(fail_on_args)
+    create_licenses_table(args)
+
+    assert "" == mocked_stdout.printed
+    assert (
+        "fail-on license MIT License was found for "
+        "package" in mocked_stderr.printed
+    )
+
+
 def test_different_python() -> None:
     import tempfile
 
