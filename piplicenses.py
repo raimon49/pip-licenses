@@ -35,7 +35,7 @@ import re
 import subprocess
 import sys
 from collections import Counter
-from collections.abc import Callable, Iterator, Sequence
+from collections.abc import Callable, Generator, Iterable, Iterator, Sequence
 from enum import Enum, auto
 from functools import partial
 from importlib import metadata as importlib_metadata
@@ -244,6 +244,35 @@ def normalize_pkg_name_and_version(pkg_name_version: str) -> str:
     return normalize_pkg_name(pkg_name) + sep + normalize_version(version)
 
 
+def deduplicate_and_normalize(
+    packages: Iterable[str],
+) -> Generator[str, None, None]:
+    """Normalize and deduplicate a list of package names.
+
+    This generator function takes an iterable of package names,
+    normalizes each package name, and yields only unique normalized
+    names, preserving the order of their first occurrence.
+
+    Args:
+        packages (Iterable[str]): An iterable containing package names
+                                  that need to be normalized. The input
+                                  can be a list, tuple, or any other
+                                  iterable of strings.
+
+    Yields:
+        str: A unique normalized package name each time this
+             function is called. The normalization is performed
+             by the `normalize_pkg_name` function.
+
+    """
+    seen: set[str] = set()
+    for pkg in packages:
+        norm_pkg: str = normalize_pkg_name(pkg)
+        if norm_pkg not in seen:
+            seen.add(norm_pkg)
+            yield norm_pkg
+
+
 METADATA_KEYS: dict[str, list[Callable[[Message], str | None]]] = {
     "home-page": [extract_homepage],
     "author": [
@@ -378,7 +407,7 @@ def get_packages(
     ignore_pkgs_as_normalize = [
         normalize_pkg_name_and_version(pkg) for pkg in args.ignore_packages
     ]
-    pkgs_as_normalize = [normalize_pkg_name(pkg) for pkg in args.packages]
+    pkgs_as_normalize = list(deduplicate_and_normalize(args.packages))
 
     fail_on_licenses = set()
     if args.fail_on:
