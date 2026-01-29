@@ -21,6 +21,7 @@ import docutils.utils
 import pytest
 import tomli_w
 from _pytest.capture import CaptureFixture
+from prettytable import HRuleStyle
 
 import piplicenses
 from piplicenses import (
@@ -46,14 +47,13 @@ from piplicenses import (
     get_packages,
     get_sortby,
     normalize_pkg_name,
-    normalize_version,
     normalize_pkg_name_and_version,
+    normalize_version,
     output_colored,
     save_if_needs,
     select_license_by_source,
     value_to_enum_key,
 )
-from prettytable import HRuleStyle
 
 if TYPE_CHECKING:
     if sys.version_info >= (3, 10):
