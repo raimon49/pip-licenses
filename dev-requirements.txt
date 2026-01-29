@@ -37,13 +37,10 @@ idna==3.11
 importlib-metadata==8.7.1
     # via
     #   build
-    #   isort
     #   keyring
     #   twine
 iniconfig==2.1.0
     # via pytest
-isort==6.1.0
-    # via pip-licenses (pyproject.toml)
 jaraco-classes==3.4.0
     # via keyring
 jaraco-context==6.1.0

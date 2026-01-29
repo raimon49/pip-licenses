@@ -37,7 +37,6 @@ dependencies = [
 dev = [
     "black",
     "docutils",
-    "isort",
     "wheel",
     "mypy",
     "pip-tools",
@@ -70,11 +69,6 @@ addopts = "-v --cov --cov-report term-missing"
 [tool.black]
 line-length = 79
 
-[tool.isort]
-line_length = 72
-known_first_party = ["piplicenses"]
-profile = "black"
-
 [tool.ruff]
 line-length = 79
 
@@ -90,6 +84,7 @@ extend-select = [
     "PYI",    # flake8-pyi
     "SIM",    # flake8-simplify
     "FLY",    # flynt
+    "I",      # isort
     "PERF",   # Perflint
     "PGH",    # pygrep-hooks
     "UP",     # pyupgrade
@@ -103,6 +98,7 @@ ignore = [
     "RUF005", # Consider unpacking instead of concatenation
     "RUF021", # Parenthesize `a and b` expressions when chaining `and` and `or` together, to make the precedence clear
 ]
+isort.known-first-party = ["piplicenses"]
 
 [tool.mypy]
 exclude = ["venv"]
