@@ -1,3 +1,130 @@
+#!/usr/bin/env make -f
+
+# Pip-Licenses
+# ..................................
+# Copyright (c) 2018-2024, raimon
+# Copyright (c) 2024-2026, Mr. Walls
+# ..................................
+# Licensed under MIT (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# ..........................................
+# https://github.com/raimon49/pip-licenses/tree/HEAD/LICENSE
+# ..........................................
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+ifeq "$(LANG)" ""
+	LANG="en_US.UTF-8"
+endif
+
+ifeq "$(LC_CTYPE)" ""
+	LC_CTYPE="en_US.UTF-8"
+endif
+
+ifndef SHELL
+	SHELL:=command -pv bash
+endif
+
+ifeq "$(ERROR_LOG_PATH)" ""
+	ERROR_LOG_PATH="/dev/null"
+endif
+
+# find correct python in cross-platform way
+ifeq "$(COMMAND)" ""
+	COMMAND_CMD!=`command -v xcrun || command which which || command -v which || command -v command`
+	ifeq "$(COMMAND_CMD)" "*xcrun"
+		COMMAND_ARGS=--find
+	endif
+	ifeq "$(COMMAND_CMD)" "*command"
+		COMMAND_ARGS=-pv
+	endif
+	COMMAND=$(COMMAND_CMD) $(COMMAND_ARGS)
+endif
+
+ifeq "$(MAKE)" ""
+	#  just no cmake please
+	MAKEFLAGS=$(MAKEFLAGS) -s
+	MAKE!=`$(COMMAND) make 2>$(ERROR_LOG_PATH) || $(COMMAND) gnumake 2>$(ERROR_LOG_PATH)`
+endif
+
+ifeq "$(ECHO)" ""
+	ECHO=printf "%s\n"
+endif
+
+ifndef PYTHONUTF8
+	PYTHONUTF8 := 1
+endif
+
+ifeq "$(PYTHON)" ""
+	PY_CMD=$(COMMAND) python3
+	ifneq "$(PY_CMD)" ""
+		PY_ARGS=-B
+	else
+		PY_CMD=$(COMMAND) python
+	endif
+	PYTHON=$(PY_CMD) $(PY_ARGS)
+endif
+
+# SUPPORT PEP-517
+
+ifndef PIP_COMMON_FLAGS
+	# Define probable pip install flags based on python command
+	ifneq "$(PY_CMD)" ""
+		# Define probable pip install flags
+		PIP_PREFIX_FLAGS := --no-input
+	else
+		# Define common pip install flags
+		PIP_PREFIX_FLAGS := --no-input
+	endif
+	# Define common pip install flags
+	PIP_COMMON_FLAGS := --use-pep517 --exists-action s --upgrade --upgrade-strategy eager
+endif
+
+# Define environment-specific pip install flags
+ifeq ($(shell uname),Darwin)
+	# Check if pip supports --break-system-packages
+	PIP_VERSION := $(shell $(PYTHON) -m pip --version | awk '{print $2}')
+	PIP_MAJOR := $(word 2,$(subst ., ,$(PIP_VERSION)))
+	PIP_MINOR := $(word 3,$(subst ., ,$(PIP_VERSION)))
+	# --break-system-packages was added to pip in version 23.0.1 so check for 23.1+
+	ifeq ($(shell [ $(PIP_MAJOR) -ge 24 ] || { [ $(PIP_MAJOR) -eq 23 ] && [ $(PIP_MINOR) -ge 1 ]; } && printf "%d" 1 || printf "%d" 0), 1)
+		# workaround for specific xcode python + homebrew
+		PIP_ENV_FLAGS := --break-system-packages
+	else
+		PIP_ENV_FLAGS :=
+	endif
+else
+	PIP_ENV_FLAGS :=
+endif
+
+ifeq "$(LOG)" ""
+	LOG=no
+endif
+
+ifeq "$(LOG)" "no"
+	QUIET=@
+	ifeq "$(DO_FAIL)" ""
+		DO_FAIL=$(COMMAND) true
+	endif
+endif
+
+# else
+ifeq "$(DO_FAIL)" ""
+	DO_FAIL=$(ECHO) "ok"
+endif
+
+ifeq "$(RM)" ""
+	RM=$(COMMAND) rm -f
+endif
+
+ifeq "$(RMDIR)" ""
+	RMDIR=$(RM)Rd
+endif
+
 # based on remote (requires remote named origin)
 # REPO_NAME:=$(shell basename -s .git `git remote get-url origin`)
 # get the local clone directory name (always will exist in clones, even if you call your remote fork on github "github" and setup the remote "upstream")
@@ -30,17 +157,18 @@ venv:
 	test -d $@ || mkdir -m 755 ./$@
 
 $(VENV_NAME): venv
-	test -d $(VENV_NAME) || python -m venv $(VENV_NAME)
+	test -d $(VENV_NAME) || $(PYTHON) -m venv $(VENV_NAME)
 	test -d $(VENV_NAME) || exit 1 ;
 
 setup: $(VENV_NAME)
-	$(VENV_NAME)/bin/python -m pip install -r $(DEV_DEPENDS).txt
+	$(VENV_NAME)/bin/python -m ensurepip || exit 2;
+	$(VENV_NAME)/bin/python -m pip $(PIP_PREFIX_FLAGS) install -r $(DEV_DEPENDS).txt
 
 local-install: $(VENV_NAME)
-	$(VENV_NAME)/bin/python -m pip install -e .
+	$(VENV_NAME)/bin/python -m pip $(PIP_PREFIX_FLAGS) install -e .
 
 local-uninstall:
-	$(VENV_NAME)/bin/python -m pip uninstall -y pip-licenses
+	$(VENV_NAME)/bin/python -m pip $(PIP_PREFIX_FLAGS) uninstall -y pip-licenses
 
 update-depends:
 	$(VENV_NAME)/bin/python -m pip-compile --extra dev -o dev-requirements.txt -U pyproject.toml
@@ -64,14 +192,14 @@ clean:
 	rm -rf dist
 
 full-clean:: local-uninstall clean
-	rm -vrf *.egg-info 2>/dev/null || true ;
-	rm -vfrd ./{piplicenses,tests}/__pycache__ 2>/dev/null || true ;
-	rm -vfrd ./.coverage 2>/dev/null || true ;
-	rm -vfrd ./.mypy_cache 2>/dev/null || true ;
-	rm -vfrd ./.pytest_cache 2>/dev/null || true ;
+	rm -vrf *.egg-info 2>$(ERROR_LOG_PATH) || true ;
+	rm -vfrd ./{piplicenses,tests}/__pycache__ 2>$(ERROR_LOG_PATH) || true ;
+	rm -vfrd ./.coverage 2>$(ERROR_LOG_PATH) || true ;
+	rm -vfrd ./.mypy_cache 2>$(ERROR_LOG_PATH) || true ;
+	rm -vfrd ./.pytest_cache 2>$(ERROR_LOG_PATH) || true ;
 
 un-setup:: full-clean
-	rm -vfrd ./venv 2>/dev/null || true ;
+	rm -vfrd ./venv 2>$(ERROR_LOG_PATH) || true ;
 
 # historical targets, no-longer supported
 
