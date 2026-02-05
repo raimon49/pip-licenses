@@ -162,13 +162,13 @@ $(VENV_NAME): venv
 
 setup: $(VENV_NAME)
 	$(VENV_NAME)/bin/python -m ensurepip || exit 2;
-	$(VENV_NAME)/bin/python -m pip $(PIP_PREFIX_FLAGS) install -r $(DEV_DEPENDS).txt
+	$(VENV_NAME)/bin/python -m pip $(PIP_PREFIX_FLAGS) install $(PIP_COMMON_FLAGS) $(PIP_ENV_FLAGS) -r $(DEV_DEPENDS).txt
 
 local-install: $(VENV_NAME)
-	$(VENV_NAME)/bin/python -m pip $(PIP_PREFIX_FLAGS) install -e .
+	$(VENV_NAME)/bin/python -m pip $(PIP_PREFIX_FLAGS) install $(PIP_COMMON_FLAGS) $(PIP_ENV_FLAGS) -e .
 
 local-uninstall:
-	$(VENV_NAME)/bin/python -m pip $(PIP_PREFIX_FLAGS) uninstall -y pip-licenses
+	$(VENV_NAME)/bin/python -m pip $(PIP_PREFIX_FLAGS) uninstall $(PIP_COMMON_FLAGS) $(PIP_ENV_FLAGS) -y pip-licenses
 
 update-depends:
 	$(VENV_NAME)/bin/python -m pip-compile --extra dev -o dev-requirements.txt -U pyproject.toml
@@ -179,8 +179,8 @@ build: clean
 	$(VENV_NAME)/bin/python -m build
 
 lint:
-	$(VENV_NAME)/bin/python -m ruff check
-	$(VENV_NAME)/bin/python -m ruff format
+	$(VENV_NAME)/bin/python -m ruff check .
+	$(VENV_NAME)/bin/python -m ruff format .
 	$(VENV_NAME)/bin/python -m mypy --install-types --non-interactive .
 
 test:
