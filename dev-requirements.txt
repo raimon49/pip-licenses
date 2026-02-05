@@ -116,7 +116,7 @@ urllib3==2.6.3
     #   twine
 wcwidth==0.2.13
     # via prettytable
-wheel==0.45.1
+wheel==0.46.2
     # via
     #   pip-licenses (pyproject.toml)
     #   pip-tools
