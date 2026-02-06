@@ -122,7 +122,7 @@ ifeq "$(RM)" ""
 endif
 
 ifeq "$(RMDIR)" ""
-	RMDIR=$(RM)Rd
+	RMDIR=$(RM)rd
 endif
 
 # based on remote (requires remote named origin)
@@ -144,6 +144,7 @@ help:
 	@echo '    setup           Setup for development'
 	@echo '    local-install   Install locally'
 	@echo '    local-uninstall Uninstall locally'
+	@echo '    local-ci-check  Run acceptance tests and linting checks locally'
 	@echo '    update-depends  Re-compile requirements for development'
 	@echo '    build           Build package'
 	@echo '    lint            Re-lint formatting and typing with pyproject.toml'
@@ -158,10 +159,10 @@ venv:
 
 $(VENV_NAME): venv
 	test -d $(VENV_NAME) || $(PYTHON) -m venv $(VENV_NAME)
-	test -d $(VENV_NAME) || exit 1 ;
+	$(QUIET)test -d $(VENV_NAME) || exit 1 ;
 
 setup: $(VENV_NAME)
-	$(VENV_NAME)/bin/python -m ensurepip || exit 2;
+	$(QUIET)$(VENV_NAME)/bin/python -m ensurepip || exit 2 ;
 	$(VENV_NAME)/bin/python -m pip $(PIP_PREFIX_FLAGS) install $(PIP_COMMON_FLAGS) $(PIP_ENV_FLAGS) -r $(DEV_DEPENDS).txt
 
 local-install: $(VENV_NAME)
@@ -169,6 +170,9 @@ local-install: $(VENV_NAME)
 
 local-uninstall:
 	$(VENV_NAME)/bin/python -m pip $(PIP_PREFIX_FLAGS) uninstall $(PIP_COMMON_FLAGS) $(PIP_ENV_FLAGS) -y pip-licenses
+
+local-ci-check: build lint test
+	$(QUIET)$(DO_FAIL)  # does nothing successfully (if reached)
 
 update-depends:
 	$(VENV_NAME)/bin/python -m pip-compile --extra dev -o dev-requirements.txt -U pyproject.toml
@@ -189,17 +193,17 @@ test:
 # cleanup and reset
 
 clean:
-	rm -rf dist
+	$(QUIET)$(RM) -r dist
 
 full-clean:: local-uninstall clean
-	rm -vrf *.egg-info 2>$(ERROR_LOG_PATH) || true ;
-	rm -vfrd ./{piplicenses,tests}/__pycache__ 2>$(ERROR_LOG_PATH) || true ;
-	rm -vfrd ./.coverage 2>$(ERROR_LOG_PATH) || true ;
-	rm -vfrd ./.mypy_cache 2>$(ERROR_LOG_PATH) || true ;
-	rm -vfrd ./.pytest_cache 2>$(ERROR_LOG_PATH) || true ;
+	$(RM) -vr *.egg-info 2>$(ERROR_LOG_PATH) || true ;
+	$(RMDIR) -v ./{piplicenses,tests}/__pycache__ 2>$(ERROR_LOG_PATH) || true ;
+	$(RMDIR) -v ./.coverage 2>$(ERROR_LOG_PATH) || true ;
+	$(RMDIR) -v ./.mypy_cache 2>$(ERROR_LOG_PATH) || true ;
+	$(RMDIR) -v ./.pytest_cache 2>$(ERROR_LOG_PATH) || true ;
 
 un-setup:: full-clean
-	rm -vfrd ./venv 2>$(ERROR_LOG_PATH) || true ;
+	$(RMDIR) -v ./venv 2>$(ERROR_LOG_PATH) || true ;
 
 # historical targets, no-longer supported
 
