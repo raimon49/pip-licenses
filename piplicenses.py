@@ -57,7 +57,7 @@ if TYPE_CHECKING:  # pragma: no cover
 open = open  # allow monkey patching
 
 __pkgname__ = "pip-licenses"
-__version__ = "5.5.1"
+__version__ = "5.5.2"
 __summary__ = (
     "Dump the software license list of Python packages installed with pip."
 )
@@ -346,9 +346,12 @@ def get_packages(
 
     def get_pkg_info(pkg: Distribution) -> dict[str, str | list[str]]:
         license_file, license_text = get_pkg_included_file(
-            pkg, "LICEN[CS]E.*|COPYING.*"
+            pkg, "[Ll][Ii][Cc][Ee][Nn][CScs][Ee].*|[Cc][Oo][Pp][Yy][Ii][Nn][Gg].*",
         )
         notice_file, notice_text = get_pkg_included_file(pkg, "NOTICE.*")
+        other_file, other_text = get_pkg_included_file(
+            pkg, "[Aa][Uu][Tt][Hh][Oo][Rr][Ss].*",
+        )
         pkg_info: dict[str, str | list[str]] = {
             "name": pkg.metadata["name"],
             "version": pkg.version,
@@ -357,6 +360,8 @@ def get_packages(
             "licensetext": license_text,
             "noticefile": notice_file,
             "noticetext": notice_text,
+            "otherfile": other_file,
+            "othertext": other_text,
         }
         metadata = pkg.metadata
         for field_name, field_selector_fns in METADATA_KEYS.items():
