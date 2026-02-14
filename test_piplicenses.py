@@ -1021,16 +1021,25 @@ def test_fail_on_with_empty_tokens(monkeypatch) -> None:
 
 def test_different_python() -> None:
     import tempfile
+    from venv import (  # type: ignore[attr-defined]
+        subprocess as venv_subprocess,
+    )
+
+    _warning_skip: str = "Testing via venv unsupported. Skipping."
 
     class TempEnvBuild(venv.EnvBuilder):
         def post_setup(self, context: SimpleNamespace) -> None:
             self.context = context
 
     with tempfile.TemporaryDirectory() as target_dir_path:
-        venv_builder = TempEnvBuild(with_pip=True)
-        venv_builder.create(str(target_dir_path))
-        python_exec = venv_builder.context.env_exe
-        python_arg = f"--python={python_exec}"
+        python_exec = None
+        try:
+            venv_builder = TempEnvBuild(with_pip=True)
+            venv_builder.create(str(target_dir_path))
+            python_exec = venv_builder.context.env_exe
+        except venv_subprocess.CalledProcessError as skip_cause:
+            raise unittest.SkipTest(_warning_skip) from skip_cause
+        python_arg = f"--python={python_exec}" if python_exec else ""
         args = create_parser().parse_args([python_arg, "-s", "-f=json"])
         pkgs = get_packages(args)
         package_names = sorted(set(p["name"] for p in pkgs))

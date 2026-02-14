@@ -97,7 +97,7 @@ ignore = [
 isort.known-first-party = ["piplicenses"]
 
 [tool.mypy]
-exclude = ["venv"]
+exclude = ["venv"] # and thus venv[subprocess].CalledProcessError
 
 [tool.coverage.run]
 include = ["piplicenses.py"]
