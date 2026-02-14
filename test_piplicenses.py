@@ -944,7 +944,6 @@ def test_allow_only(monkeypatch) -> None:
     )  # GHI #292 -- MIT License has become abreviated to just MIT for some
 
 
-
 def test_allow_only_partial(monkeypatch) -> None:
     licenses = (
         "Bsd",
