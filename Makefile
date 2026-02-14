@@ -1,6 +1,6 @@
 #!/usr/bin/env make -f
 
-# Pip-Licenses
+# Pip-Licenses Makefile
 # ..................................
 # Copyright (c) 2018-2024, raimon
 # Copyright (c) 2024-2026, Mr. Walls
@@ -69,7 +69,7 @@ ifeq "$(PYTHON)" ""
 	PYTHON=$(PY_CMD) $(PY_ARGS)
 endif
 
-# SUPPORT PEP-517
+# SUPPORT PEP-517 with --use-pep517 when available
 
 ifndef PIP_COMMON_FLAGS
 	# Define probable pip install flags based on python command
@@ -81,24 +81,7 @@ ifndef PIP_COMMON_FLAGS
 		PIP_PREFIX_FLAGS := --no-input
 	endif
 	# Define common pip install flags
-	PIP_COMMON_FLAGS := --use-pep517 --exists-action s --upgrade --upgrade-strategy eager
-endif
-
-# Define environment-specific pip install flags
-ifeq ($(shell uname),Darwin)
-	# Check if pip supports --break-system-packages
-	PIP_VERSION := $(shell $(PYTHON) -m pip --version | awk '{print $2}')
-	PIP_MAJOR := $(word 2,$(subst ., ,$(PIP_VERSION)))
-	PIP_MINOR := $(word 3,$(subst ., ,$(PIP_VERSION)))
-	# --break-system-packages was added to pip in version 23.0.1 so check for 23.1+
-	ifeq ($(shell [ $(PIP_MAJOR) -ge 24 ] || { [ $(PIP_MAJOR) -eq 23 ] && [ $(PIP_MINOR) -ge 1 ]; } && printf "%d" 1 || printf "%d" 0), 1)
-		# workaround for specific xcode python + homebrew
-		PIP_ENV_FLAGS := --break-system-packages
-	else
-		PIP_ENV_FLAGS :=
-	endif
-else
-	PIP_ENV_FLAGS :=
+	PIP_COMMON_FLAGS := --exists-action s --upgrade --upgrade-strategy eager
 endif
 
 ifeq "$(LOG)" ""
@@ -162,14 +145,14 @@ $(VENV_NAME): venv
 	$(QUIET)test -d $(VENV_NAME) || exit 1 ;
 
 setup: $(VENV_NAME)
-	$(QUIET)$(VENV_NAME)/bin/python -m ensurepip || exit 2 ;
-	$(VENV_NAME)/bin/python -m pip $(PIP_PREFIX_FLAGS) install $(PIP_COMMON_FLAGS) $(PIP_ENV_FLAGS) -r $(DEV_DEPENDS).txt
+	$(QUIET)$(VENV_NAME)/bin/python -B -m ensurepip || exit 2 ;
+	$(VENV_NAME)/bin/python -B -m pip $(PIP_PREFIX_FLAGS) install $(PIP_COMMON_FLAGS) -r $(DEV_DEPENDS).txt
 
 local-install: $(VENV_NAME)
-	$(VENV_NAME)/bin/python -m pip $(PIP_PREFIX_FLAGS) install $(PIP_COMMON_FLAGS) $(PIP_ENV_FLAGS) -e .
+	$(VENV_NAME)/bin/python -m pip $(PIP_PREFIX_FLAGS) install $(PIP_COMMON_FLAGS) -e .
 
 local-uninstall:
-	$(VENV_NAME)/bin/python -m pip $(PIP_PREFIX_FLAGS) uninstall $(PIP_COMMON_FLAGS) $(PIP_ENV_FLAGS) -y pip-licenses
+	$(VENV_NAME)/bin/python -m pip $(PIP_PREFIX_FLAGS) uninstall -y pip-licenses
 
 local-ci-check: build lint test
 	$(QUIET)$(DO_FAIL)  # does nothing successfully (if reached)
@@ -183,8 +166,8 @@ build: clean
 	$(VENV_NAME)/bin/python -m build
 
 lint:
-	$(VENV_NAME)/bin/python -m ruff check .
-	$(VENV_NAME)/bin/python -m ruff format .
+	$(VENV_NAME)/bin/python -m ruff --config pyproject.toml check .
+	$(VENV_NAME)/bin/python -m ruff --config pyproject.toml format .
 	$(VENV_NAME)/bin/python -m mypy --install-types --non-interactive .
 
 test:

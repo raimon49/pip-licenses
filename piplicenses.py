@@ -346,11 +346,13 @@ def get_packages(
 
     def get_pkg_info(pkg: Distribution) -> dict[str, str | list[str]]:
         license_file, license_text = get_pkg_included_file(
-            pkg, "[Ll][Ii][Cc][Ee][Nn][CScs][Ee].*|[Cc][Oo][Pp][Yy][Ii][Nn][Gg].*",
+            pkg,
+            "[Ll][Ii][Cc][Ee][Nn][CScs][Ee].*|[Cc][Oo][Pp][Yy][Ii][Nn][Gg].*",
         )
         notice_file, notice_text = get_pkg_included_file(pkg, "NOTICE.*")
         other_file, other_text = get_pkg_included_file(
-            pkg, "[Aa][Uu][Tt][Hh][Oo][Rr][Ss].*",
+            pkg,
+            "[Aa][Uu][Tt][Hh][Oo][Rr][Ss].*",
         )
         pkg_info: dict[str, str | list[str]] = {
             "name": pkg.metadata["name"],
