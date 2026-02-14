@@ -965,7 +965,9 @@ def test_allow_only_partial(monkeypatch) -> None:
 
     assert "" == mocked_stdout.printed
     assert (
-        "license MIT License not in allow-only licenses was found for "
+        "license MIT" in mocked_stderr.printed
+    ) and (  # GHI #292 -- partial match may ommit 'License'
+        " not in allow-only licenses was found for "
         "package" in mocked_stderr.printed
     )
 
