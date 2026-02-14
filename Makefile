@@ -166,9 +166,7 @@ build: clean
 	$(VENV_NAME)/bin/python -m build
 
 lint:
-	$(VENV_NAME)/bin/python -m ruff --config pyproject.toml check .
-	$(VENV_NAME)/bin/python -m ruff --config pyproject.toml format .
-	$(VENV_NAME)/bin/python -m mypy --install-types --non-interactive .
+	$(VENV_NAME)/bin/python -m pre-commit run -a
 
 test:
 	$(VENV_NAME)/bin/python -m pytest
