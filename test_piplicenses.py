@@ -1076,8 +1076,9 @@ def test_fail_on_partial_match(monkeypatch) -> None:
 
     assert "" == mocked_stdout.printed
     assert (
-        "fail-on license MIT License was found for "
-        "package" in mocked_stderr.printed
+        "fail-on license MIT" in mocked_stderr.printed
+    ) and (  # GHI 292 -- partial match may ommit 'License'
+        " was found for package" in mocked_stderr.printed
     )
 
 
