@@ -938,7 +938,10 @@ def test_allow_only(monkeypatch) -> None:
     assert (
         "license MIT License not in allow-only licenses was found for "
         "package" in mocked_stderr.printed
-    )
+    ) or (
+        "license MIT not in allow-only licenses was found for "
+        "package" in mocked_stderr.printed
+    )  # GHI #292 -- MIT License has become abreviated to just MIT for some
 
 
 def test_allow_only_partial(monkeypatch) -> None:
@@ -965,7 +968,9 @@ def test_allow_only_partial(monkeypatch) -> None:
 
     assert "" == mocked_stdout.printed
     assert (
-        "license MIT License not in allow-only licenses was found for "
+        "license MIT" in mocked_stderr.printed
+    ) and (  # GHI #292 -- partial match may ommit 'License'
+        " not in allow-only licenses was found for "
         "package" in mocked_stderr.printed
     )
 
@@ -995,7 +1000,10 @@ def test_allow_only_with_empty_tokens(monkeypatch) -> None:
     assert (
         "license MIT License not in allow-only licenses was found for "
         "package" in mocked_stderr.printed
-    )
+    ) or (
+        "license MIT not in allow-only licenses was found for "
+        "package" in mocked_stderr.printed
+    )  # GHI #292 -- MIT License has become abreviated to just MIT for some
 
 
 def test_fail_on_with_empty_tokens(monkeypatch) -> None:
@@ -1019,16 +1027,25 @@ def test_fail_on_with_empty_tokens(monkeypatch) -> None:
 
 def test_different_python() -> None:
     import tempfile
+    from venv import (  # type: ignore[attr-defined]
+        subprocess as venv_subprocess,
+    )
+
+    _warning_skip: str = "Testing via venv unsupported. Skipping."
 
     class TempEnvBuild(venv.EnvBuilder):
         def post_setup(self, context: SimpleNamespace) -> None:
             self.context = context
 
     with tempfile.TemporaryDirectory() as target_dir_path:
-        venv_builder = TempEnvBuild(with_pip=True)
-        venv_builder.create(str(target_dir_path))
-        python_exec = venv_builder.context.env_exe
-        python_arg = f"--python={python_exec}"
+        python_exec = None
+        try:
+            venv_builder = TempEnvBuild(with_pip=True)
+            venv_builder.create(str(target_dir_path))
+            python_exec = venv_builder.context.env_exe
+        except venv_subprocess.CalledProcessError as skip_cause:
+            raise unittest.SkipTest(_warning_skip) from skip_cause
+        python_arg = f"--python={python_exec}" if python_exec else ""
         args = create_parser().parse_args([python_arg, "-s", "-f=json"])
         pkgs = get_packages(args)
         package_names = sorted(set(p["name"] for p in pkgs))
@@ -1074,8 +1091,9 @@ def test_fail_on_partial_match(monkeypatch) -> None:
 
     assert "" == mocked_stdout.printed
     assert (
-        "fail-on license MIT License was found for "
-        "package" in mocked_stderr.printed
+        "fail-on license MIT" in mocked_stderr.printed
+    ) and (  # GHI 292 -- partial match may ommit 'License'
+        " was found for package" in mocked_stderr.printed
     )
 
 
