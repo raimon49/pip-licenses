@@ -938,7 +938,11 @@ def test_allow_only(monkeypatch) -> None:
     assert (
         "license MIT License not in allow-only licenses was found for "
         "package" in mocked_stderr.printed
-    )
+    ) or (
+        "license MIT not in allow-only licenses was found for "
+        "package" in mocked_stderr.printed
+    )  # GHI #292 -- MIT License has become abreviated to just MIT for some
+
 
 
 def test_allow_only_partial(monkeypatch) -> None:
@@ -997,7 +1001,10 @@ def test_allow_only_with_empty_tokens(monkeypatch) -> None:
     assert (
         "license MIT License not in allow-only licenses was found for "
         "package" in mocked_stderr.printed
-    )
+    ) or (
+        "license MIT not in allow-only licenses was found for "
+        "package" in mocked_stderr.printed
+    )  # GHI #292 -- MIT License has become abreviated to just MIT for some
 
 
 def test_fail_on_with_empty_tokens(monkeypatch) -> None:
