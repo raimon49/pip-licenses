@@ -195,7 +195,7 @@ def normalize_version(version_string):
         str: A normalized version string in PEP 440 format or empty if invalid.
     """
     _regex = re.compile(
-        r"^\s*" + VERSION_PATTERN + r"\s*$",
+        rf"^\s*{VERSION_PATTERN}\s*$",
         re.VERBOSE | re.IGNORECASE,
     )
     match = _regex.match(version_string)
@@ -432,7 +432,8 @@ def get_packages(
 
     for pkg in pkgs:
         pkg_name = normalize_pkg_name(pkg.metadata["name"])
-        pkg_name_and_version = pkg_name + ":" + pkg.metadata["version"]
+        pkg_version = pkg.metadata["version"]
+        pkg_name_and_version = f"{pkg_name}:{pkg_version}"
 
         if (
             pkg_name.lower() in ignore_pkgs_as_normalize
@@ -1060,7 +1061,10 @@ def create_parser(
     verify_options = parser.add_argument_group("Verify options")
 
     parser.add_argument(
-        "-v", "--version", action="version", version="%(prog)s " + __version__
+        "-v",
+        "--version",
+        action="version",
+        version=f"%(prog)s {__version__}",  # type: ignore [name-defined]
     )
 
     common_options.add_argument(
@@ -1282,7 +1286,7 @@ def save_if_needs(output_file: None | str, output_string: str) -> None:
                 # Always end output files with a new line
                 f.write("\n")
 
-        sys.stdout.write("created path: " + output_file + "\n")
+        sys.stdout.write(f"created path: {output_file}\n")
         sys.exit(0)
     except OSError:
         sys.stderr.write("check path: --output-file\n")
