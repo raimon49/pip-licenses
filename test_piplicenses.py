@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # vim:fenc=utf-8 ff=unix ft=python ts=4 sw=4 sts=4 si et
 from __future__ import annotations
 
@@ -22,6 +21,7 @@ import docutils.utils
 import pytest
 import tomli_w
 from _pytest.capture import CaptureFixture
+from prettytable import HRuleStyle
 
 import piplicenses
 from piplicenses import (
@@ -47,14 +47,13 @@ from piplicenses import (
     get_packages,
     get_sortby,
     normalize_pkg_name,
-    normalize_version,
     normalize_pkg_name_and_version,
+    normalize_version,
     output_colored,
     save_if_needs,
     select_license_by_source,
     value_to_enum_key,
 )
-from prettytable import HRuleStyle
 
 if TYPE_CHECKING:
     if sys.version_info >= (3, 10):
@@ -116,9 +115,7 @@ class TestGetLicenses(CommandLineTestCase):
 
         # XXX: access to private API
         rows = copy.deepcopy(table.rows)
-        pkg_name_columns = []
-        for row in rows:
-            pkg_name_columns.append(row[index])
+        pkg_name_columns = [row[index] for row in rows]
 
         return pkg_name_columns
 
@@ -127,9 +124,7 @@ class TestGetLicenses(CommandLineTestCase):
 
         # XXX: access to private API
         rows = copy.deepcopy(table.rows)
-        pkg_name_columns = []
-        for row in rows:
-            pkg_name_columns.append(row[index])
+        pkg_name_columns = [row[index] for row in rows]
 
         return pkg_name_columns
 
@@ -236,14 +231,12 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertIn("License-Expression", output_fields)
 
         index_license_meta = output_fields.index("License-Metadata")
-        license_meta = []
-        for row in table.rows:
-            license_meta.append(row[index_license_meta])
+        license_meta = [row[index_license_meta] for row in table.rows]
 
         index_license_classifier = output_fields.index("License-Classifier")
-        license_classifier = []
-        for row in table.rows:
-            license_classifier.append(row[index_license_classifier])
+        license_classifier = [
+            row[index_license_classifier] for row in table.rows
+        ]
 
         index_license_expression = output_fields.index("License-Expression")
         license_expression = [
@@ -868,7 +861,7 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertTrue(len(a_intersect_empty) == 0)
 
 
-class MockStdStream(object):
+class MockStdStream:
     def __init__(self) -> None:
         self.printed = ""
 
@@ -896,7 +889,7 @@ def test_output_file_success(monkeypatch) -> None:
 
 def test_output_file_error(monkeypatch) -> None:
     def mocked_open(*args, **kwargs):
-        raise IOError
+        raise OSError
 
     mocked_stdout = MockStdStream()
     mocked_stderr = MockStdStream()
@@ -945,7 +938,10 @@ def test_allow_only(monkeypatch) -> None:
     assert (
         "license MIT License not in allow-only licenses was found for "
         "package" in mocked_stderr.printed
-    )
+    ) or (
+        "license MIT not in allow-only licenses was found for "
+        "package" in mocked_stderr.printed
+    )  # GHI #292 -- MIT License has become abreviated to just MIT for some
 
 
 def test_allow_only_partial(monkeypatch) -> None:
@@ -972,23 +968,84 @@ def test_allow_only_partial(monkeypatch) -> None:
 
     assert "" == mocked_stdout.printed
     assert (
+        "license MIT" in mocked_stderr.printed
+    ) and (  # GHI #292 -- partial match may ommit 'License'
+        " not in allow-only licenses was found for "
+        "package" in mocked_stderr.printed
+    )
+
+
+def test_allow_only_with_empty_tokens(monkeypatch) -> None:
+    # same as test_allow_only but with extra semicolons/whitespace
+    licenses = (
+        "Bsd License",
+        "Apache Software License",
+        "Mozilla Public License 2.0 (MPL 2.0)",
+        "Python Software Foundation License",
+        "Public Domain",
+        "GNU General Public License (GPL)",
+        "GNU Library or Lesser General Public License (LGPL)",
+    )
+    # leading/trailing and consecutive semicolons + spaces
+    allow_only_args = ["--allow-only= ; ;{};; ".format(";".join(licenses))]
+    mocked_stdout = MockStdStream()
+    mocked_stderr = MockStdStream()
+    monkeypatch.setattr(sys.stdout, "write", mocked_stdout.write)
+    monkeypatch.setattr(sys.stderr, "write", mocked_stderr.write)
+    monkeypatch.setattr(sys, "exit", lambda n: None)
+    args = create_parser().parse_args(allow_only_args)
+    create_licenses_table(args)
+
+    assert "" == mocked_stdout.printed
+    assert (
         "license MIT License not in allow-only licenses was found for "
+        "package" in mocked_stderr.printed
+    ) or (
+        "license MIT not in allow-only licenses was found for "
+        "package" in mocked_stderr.printed
+    )  # GHI #292 -- MIT License has become abreviated to just MIT for some
+
+
+def test_fail_on_with_empty_tokens(monkeypatch) -> None:
+    # include extra semicolons/whitespace around the entry
+    licenses = ("MIT license",)
+    fail_on_args = ["--fail-on=;;  {} ;".format(";".join(licenses))]
+    mocked_stdout = MockStdStream()
+    mocked_stderr = MockStdStream()
+    monkeypatch.setattr(sys.stdout, "write", mocked_stdout.write)
+    monkeypatch.setattr(sys.stderr, "write", mocked_stderr.write)
+    monkeypatch.setattr(sys, "exit", lambda n: None)
+    args = create_parser().parse_args(fail_on_args)
+    create_licenses_table(args)
+
+    assert "" == mocked_stdout.printed
+    assert (
+        "fail-on license MIT License was found for "
         "package" in mocked_stderr.printed
     )
 
 
 def test_different_python() -> None:
     import tempfile
+    from venv import (  # type: ignore[attr-defined]
+        subprocess as venv_subprocess,
+    )
+
+    _warning_skip: str = "Testing via venv unsupported. Skipping."
 
     class TempEnvBuild(venv.EnvBuilder):
         def post_setup(self, context: SimpleNamespace) -> None:
             self.context = context
 
     with tempfile.TemporaryDirectory() as target_dir_path:
-        venv_builder = TempEnvBuild(with_pip=True)
-        venv_builder.create(str(target_dir_path))
-        python_exec = venv_builder.context.env_exe
-        python_arg = f"--python={python_exec}"
+        python_exec = None
+        try:
+            venv_builder = TempEnvBuild(with_pip=True)
+            venv_builder.create(str(target_dir_path))
+            python_exec = venv_builder.context.env_exe
+        except venv_subprocess.CalledProcessError as skip_cause:
+            raise unittest.SkipTest(_warning_skip) from skip_cause
+        python_arg = f"--python={python_exec}" if python_exec else ""
         args = create_parser().parse_args([python_arg, "-s", "-f=json"])
         pkgs = get_packages(args)
         package_names = sorted(set(p["name"] for p in pkgs))
@@ -1034,8 +1091,9 @@ def test_fail_on_partial_match(monkeypatch) -> None:
 
     assert "" == mocked_stdout.printed
     assert (
-        "fail-on license MIT License was found for "
-        "package" in mocked_stderr.printed
+        "fail-on license MIT" in mocked_stderr.printed
+    ) and (  # GHI 292 -- partial match may ommit 'License'
+        " was found for package" in mocked_stderr.printed
     )
 
 
@@ -1189,7 +1247,7 @@ def test_extract_homepage_home_page_set() -> None:
     metadata = MagicMock()
     metadata.get.return_value = "Foobar"
 
-    assert "Foobar" == extract_homepage(metadata=metadata)  # type: ignore
+    assert "Foobar" == extract_homepage(metadata=metadata)
 
     metadata.get.assert_called_once_with("home-page", None)
 
@@ -1204,7 +1262,7 @@ def test_extract_homepage_project_url_fallback() -> None:
         "Homepage, homepage",
     ]
 
-    assert "homepage" == extract_homepage(metadata=metadata)  # type: ignore
+    assert "homepage" == extract_homepage(metadata=metadata)
 
     metadata.get_all.assert_called_once_with("Project-URL", [])
 
@@ -1219,9 +1277,7 @@ def test_extract_homepage_project_url_fallback_multiple_parts() -> None:
         "Homepage, homepage, foo, bar",
     ]
 
-    assert "homepage, foo, bar" == extract_homepage(
-        metadata=metadata  # type: ignore
-    )
+    assert "homepage, foo, bar" == extract_homepage(metadata=metadata)
 
     metadata.get_all.assert_called_once_with("Project-URL", [])
 
@@ -1232,7 +1288,7 @@ def test_extract_homepage_empty() -> None:
     metadata.get.return_value = None
     metadata.get_all.return_value = []
 
-    assert None is extract_homepage(metadata=metadata)  # type: ignore
+    assert None is extract_homepage(metadata=metadata)
 
     metadata.get.assert_called_once_with("home-page", None)
     metadata.get_all.assert_called_once_with("Project-URL", [])
@@ -1248,7 +1304,7 @@ def test_extract_homepage_project_uprl_fallback_capitalisation() -> None:
         "homepage, homepage",
     ]
 
-    assert "homepage" == extract_homepage(metadata=metadata)  # type: ignore
+    assert "homepage" == extract_homepage(metadata=metadata)
 
     metadata.get_all.assert_called_once_with("Project-URL", [])
 
@@ -1307,58 +1363,58 @@ def test_case_insensitive_partial_match_set_diff():
     set_a = {"Python", "Java", "C++"}
     set_b = {"Ruby", "JavaScript"}
     result = case_insensitive_partial_match_set_diff(set_a, set_b)
-    assert (
-        result == set_a
-    ), "When no overlap, the result should be the same as set_a."
+    assert result == set_a, (
+        "When no overlap, the result should be the same as set_a."
+    )
 
     set_a = {"Hello", "World"}
     set_b = {"hello", "world"}
     result = case_insensitive_partial_match_set_diff(set_a, set_b)
-    assert (
-        result == set()
-    ), "When all items overlap, the result should be an empty set."
+    assert result == set(), (
+        "When all items overlap, the result should be an empty set."
+    )
 
     set_a = {"HelloWorld", "Python", "JavaScript"}
     set_b = {"hello", "script"}
     result = case_insensitive_partial_match_set_diff(set_a, set_b)
-    assert result == {
-        "Python"
-    }, "Only 'Python' should remain as it has no overlap with set_b."
+    assert result == {"Python"}, (
+        "Only 'Python' should remain as it has no overlap with set_b."
+    )
 
     set_a = {"HELLO", "world"}
     set_b = {"hello"}
     result = case_insensitive_partial_match_set_diff(set_a, set_b)
-    assert result == {
-        "world"
-    }, "The function should handle case-insensitive matches correctly."
+    assert result == {"world"}, (
+        "The function should handle case-insensitive matches correctly."
+    )
 
     set_a = set()
     set_b = set()
     result = case_insensitive_partial_match_set_diff(set_a, set_b)
-    assert (
-        result == set()
-    ), "When both sets are empty, the result should also be empty."
+    assert result == set(), (
+        "When both sets are empty, the result should also be empty."
+    )
 
     set_a = {"Python", "Java"}
     set_b = set()
     result = case_insensitive_partial_match_set_diff(set_a, set_b)
-    assert (
-        result == set_a
-    ), "If set_b is empty, result should be the same as set_a."
+    assert result == set_a, (
+        "If set_b is empty, result should be the same as set_a."
+    )
 
     set_a = set()
     set_b = {"Ruby"}
     result = case_insensitive_partial_match_set_diff(set_a, set_b)
-    assert (
-        result == set()
-    ), "If set_a is empty, result should be empty regardless of set_b."
+    assert result == set(), (
+        "If set_a is empty, result should be empty regardless of set_b."
+    )
 
     set_a = {"BSD License", "MIT License"}
     set_b = {"BSD"}
     result = case_insensitive_partial_match_set_diff(set_a, set_b)
-    assert result == {
-        "MIT License"
-    }, "The function should match partials (exclusively)."
+    assert result == {"MIT License"}, (
+        "The function should match partials (exclusively)."
+    )
 
     set_a = {"BSD", "BSD License"}
     set_b = {"BSD"}
@@ -1374,21 +1430,21 @@ def test_case_insensitive_partial_match_set_diff():
     set_b = {"unique"}
     result = sorted(case_insensitive_partial_match_set_diff(set_a, set_b))
     expected_order = sorted({"Duplicate", "duplicate"})
-    assert (
-        result == expected_order
-    ), "The function should still preserve case of set_a (order-insensitive)."
+    assert result == expected_order, (
+        "The function should still preserve case of set_a (order-insensitive)."
+    )
 
     set_a = {"Test", "Example"}
     set_b = {"Sample", "Test"}
     result = case_insensitive_partial_match_set_diff(set_a, set_b)
-    assert result == {
-        "Example"
-    }, "If only part of set_b matches set_a non-matches should have no impact."
+    assert result == {"Example"}, (
+        "If only part of set_b matches set_a non-matches should have no impact."
+    )
 
     set_a = {"A", "B", "C"}
     set_b = {"D", "E"}
     result = sorted(case_insensitive_partial_match_set_diff(set_a, set_b))
     expected_order = sorted({"A", "B", "C"})
-    assert (
-        result == expected_order
-    ), "Non-overlapping sets should preserve all of set_a (order-insensitive)."
+    assert result == expected_order, (
+        "Non-overlapping sets should preserve all of set_a (order-insensitive)."
+    )
