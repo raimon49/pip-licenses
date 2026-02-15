@@ -133,10 +133,10 @@ class TestGetLicenses(CommandLineTestCase):
     @staticmethod
     def check_rst(text: str) -> None:
         parser = docutils.parsers.rst.Parser()
-        components = (docutils.parsers.rst.Parser,)
-        settings = docutils.frontend.OptionParser(
-            components=components
-        ).get_default_values()
+        component = docutils.parsers.rst.Parser
+        settings = docutils.frontend.get_default_settings(
+            component  # type: ignore[arg-type]  # https://sourceforge.net/p/docutils/patches/216/
+        )
         settings.halt_level = 3
         document = docutils.utils.new_document("<rst-doc>", settings=settings)
         parser.parse(text, document)
