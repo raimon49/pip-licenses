@@ -936,11 +936,11 @@ def test_allow_only(monkeypatch) -> None:
 
     assert "" == mocked_stdout.printed
     assert (
-        "license MIT License not in allow-only licenses was found for "
-        "package" in mocked_stderr.printed
+        "license MIT License not in allow-only licenses was found for package"
+        in mocked_stderr.printed
     ) or (
-        "license MIT not in allow-only licenses was found for "
-        "package" in mocked_stderr.printed
+        "license MIT not in allow-only licenses was found for package"
+        in mocked_stderr.printed
     )  # GHI #292 -- MIT License has become abreviated to just MIT for some
 
 
@@ -970,8 +970,8 @@ def test_allow_only_partial(monkeypatch) -> None:
     assert (
         "license MIT" in mocked_stderr.printed
     ) and (  # GHI #292 -- partial match may ommit 'License'
-        " not in allow-only licenses was found for "
-        "package" in mocked_stderr.printed
+        " not in allow-only licenses was found for package"
+        in mocked_stderr.printed
     )
 
 
@@ -998,11 +998,11 @@ def test_allow_only_with_empty_tokens(monkeypatch) -> None:
 
     assert "" == mocked_stdout.printed
     assert (
-        "license MIT License not in allow-only licenses was found for "
-        "package" in mocked_stderr.printed
+        "license MIT License not in allow-only licenses was found for package"
+        in mocked_stderr.printed
     ) or (
-        "license MIT not in allow-only licenses was found for "
-        "package" in mocked_stderr.printed
+        "license MIT not in allow-only licenses was found for package"
+        in mocked_stderr.printed
     )  # GHI #292 -- MIT License has become abreviated to just MIT for some
 
 
@@ -1020,8 +1020,8 @@ def test_fail_on_with_empty_tokens(monkeypatch) -> None:
 
     assert "" == mocked_stdout.printed
     assert (
-        "fail-on license MIT License was found for "
-        "package" in mocked_stderr.printed
+        "fail-on license MIT License was found for package"
+        in mocked_stderr.printed
     )
 
 
@@ -1070,8 +1070,8 @@ def test_fail_on(monkeypatch) -> None:
 
     assert "" == mocked_stdout.printed
     assert (
-        "fail-on license MIT License was found for "
-        "package" in mocked_stderr.printed
+        "fail-on license MIT License was found for package"
+        in mocked_stderr.printed
     )
 
 
