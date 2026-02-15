@@ -15,8 +15,8 @@ The design policy of `pip-licenses` is as follows.
 2. Create a branch to represent changes.
     * Branch name does **NOT** need `feature/` prefix. Because git-flow is configured differently for maintainers.
 3. Create a new venv environment and Install package for development via `make setup` .
-    * Dependencies are managed by [pip-tools](https://pypi.org/project/pip-tools/).
-    * If you want to add dependency packages for development, edit [the dev entry in pyproject.toml](https://github.com/raimon49/pip-licenses/blob/master/pyproject.toml) file and run `make update-depends` .
+* Dependencies are managed by [uv](https://pypi.org/project/pip-tools/).
+    * If you want to add dependency packages for development, edit [the dev entry in pyproject.toml](https://github.com/raimon49/pip-licenses/blob/master/pyproject.toml) file.
     * If you want to install the code under development, run `make local-install` .
 
 ## Implementation and testing

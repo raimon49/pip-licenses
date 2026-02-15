@@ -69,21 +69,6 @@ ifeq "$(PYTHON)" ""
 	PYTHON=$(PY_CMD) $(PY_ARGS)
 endif
 
-# SUPPORT PEP-517 with --use-pep517 when available
-
-ifndef PIP_COMMON_FLAGS
-	# Define probable pip install flags based on python command
-	ifneq "$(PY_CMD)" ""
-		# Define probable pip install flags
-		PIP_PREFIX_FLAGS := --no-input
-	else
-		# Define common pip install flags
-		PIP_PREFIX_FLAGS := --no-input
-	endif
-	# Define common pip install flags
-	PIP_COMMON_FLAGS := --exists-action s --upgrade --upgrade-strategy eager
-endif
-
 ifeq "$(LOG)" ""
 	LOG=no
 endif
@@ -138,40 +123,38 @@ help:
 
 # utility for some developer environments
 venv:
-	test -d $@ || mkdir -m 755 ./$@
+	test -d $@ || mkdir -m 755 $@
 
 $(VENV_NAME): venv
-	test -d $(VENV_NAME) || $(PYTHON) -m venv $(VENV_NAME)
+	test -d $(VENV_NAME) || uv venv $(VENV_NAME)
 	$(QUIET)test -d $(VENV_NAME) || exit 1 ;
 
 setup: $(VENV_NAME)
-	$(QUIET)$(VENV_NAME)/bin/python -B -m ensurepip || exit 2 ;
-	$(VENV_NAME)/bin/python -B -m pip $(PIP_PREFIX_FLAGS) install $(PIP_COMMON_FLAGS) -r $(DEV_DEPENDS).txt
+	UV_PROJECT_ENVIRONMENT=$(VENV_NAME) uv sync --frozen --no-dev
 
 local-install: $(VENV_NAME)
-	$(VENV_NAME)/bin/python -m pip $(PIP_PREFIX_FLAGS) install $(PIP_COMMON_FLAGS) -e .
+	UV_PROJECT_ENVIRONMENT=$(VENV_NAME) uv sync --frozen
 
-local-uninstall:
-	$(VENV_NAME)/bin/python -m pip $(PIP_PREFIX_FLAGS) uninstall -y pip-licenses
+local-uninstall: un-setup
 
 local-ci-check: build lint test
 	$(QUIET)$(DO_FAIL)  # does nothing successfully (if reached)
 
 update-depends:
-	$(VENV_NAME)/bin/python -m pip-compile --extra dev -o dev-requirements.txt -U pyproject.toml
+	UV_PROJECT_ENVIRONMENT=$(VENV_NAME) uv lock --upgrade
 
 # developer workflow targets
 
 build: clean
-	$(VENV_NAME)/bin/python -m build
+	uv build
 
 lint:
-	$(VENV_NAME)/bin/python -m ruff --config pyproject.toml check .
-	$(VENV_NAME)/bin/python -m ruff --config pyproject.toml format .
-	$(VENV_NAME)/bin/python -m mypy --install-types --non-interactive .
+	uv run ruff --config pyproject.toml check .
+	uv run ruff --config pyproject.toml format .
+	uv run mypy --install-types --non-interactive .
 
 test:
-	$(VENV_NAME)/bin/python -m pytest
+	uv run pytest
 
 # cleanup and reset
 
@@ -191,7 +174,7 @@ un-setup:: full-clean
 # historical targets, no-longer supported
 
 deploy: build
-	$(VENV_NAME)/bin/python -m twine upload dist/*
+	uv run twine upload dist/*
 
 test-deploy: build
-	$(VENV_NAME)/bin/python -m twine upload -r pypitest dist/*
+	uv run twine upload -r pypitest dist/*
