@@ -614,10 +614,6 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertEqual("|", table.junction_char)
         self.assertEqual(HRuleStyle.HEADER, table.hrules)
 
-    @unittest.skipIf(
-        sys.version_info < (3, 6, 0),
-        "To unsupport Python 3.5 in the near future",
-    )
     def test_format_rst_without_filter(self) -> None:
         piplicenses.importlib_metadata.distributions = (
             importlib_metadata_distributions_mocked
