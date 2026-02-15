@@ -97,22 +97,18 @@ SUMMARY_OUTPUT_FIELDS = (
 
 
 def extract_homepage(metadata: Message) -> str | None:
-    """Extracts the homepage attribute from the package metadata.
+    """Extracts the home page from the package metadata.
 
-    Not all python packages have defined a home-page attribute.
-    As a fallback, the `Project-URL` metadata can be used.
-    The python core metadata supports multiple (free text) values for
-    the `Project-URL` field that are comma separated.
+    Retrieve home page from the PEP 753 `Project-URL` metadata.
+    As a fallback, try the Core Metadata 1.0 home-page attribute.
+    If all else fails, try other PEP 753 `Project-URL` labels.
 
     Args:
-        metadata: The package metadata to extract the homepage from.
+        metadata: The package metadata to extract the home page from.
 
     Returns:
         The home page if applicable, None otherwise.
     """
-    homepage = metadata.get("home-page", None)
-    if homepage is not None:
-        return homepage
 
     candidates: dict[str, str] = {}
 
@@ -120,13 +116,26 @@ def extract_homepage(metadata: Message) -> str | None:
         key, value = entry.split(",", 1)
         candidates[key.strip().lower()] = value.strip()
 
-    for priority_key in [
-        "homepage",
+    # start with Core Metadata 1.2 (PEP 753)
+    # https://packaging.python.org/en/latest/specifications/core-metadata/#core-metadata-project-url
+    homepage = candidates.get("homepage")
+    if homepage is not None:
+        return homepage
+
+    # fall back to deprecated Core Metadata 1.0
+    # https://packaging.python.org/en/latest/specifications/core-metadata/#home-page
+    homepage = metadata.get("home-page", None)
+    if homepage is not None:
+        return homepage
+
+    # if all else fails, try alternative Core Metadata 1.2 labels
+    # https://packaging.python.org/en/latest/specifications/well-known-project-urls/#well-known-labels
+    for priority_key in (
         "source",
         "repository",
         "changelog",
         "bug tracker",
-    ]:
+    ):
         if priority_key in candidates:
             return candidates[priority_key]
 
