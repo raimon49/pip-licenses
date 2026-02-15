@@ -1060,11 +1060,12 @@ def create_parser(
     format_options = parser.add_argument_group("Format options")
     verify_options = parser.add_argument_group("Verify options")
 
+    lit_prog_pat = "%(prog)s"
     parser.add_argument(
         "-v",
         "--version",
         action="version",
-        version=f"%(prog)s {__version__}",  # type: ignore [name-defined]
+        version=f"{lit_prog_pat} {__version__}",
     )
 
     common_options.add_argument(
