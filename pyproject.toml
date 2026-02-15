@@ -33,18 +33,22 @@ dependencies = [
     "tomli >= 2;python_version<'3.11'"
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
     "docutils",
     "wheel",
     "mypy",
-    "pip-tools",
+    "pip",
     "pypandoc",
+    "pytest<9.0.0", # Python 3.9
     "pytest-cov",
     "pytest-runner",
     "ruff",
+    "setuptools",
+    "tomli-w",
     "twine",
-    "tomli-w"
+    "types-docutils",
+    "uv",
 ]
 
 [project.urls]
