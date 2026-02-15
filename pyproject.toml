@@ -35,7 +35,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "docutils",
+    "docutils>=0.19", # frontend.get_default_settings()
     "wheel",
     "mypy",
     "pip-tools",
