@@ -37,14 +37,17 @@ dependencies = [
 dev = [
     "docutils",
     "wheel",
-    "mypy",
     "pip-tools",
+    "pre-commit",
     "pypandoc",
     "pytest-cov",
     "pytest-runner",
-    "ruff",
     "twine",
-    "tomli-w"
+    "tomli-w",
+    # incompatibility with Python 3.9 because of a pip-compile bug:
+    #   "filelock>=3.16.1,<4; python_version<'3.10'",
+    #   "filelock>=3.20.1,<4; python_version>='3.10'",
+    "virtualenv<20.36.0",
 ]
 
 [project.urls]
@@ -97,7 +100,8 @@ ignore = [
 isort.known-first-party = ["piplicenses"]
 
 [tool.mypy]
-exclude = ["venv"] # and thus venv[subprocess].CalledProcessError
+exclude = ["venv"]   # and thus venv[subprocess].CalledProcessError
+python_version = 3.9 # should be the earliest supported version
 
 [tool.coverage.run]
 include = ["piplicenses.py"]
