@@ -476,7 +476,7 @@ class TestGetLicenses(CommandLineTestCase):
     def test_ignore_packages(self) -> None:
         ignore_pkg_name = "prettytable"
         ignore_packages_args = [
-            "--ignore-package=" + ignore_pkg_name,
+            f"--ignore-package={ignore_pkg_name}",
             "--with-system",
         ]
         args = self.parser.parse_args(ignore_packages_args)
@@ -500,9 +500,9 @@ class TestGetLicenses(CommandLineTestCase):
     def test_ignore_packages_and_version(self) -> None:
         # Fictitious version that does not exist
         ignore_pkg_name = "prettytable"
-        ignore_pkg_spec = ignore_pkg_name + ":1.99.99"
+        ignore_pkg_spec = f"{ignore_pkg_name}:1.99.99"
         ignore_packages_args = [
-            "--ignore-package=" + ignore_pkg_spec,
+            f"--ignore-package={ignore_pkg_spec}",
             "--with-system",
         ]
         args = self.parser.parse_args(ignore_packages_args)
@@ -514,7 +514,7 @@ class TestGetLicenses(CommandLineTestCase):
 
     def test_with_packages(self) -> None:
         pkg_name = "pytest"
-        only_packages_args = ["--packages=" + pkg_name]
+        only_packages_args = [f"--packages={pkg_name}"]
         args = self.parser.parse_args(only_packages_args)
         table = create_licenses_table(args)
 
@@ -535,7 +535,7 @@ class TestGetLicenses(CommandLineTestCase):
 
     def test_with_packages_with_system(self) -> None:
         pkg_name = "prettytable"
-        only_packages_args = ["--packages=" + pkg_name, "--with-system"]
+        only_packages_args = [f"--packages={pkg_name}", "--with-system"]
         args = self.parser.parse_args(only_packages_args)
         table = create_licenses_table(args)
 
