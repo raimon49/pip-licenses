@@ -37,14 +37,16 @@ dependencies = [
 dev = [
     "docutils>=0.19", # frontend.get_default_settings()
     "wheel",
-    "mypy",
     "pip-tools",
+    "pre-commit",
     "pypandoc",
     "pytest-cov",
     "pytest-runner",
-    "ruff",
     "twine",
-    "tomli-w"
+    "tomli-w",
+    # virtualenv 20.36 is incompatible with Python 3.9:
+    # https://github.com/pypa/virtualenv/issues/3037
+    "virtualenv<20.36.0",
 ]
 
 [project.urls]
@@ -97,7 +99,8 @@ ignore = [
 isort.known-first-party = ["piplicenses"]
 
 [tool.mypy]
-exclude = ["venv"] # and thus venv[subprocess].CalledProcessError
+exclude = ["venv"]   # and thus venv[subprocess].CalledProcessError
+python_version = 3.9 # should be the earliest supported version
 
 [tool.coverage.run]
 include = ["piplicenses.py"]
