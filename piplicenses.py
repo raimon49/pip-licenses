@@ -57,7 +57,7 @@ if TYPE_CHECKING:  # pragma: no cover
 open = open  # allow monkey patching
 
 __pkgname__ = "pip-licenses"
-__version__ = "5.5.2"
+__version__ = "5.5.3"
 __summary__ = (
     "Dump the software license list of Python packages installed with pip."
 )
@@ -97,22 +97,18 @@ SUMMARY_OUTPUT_FIELDS = (
 
 
 def extract_homepage(metadata: Message) -> str | None:
-    """Extracts the homepage attribute from the package metadata.
+    """Extracts the home page from the package metadata.
 
-    Not all python packages have defined a home-page attribute.
-    As a fallback, the `Project-URL` metadata can be used.
-    The python core metadata supports multiple (free text) values for
-    the `Project-URL` field that are comma separated.
+    Retrieve home page from the PEP 753 `Project-URL` metadata.
+    As a fallback, try the Core Metadata 1.0 home-page attribute.
+    If all else fails, try other PEP 753 `Project-URL` labels.
 
     Args:
-        metadata: The package metadata to extract the homepage from.
+        metadata: The package metadata to extract the home page from.
 
     Returns:
         The home page if applicable, None otherwise.
     """
-    homepage = metadata.get("home-page", None)
-    if homepage is not None:
-        return homepage
 
     candidates: dict[str, str] = {}
 
@@ -120,13 +116,26 @@ def extract_homepage(metadata: Message) -> str | None:
         key, value = entry.split(",", 1)
         candidates[key.strip().lower()] = value.strip()
 
-    for priority_key in [
-        "homepage",
+    # start with Core Metadata 1.2 (PEP 753)
+    # https://packaging.python.org/en/latest/specifications/core-metadata/#core-metadata-project-url
+    homepage = candidates.get("homepage")
+    if homepage is not None:
+        return homepage
+
+    # fall back to deprecated Core Metadata 1.0
+    # https://packaging.python.org/en/latest/specifications/core-metadata/#home-page
+    homepage = metadata.get("home-page", None)
+    if homepage is not None:
+        return homepage
+
+    # if all else fails, try alternative Core Metadata 1.2 labels
+    # https://packaging.python.org/en/latest/specifications/well-known-project-urls/#well-known-labels
+    for priority_key in (
         "source",
         "repository",
         "changelog",
         "bug tracker",
-    ]:
+    ):
         if priority_key in candidates:
             return candidates[priority_key]
 
@@ -195,7 +204,7 @@ def normalize_version(version_string):
         str: A normalized version string in PEP 440 format or empty if invalid.
     """
     _regex = re.compile(
-        r"^\s*" + VERSION_PATTERN + r"\s*$",
+        rf"^\s*{VERSION_PATTERN}\s*$",
         re.VERBOSE | re.IGNORECASE,
     )
     match = _regex.match(version_string)
@@ -432,7 +441,8 @@ def get_packages(
 
     for pkg in pkgs:
         pkg_name = normalize_pkg_name(pkg.metadata["name"])
-        pkg_name_and_version = pkg_name + ":" + pkg.metadata["version"]
+        pkg_version = pkg.metadata["version"]
+        pkg_name_and_version = f"{pkg_name}:{pkg_version}"
 
         if (
             pkg_name.lower() in ignore_pkgs_as_normalize
@@ -1059,8 +1069,12 @@ def create_parser(
     format_options = parser.add_argument_group("Format options")
     verify_options = parser.add_argument_group("Verify options")
 
+    lit_prog_pat = "%(prog)s"
     parser.add_argument(
-        "-v", "--version", action="version", version="%(prog)s " + __version__
+        "-v",
+        "--version",
+        action="version",
+        version=f"{lit_prog_pat} {__version__}",
     )
 
     common_options.add_argument(
@@ -1282,7 +1296,7 @@ def save_if_needs(output_file: None | str, output_string: str) -> None:
                 # Always end output files with a new line
                 f.write("\n")
 
-        sys.stdout.write("created path: " + output_file + "\n")
+        sys.stdout.write(f"created path: {output_file}\n")
         sys.exit(0)
     except OSError:
         sys.stderr.write("check path: --output-file\n")

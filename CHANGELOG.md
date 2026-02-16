@@ -1,5 +1,23 @@
 ## CHANGELOG
 
+### 5.5.3
+
+* Aligned parsing logic with [PEP 753](https://peps.python.org/pep-0753/)
+* Refactored to better leverage f-strings to improve performance slightly
+
+### 5.5.2
+
+* Added support for multi-line allow-only and fail-on arguments
+  * Relaxed parsing of most whitespace around semicolon delimeter
+* Added simple `SECURITY.md` policy document
+* Fixed a duplication behavior in output when a package was found at multiple paths (e.g., symlinks)
+* Fixed issue where lowercase license filenames were ignored
+* Improved project `Makefile` stability for developers
+* Migrated from the linters black and isort to ruff
+  * Code style remains PEP-8 aligned, but should be slightly more readable.
+  * Linting configuration remains in `pyproject.toml`
+* Updated `CONTRIBUTORS.md` guide with related changes
+
 ### 5.5.1
 
 * Fixed typographical issue in README examples, closing GHI #209.
