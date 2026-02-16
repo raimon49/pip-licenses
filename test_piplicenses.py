@@ -476,7 +476,7 @@ class TestGetLicenses(CommandLineTestCase):
     def test_ignore_packages(self) -> None:
         ignore_pkg_name = "prettytable"
         ignore_packages_args = [
-            "--ignore-package=" + ignore_pkg_name,
+            f"--ignore-package={ignore_pkg_name}",
             "--with-system",
         ]
         args = self.parser.parse_args(ignore_packages_args)
@@ -500,9 +500,9 @@ class TestGetLicenses(CommandLineTestCase):
     def test_ignore_packages_and_version(self) -> None:
         # Fictitious version that does not exist
         ignore_pkg_name = "prettytable"
-        ignore_pkg_spec = ignore_pkg_name + ":1.99.99"
+        ignore_pkg_spec = f"{ignore_pkg_name}:1.99.99"
         ignore_packages_args = [
-            "--ignore-package=" + ignore_pkg_spec,
+            f"--ignore-package={ignore_pkg_spec}",
             "--with-system",
         ]
         args = self.parser.parse_args(ignore_packages_args)
@@ -514,7 +514,7 @@ class TestGetLicenses(CommandLineTestCase):
 
     def test_with_packages(self) -> None:
         pkg_name = "pytest"
-        only_packages_args = ["--packages=" + pkg_name]
+        only_packages_args = [f"--packages={pkg_name}"]
         args = self.parser.parse_args(only_packages_args)
         table = create_licenses_table(args)
 
@@ -535,7 +535,7 @@ class TestGetLicenses(CommandLineTestCase):
 
     def test_with_packages_with_system(self) -> None:
         pkg_name = "prettytable"
-        only_packages_args = ["--packages=" + pkg_name, "--with-system"]
+        only_packages_args = [f"--packages={pkg_name}", "--with-system"]
         args = self.parser.parse_args(only_packages_args)
         table = create_licenses_table(args)
 
@@ -614,10 +614,6 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertEqual("|", table.junction_char)
         self.assertEqual(HRuleStyle.HEADER, table.hrules)
 
-    @unittest.skipIf(
-        sys.version_info < (3, 6, 0),
-        "To unsupport Python 3.5 in the near future",
-    )
     def test_format_rst_without_filter(self) -> None:
         piplicenses.importlib_metadata.distributions = (
             importlib_metadata_distributions_mocked
@@ -936,11 +932,11 @@ def test_allow_only(monkeypatch) -> None:
 
     assert "" == mocked_stdout.printed
     assert (
-        "license MIT License not in allow-only licenses was found for "
-        "package" in mocked_stderr.printed
+        "license MIT License not in allow-only licenses was found for package"
+        in mocked_stderr.printed
     ) or (
-        "license MIT not in allow-only licenses was found for "
-        "package" in mocked_stderr.printed
+        "license MIT not in allow-only licenses was found for package"
+        in mocked_stderr.printed
     )  # GHI #292 -- MIT License has become abreviated to just MIT for some
 
 
@@ -970,8 +966,8 @@ def test_allow_only_partial(monkeypatch) -> None:
     assert (
         "license MIT" in mocked_stderr.printed
     ) and (  # GHI #292 -- partial match may ommit 'License'
-        " not in allow-only licenses was found for "
-        "package" in mocked_stderr.printed
+        " not in allow-only licenses was found for package"
+        in mocked_stderr.printed
     )
 
 
@@ -998,11 +994,11 @@ def test_allow_only_with_empty_tokens(monkeypatch) -> None:
 
     assert "" == mocked_stdout.printed
     assert (
-        "license MIT License not in allow-only licenses was found for "
-        "package" in mocked_stderr.printed
+        "license MIT License not in allow-only licenses was found for package"
+        in mocked_stderr.printed
     ) or (
-        "license MIT not in allow-only licenses was found for "
-        "package" in mocked_stderr.printed
+        "license MIT not in allow-only licenses was found for package"
+        in mocked_stderr.printed
     )  # GHI #292 -- MIT License has become abreviated to just MIT for some
 
 
@@ -1020,8 +1016,8 @@ def test_fail_on_with_empty_tokens(monkeypatch) -> None:
 
     assert "" == mocked_stdout.printed
     assert (
-        "fail-on license MIT License was found for "
-        "package" in mocked_stderr.printed
+        "fail-on license MIT License was found for package"
+        in mocked_stderr.printed
     )
 
 
@@ -1070,8 +1066,8 @@ def test_fail_on(monkeypatch) -> None:
 
     assert "" == mocked_stdout.printed
     assert (
-        "fail-on license MIT License was found for "
-        "package" in mocked_stderr.printed
+        "fail-on license MIT License was found for package"
+        in mocked_stderr.printed
     )
 
 
