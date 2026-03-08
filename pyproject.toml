@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=77.0.3", "setuptools_scm"]
+requires = ["setuptools>=82.0.0", "setuptools_scm"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -44,7 +44,8 @@ dev = [
     "pytest-runner",
     "ruff",
     "twine",
-    "tomli-w"
+    "tomli-w",
+    "virtualenv>=21.1.0",
 ]
 
 [project.urls]
@@ -67,9 +68,14 @@ addopts = "-v --cov --cov-report term-missing"
 
 [tool.ruff]
 line-length = 79
+# Same as Black.
+indent-width = 4
+# assume python 3.9 support
+target-version = "py39"
 
 [tool.ruff.lint]
 extend-select = [
+    "ANN",     # flake8-annotations
     "B",      # flake8-bugbear
     "C4",     # flake8-comprehensions
     "FA",     # flake8-future-annotations
@@ -95,9 +101,24 @@ ignore = [
     "RUF021", # Parenthesize `a and b` expressions when chaining `and` and `or` together, to make the precedence clear
 ]
 isort.known-first-party = ["piplicenses"]
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?)(_{2,2})?)$"  # See https://regex101.com/r/U0tpDT/2
+
+[tool.ruff.lint.flake8-annotations]
+suppress-dummy-args = true
+
+[tool.ruff.format]
+# Like Black
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+# misc.
+docstring-code-line-length = 79
 
 [tool.mypy]
-exclude = ["venv"] # and thus venv[subprocess].CalledProcessError
+exclude = ["venv"]   # and thus venv[subprocess].CalledProcessError
+python_version = 3.9 # should be the earliest supported version
 
 [tool.coverage.run]
 include = ["piplicenses.py"]
+
