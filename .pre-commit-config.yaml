@@ -23,6 +23,7 @@ repos:
         language: python
         entry: make -f Makefile update-depends
         priority: 2
+        files: "pyproject.toml|dev-requirements.txt"
         pass_filenames: false
         additional_dependencies:
           - pip-tools
@@ -38,6 +39,7 @@ repos:
         language: python
         entry: python3 -m ruff --config pyproject.toml check --fix .
         priority: 5
+        always_run: true
         pass_filenames: false
         additional_dependencies:
           - ruff
@@ -53,6 +55,7 @@ repos:
         language: python
         entry: python3 -m ruff --config pyproject.toml format .
         priority: 10
+        always_run: true
         pass_filenames: false
         additional_dependencies:
           - ruff
@@ -68,6 +71,7 @@ repos:
         language: python
         entry: python3 -m mypy --install-types --non-interactive .
         priority: 20
+        always_run: true
         pass_filenames: false
         verbose: true
         additional_dependencies:

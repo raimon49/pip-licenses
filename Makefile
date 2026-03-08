@@ -208,6 +208,7 @@ full-clean:: local-uninstall clean
 	$(RMDIR) -v ./.mypy_cache 2>$(ERROR_LOG_PATH) || true ;
 	$(RMDIR) -v ./.ruff_cache 2>$(ERROR_LOG_PATH) || true ;
 	$(RMDIR) -v ./.pytest_cache 2>$(ERROR_LOG_PATH) || true ;
+	prek cache clean 2>$(ERROR_LOG_PATH) || true ;
 
 un-setup:: full-clean
 	$(RMDIR) -v ./venv 2>$(ERROR_LOG_PATH) || true ;
