@@ -193,7 +193,7 @@ VERSION_PATTERN = r"""
 """
 
 
-def normalize_version(version_string: None | str ) -> str:
+def normalize_version(version_string: None | str) -> str:
     """
     Normalize a version string to a PEP 440 compliant format.
 
@@ -563,7 +563,10 @@ def create_summary_table(args: CustomNamespace) -> PrettyTable:
     return table
 
 
-def case_insensitive_set_intersect(set_a: set[str] | list[str | None] | tuple | frozenset, set_b: set[str] | list[str | None] | tuple | frozenset) -> set:
+def case_insensitive_set_intersect(
+    set_a: set[str] | list[str | None] | tuple | frozenset,
+    set_b: set[str] | list[str | None] | tuple | frozenset,
+) -> set:
     """Same as set.intersection() but case-insensitive"""
     common_items = set()
     set_b_lower = {item.lower() for item in set_b}
@@ -573,7 +576,10 @@ def case_insensitive_set_intersect(set_a: set[str] | list[str | None] | tuple | 
     return common_items
 
 
-def case_insensitive_partial_match_set_intersect(set_a: set[str] | list[str | None] | tuple | frozenset, set_b: set[str] | list[str | None] | tuple | frozenset) -> set:
+def case_insensitive_partial_match_set_intersect(
+    set_a: set[str] | list[str | None] | tuple | frozenset,
+    set_b: set[str] | list[str | None] | tuple | frozenset,
+) -> set:
     common_items = set()
     for item_a in set_a:
         for item_b in set_b:
@@ -582,7 +588,10 @@ def case_insensitive_partial_match_set_intersect(set_a: set[str] | list[str | No
     return common_items
 
 
-def case_insensitive_partial_match_set_diff(set_a: set | list | tuple | frozenset, set_b: set[str] | list[str | None] | tuple | frozenset) -> set[str] | list[str | None] | tuple | frozenset | Sequence:
+def case_insensitive_partial_match_set_diff(
+    set_a: set | list | tuple | frozenset,
+    set_b: set[str] | list[str | None] | tuple | frozenset,
+) -> set[str] | list[str | None] | tuple | frozenset | Sequence:
     """
     Return items from set_a without case-insensitive partial matches
     from items in set_b.
@@ -597,7 +606,10 @@ def case_insensitive_partial_match_set_diff(set_a: set | list | tuple | frozense
     return uncommon_items
 
 
-def case_insensitive_set_diff(set_a: set | list | tuple | frozenset, set_b: set[str] | list[str | None] | tuple | frozenset) -> set:
+def case_insensitive_set_diff(
+    set_a: set | list | tuple | frozenset,
+    set_b: set[str] | list[str | None] | tuple | frozenset,
+) -> set:
     """Same as set.difference() but case-insensitive"""
     uncommon_items = set()
     set_b_lower = {item.lower() for item in set_b}
