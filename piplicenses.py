@@ -63,7 +63,7 @@ __summary__ = (
 )
 
 
-FIELD_NAMES: set[str] = (
+FIELD_NAMES: set[str] = {
     "Name",
     "Version",
     "License",
@@ -75,25 +75,25 @@ FIELD_NAMES: set[str] = (
     "Maintainer",
     "Description",
     "URL",
-)
+}
 
 
-SUMMARY_FIELD_NAMES: set[str] = (
+SUMMARY_FIELD_NAMES: set[str] = {
     "Count",
     "License",
-)
+}
 
 
-DEFAULT_OUTPUT_FIELDS: set[str] = (
+DEFAULT_OUTPUT_FIELDS: set[str] | Sequence[str] = {
     "Name",
     "Version",
-)
+}
 
 
-SUMMARY_OUTPUT_FIELDS: set[str] = (
+SUMMARY_OUTPUT_FIELDS: set[str] = {
     "Count",
     "License",
-)
+}
 
 
 def extract_homepage(metadata: Message) -> str | None:
@@ -207,7 +207,7 @@ def normalize_version(version_string: None | str) -> str:
         rf"^\s*{VERSION_PATTERN}\s*$",
         re.VERBOSE | re.IGNORECASE,
     )
-    match = _regex.match(version_string)
+    match = _regex.match(version_string) if version_string else None
     if not match:
         return ""
     epoch = match.group("epoch") or "0"
@@ -300,7 +300,7 @@ METADATA_KEYS: dict[str, list[Callable[[Message], str | None]]] = {
 }
 
 # Mapping of FIELD_NAMES to METADATA_KEYS where they differ by more than case
-FIELDS_TO_METADATA_KEYS: dict[str, list[str | None]] = {
+FIELDS_TO_METADATA_KEYS: dict[str, str] = {
     "URL": "home-page",
     "Description": "summary",
     "License-Metadata": "license",
@@ -309,7 +309,7 @@ FIELDS_TO_METADATA_KEYS: dict[str, list[str | None]] = {
 }
 
 
-SYSTEM_PACKAGES: list = [
+SYSTEM_PACKAGES: list[str] = [
     __pkgname__,
     "pip",
     "prettytable",
@@ -492,8 +492,10 @@ def get_packages(
                     license_names, allow_only_licenses
                 )
             else:
-                uncommon_licenses = case_insensitive_partial_match_set_diff(
-                    license_names, allow_only_licenses
+                uncommon_licenses = set(
+                    case_insensitive_partial_match_set_diff(
+                        license_names, allow_only_licenses
+                    )
                 )
 
             if len(uncommon_licenses) == len(license_names):
@@ -512,7 +514,7 @@ def get_packages(
 
 def create_licenses_table(
     args: CustomNamespace,
-    output_fields: Sequence[str] = DEFAULT_OUTPUT_FIELDS,
+    output_fields: set[str] | Sequence[str] = DEFAULT_OUTPUT_FIELDS,
 ) -> PrettyTable:
     table = factory_styled_table_with_args(args, output_fields)
 
@@ -564,8 +566,8 @@ def create_summary_table(args: CustomNamespace) -> PrettyTable:
 
 
 def case_insensitive_set_intersect(
-    set_a: set[str] | list[str | None] | tuple | frozenset,
-    set_b: set[str] | list[str | None] | tuple | frozenset,
+    set_a: set[str] | list[str] | tuple | frozenset,
+    set_b: set[str] | list[str] | tuple | frozenset,
 ) -> set:
     """Same as set.intersection() but case-insensitive"""
     common_items = set()
@@ -577,8 +579,8 @@ def case_insensitive_set_intersect(
 
 
 def case_insensitive_partial_match_set_intersect(
-    set_a: set[str] | list[str | None] | tuple | frozenset,
-    set_b: set[str] | list[str | None] | tuple | frozenset,
+    set_a: set[str] | list[str] | tuple | frozenset,
+    set_b: set[str] | list[str] | tuple | frozenset,
 ) -> set:
     common_items = set()
     for item_a in set_a:
@@ -589,9 +591,9 @@ def case_insensitive_partial_match_set_intersect(
 
 
 def case_insensitive_partial_match_set_diff(
-    set_a: set | list | tuple | frozenset,
-    set_b: set[str] | list[str | None] | tuple | frozenset,
-) -> set[str] | list[str | None] | tuple | frozenset | Sequence:
+    set_a: set,
+    set_b: set[str],
+) -> set[str]:
     """
     Return items from set_a without case-insensitive partial matches
     from items in set_b.
@@ -608,7 +610,7 @@ def case_insensitive_partial_match_set_diff(
 
 def case_insensitive_set_diff(
     set_a: set | list | tuple | frozenset,
-    set_b: set[str] | list[str | None] | tuple | frozenset,
+    set_b: set[str] | list[str] | tuple | frozenset,
 ) -> set:
     """Same as set.difference() but case-insensitive"""
     uncommon_items = set()
@@ -723,7 +725,7 @@ class PlainVerticalTable(PrettyTable):
 
 def factory_styled_table_with_args(
     args: CustomNamespace,
-    output_fields: Sequence[str] = DEFAULT_OUTPUT_FIELDS,
+    output_fields: set[str] | Sequence[str] = DEFAULT_OUTPUT_FIELDS,
 ) -> PrettyTable:
     table = PrettyTable()
     table.field_names = output_fields  # type: ignore[assignment]
@@ -1042,7 +1044,7 @@ def get_value_from_enum(
     return getattr(enum_cls, value_to_enum_key(value))
 
 
-MAP_DEST_TO_ENUM: dict[str, Enum | NoValueEnum] = {
+MAP_DEST_TO_ENUM: dict[str, type[NoValueEnum]] = {
     "from_": FromArg,
     "order": OrderArg,
     "format_": FormatArg,
