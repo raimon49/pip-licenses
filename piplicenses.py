@@ -63,7 +63,7 @@ __summary__ = (
 )
 
 
-FIELD_NAMES = (
+FIELD_NAMES: set[str] = {
     "Name",
     "Version",
     "License",
@@ -75,25 +75,25 @@ FIELD_NAMES = (
     "Maintainer",
     "Description",
     "URL",
-)
+}
 
 
-SUMMARY_FIELD_NAMES = (
+SUMMARY_FIELD_NAMES: set[str] = {
     "Count",
     "License",
-)
+}
 
 
-DEFAULT_OUTPUT_FIELDS = (
+DEFAULT_OUTPUT_FIELDS: set[str] | Sequence[str] = {
     "Name",
     "Version",
-)
+}
 
 
-SUMMARY_OUTPUT_FIELDS = (
+SUMMARY_OUTPUT_FIELDS: set[str] = {
     "Count",
     "License",
-)
+}
 
 
 def extract_homepage(metadata: Message) -> str | None:
@@ -193,7 +193,7 @@ VERSION_PATTERN = r"""
 """
 
 
-def normalize_version(version_string):
+def normalize_version(version_string: None | str) -> str:
     """
     Normalize a version string to a PEP 440 compliant format.
 
@@ -207,7 +207,7 @@ def normalize_version(version_string):
         rf"^\s*{VERSION_PATTERN}\s*$",
         re.VERBOSE | re.IGNORECASE,
     )
-    match = _regex.match(version_string)
+    match = _regex.match(version_string) if version_string else None
     if not match:
         return ""
     epoch = match.group("epoch") or "0"
@@ -300,7 +300,7 @@ METADATA_KEYS: dict[str, list[Callable[[Message], str | None]]] = {
 }
 
 # Mapping of FIELD_NAMES to METADATA_KEYS where they differ by more than case
-FIELDS_TO_METADATA_KEYS = {
+FIELDS_TO_METADATA_KEYS: dict[str, str] = {
     "URL": "home-page",
     "Description": "summary",
     "License-Metadata": "license",
@@ -309,7 +309,7 @@ FIELDS_TO_METADATA_KEYS = {
 }
 
 
-SYSTEM_PACKAGES = [
+SYSTEM_PACKAGES: list[str] = [
     __pkgname__,
     "pip",
     "prettytable",
@@ -320,7 +320,7 @@ SYSTEM_PACKAGES = [
 if sys.version_info < (3, 11):
     SYSTEM_PACKAGES.append("tomli")
 
-LICENSE_UNKNOWN = "UNKNOWN"
+LICENSE_UNKNOWN: str = "UNKNOWN"
 
 
 def get_packages(
@@ -492,8 +492,10 @@ def get_packages(
                     license_names, allow_only_licenses
                 )
             else:
-                uncommon_licenses = case_insensitive_partial_match_set_diff(
-                    license_names, allow_only_licenses
+                uncommon_licenses = set(
+                    case_insensitive_partial_match_set_diff(
+                        license_names, allow_only_licenses
+                    )
                 )
 
             if len(uncommon_licenses) == len(license_names):
@@ -512,7 +514,7 @@ def get_packages(
 
 def create_licenses_table(
     args: CustomNamespace,
-    output_fields: Sequence[str] = DEFAULT_OUTPUT_FIELDS,
+    output_fields: set[str] | Sequence[str] = DEFAULT_OUTPUT_FIELDS,
 ) -> PrettyTable:
     table = factory_styled_table_with_args(args, output_fields)
 
@@ -563,7 +565,10 @@ def create_summary_table(args: CustomNamespace) -> PrettyTable:
     return table
 
 
-def case_insensitive_set_intersect(set_a, set_b):
+def case_insensitive_set_intersect(
+    set_a: set[str] | list[str] | tuple | frozenset,
+    set_b: set[str] | list[str] | tuple | frozenset,
+) -> set:
     """Same as set.intersection() but case-insensitive"""
     common_items = set()
     set_b_lower = {item.lower() for item in set_b}
@@ -573,7 +578,10 @@ def case_insensitive_set_intersect(set_a, set_b):
     return common_items
 
 
-def case_insensitive_partial_match_set_intersect(set_a, set_b):
+def case_insensitive_partial_match_set_intersect(
+    set_a: set[str] | list[str] | tuple | frozenset,
+    set_b: set[str] | list[str] | tuple | frozenset,
+) -> set:
     common_items = set()
     for item_a in set_a:
         for item_b in set_b:
@@ -582,7 +590,10 @@ def case_insensitive_partial_match_set_intersect(set_a, set_b):
     return common_items
 
 
-def case_insensitive_partial_match_set_diff(set_a, set_b):
+def case_insensitive_partial_match_set_diff(
+    set_a: set,
+    set_b: set[str],
+) -> set[str]:
     """
     Return items from set_a without case-insensitive partial matches
     from items in set_b.
@@ -597,7 +608,10 @@ def case_insensitive_partial_match_set_diff(set_a, set_b):
     return uncommon_items
 
 
-def case_insensitive_set_diff(set_a, set_b):
+def case_insensitive_set_diff(
+    set_a: set | list | tuple | frozenset,
+    set_b: set[str] | list[str] | tuple | frozenset,
+) -> set:
     """Same as set.difference() but case-insensitive"""
     uncommon_items = set()
     set_b_lower = {item.lower() for item in set_b}
@@ -711,7 +725,7 @@ class PlainVerticalTable(PrettyTable):
 
 def factory_styled_table_with_args(
     args: CustomNamespace,
-    output_fields: Sequence[str] = DEFAULT_OUTPUT_FIELDS,
+    output_fields: set[str] | Sequence[str] = DEFAULT_OUTPUT_FIELDS,
 ) -> PrettyTable:
     table = PrettyTable()
     table.field_names = output_fields  # type: ignore[assignment]
@@ -1030,7 +1044,7 @@ def get_value_from_enum(
     return getattr(enum_cls, value_to_enum_key(value))
 
 
-MAP_DEST_TO_ENUM = {
+MAP_DEST_TO_ENUM: dict[str, type[NoValueEnum]] = {
     "from_": FromArg,
     "order": OrderArg,
     "format_": FormatArg,
@@ -1049,7 +1063,7 @@ class SelectAction(argparse.Action):
         setattr(namespace, self.dest, get_value_from_enum(enum_cls, values))
 
 
-def load_config_from_file(pyproject_path: str):
+def load_config_from_file(pyproject_path: str) -> dict:
     if Path(pyproject_path).exists():
         with open(pyproject_path, "rb") as f:
             return tomllib.load(f).get("tool", {}).get(__pkgname__, {})

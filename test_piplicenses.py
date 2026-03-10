@@ -111,7 +111,10 @@ class CommandLineTestCase(unittest.TestCase):
 
 class TestGetLicenses(CommandLineTestCase):
     def _create_pkg_name_columns(self, table):
-        index = DEFAULT_OUTPUT_FIELDS.index("Name")
+        _list_DEFAULT_OUTPUT_FIELDS = list(
+            DEFAULT_OUTPUT_FIELDS
+        )  # cast to list for .index()
+        index = _list_DEFAULT_OUTPUT_FIELDS.index("Name")
 
         # XXX: access to private API
         rows = copy.deepcopy(table.rows)
