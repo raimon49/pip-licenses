@@ -76,15 +76,12 @@ repos:
         verbose: true
         additional_dependencies:
           - prettytable
-          - mypy
+          - --requirements=dev-requirements.txt
           - pip
-          - tomli
-          - tomli-w
-          - docutils
-          - pytest
           - typing_extensions
           - types-docutils
           - types-Pygments
+          - types_pexpect
         stages:
           - manual
           - pre-commit
@@ -101,11 +98,8 @@ repos:
         additional_dependencies:
           - prettytable
           - ty
-          - tomli
-          - tomli-w
-          - docutils
+          - --requirements=dev-requirements.txt
           - types-docutils
-          - pytest
         stages:
           - manual
           - pre-commit
