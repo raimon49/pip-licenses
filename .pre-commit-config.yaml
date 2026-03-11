@@ -12,7 +12,19 @@ repos:
         always_run: true
         fail_fast: true
         priority: 0
-        files: ".pre-commit-config.yaml"
+        files: "pyproject.toml|.pre-commit-config.yaml"
+        pass_filenames: true
+        additional_dependencies:
+          - prek
+
+      - id: hooks-check
+        name: hooks-check
+        language: python
+        entry: prek validate-manifest
+        always_run: true
+        fail_fast: true
+        priority: 1
+        files: ".pre-commit-hooks.yaml"
         pass_filenames: true
         additional_dependencies:
           - prek
