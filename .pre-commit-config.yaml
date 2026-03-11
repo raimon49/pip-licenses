@@ -36,15 +36,12 @@ repos:
         entry: make -f Makefile update-depends
         priority: 2
         files: "pyproject.toml|dev-requirements.txt"
+        always_run: false
         pass_filenames: false
         additional_dependencies:
           - pip-tools
         stages:
           - manual
-          - pre-commit
-          - pre-merge-commit
-          - pre-rebase
-          - pre-push
 
       - id: ruff-check
         name: style-check

@@ -1455,7 +1455,7 @@ def test_case_insensitive_partial_match_set_diff() -> None:
 
     set_a = {"A", "B", "C"}
     set_b = {"D", "E"}
-    resul_list = sorted(case_insensitive_partial_match_set_diff(set_a, set_b))
+    result_list = sorted(case_insensitive_partial_match_set_diff(set_a, set_b))
     expected_order = sorted({"A", "B", "C"})
     assert result_list == expected_order, (
         "Non-overlapping sets should preserve all of set_a (order-insensitive)."
