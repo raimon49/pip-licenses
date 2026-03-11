@@ -20,7 +20,7 @@ import docutils.parsers.rst
 import docutils.utils
 import pytest
 import tomli_w
-from _pytest.capture import CaptureFixture  # ty: ignore[unresolved-import]
+from _pytest.capture import CaptureFixture
 from prettytable import HRuleStyle
 
 import piplicenses
@@ -60,7 +60,7 @@ if TYPE_CHECKING:
         from importlib.metadata._meta import PackageMetadata
     else:
         from email.message import Message as PackageMetadata
-
+    from prettytable import PrettyTable
 
 UNICODE_APPENDIX = ""
 with open("tests/fixtures/unicode_characters.txt", encoding="utf-8") as f:
@@ -83,12 +83,12 @@ def importlib_metadata_distributions_mocked(
         def __init__(self, orig_msg: PackageMetadata) -> None:
             self.__msg = orig_msg
 
-        def __getattr__(self, attr: str) -> Any:
+        def __getattr__(self, attr: str) -> Any:  # noqa: ANN401
             return getattr(self.__msg, attr)
 
         # Morally, the return type should be `email.message.Message._HeaderType | None`
         # Mocking with Any
-        def __getitem__(self, key: str) -> Any:  # ty: ignore[invalid-method-override]
+        def __getitem__(self, key: str) -> Any:  # noqa: ANN401  # ty: ignore[invalid-method-override]
             if key.lower() == "name":
                 return self.__msg["name"] + " " + UNICODE_APPENDIX
             return self.__msg[key]
@@ -112,7 +112,7 @@ class CommandLineTestCase(unittest.TestCase):
 
 
 class TestGetLicenses(CommandLineTestCase):
-    def _create_pkg_name_columns(self, table):
+    def _create_pkg_name_columns(self, table: PrettyTable) -> list:
         _list_DEFAULT_OUTPUT_FIELDS = list(
             DEFAULT_OUTPUT_FIELDS
         )  # cast to list for .index()
@@ -124,7 +124,9 @@ class TestGetLicenses(CommandLineTestCase):
 
         return pkg_name_columns
 
-    def _create_license_columns(self, table, output_fields):
+    def _create_license_columns(
+        self, table: PrettyTable, output_fields: list
+    ) -> list:
         index = output_fields.index("License")
 
         # XXX: access to private API
@@ -866,12 +868,15 @@ class MockStdStream:
     def __init__(self) -> None:
         self.printed = ""
 
-    def write(self, p) -> None:
+    def write(self: MockStdStream, p: str) -> None:
         self.printed = p
 
 
-def test_output_file_success(monkeypatch) -> None:
-    def mocked_open(*args, **kwargs):
+def test_output_file_success(monkeypatch: pytest.MonkeyPatch) -> None:
+    if TYPE_CHECKING:
+        import io
+
+    def mocked_open(*args: Any, **kwargs: Any) -> io.TextIOWrapper:
         import tempfile
 
         return tempfile.TemporaryFile("w")
@@ -888,8 +893,8 @@ def test_output_file_success(monkeypatch) -> None:
     assert "" == mocked_stderr.printed
 
 
-def test_output_file_error(monkeypatch) -> None:
-    def mocked_open(*args, **kwargs):
+def test_output_file_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    def mocked_open(*args: Any, **kwargs: Any) -> None:
         raise OSError
 
     mocked_stdout = MockStdStream()
@@ -904,7 +909,7 @@ def test_output_file_error(monkeypatch) -> None:
     assert "check path: " in mocked_stderr.printed
 
 
-def test_output_file_none(monkeypatch) -> None:
+def test_output_file_none(monkeypatch: pytest.MonkeyPatch) -> None:
     mocked_stdout = MockStdStream()
     mocked_stderr = MockStdStream()
     monkeypatch.setattr(sys.stdout, "write", mocked_stdout.write)
@@ -916,7 +921,7 @@ def test_output_file_none(monkeypatch) -> None:
     assert "" == mocked_stderr.printed
 
 
-def test_allow_only(monkeypatch) -> None:
+def test_allow_only(monkeypatch: pytest.MonkeyPatch) -> None:
     licenses = (
         "Bsd License",
         "Apache Software License",
@@ -945,7 +950,7 @@ def test_allow_only(monkeypatch) -> None:
     )  # GHI #292 -- MIT License has become abreviated to just MIT for some
 
 
-def test_allow_only_partial(monkeypatch) -> None:
+def test_allow_only_partial(monkeypatch: pytest.MonkeyPatch) -> None:
     licenses = (
         "Bsd",
         "Apache",
@@ -976,7 +981,9 @@ def test_allow_only_partial(monkeypatch) -> None:
     )
 
 
-def test_allow_only_with_empty_tokens(monkeypatch) -> None:
+def test_allow_only_with_empty_tokens(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     # same as test_allow_only but with extra semicolons/whitespace
     licenses = (
         "Bsd License",
@@ -1007,7 +1014,9 @@ def test_allow_only_with_empty_tokens(monkeypatch) -> None:
     )  # GHI #292 -- MIT License has become abreviated to just MIT for some
 
 
-def test_fail_on_with_empty_tokens(monkeypatch) -> None:
+def test_fail_on_with_empty_tokens(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     # include extra semicolons/whitespace around the entry
     licenses = ("MIT license",)
     fail_on_args = ["--fail-on=;;  {} ;".format(";".join(licenses))]
@@ -1058,7 +1067,7 @@ def test_different_python() -> None:
     assert package_names == expected_packages
 
 
-def test_fail_on(monkeypatch) -> None:
+def test_fail_on(monkeypatch: pytest.MonkeyPatch) -> None:
     licenses = ("MIT license",)
     allow_only_args = ["--fail-on={}".format(";".join(licenses))]
     mocked_stdout = MockStdStream()
@@ -1076,7 +1085,7 @@ def test_fail_on(monkeypatch) -> None:
     )
 
 
-def test_fail_on_partial_match(monkeypatch) -> None:
+def test_fail_on_partial_match(monkeypatch: pytest.MonkeyPatch) -> None:
     licenses = ("MIT",)
     allow_only_args = [
         "--partial-match",
@@ -1161,7 +1170,7 @@ def test_normalize_pkg_name() -> None:
     assert normalize_pkg_name("Pip-Licenses") == expected_normalized_name
 
 
-def test_normalize_version():
+def test_normalize_version() -> None:
     """
     Test normalize_version function with various version strings.
     """
@@ -1310,7 +1319,7 @@ def test_extract_homepage_project_uprl_fallback_capitalisation() -> None:
     metadata.get_all.assert_called_once_with("Project-URL", [])
 
 
-def test_pyproject_toml_args_parsed_correctly():
+def test_pyproject_toml_args_parsed_correctly() -> None:
     # we test that parameters of different types are deserialized correctly
     pyptoject_conf = {
         "tool": {
@@ -1360,7 +1369,7 @@ def test_pyproject_toml_args_parsed_correctly():
     os.unlink(temp_file.name)
 
 
-def test_case_insensitive_partial_match_set_diff():
+def test_case_insensitive_partial_match_set_diff() -> None:
     set_a = {"Python", "Java", "C++"}
     set_b = {"Ruby", "JavaScript"}
     result = case_insensitive_partial_match_set_diff(set_a, set_b)
@@ -1429,9 +1438,11 @@ def test_case_insensitive_partial_match_set_diff():
 
     set_a = {"Duplicate", "duplicate", "Unique"}
     set_b = {"unique"}
-    result = sorted(case_insensitive_partial_match_set_diff(set_a, set_b))
+    result_list: list = sorted(
+        case_insensitive_partial_match_set_diff(set_a, set_b)
+    )
     expected_order = sorted({"Duplicate", "duplicate"})
-    assert result == expected_order, (
+    assert result_list == expected_order, (
         "The function should still preserve case of set_a (order-insensitive)."
     )
 
@@ -1444,8 +1455,8 @@ def test_case_insensitive_partial_match_set_diff():
 
     set_a = {"A", "B", "C"}
     set_b = {"D", "E"}
-    result = sorted(case_insensitive_partial_match_set_diff(set_a, set_b))
+    resul_list = sorted(case_insensitive_partial_match_set_diff(set_a, set_b))
     expected_order = sorted({"A", "B", "C"})
-    assert result == expected_order, (
+    assert result_list == expected_order, (
         "Non-overlapping sets should preserve all of set_a (order-insensitive)."
     )
