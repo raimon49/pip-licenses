@@ -83,12 +83,7 @@ SUMMARY_FIELD_NAMES: set[str] = {
 }
 
 # Morally, this should be typed as an ordered-set
-DEFAULT_OUTPUT_FIELDS: set[str] | Sequence[str] = sorted(
-    {
-        "Name",
-        "Version",
-    }
-)
+DEFAULT_OUTPUT_FIELDS: Sequence[str] = ("Name", "Version")
 
 
 SUMMARY_OUTPUT_FIELDS: set[str] = {
