@@ -99,7 +99,13 @@ repos:
         priority: 25
         pass_filenames: false
         additional_dependencies:
+          - prettytable
           - ty
+          - tomli
+          - tomli-w
+          - docutils
+          - types-docutils
+          - pytest
         stages:
           - manual
           - pre-commit

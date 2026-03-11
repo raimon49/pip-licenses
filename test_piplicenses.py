@@ -20,7 +20,7 @@ import docutils.parsers.rst
 import docutils.utils
 import pytest
 import tomli_w
-from _pytest.capture import CaptureFixture
+from _pytest.capture import CaptureFixture  # ty: ignore[unresolved-import]
 from prettytable import HRuleStyle
 
 import piplicenses
@@ -86,7 +86,9 @@ def importlib_metadata_distributions_mocked(
         def __getattr__(self, attr: str) -> Any:
             return getattr(self.__msg, attr)
 
-        def __getitem__(self, key: str) -> Any:
+        # Morally, the return type should be `email.message.Message._HeaderType | None`
+        # Mocking with Any
+        def __getitem__(self, key: str) -> Any:  # ty: ignore[invalid-method-override]
             if key.lower() == "name":
                 return self.__msg["name"] + " " + UNICODE_APPENDIX
             return self.__msg[key]
@@ -618,7 +620,7 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertEqual(HRuleStyle.HEADER, table.hrules)
 
     def test_format_rst_without_filter(self) -> None:
-        piplicenses.importlib_metadata.distributions = (
+        piplicenses.importlib_metadata.distributions = (  # ty: ignore[invalid-assignment]
             importlib_metadata_distributions_mocked
         )
         format_rst_args = ["--format=rst"]
@@ -635,7 +637,7 @@ class TestGetLicenses(CommandLineTestCase):
         )
 
     def test_format_rst_default_filter(self) -> None:
-        piplicenses.importlib_metadata.distributions = (
+        piplicenses.importlib_metadata.distributions = (  # ty: ignore[invalid-assignment]
             importlib_metadata_distributions_mocked
         )
         format_rst_args = ["--format=rst", "--filter-strings"]
@@ -761,7 +763,7 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertTrue(actual.endswith("\033[0m"))
 
     def test_without_filter(self) -> None:
-        piplicenses.importlib_metadata.distributions = (
+        piplicenses.importlib_metadata.distributions = (  # ty: ignore[invalid-assignment]
             importlib_metadata_distributions_mocked
         )
         args = self.parser.parse_args([])
@@ -772,7 +774,7 @@ class TestGetLicenses(CommandLineTestCase):
         )
 
     def test_with_default_filter(self) -> None:
-        piplicenses.importlib_metadata.distributions = (
+        piplicenses.importlib_metadata.distributions = (  # ty: ignore[invalid-assignment]
             importlib_metadata_distributions_mocked
         )
         args = self.parser.parse_args(["--filter-strings"])
@@ -783,7 +785,7 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertNotIn(UNICODE_APPENDIX, packages[-1]["name"])
 
     def test_with_specified_filter(self) -> None:
-        piplicenses.importlib_metadata.distributions = (
+        piplicenses.importlib_metadata.distributions = (  # ty: ignore[invalid-assignment]
             importlib_metadata_distributions_mocked
         )
         args = self.parser.parse_args(
@@ -1026,9 +1028,9 @@ def test_fail_on_with_empty_tokens(monkeypatch) -> None:
 
 def test_different_python() -> None:
     import tempfile
-    from venv import (  # type: ignore[attr-defined]
-        subprocess as venv_subprocess,
-    )
+    from venv import (  # type: ignore[attr-defined]  # ty: ignore[unused-ignore-comment]
+        subprocess as venv_subprocess,  # ty: ignore[unresolved-import]
+    )  # local import -- this works and limits exposing the dangerous subprocess module globally
 
     _warning_skip: str = "Testing via venv unsupported. Skipping."
 
