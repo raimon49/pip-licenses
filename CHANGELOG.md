@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+### 5.5.5
+
+* Updated cc lines and officially made note of change in maintainers
+
 ### 5.5.4
 
 * Expanded typing annotations through-out codebase

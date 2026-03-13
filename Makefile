@@ -134,21 +134,19 @@ DEV_DEPENDS:='dev-requirements'
 .PHONY: help, setup, local-install, local-uninstall, update-depends, lint, test, deploy, test-deploy, build, clean, full-clean, un-setup
 
 help:
-	@echo 'Usage: make <subcommand>'
-	@echo ''
-	@echo 'Subcommands:'
-	@echo '    setup           Setup for development'
-	@echo '    local-install   Install locally'
-	@echo '    local-uninstall Uninstall locally'
-	@echo '    local-ci-check  Run acceptance tests and linting checks locally'
-	@echo '    update-depends  Re-compile requirements for development (requires pip-tools)'
-	@echo '    update-style    Re-lint and auto-format with pyproject.toml'
-	@echo '    build           Build package'
-	@echo '    lint            Re-lint formatting and typing with pyproject.toml'
-	@echo '    test            Run project tests'
-	@echo '    clean           Clean directories'
-	@echo '    deploy          Unused & Deprecated (Previously Release to PyPI server)'
-	@echo '    test-deploy     Unused & Deprecated (previously released to Test PyPI server)'
+	$(QUIET)$(ECHO) 'Usage: make <subcommand>'
+	$(QUIET)$(ECHO) ''
+	$(QUIET)$(ECHO) 'Subcommands:'
+	$(QUIET)$(ECHO) '    setup           Setup for development'
+	$(QUIET)$(ECHO) '    local-install   Install locally'
+	$(QUIET)$(ECHO) '    local-uninstall Uninstall locally'
+	$(QUIET)$(ECHO) '    local-ci-check  Run acceptance tests and linting checks locally'
+	$(QUIET)$(ECHO) '    update-depends  Re-compile requirements for development (requires pip-tools)'
+	$(QUIET)$(ECHO) '    update-style    Re-lint and auto-format with pyproject.toml'
+	$(QUIET)$(ECHO) '    build           Build package'
+	$(QUIET)$(ECHO) '    lint            Re-lint formatting and typing with pyproject.toml'
+	$(QUIET)$(ECHO) '    test            Run project tests'
+	$(QUIET)$(ECHO) '    clean           Clean directories'
 
 # utility for some developer environments
 venv:
@@ -203,6 +201,7 @@ clean:
 
 full-clean:: local-uninstall clean
 	$(RM) -vr *.egg-info 2>$(ERROR_LOG_PATH) || true ;
+	$(RMDIR) -v ./__pycache__ 2>$(ERROR_LOG_PATH) || true ;
 	$(RMDIR) -v ./{piplicenses,tests}/__pycache__ 2>$(ERROR_LOG_PATH) || true ;
 	$(RMDIR) -v ./.coverage 2>$(ERROR_LOG_PATH) || true ;
 	$(RMDIR) -v ./.mypy_cache 2>$(ERROR_LOG_PATH) || true ;
@@ -223,8 +222,11 @@ $(VENV_NAME)/bin/: venv $(VENV_NAME)
 
 # historical targets, no-longer supported
 
-deploy: build
-	$(VENV_NAME)/bin/python -m twine upload dist/*
+deploy:
+	$(QUIET)$(ECHO) "Manual Deployment has been deprecated."
+	exit 125
 
-test-deploy: build
-	$(VENV_NAME)/bin/python -m twine upload -r pypitest dist/*
+test-deploy:
+	$(QUIET)$(ECHO) "Test deployments are deprecated."
+	$(QUIET)$(ECHO) "Testing is now automatically performed prior to any deployment."
+	exit 125

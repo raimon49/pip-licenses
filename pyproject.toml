@@ -10,9 +10,13 @@ requires-python = ">=3.9"
 license = "MIT"
 license-files = ["LICENSE"]
 authors = [
-    {name = "raimon", email = "raimon49@hotmail.com"}
+    {name = "raimon", email = "raimon49@hotmail.com"}, # 2018-2025 (retired)
+    {name = "Mr. Walls"},                              # as of 2025
 ]
-keywords = ["pip", "pypi", "package", "license", "check"]
+maintainers = [
+    {name = "Mr. Walls", email = "reactive-firewall@users.noreply.github.com"},
+]
+keywords = ["pip", "pypi", "package", "license", "check", "audit"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
@@ -43,7 +47,6 @@ dev = [
     "pytest-cov",
     "pytest-runner",
     "ruff",
-    "twine",
     "tomli-w",
     "virtualenv>=21.1.0",
 ]
