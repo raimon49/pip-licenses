@@ -24,6 +24,8 @@ jobs:
     permissions:
       # IMPORTANT: this permission is mandatory for Build Attestation
       attestations: write
+      # IMPORTANT: this permission is mandatory for Uploading Attestation
+      artifact-metadata: write
       # IMPORTANT: this permission is mandatory for Trusted Publishing
       id-token: write
       statuses: write
@@ -58,7 +60,7 @@ jobs:
       - name: Setup build tools
         id: build_deps
         shell: bash
-        run: pip install --no-input --user "pip>=25.2" "setuptools>=80.9" "wheel>=0.45" "build>=1.2.1"
+        run: pip install --no-input --user "pip>=26.0" "setuptools>=82.0" "wheel>=0.45" "build>=1.2.1"
       - name: Pre-Clean
         id: clean
         shell: bash
@@ -70,14 +72,14 @@ jobs:
       - name: Build
         id: build
         shell: bash
-        run: make -j1 -f Makefile build
+        run: ${PYTHON} -m build
       - name: Calculate artifact checksums
         run: |
           shasum -a 512 dist/* > build.checksums.txt
       - name: "Attest Build with Checksums"
         id: multicast-build-chksum-attest
         if: ${{ !cancelled() && (github.repository == 'raimon49/pip-licenses') && startsWith(github.ref, 'refs/tags/') }}
-        uses: actions/attest-build-provenance@96278af6caaf10aea03fd8d33a09a777ca52d62f # v3.2.0
+        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
         with:
           subject-checksums: build.checksums.txt
           github-token: ${{ github.token }}
