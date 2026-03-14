@@ -1,0 +1,146 @@
+---
+default_language_version:
+  python: "system"
+
+repos:
+  - repo: local
+    hooks:
+      - id: prek-validate
+        name: self-check
+        language: python
+        entry: prek validate-config
+        always_run: true
+        fail_fast: true
+        priority: 0
+        files: ".pre-commit-config.yaml"
+        pass_filenames: true
+        additional_dependencies:
+          - prek
+
+      - id: hooks-check
+        name: hooks-check
+        language: python
+        entry: prek validate-manifest
+        always_run: true
+        fail_fast: true
+        priority: 1
+        files: ".pre-commit-hooks.yaml"
+        pass_filenames: true
+        additional_dependencies:
+          - prek
+
+      - id: dev-update
+        name: update-dev-dependencies
+        require_serial: true
+        language: python
+        entry: make -f Makefile update-depends
+        priority: 2
+        files: "pyproject.toml|dev-requirements.txt"
+        always_run: false
+        pass_filenames: false
+        additional_dependencies:
+          - pip-tools
+        stages:
+          - manual
+
+      - id: ruff-check
+        name: style-check
+        language: python
+        entry: ruff --config pyproject.toml check --fix .
+        priority: 5
+        always_run: true
+        pass_filenames: false
+        additional_dependencies:
+          - ruff
+        stages:
+          - manual
+          - pre-commit
+          - pre-merge-commit
+          - pre-rebase
+          - pre-push
+
+      - id: ruff-format
+        name: format-check
+        language: python
+        entry: ruff --config pyproject.toml format .
+        priority: 10
+        always_run: true
+        pass_filenames: false
+        additional_dependencies:
+          - ruff
+        stages:
+          - manual
+          - pre-commit
+          - pre-merge-commit
+          - pre-rebase
+          - pre-push
+
+      - id: mypy-check
+        name: type-check-mypy
+        language: python
+        entry: python3 -m mypy --install-types --non-interactive .
+        priority: 20
+        always_run: true
+        pass_filenames: false
+        verbose: true
+        additional_dependencies:
+          - prettytable
+          - --requirements=dev-requirements.txt
+          - pip
+          - typing_extensions
+          - types-docutils
+          - types-Pygments
+          - types_pexpect
+        stages:
+          - manual
+          - pre-commit
+          - pre-merge-commit
+          - pre-rebase
+          - pre-push
+
+      - id: ty-check
+        name: type-check-ty
+        language: python
+        entry: python3 -m ty check .
+        priority: 25
+        pass_filenames: false
+        additional_dependencies:
+          - prettytable
+          - ty
+          - --requirements=dev-requirements.txt
+          - types-docutils
+        stages:
+          - manual
+          - pre-commit
+          - pre-merge-commit
+          - pre-rebase
+          - pre-push
+
+      - id: setup
+        name: setup
+        language: system
+        entry: make -f Makefile setup
+        pass_filenames: false
+        priority: 1
+        stages:
+          - manual
+
+      - id: un-setup
+        name: un-setup
+        language: system
+        entry: make -f Makefile un-setup
+        pass_filenames: false
+        priority: 99
+        stages:
+          - manual
+
+      - id: lint
+        name: Lint
+        language: system
+        entry: make -f Makefile setup lint un-setup
+        always_run: true
+        files: "\\.py$"
+        pass_filenames: false
+        priority: 15
+        stages:
+          - manual

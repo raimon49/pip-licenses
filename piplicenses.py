@@ -5,7 +5,8 @@ pip-licenses
 
 MIT License
 
-Copyright (c) 2018 raimon
+Copyright (c) 2018-2025 raimon
+Copyright (c) 2025-2026 Mr. Walls
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -48,7 +49,7 @@ from prettytable import HRuleStyle, PrettyTable, RowType
 if sys.version_info >= (3, 11):
     import tomllib
 else:
-    import tomli as tomllib  # type: ignore[import-not-found]
+    import tomli as tomllib  # type: ignore[import-not-found]  # ty: ignore[unused-type-ignore-comment]
 
 if TYPE_CHECKING:  # pragma: no cover
     from email.message import Message
@@ -57,13 +58,13 @@ if TYPE_CHECKING:  # pragma: no cover
 open = open  # allow monkey patching
 
 __pkgname__ = "pip-licenses"
-__version__ = "5.5.2"
+__version__ = "5.5.5"
 __summary__ = (
     "Dump the software license list of Python packages installed with pip."
 )
 
 
-FIELD_NAMES = (
+FIELD_NAMES: set[str] = {
     "Name",
     "Version",
     "License",
@@ -75,44 +76,36 @@ FIELD_NAMES = (
     "Maintainer",
     "Description",
     "URL",
-)
+}
 
-
-SUMMARY_FIELD_NAMES = (
+SUMMARY_FIELD_NAMES: set[str] = {
     "Count",
     "License",
-)
+}
+
+# Morally, this should be typed as an ordered-set
+DEFAULT_OUTPUT_FIELDS: Sequence[str] = ("Name", "Version")
 
 
-DEFAULT_OUTPUT_FIELDS = (
-    "Name",
-    "Version",
-)
-
-
-SUMMARY_OUTPUT_FIELDS = (
+SUMMARY_OUTPUT_FIELDS: set[str] = {
     "Count",
     "License",
-)
+}
 
 
 def extract_homepage(metadata: Message) -> str | None:
-    """Extracts the homepage attribute from the package metadata.
+    """Extracts the home page from the package metadata.
 
-    Not all python packages have defined a home-page attribute.
-    As a fallback, the `Project-URL` metadata can be used.
-    The python core metadata supports multiple (free text) values for
-    the `Project-URL` field that are comma separated.
+    Retrieve home page from the PEP 753 `Project-URL` metadata.
+    As a fallback, try the Core Metadata 1.0 home-page attribute.
+    If all else fails, try other PEP 753 `Project-URL` labels.
 
     Args:
-        metadata: The package metadata to extract the homepage from.
+        metadata: The package metadata to extract the home page from.
 
     Returns:
         The home page if applicable, None otherwise.
     """
-    homepage = metadata.get("home-page", None)
-    if homepage is not None:
-        return homepage
 
     candidates: dict[str, str] = {}
 
@@ -120,13 +113,26 @@ def extract_homepage(metadata: Message) -> str | None:
         key, value = entry.split(",", 1)
         candidates[key.strip().lower()] = value.strip()
 
-    for priority_key in [
-        "homepage",
+    # start with Core Metadata 1.2 (PEP 753)
+    # https://packaging.python.org/en/latest/specifications/core-metadata/#core-metadata-project-url
+    homepage = candidates.get("homepage")
+    if homepage is not None:
+        return homepage
+
+    # fall back to deprecated Core Metadata 1.0
+    # https://packaging.python.org/en/latest/specifications/core-metadata/#home-page
+    homepage = metadata.get("home-page", None)
+    if homepage is not None:
+        return homepage
+
+    # if all else fails, try alternative Core Metadata 1.2 labels
+    # https://packaging.python.org/en/latest/specifications/well-known-project-urls/#well-known-labels
+    for priority_key in (
         "source",
         "repository",
         "changelog",
         "bug tracker",
-    ]:
+    ):
         if priority_key in candidates:
             return candidates[priority_key]
 
@@ -184,7 +190,7 @@ VERSION_PATTERN = r"""
 """
 
 
-def normalize_version(version_string):
+def normalize_version(version_string: None | str) -> str:
     """
     Normalize a version string to a PEP 440 compliant format.
 
@@ -195,10 +201,10 @@ def normalize_version(version_string):
         str: A normalized version string in PEP 440 format or empty if invalid.
     """
     _regex = re.compile(
-        r"^\s*" + VERSION_PATTERN + r"\s*$",
+        rf"^\s*{VERSION_PATTERN}\s*$",
         re.VERBOSE | re.IGNORECASE,
     )
-    match = _regex.match(version_string)
+    match = _regex.match(version_string) if version_string else None
     if not match:
         return ""
     epoch = match.group("epoch") or "0"
@@ -291,7 +297,7 @@ METADATA_KEYS: dict[str, list[Callable[[Message], str | None]]] = {
 }
 
 # Mapping of FIELD_NAMES to METADATA_KEYS where they differ by more than case
-FIELDS_TO_METADATA_KEYS = {
+FIELDS_TO_METADATA_KEYS: dict[str, str] = {
     "URL": "home-page",
     "Description": "summary",
     "License-Metadata": "license",
@@ -300,7 +306,7 @@ FIELDS_TO_METADATA_KEYS = {
 }
 
 
-SYSTEM_PACKAGES = [
+SYSTEM_PACKAGES: list[str] = [
     __pkgname__,
     "pip",
     "prettytable",
@@ -311,7 +317,7 @@ SYSTEM_PACKAGES = [
 if sys.version_info < (3, 11):
     SYSTEM_PACKAGES.append("tomli")
 
-LICENSE_UNKNOWN = "UNKNOWN"
+LICENSE_UNKNOWN: str = "UNKNOWN"
 
 
 def get_packages(
@@ -432,7 +438,8 @@ def get_packages(
 
     for pkg in pkgs:
         pkg_name = normalize_pkg_name(pkg.metadata["name"])
-        pkg_name_and_version = pkg_name + ":" + pkg.metadata["version"]
+        pkg_version = pkg.metadata["version"]
+        pkg_name_and_version = f"{pkg_name}:{pkg_version}"
 
         if (
             pkg_name.lower() in ignore_pkgs_as_normalize
@@ -482,8 +489,10 @@ def get_packages(
                     license_names, allow_only_licenses
                 )
             else:
-                uncommon_licenses = case_insensitive_partial_match_set_diff(
-                    license_names, allow_only_licenses
+                uncommon_licenses = set(
+                    case_insensitive_partial_match_set_diff(
+                        license_names, allow_only_licenses
+                    )
                 )
 
             if len(uncommon_licenses) == len(license_names):
@@ -502,7 +511,7 @@ def get_packages(
 
 def create_licenses_table(
     args: CustomNamespace,
-    output_fields: Sequence[str] = DEFAULT_OUTPUT_FIELDS,
+    output_fields: set[str] | Sequence[str] = DEFAULT_OUTPUT_FIELDS,
 ) -> PrettyTable:
     table = factory_styled_table_with_args(args, output_fields)
 
@@ -553,7 +562,10 @@ def create_summary_table(args: CustomNamespace) -> PrettyTable:
     return table
 
 
-def case_insensitive_set_intersect(set_a, set_b):
+def case_insensitive_set_intersect(
+    set_a: set[str] | list[str] | tuple | frozenset,
+    set_b: set[str] | list[str] | tuple | frozenset,
+) -> set:
     """Same as set.intersection() but case-insensitive"""
     common_items = set()
     set_b_lower = {item.lower() for item in set_b}
@@ -563,7 +575,10 @@ def case_insensitive_set_intersect(set_a, set_b):
     return common_items
 
 
-def case_insensitive_partial_match_set_intersect(set_a, set_b):
+def case_insensitive_partial_match_set_intersect(
+    set_a: set[str] | list[str] | tuple | frozenset,
+    set_b: set[str] | list[str] | tuple | frozenset,
+) -> set:
     common_items = set()
     for item_a in set_a:
         for item_b in set_b:
@@ -572,7 +587,10 @@ def case_insensitive_partial_match_set_intersect(set_a, set_b):
     return common_items
 
 
-def case_insensitive_partial_match_set_diff(set_a, set_b):
+def case_insensitive_partial_match_set_diff(
+    set_a: set,
+    set_b: set[str],
+) -> set[str]:
     """
     Return items from set_a without case-insensitive partial matches
     from items in set_b.
@@ -587,7 +605,10 @@ def case_insensitive_partial_match_set_diff(set_a, set_b):
     return uncommon_items
 
 
-def case_insensitive_set_diff(set_a, set_b):
+def case_insensitive_set_diff(
+    set_a: set | list | tuple | frozenset,
+    set_b: set[str] | list[str] | tuple | frozenset,
+) -> set:
     """Same as set.difference() but case-insensitive"""
     uncommon_items = set()
     set_b_lower = {item.lower() for item in set_b}
@@ -701,7 +722,7 @@ class PlainVerticalTable(PrettyTable):
 
 def factory_styled_table_with_args(
     args: CustomNamespace,
-    output_fields: Sequence[str] = DEFAULT_OUTPUT_FIELDS,
+    output_fields: set[str] | Sequence[str] = DEFAULT_OUTPUT_FIELDS,
 ) -> PrettyTable:
     table = PrettyTable()
     table.field_names = output_fields  # type: ignore[assignment]
@@ -1020,7 +1041,7 @@ def get_value_from_enum(
     return getattr(enum_cls, value_to_enum_key(value))
 
 
-MAP_DEST_TO_ENUM = {
+MAP_DEST_TO_ENUM: dict[str, type[NoValueEnum]] = {
     "from_": FromArg,
     "order": OrderArg,
     "format_": FormatArg,
@@ -1039,7 +1060,7 @@ class SelectAction(argparse.Action):
         setattr(namespace, self.dest, get_value_from_enum(enum_cls, values))
 
 
-def load_config_from_file(pyproject_path: str):
+def load_config_from_file(pyproject_path: str) -> dict:
     if Path(pyproject_path).exists():
         with open(pyproject_path, "rb") as f:
             return tomllib.load(f).get("tool", {}).get(__pkgname__, {})
@@ -1059,8 +1080,12 @@ def create_parser(
     format_options = parser.add_argument_group("Format options")
     verify_options = parser.add_argument_group("Verify options")
 
+    lit_prog_pat = "%(prog)s"
     parser.add_argument(
-        "-v", "--version", action="version", version="%(prog)s " + __version__
+        "-v",
+        "--version",
+        action="version",
+        version=f"{lit_prog_pat} {__version__}",
     )
 
     common_options.add_argument(
@@ -1282,7 +1307,7 @@ def save_if_needs(output_file: None | str, output_string: str) -> None:
                 # Always end output files with a new line
                 f.write("\n")
 
-        sys.stdout.write("created path: " + output_file + "\n")
+        sys.stdout.write(f"created path: {output_file}\n")
         sys.exit(0)
     except OSError:
         sys.stderr.write("check path: --output-file\n")
