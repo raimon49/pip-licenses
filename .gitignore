@@ -101,6 +101,9 @@ ENV/
 # mypy
 .mypy_cache/
 
+# ruff
+.ruff_cache/
+
 # ignore files to run in docker
 docker/*
 !docker/.gitkeep
