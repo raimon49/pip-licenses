@@ -48,6 +48,13 @@ dev = [
     "virtualenv>=21.1.0",
 ]
 
+[tool.pip-tools.compile]
+dry-run = false
+extra = ["dev"]
+no-strip-extras = true
+upgrade = true
+output-file = "dev-requirements.in"
+
 [project.urls]
 homepage = "https://github.com/raimon49/pip-licenses"
 releasenotes = "https://github.com/raimon49/pip-licenses/releases"

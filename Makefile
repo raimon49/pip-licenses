@@ -175,7 +175,7 @@ local-ci-check: build lint test
 
 update-depends:
 	$(QUITE)$(RM) dev-requirements.txt 2>$(ERROR_LOG_PATH) || true ;
-	pip-compile --extra dev -o dev-requirements.in --quiet --rebuild -U pyproject.toml
+	pip-compile --extra dev --no-strip-extras -o dev-requirements.in --quiet --rebuild -U pyproject.toml
 	sed -r -e $(DEV_PAT) dev-requirements.in | tee dev-requirements.txt
 	$(QUITE)$(RM) dev-requirements.in 2>$(ERROR_LOG_PATH) || true ;
 
