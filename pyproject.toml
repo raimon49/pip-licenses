@@ -126,6 +126,10 @@ docstring-code-line-length = 79
 exclude = ["venv"]   # and thus venv[subprocess].CalledProcessError
 python_version = 3.9 # should be the earliest supported version
 
+[tool.ty.rules]
+unused-ignore-comment = "warn"
+redundant-cast = "warn"
+
 [tool.coverage.run]
 include = ["piplicenses.py"]
 

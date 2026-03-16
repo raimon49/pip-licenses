@@ -48,7 +48,7 @@ from prettytable import HRuleStyle, PrettyTable, RowType
 if sys.version_info >= (3, 11):
     import tomllib
 else:
-    import tomli as tomllib  # type: ignore[import-not-found]
+    import tomli as tomllib  # type: ignore[import-not-found]  # ty: ignore[unused-type-ignore-comment]
 
 if TYPE_CHECKING:  # pragma: no cover
     from email.message import Message
