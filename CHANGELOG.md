@@ -1,5 +1,14 @@
 ## CHANGELOG
 
+### 5.5.4
+
+* Expanded typing annotations through-out codebase
+* Configured `prek`/`pre-commit` for CI linting and local developer workflows
+* Additional configuration following v5.5.2's migration of linters
+  * Fine tune ruff to enforce typing and black style opinions (Code style remains PEP-8 aligned)
+  * Cleanup/gitignore for ruff
+* Fixed a typo in previous changelog
+
 ### 5.5.3
 
 * Aligned parsing logic with [PEP 753](https://peps.python.org/pep-0753/)
@@ -8,7 +17,7 @@
 ### 5.5.2
 
 * Added support for multi-line allow-only and fail-on arguments
-  * Relaxed parsing of most whitespace around semicolon delimeter
+  * Relaxed parsing of most whitespace around semicolon delimiter
 * Added simple `SECURITY.md` policy document
 * Fixed a duplication behavior in output when a package was found at multiple paths (e.g., symlinks)
 * Fixed issue where lowercase license filenames were ignored
