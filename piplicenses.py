@@ -5,7 +5,8 @@ pip-licenses
 
 MIT License
 
-Copyright (c) 2018 raimon
+Copyright (c) 2018-2025 raimon
+Copyright (c) 2025-2026 Mr. Walls
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -57,7 +58,7 @@ if TYPE_CHECKING:  # pragma: no cover
 open = open  # allow monkey patching
 
 __pkgname__ = "pip-licenses"
-__version__ = "5.5.4"
+__version__ = "5.5.5"
 __summary__ = (
     "Dump the software license list of Python packages installed with pip."
 )
