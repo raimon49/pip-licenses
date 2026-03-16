@@ -77,17 +77,13 @@ FIELD_NAMES: set[str] = {
     "URL",
 }
 
-
 SUMMARY_FIELD_NAMES: set[str] = {
     "Count",
     "License",
 }
 
-
-DEFAULT_OUTPUT_FIELDS: set[str] | Sequence[str] = {
-    "Name",
-    "Version",
-}
+# Morally, this should be typed as an ordered-set
+DEFAULT_OUTPUT_FIELDS: Sequence[str] = ("Name", "Version")
 
 
 SUMMARY_OUTPUT_FIELDS: set[str] = {
