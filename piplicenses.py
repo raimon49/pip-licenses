@@ -94,7 +94,7 @@ SUMMARY_OUTPUT_FIELDS: set[str] = {
 
 
 def extract_homepage(metadata: Message) -> str | None:
-    """Extracts the home page from the package metadata.
+    """Extracts a homepage attribute from the package metadata.
 
     Retrieve home page from the PEP 753 `Project-URL` metadata.
     As a fallback, try the Core Metadata 1.0 home-page attribute.
@@ -131,6 +131,7 @@ def extract_homepage(metadata: Message) -> str | None:
         "source",
         "repository",
         "changelog",
+        "documentation",
         "bug tracker",
     ):
         if priority_key in candidates:

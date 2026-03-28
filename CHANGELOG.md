@@ -17,6 +17,8 @@
 
 * Aligned parsing logic with [PEP 753](https://peps.python.org/pep-0753/)
 * Refactored to better leverage f-strings to improve performance slightly
+* Fixed various warnings in tests
+* Got rid of historical Python 3.5 left-overs
 
 ### 5.5.2
 

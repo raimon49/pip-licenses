@@ -85,6 +85,7 @@ ifndef PIP_COMMON_FLAGS
 endif
 
 ifeq "$(DEV_PAT)" ""
+	# Replaces 'filelock==*' with 'filelock>=3.19.1' for Python 3.9 support
 	DEV_PAT=s/^\(filelock\)\(=+\)\(\[0-9.\]+\)\$$/\\1\>\=3.19.1/g
 endif
 
@@ -104,8 +105,12 @@ ifeq "$(DO_FAIL)" ""
 	DO_FAIL=$(ECHO) "ok"
 endif
 
-ifeq "$(MV)" ""
-	MV=$(COMMAND) mv -f
+ifeq "$(SED)" ""
+	SED=$(COMMAND) sed -r
+endif
+
+ifeq "$(TEST)" ""
+	TEST=builtin test
 endif
 
 ifeq "$(RM)" ""
