@@ -11,7 +11,7 @@ license = "MIT"
 license-files = ["LICENSE"]
 authors = [
     {name = "raimon", email = "raimon49@hotmail.com"}, # 2018-2025 (retired)
-    {name = "Mr. Walls"},                              # as of 2025
+    {name = "Mr. Walls", email = "reactive-firewall@users.noreply.github.com"},
 ]
 maintainers = [
     {name = "Mr. Walls", email = "reactive-firewall@users.noreply.github.com"},
@@ -85,7 +85,7 @@ target-version = "py39"
 
 [tool.ruff.lint]
 extend-select = [
-    "ANN",     # flake8-annotations
+    "ANN",    # flake8-annotations
     "B",      # flake8-bugbear
     "C4",     # flake8-comprehensions
     "FA",     # flake8-future-annotations
