@@ -83,7 +83,7 @@ pluggy==1.6.0
     #   pytest-cov
 prettytable==3.16.0
     # via pip-licenses (pyproject.toml)
-pygments==2.19.2
+pygments==2.20.0
     # via
     #   pytest
     #   readme-renderer
