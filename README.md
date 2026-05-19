@@ -102,6 +102,17 @@ Execute the command with your venv (or virtualenv) environment.
 
 ### Common options
 
+| Option | Argument | Default | Description |
+| --- | --- | --- | --- |
+| `--python` | path | current interpreter | Python executable whose `sys.path` is searched for packages. |
+| `--from` | `meta`, `classifier`, `mixed`, `all` | `mixed` | Source used to look up license information. |
+| `--order` | `name`, `license`, `author`, `url`, `count` | `name` | Column used to sort the output. |
+| `--format` | `plain`, `plain-vertical`, `markdown`, `rst`, `confluence`, `html`, `json`, `json-license-finder`, `csv` | `plain` | Output format of the report. |
+| `--summary` | (flag) | off | Output a count summary per license instead of a package list. |
+| `--output-file` | path | stdout | Write the result to the given file path. |
+| `--ignore-packages` | package names | none | Exclude the listed packages from the output. |
+| `--packages` | package names | all | Limit the output to the listed packages only. |
+
 #### Option: python
 
 By default, this tools finds the packages from the environment pip-licenses is launched from, by searching in current python's `sys.path` folders. In the case you want to search for packages in an other environment (e.g. if you want to run pip-licenses from its own isolated environment), you can specify a path to a python executable. The packages will be searched for in the given python's `sys.path`, free of pip-licenses dependencies.
