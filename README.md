@@ -102,13 +102,13 @@ Execute the command with your venv (or virtualenv) environment.
 
 ### Common options
 
-| Option | Argument | Default | Description |
+| Option | Argument(s) | Default | Description |
 | --- | --- | --- | --- |
 | `--python` | path | current interpreter | Python executable whose `sys.path` is searched for packages. |
 | `--from` | `meta`, `classifier`, `mixed`, `all` | `mixed` | Source used to look up license information. |
 | `--order` | `name`, `license`, `author`, `url`, `count` | `name` | Column used to sort the output. |
 | `--format` | `plain`, `plain-vertical`, `markdown`, `rst`, `confluence`, `html`, `json`, `json-license-finder`, `csv` | `plain` | Output format of the report. |
-| `--summary` | (flag) | off | Output a count summary per license instead of a package list. |
+| `--summary` | None (_flag takes no values_) | off | Output a count summary per license instead of a package list. |
 | `--output-file` | path | stdout | Write the result to the given file path. |
 | `--ignore-packages` | package names | none | Exclude the listed packages from the output. |
 | `--packages` | package names | all | Limit the output to the listed packages only. |
