@@ -951,7 +951,7 @@ def test_allow_only(monkeypatch: pytest.MonkeyPatch) -> None:
         "license Unlicense not in allow-only licenses was found for package"
         in mocked_stderr.printed
     )  # GHI #292 -- MIT License has become abbreviated to just MIT for some
-    # GHI #338 -- filelock >=3.23.0 changed license metadata to Unlicense
+    # GHI #338 -- filelock <3.23.0 reports Unlicense instead of MIT
 
 
 def test_allow_only_partial(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -984,7 +984,7 @@ def test_allow_only_partial(monkeypatch: pytest.MonkeyPatch) -> None:
         "license MIT" in mocked_stderr.printed
         or "license Unlicense" in mocked_stderr.printed
     )  # GHI #292 -- partial match may omit 'License'
-    # GHI #338 -- filelock >=3.23.0 changed license metadata to Unlicense
+    # GHI #338 -- filelock <3.23.0 reports Unlicense instead of MIT
 
 
 def test_allow_only_with_empty_tokens(
@@ -1021,7 +1021,7 @@ def test_allow_only_with_empty_tokens(
         "license Unlicense not in allow-only licenses was found for package"
         in mocked_stderr.printed
     )  # GHI #292 -- MIT License has become abbreviated to just MIT for some
-    # GHI #338 -- filelock >=3.23.0 changed license metadata to Unlicense
+    # GHI #338 -- filelock <3.23.0 reports Unlicense instead of MIT
 
 
 def test_fail_on_with_empty_tokens(
