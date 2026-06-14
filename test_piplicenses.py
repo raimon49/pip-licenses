@@ -942,14 +942,18 @@ def test_allow_only(monkeypatch: pytest.MonkeyPatch) -> None:
 
     assert "" == mocked_stdout.printed
     assert (
-        "license MIT License not in allow-only licenses was found for package"
-        in mocked_stderr.printed
-    ) or (
-        "license MIT not in allow-only licenses was found for package"
-        in mocked_stderr.printed
-    ) or (
-        "license Unlicense not in allow-only licenses was found for package"
-        in mocked_stderr.printed
+        (
+            "license MIT License not in allow-only licenses was found for package"
+            in mocked_stderr.printed
+        )
+        or (
+            "license MIT not in allow-only licenses was found for package"
+            in mocked_stderr.printed
+        )
+        or (
+            "license Unlicense not in allow-only licenses was found for package"
+            in mocked_stderr.printed
+        )
     )  # GHI #292 -- MIT License has become abbreviated to just MIT for some
     # GHI #338 -- filelock <3.23.0 reports Unlicense instead of MIT
 
@@ -1012,14 +1016,18 @@ def test_allow_only_with_empty_tokens(
 
     assert "" == mocked_stdout.printed
     assert (
-        "license MIT License not in allow-only licenses was found for package"
-        in mocked_stderr.printed
-    ) or (
-        "license MIT not in allow-only licenses was found for package"
-        in mocked_stderr.printed
-    ) or (
-        "license Unlicense not in allow-only licenses was found for package"
-        in mocked_stderr.printed
+        (
+            "license MIT License not in allow-only licenses was found for package"
+            in mocked_stderr.printed
+        )
+        or (
+            "license MIT not in allow-only licenses was found for package"
+            in mocked_stderr.printed
+        )
+        or (
+            "license Unlicense not in allow-only licenses was found for package"
+            in mocked_stderr.printed
+        )
     )  # GHI #292 -- MIT License has become abbreviated to just MIT for some
     # GHI #338 -- filelock <3.23.0 reports Unlicense instead of MIT
 
