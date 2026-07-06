@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+### 6.0.0 (WIP)
+
+* Updated testing in CI to resolve python3.9 coverage regresions
+
 ### 5.5.5
 
 * Updated cc lines and officially made note of change in maintainers
