@@ -225,7 +225,7 @@ def extract_homepage(metadata: Message) -> str | None:
                 return cast(
                     str, raw_input[0]
                 )  # overkill explicit cast (for linters)
-            else:
+            else:  # pragma: no cover
                 raise ValueError(
                     "BUG-242: If you encounter this error, please file a regression bug."
                     "You have found a regression bug caused by changes introduced by "
@@ -664,7 +664,7 @@ def get_packages(
                     else None,
                 )
             )
-            if pkg_other_texts and pkg_other_texts is not None:
+            if pkg_other_texts is not None:
                 pkg_info["other_texts"] = cast(list[str], pkg_other_texts)
 
         if args.filter_strings:
