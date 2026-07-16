@@ -1457,6 +1457,8 @@ def test_allow_only_with_empty_tokens(
     # same as test_allow_only but with extra semicolons/whitespace
     licenses = (
         "Bsd License",
+        "BSD-2-Clause",
+        "BSD-3-Clause",
         "Apache Software License",
         "Mozilla Public License 2.0 (MPL 2.0)",
         "Python Software Foundation License",
