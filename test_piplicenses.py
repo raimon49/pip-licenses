@@ -11,6 +11,7 @@ import unittest
 import venv
 from enum import Enum, auto
 from importlib.metadata import Distribution
+from pathlib import Path
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any
 from unittest.mock import MagicMock
@@ -41,11 +42,13 @@ from piplicenses import (
     create_warn_string,
     enum_key_to_value,
     extract_homepage,
+    extract_urls,
     factory_styled_table_with_args,
     find_license_from_classifier,
     get_output_fields,
     get_packages,
     get_sortby,
+    load_config_from_file,
     normalize_pkg_name,
     normalize_pkg_name_and_version,
     normalize_version,
@@ -1064,7 +1067,7 @@ class TestUtilities(unittest.TestCase):
             ]
         )
         self.assertEqual(
-            piplicenses.extract_urls(metadata),
+            extract_urls(metadata),
             {
                 "homepage": "https://github.com/raimon49/pip-licenses",
                 "bug tracker": "https://github.com/raimon49/pip-licenses/issues",
@@ -1074,7 +1077,7 @@ class TestUtilities(unittest.TestCase):
     def test_extract_urls_empty_value_becomes_none(self) -> None:
         metadata = TestUtilities._mock_metadata(["Source Code,   "])
         self.assertEqual(
-            piplicenses.extract_urls(metadata),
+            extract_urls(metadata),
             {"source code": None},
         )
 
@@ -1127,6 +1130,32 @@ class TestUtilities(unittest.TestCase):
         self.assertEqual(
             _test_urls,
             piplicenses.extract_urls(_handcrafted_metadata),
+        )
+
+    def test_urls_none_value_for_key_can_be_mocked(self) -> None:
+        _url_key_1 = "source"
+        _url_key_2 = "documentation"
+        _url_value_1 = None
+        _url_value_2 = "https://github.com/raimon49/pip-licenses/docs"
+        _url_key_comma_value_1 = f"{_url_key_1},    "
+        _url_key_comma_value_2 = f"{_url_key_2}, {_url_value_2}"
+
+        metadata = TestUtilities._mock_metadata(
+            [
+                _url_key_comma_value_1,
+                _url_key_comma_value_2,
+            ]
+        )
+        _test_urls = piplicenses.extract_urls(metadata)
+        self.assertIsNotNone(
+            _test_urls, "Regression Bug: Can't mock NoneType metadata at all"
+        )
+        self.assertEqual(
+            _test_urls,
+            {
+                _url_key_1: _url_value_1,
+                _url_key_2: _url_value_2,
+            },
         )
 
     def test_extract_urls_duplicate_key_becomes_list(self) -> None:
@@ -1188,6 +1217,48 @@ class TestUtilities(unittest.TestCase):
         metadata = TestUtilities._mock_metadata([])
         self.assertEqual(piplicenses.extract_urls(metadata), {})
 
+    def test_extract_homepage_can_handle_invalid_urls(self) -> None:
+        _url_key_1 = "source"
+        _url_key_2 = "documentation"
+        _url_value_1 = None
+        _url_value_2 = "https://github.com/raimon49/pip-licenses/docs"
+        _url_key_comma_value_1 = f"{_url_key_1},    "
+        _url_key_comma_value_2 = f"{_url_key_2}, {_url_value_2}"
+
+        metadata = TestUtilities._mock_metadata(
+            [
+                _url_key_comma_value_1,
+                _url_key_comma_value_2,
+            ]
+        )
+        _test_url = piplicenses.extract_homepage(metadata)
+        self.assertIsNotNone(
+            _test_url, "Regression Bug: Can't mock NoneType metadata at all"
+        )
+        self.assertEqual(
+            _test_url,
+            _url_value_2,
+        )
+
+    def test_extract_homepage_can_handle_just_invalid_urls(self) -> None:
+        _url_key_1 = "repository"
+        _url_value_1 = None
+        _url_key_comma_value_1 = f"{_url_key_1},    "
+
+        metadata = TestUtilities._mock_metadata(
+            [
+                _url_key_comma_value_1,
+            ]
+        )
+        _test_url = piplicenses.extract_homepage(metadata)
+        self.assertIsNotNone(
+            _test_url, "Regression Bug: Can't mock NoneType metadata at all"
+        )
+        self.assertEqual(
+            _test_url,
+            "UNKNOWN",
+        )
+
     def test_handle_multiple_value_field_plural_returns_list(self) -> None:
         self.assertEqual(
             piplicenses._handle_multiple_value_field(
@@ -1230,6 +1301,24 @@ class TestUtilities(unittest.TestCase):
                 "ChangelogS", iter(["v1", "v2"])
             ),
             ["v1", "v2"],
+        )
+
+
+INVALID_PATH_FIXTURE = "/var/some/unlikly/path/that/should/not/be"
+
+
+class TestEdges(unittest.TestCase):
+    @unittest.skipIf(
+        Path(INVALID_PATH_FIXTURE).exists(),
+        "Invalid path Actually exists",
+    )
+    def test_handle_invalid_config_load(self) -> None:
+        self.assertFalse(
+            Path(INVALID_PATH_FIXTURE).exists(),
+        )
+        self.assertEqual(
+            load_config_from_file(INVALID_PATH_FIXTURE),
+            {},
         )
 
 

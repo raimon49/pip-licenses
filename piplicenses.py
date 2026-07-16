@@ -207,6 +207,13 @@ def extract_homepage(metadata: Message) -> str | None:
         Utility; Not part of exposed API. Helps by handling the
         zero-one-infinity principle.
 
+        Pseudo-logic:
+          A. Unless the input is non-None, just return None.
+          B. If input is a string, then just return the input string.
+          C. Otherwise if input is a list and has at least one value,
+             then return the first value as a string.
+          D. Otherwise raise a ValueError (likely a regression)
+
         Args:
             raw_input: One or more strings. (optional)
 
@@ -245,6 +252,7 @@ def extract_homepage(metadata: Message) -> str | None:
     if homepage is not None:
         return _help_get_first_of_many(homepage)
 
+    _has_something_flag = False
     # if all else fails, try alternative Core Metadata 1.2 labels
     # https://packaging.python.org/en/latest/specifications/well-known-project-urls/#well-known-labels
     for priority_key in (
@@ -255,8 +263,12 @@ def extract_homepage(metadata: Message) -> str | None:
         "bug tracker",
     ):
         if priority_key in candidates:
-            return _help_get_first_of_many(candidates[priority_key])
-
+            _has_something_flag = True
+            _val = _help_get_first_of_many(candidates[priority_key])
+            if _val:
+                return _val
+    if _has_something_flag:
+        return LICENSE_UNKNOWN
     return None
 
 
