@@ -1382,6 +1382,8 @@ def test_output_file_none(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_allow_only(monkeypatch: pytest.MonkeyPatch) -> None:
     licenses = (
         "Bsd License",
+        "BSD-3-Clause",  # v6 considers this unique
+        "BSD-2-Clause",  # v6 considers this unique
         "Apache Software License",
         "Mozilla Public License 2.0 (MPL 2.0)",
         "Python Software Foundation License",

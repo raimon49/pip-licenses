@@ -521,7 +521,7 @@ def get_packages(
         for rel_path in matched_rel_paths:
             abs_path = Path(str(pkg.locate_file(rel_path)))
             if not abs_path.is_file():
-                continue
+                continue  # pragma: no cover
             included_file = str(rel_path)
             included_files_set.add(included_file)
 
@@ -541,7 +541,7 @@ def get_packages(
         for rel_path in matched_rel_paths:
             abs_path = Path(str(pkg.locate_file(rel_path)))
             if not abs_path.is_file():
-                continue
+                continue  # pragma: no cover
             included_file = str(abs_path)
             with open(
                 abs_path, encoding="utf-8", errors="backslashreplace"
@@ -1123,7 +1123,7 @@ class PlainVerticalTable(PrettyTable):
                         ):
                             output += f"{first_entry}\n{second_entry}\n"
                         index += 1
-                    else:
+                    else:  # pragma: no cover
                         for entry in v:
                             output += f"{entry}\n"
                 else:

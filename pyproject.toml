@@ -41,7 +41,7 @@ dependencies = [
 dev = [
     "docutils>=0.19", # frontend.get_default_settings()
     "wheel",
-    "mypy",
+    "mypy==1.19.1", # v1.19.1 is needed for python 3.9 support
     "pip-tools",
     "pypandoc",
     "pytest-cov",
