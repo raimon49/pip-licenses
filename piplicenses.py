@@ -98,16 +98,18 @@ def extract_urls(metadata: Message) -> dict[str, str | list[str] | None]:
     """Extract normalized project URLs from message metadata.
 
     This scans all ``Project-URL`` entries in the given metadata object and
-    builds a dictionary keyed by the lowercased, stripped project name.
+    builds a dictionary keyed by the lowercased, stripped, label value of
+    the pair (e.g., 'source' for 'Source, https://github.com/user/repo.git').
 
     Each ``Project-URL`` entry is expected to contain exactly one comma
     separating the label and URL, for example::
 
         Project-URL: Homepage, https://github.com/raimon49/pip-licenses
 
-    Duplicate labels are merged into a list on the second occurrence. The first
-    value remains a string until a duplicate is encountered. Empty URL values
-    are normalized to ``None``.
+    Duplicate labels are merged into a list on the second occurrence of a key.
+    The first value remains a string until a duplicate is encountered.
+    Empty URL values are normalized to ``None``. For canonical Specification:
+    [Core Metadata 1.2 (PEP 753)](https://packaging.python.org/en/latest/specifications/core-metadata/#core-metadata-project-url).
 
     Args:
         metadata: A message-like object supporting ``get_all("Project-URL", [])``
@@ -158,22 +160,21 @@ def extract_urls(metadata: Message) -> dict[str, str | list[str] | None]:
     _urls: dict[str, str | list[str] | None] = {}
     for entry in metadata.get_all("Project-URL", []):
         key, value = entry.split(",", 1)
-        if key.strip().lower() in _urls:
-            if not isinstance(_urls[key.strip().lower()], list):
-                # MyPy is a bit lost by this point, but we can only ever reach this point iff:
-                # 1. _urls[key.strip().lower()] exists
-                # 2. _urls[key.strip().lower()] is truthy
-                # 3. _urls[key.strip().lower()] is NOT of type list
-                # ... are ALL true (otherwise does nothing).
-                _urls[key.strip().lower()] = [
-                    _urls[key.strip().lower()],  # type: ignore[list-item]  # ty: ignore[unused-type-ignore-comment]
+        _norm_key: str = key.strip().lower()
+        _norm_val = value.strip()
+        if _norm_key in _urls:
+            if not isinstance(_urls[_norm_key], list):
+                # MyPy is a bit lost by this point, (See Discussion in PR #346)
+                # https://github.com/raimon49/pip-licenses/pull/346#discussion_r3661511932
+                _urls[_norm_key] = [
+                    _urls[_norm_key],  # type: ignore[list-item]  # ty: ignore[unused-type-ignore-comment]
                 ]
-            if value.strip() not in set(
-                cast(list[str], _urls[key.strip().lower()])
-            ):  # deduplicate
-                _urls[key.strip().lower()].append(value.strip())  # type: ignore[union-attr]  # ty: ignore[unused-type-ignore-comment]
+            if _norm_val not in set(
+                cast(list[str], _urls[_norm_key]),
+            ):  # deduplicate and merge by key
+                _urls[_norm_key].append(_norm_val)  # type: ignore[union-attr]  # ty: ignore[unused-type-ignore-comment]
         else:
-            _urls[key.strip().lower()] = value.strip() or None
+            _urls[_norm_key] = _norm_val or None
     return _urls
 
 
@@ -660,10 +661,13 @@ def get_packages(
                     else None,
                 )
             )
-            if pkg_texts and pkg_texts is not None:
+            if (
+                pkg_texts and None not in pkg_texts
+            ):  # https://github.com/raimon49/pip-licenses/pull/346#discussion_r3609573407
                 pkg_info["license_texts"] = cast(list[str], pkg_texts)
 
         if args.with_other_files:  # conditional for < v6+
+            # TODO: [GHI-394](https://github.com/raimon49/pip-licenses/issues/349)
             OTHER_FILES_PATTERN = r"[Aa][Uu][Tt][Hh][Oo][Rr][Ss].*|[Cc][Oo][Pp][Yy][Ii][Nn][Gg].*|[Ll][Ee][Gg][Aa][Ll].*"
             pkg_info["other_files"] = list(
                 filter_pkg_included_files(pkg, OTHER_FILES_PATTERN),
@@ -687,12 +691,12 @@ def get_packages(
                         args.filter_code_page, errors="ignore"
                     ).decode(args.filter_code_page)
                 except AttributeError as _cause:  # pragma: no cover
-                    _cntx_dtls = f"{item} can not be safely filtered with {args.filter_code_page}"
+                    _context_details = f"{item} can not be safely filtered with {args.filter_code_page}"
                     if not isinstance(item, str):
                         _context_details = (
                             f"{type(item)} can not be filtered as a string"
                         )
-                    raise ValueError(_cntx_dtls) from _cause
+                    raise ValueError(_context_details) from _cause
 
             def do_filter_iteration(
                 sub_item: str | list[str] | dict[str, str | list[str] | None],
@@ -892,12 +896,12 @@ def create_licenses_table(
                 _sorted_license_set = (
                     sorted(license_set) if license_set else []
                 )
-                _normalized_lisense_set = {
+                _normalized_license_set = {
                     normal_item
                     for normal_item in _sorted_license_set
                     if normal_item is not None
                 }
-                license_str = "; ".join(_normalized_lisense_set)
+                license_str = "; ".join(_normalized_license_set)
                 row.append(license_str)
             elif field == "License-Classifier":
                 row.append(

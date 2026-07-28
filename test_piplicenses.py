@@ -1105,7 +1105,7 @@ class TestUtilities(unittest.TestCase):
             "Can't read metadata at all",
         )
         # Note:
-        # mypy is brain dead and thinks strings can't be in things:
+        # mypy (v1.19.1 for Python v3.9) is brain dead and thinks strings can't be in things:
         # e.g., mypy struggles with this concept:
         # >>> _test_x = "a string"
         # >>> "a" in _test_x
