@@ -1,33 +1,21 @@
-# SPDX-License-Identifier: MIT
-# SPDX-FileCopyrightText: Copyright (c) 2018 raimon
-# SPDX-FileCopyrightText: Copyright (c) 2025 stefan6419846
+# reduce to relevant parts to ensure Stefan is credited
+# for content from https://github.com/stefan6419846/pip-licenses-cli/commit/0b1c2ae56d0d8bd0bac078bf758cc770da5527b0
+# From Stefan's Pip-liceses-cli:
+# Copyright (c) 2025 stefan6419846
+# with MIT License (See LICENSE.txt; but this file had no included content, assumed not substantial portion?)
 
-from __future__ import annotations
+# But let's reduce further to what is of interest
+# a big thank you to Stefan AKA stefan6419846 for their work on this!
 
-import argparse
-import codecs
-import sys
-from enum import Enum, auto
-from functools import partial
-from pathlib import Path
-from typing import TYPE_CHECKING, cast
 
-from piplicenses_lib import FromArg, NoValueEnum
 
-from piplicenses import __summary__, __version__
-from piplicenses.constants import DEFAULT_OUTPUT_FIELDS, SUMMARY_OUTPUT_FIELDS, TOML_SECTION_NAME
-from piplicenses.output import create_licenses_table, create_summary_table
 
-if sys.version_info >= (3, 11):  # pragma: no cover
-    import tomllib
-else:  # pragma: no cover
-    import tomli as tomllib
+
+
 
 
 if TYPE_CHECKING:  # pragma: no cover
     from collections.abc import Sequence
-
-open = open  # To allow monkey-patching.
 
 
 class CustomNamespace(argparse.Namespace):
@@ -106,104 +94,6 @@ def get_output_fields(args: CustomNamespace) -> list[str]:
     return output_fields
 
 
-def get_sortby(args: CustomNamespace) -> str:
-    if args.summary and args.order == OrderArg.COUNT:
-        return "Count"
-    elif args.summary or args.order == OrderArg.LICENSE:
-        return "License"
-    elif args.order == OrderArg.NAME:
-        return "Name"
-    elif args.order == OrderArg.AUTHOR and args.with_authors:
-        return "Author"
-    elif args.order == OrderArg.MAINTAINER and args.with_maintainers:
-        return "Maintainer"
-    elif args.order == OrderArg.URL and args.with_urls:
-        return "URL"
-
-    return "Name"
-
-
-def create_output_string(args: CustomNamespace) -> str:
-    output_fields = get_output_fields(args)
-
-    if args.summary:
-        table = create_summary_table(args)
-    else:
-        table = create_licenses_table(args, output_fields)
-
-    sortby = get_sortby(args)
-
-    if args.format_ == FormatArg.HTML:
-        html = table.get_html_string(fields=output_fields, sortby=sortby)
-        return html.encode("ascii", errors="xmlcharrefreplace").decode("ascii")
-    else:
-        return table.get_string(fields=output_fields, sortby=sortby)
-
-
-def create_warn_string(args: CustomNamespace) -> str:
-    warn_messages = []
-    warn = partial(output_colored, "33")
-
-    if args.with_license_file and not args.format_ == FormatArg.JSON:
-        message = warn("Due to the length of these fields, this option is best paired with --format=json.")
-        warn_messages.append(message)
-
-    if args.with_license_files and args.format_ not in [FormatArg.JSON, FormatArg.PLAIN_VERTICAL]:
-        message = warn("Ignoring request to output multiple files due to unsupported output format.")
-        warn_messages.append(message)
-
-    if args.summary and (args.with_authors or args.with_urls):
-        message = warn(
-            "When using this option, only --order=count or --order=license has an effect for the --order "
-            "option. And using --with-authors and --with-urls will be ignored."
-        )
-        warn_messages.append(message)
-
-    return "\n".join(warn_messages)
-
-
-class CustomHelpFormatter(argparse.HelpFormatter):  # pragma: no cover
-    def __init__(
-        self,
-        prog: str,
-        indent_increment: int = 2,
-        max_help_position: int = 24,
-        width: int | None = None,
-    ) -> None:
-        max_help_position = 30
-        super().__init__(
-            prog,
-            indent_increment=indent_increment,
-            max_help_position=max_help_position,
-            width=width,
-        )
-
-    def _format_action(self, action: argparse.Action) -> str:
-        flag_indent_argument: bool = False
-        text = self._expand_help(action)
-        separator_pos = text[:3].find("|")
-        if separator_pos != -1 and "I" in text[:separator_pos]:
-            self._indent()
-            flag_indent_argument = True
-        help_str = super()._format_action(action)
-        if flag_indent_argument:
-            self._dedent()
-        return help_str
-
-    def _expand_help(self, action: argparse.Action) -> str:
-        if isinstance(action.default, Enum):
-            default_value = enum_key_to_value(action.default)
-            return cast(str, self._get_help_string(action)) % {"default": default_value}
-        return super()._expand_help(action)
-
-    def _split_lines(self, text: str, width: int) -> list[str]:
-        separator_pos = text[:3].find("|")
-        if separator_pos != -1:
-            flag_splitlines: bool = "R" in text[:separator_pos]
-            text = text[separator_pos + 1:]  # fmt: skip
-            if flag_splitlines:
-                return text.splitlines()
-        return super()._split_lines(text, width)
 
 
 class CompatibleArgumentParser(argparse.ArgumentParser):
@@ -233,68 +123,6 @@ class CompatibleArgumentParser(argparse.ArgumentParser):
             )
 
 
-class OrderArg(NoValueEnum):
-    COUNT = C = auto()
-    LICENSE = L = auto()
-    NAME = N = auto()
-    AUTHOR = A = auto()
-    MAINTAINER = M = auto()
-    URL = U = auto()
-
-
-class FormatArg(NoValueEnum):
-    PLAIN = P = auto()
-    PLAIN_VERTICAL = auto()
-    MARKDOWN = MD = M = auto()
-    RST = REST = R = auto()
-    CONFLUENCE = C = auto()
-    HTML = H = auto()
-    JSON = J = auto()
-    JSON_LICENSE_FINDER = JLF = auto()
-    CSV = auto()
-
-
-def value_to_enum_key(value: str) -> str:
-    return value.replace("-", "_").upper()
-
-
-def enum_key_to_value(enum_key: Enum) -> str:
-    return enum_key.name.replace("_", "-").lower()
-
-
-def choices_from_enum(enum_cls: type[NoValueEnum]) -> list[str]:
-    return [key.replace("_", "-").lower() for key in enum_cls.__members__.keys()]
-
-
-def get_value_from_enum(enum_cls: type[NoValueEnum], value: str) -> NoValueEnum:
-    return getattr(enum_cls, value_to_enum_key(value))
-
-
-MAP_DEST_TO_ENUM = {
-    "from_": FromArg,
-    "order": OrderArg,
-    "format_": FormatArg,
-}
-
-
-class SelectAction(argparse.Action):
-    def __call__(  # type: ignore[override]
-        self,
-        parser: argparse.ArgumentParser,
-        namespace: argparse.Namespace,
-        values: str,
-        option_string: str | None = None,
-    ) -> None:
-        enum_cls = MAP_DEST_TO_ENUM[self.dest]
-        setattr(namespace, self.dest, get_value_from_enum(enum_cls, values))
-
-
-def load_config_from_file(pyproject_path: str):
-    path = Path(pyproject_path)
-    if path.exists():
-        with path.open(mode="rb") as f:
-            return tomllib.load(f).get("tool", {}).get(TOML_SECTION_NAME, {})
-    return {}
 
 
 def create_parser(
@@ -515,48 +343,3 @@ def create_parser(
 
     return parser
 
-
-def output_colored(code: str, text: str, is_bold: bool = False) -> str:
-    """
-    Create function to output with color sequence
-    """
-    if is_bold:
-        code = f"1;{code}"
-
-    return f"\033[{code}m{text}\033[0m"
-
-
-def save_if_needs(output_file: None | str, output_string: str) -> None:
-    """
-    Save to path given by args
-    """
-    if output_file is None:
-        return
-
-    try:
-        with open(output_file, "w", encoding="utf-8") as f:
-            f.write(output_string)
-            if not output_string.endswith("\n"):
-                # Always end output files with a new line
-                f.write("\n")
-
-        sys.stdout.write("created path: " + output_file + "\n")
-        sys.exit(0)
-    except OSError:
-        sys.stderr.write("check path: --output-file\n")
-        sys.exit(1)
-
-
-def main() -> None:  # pragma: no cover
-    parser = create_parser()
-    args = parser.parse_args()
-
-    output_string = create_output_string(args)
-
-    output_file = args.output_file
-    save_if_needs(output_file, output_string)
-
-    print(output_string)
-    warn_string = create_warn_string(args)
-    if warn_string:
-        print(warn_string, file=sys.stderr)

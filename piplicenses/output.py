@@ -1,24 +1,20 @@
-# SPDX-License-Identifier: MIT
-# SPDX-FileCopyrightText: Copyright (c) 2018 raimon
-# SPDX-FileCopyrightText: Copyright (c) 2025 stefan6419846
+# reduce to relevant parts to ensure Stefan is credited
+# for content from https://github.com/stefan6419846/pip-licenses-cli/commit/0b1c2ae56d0d8bd0bac078bf758cc770da5527b0
+# From Stefan's Pip-liceses-cli:
+# Copyright (c) 2025 stefan6419846
+# with MIT License (See LICENSE.txt; but this file had no included content, assumed not substantial portion?)
 
-from __future__ import annotations
+# But let's reduce further to what is of interest
+# a big thank you to Stefan AKA stefan6419846 for their work on this!
 
-from collections import Counter
-from typing import TYPE_CHECKING, cast
 
-from piplicenses_lib import LICENSE_UNKNOWN
-from prettytable import HRuleStyle, PrettyTable
 
-from piplicenses.collector import get_packages
-from piplicenses.constants import _MULTI_VALUE_KEYS, DEFAULT_OUTPUT_FIELDS, FIELDS_TO_METADATA_KEYS, SUMMARY_FIELD_NAMES
+
+
+_MULTI_VALUE_KEYS = None
 
 if TYPE_CHECKING:  # pragma: no cover
-    from collections.abc import Iterator, Sequence
-
-    from prettytable import RowType
-
-    from piplicenses.cli import CustomNamespace
+    pass
 
 
 def _handle_multiple_value_field(key: str, value: Iterator[str]) -> str | list[str]:
@@ -55,89 +51,6 @@ def create_licenses_table(
     return table
 
 
-def create_summary_table(args: CustomNamespace) -> PrettyTable:
-    counts = Counter("; ".join(sorted(pkg.license_names)) for pkg in get_packages(args))
-
-    table = factory_styled_table_with_args(args, SUMMARY_FIELD_NAMES)
-    for license_, count in counts.items():
-        table.add_row([count, license_])
-    return table
-
-
-class JsonPrettyTable(PrettyTable):
-    """PrettyTable-like class exporting to JSON"""
-
-    def format_row(self, row: RowType) -> dict[str, str | list[str]]:
-        resrow: dict[str, str | list[str]] = {}
-        for field, value in zip(self._field_names, row):
-            resrow[field] = value
-
-        return resrow
-
-    def get_string(self, **kwargs: str | list[str]) -> str:
-        # import included here in order to limit dependencies
-        # if not interested in JSON output,
-        # then the dependency is not required
-        import json
-
-        options = self._get_options(kwargs)
-        rows = self._get_rows(options)
-        lines = [self.format_row(row) for row in rows]
-        return json.dumps(lines, indent=2, sort_keys=True)
-
-
-class JsonLicenseFinderTable(JsonPrettyTable):
-    def format_row(self, row: RowType) -> dict[str, str | list[str]]:
-        resrow: dict[str, str | list[str]] = {}
-        for field, value in zip(self._field_names, row):
-            if field == "Name":
-                resrow["name"] = value
-
-            if field == "Version":
-                resrow["version"] = value
-
-            if field == "License":
-                resrow["licenses"] = [value]
-
-        return resrow
-
-    def get_string(self, **kwargs: str | list[str]) -> str:
-        # import included here in order to limit dependencies
-        # if not interested in JSON output,
-        # then the dependency is not required
-        import json
-
-        options = self._get_options(kwargs)
-        rows = self._get_rows(options)
-        lines = [self.format_row(row) for row in rows]
-        return json.dumps(lines, sort_keys=True)
-
-
-class CSVPrettyTable(PrettyTable):
-    """PrettyTable-like class exporting to CSV"""
-
-    def get_string(self, **kwargs: str | list[str]) -> str:
-        def esc_quotes(val: bytes | str) -> str:
-            """
-            Meta-escaping double quotes
-            https://tools.ietf.org/html/rfc4180
-            """
-            try:
-                return cast(str, val).replace('"', '""')
-            except UnicodeDecodeError:  # pragma: no cover
-                return cast(bytes, val).decode("utf-8").replace('"', '""')
-            except UnicodeEncodeError:  # pragma: no cover
-                return str(cast(str, val).encode("unicode_escape").replace('"', '""'))  # type: ignore[arg-type]
-
-        options = self._get_options(kwargs)
-        rows = self._get_rows(options)
-        formatted_rows = self._format_rows(rows)
-
-        lines: list[str] = []
-        formatted_header = ",".join([f'"{esc_quotes(val)}"' for val in self._field_names])
-        lines.append(formatted_header)
-        lines.extend([",".join([f'"{esc_quotes(val)}"' for val in row]) for row in formatted_rows])
-        return "\n".join(lines)
 
 
 class PlainVerticalTable(PrettyTable):
@@ -171,41 +84,3 @@ class PlainVerticalTable(PrettyTable):
             output += "\n"
 
         return output
-
-
-def factory_styled_table_with_args(
-    args: CustomNamespace,
-    output_fields: Sequence[str] = DEFAULT_OUTPUT_FIELDS,
-) -> PrettyTable:
-    from piplicenses.cli import FormatArg
-
-    table = PrettyTable()
-    table.field_names = output_fields  # type: ignore[assignment]
-    table.align = "l"  # type: ignore[assignment]
-    table.border = args.format_ in {
-        FormatArg.MARKDOWN,
-        FormatArg.RST,
-        FormatArg.CONFLUENCE,
-        FormatArg.JSON,
-    }
-    table.header = True
-
-    if args.format_ == FormatArg.MARKDOWN:
-        table.junction_char = "|"
-        table.hrules = HRuleStyle.HEADER
-    elif args.format_ == FormatArg.RST:
-        table.junction_char = "+"
-        table.hrules = HRuleStyle.ALL
-    elif args.format_ == FormatArg.CONFLUENCE:
-        table.junction_char = "|"
-        table.hrules = HRuleStyle.NONE
-    elif args.format_ == FormatArg.JSON:
-        table = JsonPrettyTable(table.field_names)
-    elif args.format_ == FormatArg.JSON_LICENSE_FINDER:
-        table = JsonLicenseFinderTable(table.field_names)
-    elif args.format_ == FormatArg.CSV:
-        table = CSVPrettyTable(table.field_names)
-    elif args.format_ == FormatArg.PLAIN_VERTICAL:
-        table = PlainVerticalTable(table.field_names)
-
-    return table

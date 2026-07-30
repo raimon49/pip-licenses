@@ -1,3 +1,14 @@
+Unused, but included here to ensure providence in VCS (git) for select portions of the code from
+for content from https://github.com/stefan6419846/pip-licenses-cli/commit/0b1c2ae56d0d8bd0bac078bf758cc770da5527b0
+and ensure Stefan is appropriately credited.
+
+A big thank you to Stefan AKA stefan6419846 for their work on this fix in their project!
+
+# Modified from Stefan's Pip-liceses-cli (PR-132):
+# Copyright (c) 2025 stefan6419846
+
+Relevant License Text from stefan641946 (Stefan)'s pip-licenses-cli (namely PR 132):
+---
 MIT License
 
 Copyright (c) 2018 raimon
@@ -20,3 +31,5 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+---
