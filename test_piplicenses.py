@@ -11,6 +11,7 @@ import unittest
 import venv
 from enum import Enum, auto
 from importlib.metadata import Distribution
+from pathlib import Path
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any
 from unittest.mock import MagicMock
@@ -41,11 +42,13 @@ from piplicenses import (
     create_warn_string,
     enum_key_to_value,
     extract_homepage,
+    extract_urls,
     factory_styled_table_with_args,
     find_license_from_classifier,
     get_output_fields,
     get_packages,
     get_sortby,
+    load_config_from_file,
     normalize_pkg_name,
     normalize_pkg_name_and_version,
     normalize_version,
@@ -428,12 +431,65 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertIn("LicenseText", output_fields)
         self.assertNotIn("NoticeFile", output_fields)
         self.assertNotIn("NoticeText", output_fields)
+        self.assertNotIn("OtherFiles", output_fields)
+        self.assertNotIn("OtherText", output_fields)
 
         output_string = create_output_string(args)
         self.assertIn("LicenseFile", output_string)
+        self.assertNotIn("LicenseFiles", output_string)
         self.assertIn("LicenseText", output_string)
         self.assertNotIn("NoticeFile", output_string)
+        self.assertNotIn("NoticeFiles", output_string)
         self.assertNotIn("NoticeText", output_string)
+        self.assertNotIn("OtherFiles", output_string)
+        self.assertNotIn("OtherText", output_string)
+
+    def test_with_license_files_invalid(self) -> None:
+        with_license_file_args = ["--with-license-files"]
+        # TODO: refactor when implementing default format support
+        # currently only HTML will be supported initially
+        # so without --format=html files should be ignored
+        args = self.parser.parse_args(with_license_file_args)
+
+        output_fields = get_output_fields(args)
+        self.assertNotEqual(output_fields, list(DEFAULT_OUTPUT_FIELDS))
+        self.assertNotIn("LicenseFiles", output_fields)
+        self.assertNotIn("LicenseText", output_fields)
+        self.assertNotIn("NoticeFile", output_fields)
+        self.assertNotIn("NoticeText", output_fields)
+        self.assertNotIn("OtherFiles", output_fields)
+        self.assertNotIn("OtherText", output_fields)
+
+        output_string = create_output_string(args)
+        self.assertNotIn("LicenseFiles", output_string)
+        self.assertNotIn("LicenseText", output_string)
+        self.assertNotIn("NoticeFile", output_string)
+        self.assertNotIn("NoticeFiles", output_string)
+        self.assertNotIn("NoticeText", output_string)
+        self.assertNotIn("OtherFiles", output_string)
+        self.assertNotIn("OtherText", output_string)
+
+    def test_with_license_files_html(self) -> None:
+        with_license_file_args = ["--format=html", "--with-license-files"]
+        args = self.parser.parse_args(with_license_file_args)
+
+        output_fields = get_output_fields(args)
+        self.assertNotEqual(output_fields, list(DEFAULT_OUTPUT_FIELDS))
+        self.assertIn("LicenseFiles", output_fields)
+        self.assertIn("LicenseTexts", output_fields)
+        self.assertNotIn("NoticeFile", output_fields)
+        self.assertNotIn("NoticeText", output_fields)
+        self.assertNotIn("OtherFiles", output_fields)
+        self.assertNotIn("OtherText", output_fields)
+
+        output_string = create_output_string(args)
+        self.assertIn("LicenseFiles", output_string)
+        self.assertIn("LicenseTexts", output_string)
+        self.assertNotIn("NoticeFile", output_string)
+        self.assertNotIn("NoticeFiles", output_string)
+        self.assertNotIn("NoticeText", output_string)
+        self.assertNotIn("OtherFiles", output_string)
+        self.assertNotIn("OtherText", output_string)
 
     def test_with_notice_file(self) -> None:
         with_license_file_args = ["--with-license-file", "--with-notice-file"]
@@ -442,15 +498,36 @@ class TestGetLicenses(CommandLineTestCase):
         output_fields = get_output_fields(args)
         self.assertNotEqual(output_fields, list(DEFAULT_OUTPUT_FIELDS))
         self.assertIn("LicenseFile", output_fields)
+        self.assertNotIn("LicenseFiles", output_fields)
         self.assertIn("LicenseText", output_fields)
         self.assertIn("NoticeFile", output_fields)
         self.assertIn("NoticeText", output_fields)
 
         output_string = create_output_string(args)
         self.assertIn("LicenseFile", output_string)
+        self.assertNotIn("LicenseFiles", output_string)
         self.assertIn("LicenseText", output_string)
         self.assertIn("NoticeFile", output_string)
         self.assertIn("NoticeText", output_string)
+
+    def test_with_other_files(self) -> None:
+        with_license_file_args = ["--with-license-file", "--with-other-files"]
+        args = self.parser.parse_args(with_license_file_args)
+
+        output_fields = get_output_fields(args)
+        self.assertNotEqual(output_fields, list(DEFAULT_OUTPUT_FIELDS))
+        self.assertIn("LicenseFile", output_fields)
+        self.assertNotIn("LicenseFiles", output_fields)
+        self.assertIn("LicenseText", output_fields)
+        self.assertIn("OtherFiles", output_fields)
+        self.assertIn("OtherText", output_fields)
+
+        output_string = create_output_string(args)
+        self.assertIn("LicenseFile", output_string)
+        self.assertNotIn("LicenseFiles", output_string)
+        self.assertIn("LicenseText", output_string)
+        self.assertIn("OtherFiles", output_string)
+        self.assertIn("OtherText", output_string)
 
     def test_with_license_file_no_path(self) -> None:
         with_license_file_args = [
@@ -464,14 +541,70 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertNotEqual(output_fields, list(DEFAULT_OUTPUT_FIELDS))
         self.assertNotIn("LicenseFile", output_fields)
         self.assertIn("LicenseText", output_fields)
+        self.assertIn(
+            "NoticeFile", output_fields
+        )  # changed in v6+ due to new '--no-file-paths'
+        self.assertIn("NoticeText", output_fields)
+
+        output_string = create_output_string(args)
+        self.assertNotIn("LicenseFile", output_string)
+        self.assertIn("LicenseText", output_string)
+        self.assertIn(
+            "NoticeFile", output_string
+        )  # changed in v6+ due to new '--no-file-paths'
+        self.assertIn("NoticeText", output_string)
+
+    def test_with_all_files_no_license_paths(self) -> None:
+        with_license_file_args = [
+            "--with-license-file",
+            "--with-notice-file",
+            "--with-other-files",
+            "--no-license-path",
+        ]
+        args = self.parser.parse_args(with_license_file_args)
+
+        output_fields = get_output_fields(args)
+        self.assertNotEqual(output_fields, list(DEFAULT_OUTPUT_FIELDS))
+        self.assertNotIn("LicenseFile", output_fields)
+        self.assertIn("LicenseText", output_fields)
+        self.assertIn("NoticeFile", output_fields)
+        self.assertIn("NoticeText", output_fields)
+        self.assertIn("OtherFiles", output_fields)
+        self.assertIn("OtherText", output_fields)
+
+        output_string = create_output_string(args)
+        self.assertNotIn("LicenseFile", output_string)
+        self.assertIn("LicenseText", output_string)
+        self.assertIn("NoticeFile", output_string)
+        self.assertIn("NoticeText", output_string)
+        self.assertIn("OtherFiles", output_string)
+        self.assertIn("OtherText", output_string)
+
+    def test_with_license_file_and_no_paths(self) -> None:
+        with_license_file_args = [
+            "--with-license-file",
+            "--with-notice-file",
+            "--with-other-files",
+            "--no-file-paths",
+        ]
+        args = self.parser.parse_args(with_license_file_args)
+
+        output_fields = get_output_fields(args)
+        self.assertNotEqual(output_fields, list(DEFAULT_OUTPUT_FIELDS))
+        self.assertNotIn("LicenseFile", output_fields)
+        self.assertIn("LicenseText", output_fields)
         self.assertNotIn("NoticeFile", output_fields)
         self.assertIn("NoticeText", output_fields)
+        self.assertNotIn("OtherFiles", output_fields)
+        self.assertIn("OtherText", output_fields)
 
         output_string = create_output_string(args)
         self.assertNotIn("LicenseFile", output_string)
         self.assertIn("LicenseText", output_string)
         self.assertNotIn("NoticeFile", output_string)
         self.assertIn("NoticeText", output_string)
+        self.assertNotIn("OtherFiles", output_string)
+        self.assertIn("OtherText", output_string)
 
     def test_with_license_file_warning(self) -> None:
         with_license_file_args = ["--with-license-file", "--format=markdown"]
@@ -609,6 +742,57 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertIsNotNone(
             re.search(r"pytest\n\d\.\d\.\d\nMIT License\n", output_string)
         )
+
+    def test_format_plain_vertical_multi(self) -> None:
+        format_plain_args = [
+            "--format=plain-vertical",
+        ]
+        args = self.parser.parse_args(format_plain_args)
+        output_string = create_output_string(args)
+        self.assertIsNotNone(
+            re.search(r"pytest\n\d\.\d\.\d\nMIT License\n", output_string)
+        )
+        # check that we have the target package: packaging in results
+        self.assertIsNotNone(
+            re.search(
+                r"packaging\n",
+                output_string,
+            ),
+            "Expected to find 'packaging' installed while testing",
+        )
+        # check that we have a version number for packaging
+        self.assertIsNotNone(
+            re.search(
+                r"packaging\n\d+\.\d(\.\d)?\n",
+                output_string,
+            ),
+            "Expected to parse 'packaging' followed by a version line",
+        )
+        self.assertIsNotNone(
+            re.search(
+                r"packaging\n\d+\.\d(\.\d)?\nApache-2.0\sOR\sBSD-2-Clause\n[^Ll]*",
+                output_string,
+            )
+        )
+
+    def test_format_plain_vertical_multi_with_files(self) -> None:
+        format_plain_args = [
+            "--format=plain-vertical",
+            "--with-license-files",
+        ]
+        args = self.parser.parse_args(format_plain_args)
+        output_string = create_output_string(args)
+        self.assertIsNotNone(
+            re.search(r"pytest\n\d\.\d\.\d\nMIT License\n", output_string)
+        )
+        self.assertIsNotNone(
+            re.search(
+                r"packaging\n\d+\.\d(\.\d)?\nApache-2.0\sOR\sBSD-2-Clause\nLICENSE\n",
+                output_string,
+            )
+        )
+        self.assertIn("LICENSE.APACHE", output_string)
+        self.assertIn("LICENSE.BSD", output_string)
 
     def test_format_markdown(self) -> None:
         format_markdown_args = ["--format=markdown"]
@@ -864,6 +1048,280 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertTrue(len(a_intersect_empty) == 0)
 
 
+class TestUtilities(unittest.TestCase):
+    @staticmethod
+    def _mock_metadata(
+        urls: list[str | None] | None = None,
+    ) -> PackageMetadata:
+        msg: PackageMetadata = email.message.Message()
+        for v in urls or []:
+            if v:
+                msg["Project-URL"] = v
+        return msg
+
+    def test_extract_urls_single_entries(self) -> None:
+        metadata = TestUtilities._mock_metadata(
+            urls=[
+                "Homepage, https://github.com/raimon49/pip-licenses",
+                "Bug Tracker, https://github.com/raimon49/pip-licenses/issues",
+            ]
+        )
+        self.assertEqual(
+            extract_urls(metadata),
+            {
+                "homepage": "https://github.com/raimon49/pip-licenses",
+                "bug tracker": "https://github.com/raimon49/pip-licenses/issues",
+            },
+        )
+
+    def test_extract_urls_empty_value_becomes_none(self) -> None:
+        metadata = TestUtilities._mock_metadata(["Source Code,   "])
+        self.assertEqual(
+            extract_urls(metadata),
+            {"source code": None},
+        )
+
+    def test_urls_duplicate_key_can_be_mocked(self) -> None:
+        _url_key_in = "Homepage"
+        _url_key_out = _url_key_in.lower()
+        _url_value_1 = "https://github.com/raimon49/pip-licenses"
+        _url_value_2 = "https://pypi.org/pip-licenses"
+        _url_key_comma_value_1 = f"{_url_key_in}, {_url_value_1}"
+        _url_key_comma_value_2 = f"{_url_key_in}, {_url_value_2}"
+
+        metadata = TestUtilities._mock_metadata(
+            [
+                _url_key_comma_value_1,
+                _url_key_comma_value_2,
+            ]
+        )
+        _handcrafted_metadata: PackageMetadata = email.message.Message()
+        self.assertIsNotNone(
+            _handcrafted_metadata, "Can't create metadata at all"
+        )
+        _handcrafted_metadata["Project-URL"] = _url_key_comma_value_1
+        self.assertIsNotNone(
+            _handcrafted_metadata.get("Project-URL", None),
+            "Can't read metadata at all",
+        )
+        # Note:
+        # mypy (v1.19.1 for Python v3.9) is brain dead and thinks strings can't be in things:
+        # e.g., mypy struggles with this concept:
+        # >>> _test_x = "a string"
+        # >>> "a" in _test_x
+        # True
+        #
+        self.assertTrue(
+            (_url_value_1 in _handcrafted_metadata.get("Project-URL", None)),  # type: ignore[operator]
+            "Can't find {_url_value_1} in metadata after setting it",
+        )
+        # duplicates are possible in metadata (unlike dictionaries)
+        _handcrafted_metadata["Project-URL"] = _url_key_comma_value_2
+        _test_urls = piplicenses.extract_urls(metadata)
+        self.assertEqual(
+            _test_urls,
+            {
+                _url_key_out: [
+                    _url_value_1,
+                    _url_value_2,
+                ]
+            },
+        )
+        self.assertEqual(
+            _test_urls,
+            piplicenses.extract_urls(_handcrafted_metadata),
+        )
+
+    def test_urls_none_value_for_key_can_be_mocked(self) -> None:
+        _url_key_1 = "source"
+        _url_key_2 = "documentation"
+        _url_value_1 = None
+        _url_value_2 = "https://github.com/raimon49/pip-licenses/docs"
+        _url_key_comma_value_1 = f"{_url_key_1},    "
+        _url_key_comma_value_2 = f"{_url_key_2}, {_url_value_2}"
+
+        metadata = TestUtilities._mock_metadata(
+            [
+                _url_key_comma_value_1,
+                _url_key_comma_value_2,
+            ]
+        )
+        _test_urls = piplicenses.extract_urls(metadata)
+        self.assertIsNotNone(
+            _test_urls, "Regression Bug: Can't mock NoneType metadata at all"
+        )
+        self.assertEqual(
+            _test_urls,
+            {
+                _url_key_1: _url_value_1,
+                _url_key_2: _url_value_2,
+            },
+        )
+
+    def test_extract_urls_duplicate_key_becomes_list(self) -> None:
+        metadata = TestUtilities._mock_metadata(
+            [
+                "Homepage, https://github.com/raimon49/pip-licenses",
+                "Homepage, https://pypi.org/pip-licenses",
+            ]
+        )
+        self.assertEqual(
+            piplicenses.extract_urls(metadata),
+            {
+                "homepage": [
+                    "https://github.com/raimon49/pip-licenses",
+                    "https://pypi.org/pip-licenses",
+                ]
+            },
+        )
+
+    def test_extract_urls_duplicate_key_with_whitespace_and_case_normalization(
+        self,
+    ) -> None:
+        metadata = TestUtilities._mock_metadata(
+            [
+                "HomePage, https://github.com/raimon49/pip-licenses",
+                " homepage , https://pypi.org/pip-licenses/docs ",
+            ]
+        )
+        self.assertEqual(
+            piplicenses.extract_urls(metadata),
+            {
+                "homepage": [
+                    "https://github.com/raimon49/pip-licenses",
+                    "https://pypi.org/pip-licenses/docs",
+                ]
+            },
+        )
+
+    def test_urls_duplicate_key_can_be_sorted(self) -> None:
+        _url_key_in = "Homepage"
+        _url_key_out = _url_key_in.lower()
+        _url_value_1 = "https://github.com/raimon49/pip-licenses"
+        _url_value_2 = "https://pypi.org/pip-licenses"
+        _url_key_comma_value_1 = f"{_url_key_in}, {_url_value_1}"
+        _url_key_comma_value_2 = f"{_url_key_in}, {_url_value_2}"
+
+        metadata = TestUtilities._mock_metadata(
+            [
+                _url_key_comma_value_1,
+                _url_key_comma_value_2,
+            ]
+        )
+        self.assertEqual(
+            piplicenses.extract_homepage(metadata),
+            _url_value_1,
+        )
+
+    def test_extract_urls_no_project_urls_returns_empty_dict(self) -> None:
+        metadata = TestUtilities._mock_metadata([])
+        self.assertEqual(piplicenses.extract_urls(metadata), {})
+
+    def test_extract_homepage_can_handle_invalid_urls(self) -> None:
+        _url_key_1 = "source"
+        _url_key_2 = "documentation"
+        _url_value_1 = None
+        _url_value_2 = "https://github.com/raimon49/pip-licenses/docs"
+        _url_key_comma_value_1 = f"{_url_key_1},    "
+        _url_key_comma_value_2 = f"{_url_key_2}, {_url_value_2}"
+
+        metadata = TestUtilities._mock_metadata(
+            [
+                _url_key_comma_value_1,
+                _url_key_comma_value_2,
+            ]
+        )
+        _test_url = piplicenses.extract_homepage(metadata)
+        self.assertIsNotNone(
+            _test_url, "Regression Bug: Can't mock NoneType metadata at all"
+        )
+        self.assertEqual(
+            _test_url,
+            _url_value_2,
+        )
+
+    def test_extract_homepage_can_handle_just_invalid_urls(self) -> None:
+        _url_key_1 = "repository"
+        _url_value_1 = None
+        _url_key_comma_value_1 = f"{_url_key_1},    "
+
+        metadata = TestUtilities._mock_metadata(
+            [
+                _url_key_comma_value_1,
+            ]
+        )
+        _test_url = piplicenses.extract_homepage(metadata)
+        self.assertIsNotNone(
+            _test_url, "Regression Bug: Can't mock NoneType metadata at all"
+        )
+        self.assertEqual(
+            _test_url,
+            "UNKNOWN",
+        )
+
+    def test_handle_multiple_value_field_plural_returns_list(self) -> None:
+        self.assertEqual(
+            piplicenses._handle_multiple_value_field(
+                "authors", iter(["Alice Example", "Bob Example"])
+            ),
+            ["Alice Example", "Bob Example"],
+        )
+
+    def test_handle_multiple_value_field_plural_empty_returns_unknown_list(
+        self,
+    ) -> None:
+        self.assertEqual(
+            piplicenses._handle_multiple_value_field("authors", iter([])),
+            ["UNKNOWN"],
+        )
+
+    def test_handle_multiple_value_field_singular_returns_first_value(
+        self,
+    ) -> None:
+        self.assertEqual(
+            piplicenses._handle_multiple_value_field(
+                "license", iter(["MIT", "BSD-3-Clause"])
+            ),
+            "MIT",
+        )
+
+    def test_handle_multiple_value_field_singular_empty_returns_license_unknown(
+        self,
+    ) -> None:
+        self.assertEqual(
+            piplicenses._handle_multiple_value_field("license", iter([])),
+            piplicenses.LICENSE_UNKNOWN,
+        )
+
+    def test_handle_multiple_value_field_singular_with_pluralish_name_still_uses_suffix_rule(
+        self,
+    ) -> None:
+        self.assertEqual(
+            piplicenses._handle_multiple_value_field(
+                "ChangelogS", iter(["v1", "v2"])
+            ),
+            ["v1", "v2"],
+        )
+
+
+INVALID_PATH_FIXTURE = "/var/some/unlikly/path/that/should/not/be"
+
+
+class TestEdges(unittest.TestCase):
+    @unittest.skipIf(
+        Path(INVALID_PATH_FIXTURE).exists(),
+        "Invalid path Actually exists",
+    )
+    def test_handle_invalid_config_load(self) -> None:
+        self.assertFalse(
+            Path(INVALID_PATH_FIXTURE).exists(),
+        )
+        self.assertEqual(
+            load_config_from_file(INVALID_PATH_FIXTURE),
+            {},
+        )
+
+
 class MockStdStream:
     def __init__(self) -> None:
         self.printed = ""
@@ -924,6 +1382,8 @@ def test_output_file_none(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_allow_only(monkeypatch: pytest.MonkeyPatch) -> None:
     licenses = (
         "Bsd License",
+        "BSD-3-Clause",  # v6 considers this unique
+        "BSD-2-Clause",  # v6 considers this unique
         "Apache Software License",
         "Mozilla Public License 2.0 (MPL 2.0)",
         "Python Software Foundation License",
@@ -997,6 +1457,8 @@ def test_allow_only_with_empty_tokens(
     # same as test_allow_only but with extra semicolons/whitespace
     licenses = (
         "Bsd License",
+        "BSD-2-Clause",
+        "BSD-3-Clause",
         "Apache Software License",
         "Mozilla Public License 2.0 (MPL 2.0)",
         "Python Software Foundation License",
@@ -1076,7 +1538,7 @@ def test_different_python() -> None:
         python_arg = f"--python={python_exec}" if python_exec else ""
         args = create_parser().parse_args([python_arg, "-s", "-f=json"])
         pkgs = get_packages(args)
-        package_names = sorted(set(p["name"] for p in pkgs))
+        package_names = sorted(set(str(p["name"]) for p in pkgs))
         print(package_names)
 
     expected_packages = ["pip"]
