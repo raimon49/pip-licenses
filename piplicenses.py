@@ -1,21 +1,214 @@
-# reduce to relevant parts to ensure Stefan is credited
-# for content from https://github.com/stefan6419846/pip-licenses-cli/commit/0b1c2ae56d0d8bd0bac078bf758cc770da5527b0
-# From Stefan's Pip-liceses-cli:
-# Copyright (c) 2025 stefan6419846
-# with MIT License (See LICENSE.txt; but this file had no included content, assumed not substantial portion?)
-
-# But let's reduce further to what is of interest
-# a big thank you to Stefan AKA stefan6419846 for their work on this!
 
 
-
-
-
-
+from piplicenses import __pkgname__
 
 
 if TYPE_CHECKING:  # pragma: no cover
-    from collections.abc import Sequence
+    pass
+
+# Mapping of FIELD_NAMES to METADATA_KEYS where they differ by more than case
+FIELDS_TO_METADATA_KEYS = {
+    "URL": "homepage",
+    "License-Metadata": "license",
+    "License-Classifier": "license_classifier",
+    "LicenseFile": "license_files",
+    "LicenseFiles": "license_files",
+    "LicenseText": "license_texts",
+    "LicenseTexts": "license_texts",
+    "NoticeFile": "notice_files",
+    "NoticeFiles": "notice_files",
+    "NoticeText": "notice_texts",
+    "NoticeTexts": "notice_texts",
+    "OtherFiles": "other_files",
+    "OtherTexts": "other_texts",
+    "Description": "summary",
+}
+
+_MULTI_VALUE_KEYS = {
+    "LicenseFile",
+    "LicenseFiles",
+    "LicenseText",
+    "LicenseTexts",
+    "NoticeFile",
+    "NoticeFiles",
+    "NoticeText",
+    "NoticeTexts",
+    "OtherFiles",
+    "OtherTexts",
+}
+
+
+def _handle_multiple_value_field(key: str, value: Iterator[str]) -> str | list[str]:
+    if key.endswith("s"):
+        return list(value) or ["UNKNOWN"]
+    return cast(str, next(value, LICENSE_UNKNOWN))
+
+def create_licenses_table(
+    args: CustomNamespace,
+    output_fields: Sequence[str] = DEFAULT_OUTPUT_FIELDS,
+) -> PrettyTable:
+    table = factory_styled_table_with_args(args, output_fields)
+
+    for pkg in get_packages(args):
+        row: list[str | list[str]] = []
+        for field in output_fields:
+            if field == "License":
+                license_set = pkg.license_names
+                license_str = "; ".join(sorted(license_set))
+                row.append(license_str)
+            elif field == "License-Classifier":
+                row.append("; ".join(sorted(pkg.license_classifiers)) or LICENSE_UNKNOWN)
+            elif hasattr(pkg, field.lower()):
+                row.append(cast(str, getattr(pkg, field.lower())))
+            else:
+                value = getattr(pkg, FIELDS_TO_METADATA_KEYS[field])
+                if field in _MULTI_VALUE_KEYS:
+                    row.append(_handle_multiple_value_field(field, value))
+                else:
+                    row.append(cast(str, value))
+        table.add_row(row)
+
+    return table
+
+
+
+
+class PlainVerticalTable(PrettyTable):
+    """PrettyTable for outputting to a simple non-column based style.
+
+    When used with --with-license-file, this style is similar to the default
+    style generated from Angular CLI's --extractLicenses flag.
+    """
+
+    def get_string(self, **kwargs: str | list[str]) -> str:
+        options = self._get_options(kwargs)
+        rows = self._get_rows(options)
+        show_paths = "LicenseFiles" in kwargs["fields"]
+
+        output = ""
+        for row in rows:
+            index = 0
+            while index < len(row):
+                v = row[index]
+                if isinstance(v, list):
+                    if show_paths:
+                        for first_entry, second_entry in zip(v, row[index + 1]):
+                            output += "{}\n{}\n".format(first_entry, second_entry)
+                        index += 1
+                    else:
+                        for entry in v:
+                            output += "{}\n".format(entry)
+                else:
+                    output += "{}\n".format(v)
+                index += 1
+            output += "\n"
+
+        return output
+
+
+class CustomNamespace(argparse.Namespace):
+    from_: FromArg
+    order: OrderArg
+    format_: FormatArg
+    summary: bool
+    output_file: str
+    ignore_packages: list[str]
+    packages: list[str]
+    with_system: bool
+    with_authors: bool
+    with_urls: bool
+    with_description: bool
+    with_license_file: bool
+    with_license_files: bool
+    no_license_path: bool
+    with_notice_file: bool
+    with_notice_files: bool
+    with_other_files: bool
+    filter_strings: bool
+    filter_code_page: str
+    partial_match: bool
+    fail_on: str | None
+    allow_only: str | None
+    collect_all_failures: bool
+
+
+def get_output_fields(args: CustomNamespace) -> list[str]:
+    if args.summary:
+        return list(SUMMARY_OUTPUT_FIELDS)
+
+    output_fields = list(DEFAULT_OUTPUT_FIELDS)
+
+    if args.from_ == FromArg.ALL:
+        output_fields.append("License-Metadata")
+        output_fields.append("License-Classifier")
+    else:
+        output_fields.append("License")
+
+    if args.with_authors:
+        output_fields.append("Author")
+
+    if args.with_maintainers:
+        output_fields.append("Maintainer")
+
+    if args.with_urls:
+        output_fields.append("URL")
+
+    if args.with_description:
+        output_fields.append("Description")
+
+    if args.no_version:
+        output_fields.remove("Version")
+
+    if args.with_license_files and args.format_ not in [FormatArg.JSON, FormatArg.PLAIN_VERTICAL]:
+        args.with_license_files = False
+        args.with_notice_files = False
+        args.with_other_files = False
+
+    if args.with_license_file or args.with_license_files:
+        if not args.no_license_path:
+            output_fields.append("LicenseFiles" if args.with_license_files else "LicenseFile")
+
+        output_fields.append("LicenseTexts" if args.with_license_files else "LicenseText")
+
+        if args.with_notice_file or args.with_notice_files:
+            if not args.no_license_path:
+                output_fields.append("NoticeFiles" if args.with_notice_files else "NoticeFile")
+            output_fields.append("NoticeTexts" if args.with_notice_files else "NoticeText")
+        if args.with_other_files:
+            if not args.no_license_path:
+                output_fields.append("OtherFiles")
+            output_fields.append("OtherTexts")
+
+    return output_fields
+
+
+
+
+class CompatibleArgumentParser(argparse.ArgumentParser):
+    def parse_args(  # type: ignore[override]
+        self,
+        args: None | Sequence[str] = None,
+        namespace: None | CustomNamespace = None,
+    ) -> CustomNamespace:
+        args_ = cast(CustomNamespace, super().parse_args(args, namespace))
+        self._verify_args(args_)
+        return args_
+
+    def _verify_args(self, args: CustomNamespace) -> None:
+        if args.with_license_file is False and args.with_license_files is False:
+            if args.no_license_path is True or args.with_notice_file is True or args.with_notice_files is True or args.with_other_files is True:
+                self.error(
+                    "'--no-license-path' and '--with-notice-file[s]' as well as '--with-other-files' require the '--with-license-file[s]' option to be set"
+                )
+        if args.filter_strings is False and args.filter_code_page != "latin1":
+            self.error("'--filter-code-page' requires the '--filter-strings' option to be set")
+        try:
+            codecs.lookup(args.filter_code_page)
+        except LookupError:
+            self.error(
+                f"invalid code page {args.filter_code_page!r} given for '--filter-code-page, check "
+                "https://docs.python.org/3/library/codecs.html#standard-encodings for valid code pages"
+            )
 
 
 class CustomNamespace(argparse.Namespace):
@@ -342,4 +535,3 @@ def create_parser(
     )
 
     return parser
-
