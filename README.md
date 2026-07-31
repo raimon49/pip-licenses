@@ -65,6 +65,16 @@ Install it via PyPI using `pip` command.
 ```bash
 # Install or Upgrade to newest available version
 $ pip install -U pip-licenses
+```
+
+<details>
+<summary>Legacy Python Hints</summary>
+
+**Note for Python 3.8 users:** pip-licenses 5.x discontinued support for Python 3.8. If you want to use it with Python 3.8 anyway, install pip-licenses 4.5.x.
+
+```bash
+# Using old version for the Python 3.8 environment
+$ pip install 'pip-licenses<5.0'
 
 # If upgrading from pip-licenses 3.x, remove PTable
 $ pip uninstall -y PTable
@@ -82,6 +92,8 @@ $ pip install 'pip-licenses<4.0'
 ```bash
 $ pip install 'pip-licenses<2.0'
 ```
+
+</details>
 
 ## Usage
 
@@ -123,13 +135,13 @@ By default, this tools finds the packages from the environment pip-licenses is l
 
 ```bash
 (venv) $ pip-licenses --with-system | grep pip
- pip           26.1.2   MIT
- pip-licenses  5.5.5    MIT
+ pip           26.2     MIT
+ pip-licenses  6.0.0    MIT
 ```
 
 ```bash
 (venv) $ pip-licenses --python=</path/to/other/env>/bin/python --with-system | grep pip
- pip           26.1.2   MIT
+ pip           26.2     MIT
 ```
 
 #### Option: from
@@ -387,7 +399,7 @@ Package names of arguments can be separated by spaces.
  Name        Version  License
  prettytable 3.18.0   BSD-3-Clause
  pytz        2026.2   MIT License
- setuptools  82.0.1   MIT
+ setuptools  83.0.0   MIT
  wcwidth     0.8.2    MIT
 ```
 
@@ -397,7 +409,7 @@ Packages can also be specified with a version, only ignoring that specific versi
 (venv) $ pip-licenses --with-system --ignore-packages django pytz:2026.2
  Name        Version  License
  prettytable 3.18.0   BSD-3-Clause
- setuptools  82.0.1   MIT
+ setuptools  83.0.0   MIT
  wcwidth     0.8.2    MIT
 ```
 
@@ -438,7 +450,7 @@ If you want to output all including system package, use the `--with-system` opti
  pip-licenses  5.5.5    MIT
  prettytable   3.18.0   BSD-3-Clause
  pytz          2026.2   MIT License
- setuptools    82.0.1   MIT
+ setuptools    83.0.0   MIT
  wcwidth       0.8.2    MIT
 ```
 
@@ -682,7 +694,7 @@ $ docker run --rm myapp-licenses --summary
 $ docker run --rm myapp-licenses --help
 ```
 
-**Note:** This Docker image can not check package licenses with C and C ++ Extensions. It only works with pure Python package dependencies.
+**Note:** This Docker image can not check package licenses with C and C++ Extensions. It only works with pure Python package dependencies.
 
 If you want to resolve build environment issues, try using not slim image and more.
 
