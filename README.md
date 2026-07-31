@@ -700,12 +700,12 @@ If you want to resolve build environment issues, try using not slim image and mo
 
 ```diff
 diff --git a/Dockerfile b/Dockerfile
-index bfc4edc..175e968 100644
+index bfc4edc..81f9264 100644
 --- a/Dockerfile
 +++ b/Dockerfile
 @@ -1,4 +1,4 @@
--FROM python:3.11-slim-bullseye
-+FROM python:3.11-bullseye
+-FROM python:3.14-slim-trixie
++FROM python:3.14-trixie
 ```
 
 ## About UnicodeEncodeError
