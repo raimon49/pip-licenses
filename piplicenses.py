@@ -330,7 +330,7 @@ VERSION_PATTERN = r"""
 """
 
 
-def normalize_version(version_string: None | str) -> str:
+def normalize_version(version_string: str | None) -> str:
     """
     Normalize a version string to a PEP 440 compliant format.
 
@@ -1405,8 +1405,8 @@ class CustomNamespace(argparse.Namespace):
 class CompatibleArgumentParser(argparse.ArgumentParser):
     def parse_args(  # type: ignore[override]
         self,
-        args: None | Sequence[str] = None,
-        namespace: None | CustomNamespace = None,
+        args: Sequence[str] | None = None,
+        namespace: CustomNamespace | None = None,
     ) -> CustomNamespace:
         args_ = cast(CustomNamespace, super().parse_args(args, namespace))
         self._verify_args(args_)
@@ -1780,7 +1780,7 @@ def output_colored(code: str, text: str, is_bold: bool = False) -> str:
     return f"\033[{code}m{text}\033[0m"
 
 
-def save_if_needs(output_file: None | str, output_string: str) -> None:
+def save_if_needs(output_file: str | None, output_string: str) -> None:
     """
     Save to path given by args
     """
