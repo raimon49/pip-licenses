@@ -1,7 +1,18 @@
 ## CHANGELOG
 
-### 6.0.0 (WIP)
+### pre-6.0.0 (ALPHA WIP)
 
+(SUBJECT TO CHANGE IN NEXT RELEASE)
+
+* Fixed priority logic regression from v5.5.x that lead to non-determinant ordering of multiple-source results, (WIP GHI #309), and possibly resolving? (GHI #330 - needs new testing)
+* Fixed multiple regressions in tests due to recent version bumps, closing GHI #337 & GHI #338
+* Updated various portions of the README document (WIP), closing GHI #328
+* Improved handling of multiple license files in a single package (WIP GHI #71)
+* Implemented new flags (WIP GHI #242)
+* Fixed multiple false positives including:
+  * [CVE-2026-4539 reDoS](https://github.com/advisories/GHSA-5239-wwwm-4pmq)
+  * [CVE-2026-44432 Leak](https://github.com/advisories/GHSA-mf9v-mfxr-j63j)
+  * [CVE-2026-44431](https://github.com/advisories/GHSA-qccp-gfcp-xxvc)
 * Updated testing in CI to resolve python3.9 coverage regresions
 
 ### 5.5.5
