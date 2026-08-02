@@ -721,6 +721,7 @@ def get_packages(
             [executable, "-c", script],
             capture_output=True,
             env={**os.environ, "PYTHONPATH": "", "VIRTUAL_ENV": ""},
+            check=False,
         )
         return output.stdout.decode().strip().split()
 
