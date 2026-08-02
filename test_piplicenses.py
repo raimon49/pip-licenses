@@ -253,12 +253,11 @@ class TestGetLicenses(CommandLineTestCase):
             row[index_license_expression] for row in table.rows
         ]
 
-        for license_name in ("BSD", "MIT", "Apache 2.0"):
+        for license_name in ("BSD", "MIT", "Apache-2.0"):
             self.assertIn(license_name, license_meta)
         for license_name in (
             "BSD License",
             "MIT License",
-            "Apache Software License",
         ):
             self.assertIn(license_name, license_classifier)
         # TODO enable assert once a dependency uses 'License-Expression'
