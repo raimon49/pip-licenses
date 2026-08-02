@@ -56,7 +56,7 @@ if TYPE_CHECKING:  # pragma: no cover
     from importlib.metadata import PackagePath
 
 
-open = open  # allow monkey patching
+open = open  # noqa: PLW0127  # allow monkey patching
 
 __pkgname__ = "pip-licenses"
 __version__ = "6.0.0a0"  # (dev-v6.0 branch)
