@@ -624,10 +624,8 @@ def get_packages(
             "otherfile": legacy_info["author_file"],  # DEPRECIATED in v6.0+
             "othertext": legacy_info["author_text"],  # DEPRECIATED in v6.0+
         }
-        # filter the legacy info
-        filtered_legacy_info: dict[
-            str, str | list[str] | dict[str, (str | list[str] | None)]
-        ] = {
+        # filter the legacy info and union
+        pkg_info |= {
             leg_key: leg_value
             for leg_key, leg_value in legacy_info.items()
             if (
@@ -637,9 +635,6 @@ def get_packages(
                 and (leg_value is not LICENSE_UNKNOWN)
             )
         }
-
-        for filtered_key in filtered_legacy_info:
-            pkg_info[filtered_key] = filtered_legacy_info[filtered_key]
 
         metadata = pkg.metadata
         for field_name, field_selector_fns in METADATA_KEYS.items():
