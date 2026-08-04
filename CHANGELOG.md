@@ -1,6 +1,6 @@
 ## CHANGELOG
 
-### pre-6.0.0 (ALPHA WIP)
+### pre-6.0.0 (BETA WIP)
 
 (SUBJECT TO CHANGE IN NEXT RELEASE)
 
