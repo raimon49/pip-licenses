@@ -33,12 +33,17 @@ from . import (
     __version__,
 )
 
+# might need/want
+#from . import prettytable
 
 from prettytable import (
     HRuleStyle,
     PrettyTable,
     RowType,
 )
+
+# will need stuff like
+#from .JsonPrettyTable import JsonPrettyTable  # the class
 
 def factory_styled_table_with_args(
     args: CustomNamespace,

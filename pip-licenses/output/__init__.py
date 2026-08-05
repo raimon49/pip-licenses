@@ -143,10 +143,7 @@ class PlainVerticalTable(PrettyTable):
         return output
 
 # placeholder to handle output.tables
-# import .tables as tables
-
-# re-export for backwards compatibility
-factory_styled_table_with_args = tables.factory_styled_table_with_args
+from .tables import factory_styled_table_with_args
 
 
 def get_output_fields(args: CustomNamespace) -> list[str]:
@@ -207,3 +204,15 @@ def create_output_string(args: CustomNamespace) -> str:
     else:
         return table.get_string(fields=output_fields, sortby=sortby)
 
+
+# re-export for backwards compatibility and a stable API
+__all__ = [
+    "tables",
+    "get_output_fields",
+    "create_output_string",
+    "factory_styled_table_with_args",
+    "JsonPrettyTable",
+    "JsonLicenseFinderTable",
+    "CSVPrettyTable",
+    "PlainVerticalTable",
+]
