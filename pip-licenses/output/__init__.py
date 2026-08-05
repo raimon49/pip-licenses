@@ -142,41 +142,11 @@ class PlainVerticalTable(PrettyTable):
 
         return output
 
+# placeholder to handle output.tables
+# import .tables as tables
 
-def factory_styled_table_with_args(
-    args: CustomNamespace,
-    output_fields: set[str] | Sequence[str] = DEFAULT_OUTPUT_FIELDS,
-) -> PrettyTable:
-    table = PrettyTable()
-    table.field_names = output_fields  # type: ignore[assignment]
-    table.align = "l"  # type: ignore[assignment]
-    table.border = args.format_ in (
-        FormatArg.MARKDOWN,
-        FormatArg.RST,
-        FormatArg.CONFLUENCE,
-        FormatArg.JSON,
-    )
-    table.header = True
-
-    if args.format_ == FormatArg.MARKDOWN:
-        table.junction_char = "|"
-        table.hrules = HRuleStyle.HEADER
-    elif args.format_ == FormatArg.RST:
-        table.junction_char = "+"
-        table.hrules = HRuleStyle.ALL
-    elif args.format_ == FormatArg.CONFLUENCE:
-        table.junction_char = "|"
-        table.hrules = HRuleStyle.NONE
-    elif args.format_ == FormatArg.JSON:
-        table = JsonPrettyTable(table.field_names)
-    elif args.format_ == FormatArg.JSON_LICENSE_FINDER:
-        table = JsonLicenseFinderTable(table.field_names)
-    elif args.format_ == FormatArg.CSV:
-        table = CSVPrettyTable(table.field_names)
-    elif args.format_ == FormatArg.PLAIN_VERTICAL:
-        table = PlainVerticalTable(table.field_names)
-
-    return table
+# re-export for backwards compatibility
+factory_styled_table_with_args = tables.factory_styled_table_with_args
 
 
 def get_output_fields(args: CustomNamespace) -> list[str]:
