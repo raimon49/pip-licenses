@@ -36,6 +36,7 @@ dependencies = [
     "prettytable >= 3.12.0",
     "tomli >= 2;python_version<'3.11'"
 ]
+scripts = { "pip-licenses" = "piplicenses.__init__:main" }
 
 [project.optional-dependencies]
 dev = [
@@ -63,11 +64,8 @@ homepage = "https://github.com/raimon49/pip-licenses"
 releasenotes = "https://github.com/raimon49/pip-licenses/releases"
 issues = "https://github.com/raimon49/pip-licenses/issues"
 
-[project.scripts]
-pip-licenses = "piplicenses:main"
-
 [tool.setuptools]
-py-modules = ["piplicenses"]
+py-modules = ["pip-licenses"]
 
 [tool.setuptools.dynamic]
 version = {attr = "piplicenses.__version__"}
