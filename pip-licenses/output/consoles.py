@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # vim:fenc=utf-8 ff=unix ft=python ts=4 sw=4 sts=4 si et
 """
-pip-licenses.__main__
+pip-licenses.output.consoles
 
 MIT License
 
@@ -30,45 +30,50 @@ SOFTWARE.
 from . import (
     __pkgname__,
     __version__,
-    __summary__,
     annotations,
 )
 
-from .cli import (
-    CustomHelpFormatter,
-    FromArg,  # may be deprecated in v6.1? (we can just use argparse or dataclass)
-    OrderArg,  # may be deprecated in v6.1? (we can just use argparse or dataclass)
-    FormatArg,  # may be deprecated in v6.1? (we can just use argparse or dataclass)
-    CustomNamespace,  # TO-BE deprecated in v6.1 (we can just use argparse/dataclass or even an actual namespace)
-    CompatibleArgumentParser, # Preferred since v6.0
-    SelectAction,
-    create_parser,
-)
+# placeholder for imports like sys, OSError, etc.
 
-from .output import (
-    save_if_needs,
-    output_colored,
-    create_output_string,
-)
+open = open  # allow monkey patching
 
-# placeholder for other main entry point stuff E.g.,
-# __module__ = "pip-licenses"
+# placeholder for importing colors
 
 
-def main() -> None:  # pragma: no cover
-    parser = create_parser()
-    args = parser.parse_args()
+def output_colored(code: str, text: str, is_bold: bool = False) -> str:
+    """
+    Create function to output with color sequence
+    """
+    if is_bold:
+        code = f"1;{code}"
 
-    output_string = create_output_string(args)
-
-    output_file = args.output_file
-    save_if_needs(output_file, output_string)
-
-    print(output_string)
-    warn_string = create_warn_string(args)
-    if warn_string:
-        print(warn_string, file=sys.stderr)
+    return f"\033[{code}m{text}\033[0m"
 
 
-if __name__ == "__main__":  # pragma: no cover
-    main()
+def save_if_needs(output_file: None | str, output_string: str) -> None:
+    """
+    Save to path given by args
+
+    Raises:
+        SystemExit: on underling filesystem failures (OSError).
+    """
+    if output_file is None:
+        return
+
+    try:
+        with open(output_file, "w", encoding="utf-8") as f:
+            f.write(output_string)
+            if not output_string.endswith("\n"):
+                # Always end output files with a new line
+                f.write("\n")
+
+        sys.stdout.write(f"created path: {output_file}\n")
+        sys.exit(0)
+    except OSError as _cause:
+        raise SystemExit("check path: --output-file\n", 1) from _cause
+
+
+__all__ = [
+    """save_if_needs""",
+    """output_colored""",
+]
