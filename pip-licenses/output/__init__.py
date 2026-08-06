@@ -31,6 +31,7 @@ SOFTWARE.
 from .. import (
     __pkgname__,
     __version__,
+    annotations,
 )
 
 
@@ -123,24 +124,7 @@ class CSVPrettyTable(PrettyTable):
         return "\n".join(lines)
 
 
-class PlainVerticalTable(PrettyTable):
-    """PrettyTable for outputting to a simple non-column based style.
-
-    When used with --with-license-file, this style is similar to the default
-    style generated from Angular CLI's --extractLicenses flag.
-    """
-
-    def get_string(self, **kwargs: str | list[str]) -> str:
-        options = self._get_options(kwargs)
-        rows = self._get_rows(options)
-
-        output = ""
-        for row in rows:
-            for v in row:
-                output += f"{v}\n"
-            output += "\n"
-
-        return output
+from .PlainVerticalTable import PlainVerticalTable
 
 
 def factory_styled_table_with_args(
