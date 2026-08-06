@@ -47,19 +47,31 @@ from prettytable import (
 import json
 
 
-class JsonPrettyTable(PrettyTable):
-    """PrettyTable-like class exporting to JSON"""
+from .JsonPrettyTable import JsonPrettyTable
 
+
+class JsonLicenseFinderTable(JsonPrettyTable):
     def format_row(self, row: RowType) -> dict[str, str | list[str]]:
-        return dict(zip(self._field_names, row))
+        resrow: dict[str, str | list[str]] = {}
+        for field, value in zip(self._field_names, row):
+            if field == "Name":
+                resrow["name"] = value
+
+            if field == "Version":
+                resrow["version"] = value
+
+            if field == "License":
+                resrow["licenses"] = [value]
+
+        return resrow
 
     def get_string(self, **kwargs: str | list[str]) -> str:
         options = self._get_options(kwargs)
         rows = self._get_rows(options)
         lines = [self.format_row(row) for row in rows]
-        return json.dumps(lines, indent=2, sort_keys=True)
+        return json.dumps(lines, sort_keys=True)
 
 
 __all__ = [
-    """JsonPrettyTable""",
+    """JsonLicenseFinderTable""",
 ]
