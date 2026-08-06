@@ -86,41 +86,7 @@ class JsonLicenseFinderTable(JsonPrettyTable):
         return json.dumps(lines, sort_keys=True)
 
 
-class CSVPrettyTable(PrettyTable):
-    """PrettyTable-like class exporting to CSV"""
-
-    def get_string(self, **kwargs: str | list[str]) -> str:
-        def esc_quotes(val: bytes | str) -> str:
-            """
-            Meta-escaping double quotes
-            https://tools.ietf.org/html/rfc4180
-            """
-            try:
-                return cast(str, val).replace('"', '""')
-            except UnicodeDecodeError:  # pragma: no cover
-                return cast(bytes, val).decode("utf-8").replace('"', '""')
-            except UnicodeEncodeError:  # pragma: no cover
-                return str(
-                    cast(str, val).encode("unicode_escape").replace('"', '""')  # type: ignore[arg-type]
-                )
-
-        options = self._get_options(kwargs)
-        rows = self._get_rows(options)
-        formatted_rows = self._format_rows(rows)
-
-        lines: list[str] = []
-        formatted_header = ",".join(
-            [f'"{esc_quotes(val)}"' for val in self._field_names]
-        )
-        lines.append(formatted_header)
-        lines.extend(
-            [
-                ",".join([f'"{esc_quotes(val)}"' for val in row])
-                for row in formatted_rows
-            ]
-        )
-
-        return "\n".join(lines)
+from .CSVPrettyTable import CSVPrettyTable
 
 
 class PlainVerticalTable(PrettyTable):
