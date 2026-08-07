@@ -28,8 +28,16 @@ SOFTWARE.
 """
 
 # Package constants
-from . import __pkgname__  # noqa: F401
-from . import __version__  # noqa: F401
+from . import (
+    __pkgname__,
+    __version__,
+    annotations,
+    Sequence,
+)
+from re import (
+    Pattern,
+    compile,
+)
 
 __summary__ = (
     "Dump the software license list of Python packages installed with pip."
@@ -93,7 +101,7 @@ KNOWN_URL_SUB_KEYS = (
     )
 
 
-PATTERN_DELIMITER = re.compile(r"[-_.]+")
+PATTERN_DELIMITER: Pattern = compile(r"[-_.]+")
 """See here: https://peps.python.org/pep-0503/#normalized-names"""
 
 
@@ -134,7 +142,7 @@ VERSION_PATTERN = r"""
 LICENSE_UNKNOWN: str = "UNKNOWN"
 """Placeholder when the license is undetermined"""
 
-
+# Morally, this should be typed as a path-like string
 FILE_MISSING: str = ""
 """Placeholder when the license file(s) is/are undetermined"""
 
@@ -146,5 +154,8 @@ LEGACY_NOTICE_BY_FILE_PATTERN = r"""NOTICE.*"""
 
 
 LEGACY_AUTHORS_BY_FILE_PATTERN = r"""[Aa][Uu][Tt][Hh][Oo][Rr][Ss].*"""
+
+# TODO: [GHI-394](https://github.com/raimon49/pip-licenses/issues/349)
+LICENSE_BY_OTHER_FILE_PATTERN = r"[Aa][Uu][Tt][Hh][Oo][Rr][Ss].*|[Cc][Oo][Pp][Yy][Ii][Nn][Gg].*|[Ll][Ee][Gg][Aa][Ll].*"
 
 # placeholder for classifier keys
