@@ -33,6 +33,8 @@ from . import (
     annotations,
 )
 
+import sys
+
 # placeholder for imports like sys, OSError, etc.
 
 open = open  # allow monkey patching
@@ -50,7 +52,7 @@ def output_colored(code: str, text: str, is_bold: bool = False) -> str:
     return f"\033[{code}m{text}\033[0m"
 
 
-def save_if_needs(output_file: None | str, output_string: str) -> None:
+def save_if_needs(output_file: str, output_string: str) -> None:
     """
     Save to path given by args
 
