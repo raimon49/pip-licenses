@@ -32,6 +32,7 @@ from .. import (
     __version__,
     __summary__,
     annotations,
+    TYPE_CHECKING,
 )
 
 import argparse
@@ -44,18 +45,22 @@ import subprocess
 
 from collections import Counter
 from collections.abc import Callable, Generator, Iterable, Iterator, Sequence
-from enum import Enum, auto
 from functools import partial
 from importlib import metadata as importlib_metadata
 from importlib.metadata import Distribution
 from pathlib import Path
-from typing import TYPE_CHECKING, cast
 
-# TODO: this probably goes in utils (or near wherever load_config_from_file ends up)
-if sys.version_info >= (3, 11):
-    import tomllib
-else:
-    import tomli as tomllib  # type: ignore[import-not-found]  # ty: ignore[unused-type-ignore-comment]
+from .config import (
+    CustomNamespace,  # to be deprecated in v6
+)
+
+
+if TYPE_CHECKING:
+    from typing import (
+        cast,
+#        Union,
+    )
+#    NullableInt = Union[int, None]
 
 # TODO: this is used elsewhere
 def get_sortby(args: CustomNamespace) -> str:
@@ -104,7 +109,7 @@ class CustomHelpFormatter(argparse.HelpFormatter):  # pragma: no cover
         prog: str,
         indent_increment: int = 2,
         max_help_position: int = 24,
-        width: int | None = None,
+        width: int = None,
     ) -> None:
         max_help_position = 30
         super().__init__(
@@ -144,33 +149,11 @@ class CustomHelpFormatter(argparse.HelpFormatter):  # pragma: no cover
         return super()._split_lines(text, width)
 
 
-class CustomNamespace(argparse.Namespace):
-    from_: FromArg
-    order: OrderArg
-    format_: FormatArg
-    summary: bool
-    output_file: str
-    ignore_packages: list[str]
-    packages: list[str]
-    with_system: bool
-    with_authors: bool
-    with_urls: bool
-    with_description: bool
-    with_license_file: bool
-    no_license_path: bool
-    with_notice_file: bool
-    filter_strings: bool
-    filter_code_page: str
-    partial_match: bool
-    fail_on: str | None
-    allow_only: str | None
-
-
 class CompatibleArgumentParser(argparse.ArgumentParser):
     def parse_args(  # type: ignore[override]
         self,
-        args: None | Sequence[str] = None,
-        namespace: None | CustomNamespace = None,
+        args: Sequence[str] = None,
+        namespace: CustomNamespace = None,
     ) -> CustomNamespace:
         args_ = cast(CustomNamespace, super().parse_args(args, namespace))
         self._verify_args(args_)
@@ -200,76 +183,38 @@ class CompatibleArgumentParser(argparse.ArgumentParser):
             )
 
 
-class NoValueEnum(Enum):
-    def __repr__(self) -> str:  # pragma: no cover
-        return f"<{self.__class__.__name__}.{self.name}>"
-
-
-class FromArg(NoValueEnum):
-    META = M = auto()
-    CLASSIFIER = C = auto()
-    MIXED = MIX = auto()
-    EXPRESSION = EXPR = auto()
-    ALL = auto()
-
-
-class OrderArg(NoValueEnum):
-    COUNT = C = auto()
-    LICENSE = L = auto()
-    NAME = N = auto()
-    AUTHOR = A = auto()
-    MAINTAINER = M = auto()
-    URL = U = auto()
-
-
-class FormatArg(NoValueEnum):
-    PLAIN = P = auto()
-    PLAIN_VERTICAL = auto()
-    MARKDOWN = MD = M = auto()
-    RST = REST = R = auto()
-    CONFLUENCE = C = auto()
-    HTML = H = auto()
-    JSON = J = auto()
-    JSON_LICENSE_FINDER = JLF = auto()
-    CSV = auto()
-
-
-def value_to_enum_key(value: str) -> str:
-    return value.replace("-", "_").upper()
-
-
-def enum_key_to_value(enum_key: Enum) -> str:
-    return enum_key.name.replace("_", "-").lower()
-
-
-def choices_from_enum(enum_cls: type[NoValueEnum]) -> list[str]:
-    return [key.replace("_", "-").lower() for key in enum_cls.__members__]
-
-
-def get_value_from_enum(
-    enum_cls: type[NoValueEnum], value: str
-) -> NoValueEnum:
-    return getattr(enum_cls, value_to_enum_key(value))
+from .pseudoChoices import (
+    NoValueEnum,
+    FromArg,
+    OrderArg,
+    FormatArg,
+    value_to_enum_key,
+    enum_key_to_value,
+    choices_from_enum,
+    get_value_from_enum,
+)
 
 
 class SelectAction(argparse.Action):
 
     MAP_DEST_TO_ENUM: dict[str, type[NoValueEnum]] = {
-    "from_": FromArg,
-    "order": OrderArg,
-    "format_": FormatArg,
-}
+        "from_": FromArg,
+        "order": OrderArg,
+        "format_": FormatArg,
+    }
 
     def __call__(  # type: ignore[override]
         self,
         parser: argparse.ArgumentParser,
         namespace: argparse.Namespace,
         values: str,
-        option_string: str | None = None,
+        option_string: str = None,
     ) -> None:
         enum_cls = MAP_DEST_TO_ENUM[self.dest]
         setattr(namespace, self.dest, get_value_from_enum(enum_cls, values))
 
+
+from ..tomli_bridge import tomllib  # type: ignore[import-not-found]  # ty: ignore[unused-type-ignore-comment]
 
 # TODO: this probably goes in utils (and SHOULD NOT BE vulnerable to 'open' MOCKING)
 def load_config_from_file(pyproject_path: str) -> dict:
