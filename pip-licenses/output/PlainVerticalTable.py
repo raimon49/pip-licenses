@@ -40,6 +40,9 @@ from prettytable import (
 )
 
 
+from . import strs
+
+
 class PlainVerticalTable(PrettyTable):
     """PrettyTable for outputting to a simple non-column based style.
 
@@ -47,7 +50,7 @@ class PlainVerticalTable(PrettyTable):
     style generated from Angular CLI's --extractLicenses flag.
     """
 
-    def get_string(self, **kwargs: str | list[str]) -> str:
+    def get_string(self, **kwargs: strs) -> str:
         options = self._get_options(kwargs)
         rows = self._get_rows(options)
 
