@@ -34,30 +34,25 @@ from . import (
     annotations,
     DEFAULT_OUTPUT_FIELDS,
 )
-
 from ..sorting import (
     SetLike,
 )
-
 from ..cli import (
     CustomNamespace
 )
-
 from ..cli.pseudoChoices import (
     FormatArg,
 )
-
 from prettytable import (
     HRuleStyle,
     PrettyTable,
     RowType,
 )
+from .JsonPrettyTable import JsonPrettyTable  # the class
+from .JsonLicenseFinderTable import JsonLicenseFinderTable  # the class
+from .CSVPrettyTable import CSVPrettyTable  # the class
+from .PlainVerticalTable import PlainVerticalTable  # the class
 
-# will need stuff like
-#from .JsonPrettyTable import JsonPrettyTable  # the class
-#from .JsonLicenseFinderTable import JsonLicenseFinderTable  # the class
-#from .CSVPrettyTable import CSVPrettyTable  # the class
-#from .PlainVerticalTable import PlainVerticalTable  # the class
 
 def factory_styled_table_with_args(
     args: CustomNamespace,
@@ -93,6 +88,7 @@ def factory_styled_table_with_args(
         table = PlainVerticalTable(table.field_names)
 
     return table
+
 
 __all__ = [
     """factory_styled_table_with_args""",
