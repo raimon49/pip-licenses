@@ -56,8 +56,15 @@ class PlainVerticalTable(PrettyTable):
 
         output = ""
         for row in rows:
-            for v in row:
-                output += f"{v}\n"
+            index = 0
+            while index < len(row):
+                col = row[index]
+                if isinstance(v, list):
+                    for entry in col:
+                        output += f"{entry}\n"
+                else:
+                    output += f"{col}\n"
+                index += 1
             output += "\n"
 
         return output
