@@ -31,8 +31,37 @@ SOFTWARE.
 from .. import (
     __pkgname__,
     __version__,
+    annotations,
+    TYPE_CHECKING,
+    SUMMARY_OUTPUT_FIELDS,
+    DEFAULT_OUTPUT_FIELDS,
 )
 
+# placeholder for strs
+from typing import (
+    cast,
+    Union,
+)
+#    because we are limmited in python3.9 still by https://docs.python.org/3.9/library/stdtypes.html#dict
+#    we create a simple value type for now:
+strs = Union[str, list[str]]
+#    dict_for_rows = dict[str, strs]
+# or perhaps just PEP-589 (TypedDict)
+
+
+# placeholder for consoles (from split-cli)
+#from .consoles import (
+#    save_if_needs,
+#    output_colored,
+#)
+
+from ..cli import (
+    CustomNamespace,
+)
+
+from ..sorting import (
+    SetLike,
+)
 
 from prettytable import (
     HRuleStyle,
@@ -44,10 +73,10 @@ from prettytable import (
 class JsonPrettyTable(PrettyTable):
     """PrettyTable-like class exporting to JSON"""
 
-    def format_row(self, row: RowType) -> dict[str, str | list[str]]:
+    def format_row(self, row: RowType) -> dict[str, strs]:
         return dict(zip(self._field_names, row))
 
-    def get_string(self, **kwargs: str | list[str]) -> str:
+    def get_string(self, **kwargs: strs) -> str:
         # import included here in order to limit dependencies
         # if not interested in JSON output,
         # then the dependency is not required
@@ -60,7 +89,7 @@ class JsonPrettyTable(PrettyTable):
 
 
 class JsonLicenseFinderTable(JsonPrettyTable):
-    def format_row(self, row: RowType) -> dict[str, str | list[str]]:
+    def format_row(self, row: RowType) -> dict[str, strs]:
         resrow: dict[str, str | list[str]] = {}
         for field, value in zip(self._field_names, row):
             if field == "Name":
@@ -74,7 +103,7 @@ class JsonLicenseFinderTable(JsonPrettyTable):
 
         return resrow
 
-    def get_string(self, **kwargs: str | list[str]) -> str:
+    def get_string(self, **kwargs: strs) -> str:
         # import included here in order to limit dependencies
         # if not interested in JSON output,
         # then the dependency is not required
@@ -89,8 +118,8 @@ class JsonLicenseFinderTable(JsonPrettyTable):
 class CSVPrettyTable(PrettyTable):
     """PrettyTable-like class exporting to CSV"""
 
-    def get_string(self, **kwargs: str | list[str]) -> str:
-        def esc_quotes(val: bytes | str) -> str:
+    def get_string(self, **kwargs: strs) -> str:
+        def esc_quotes(val: Union[bytes, str]) -> str:
             """
             Meta-escaping double quotes
             https://tools.ietf.org/html/rfc4180
@@ -130,7 +159,7 @@ class PlainVerticalTable(PrettyTable):
     style generated from Angular CLI's --extractLicenses flag.
     """
 
-    def get_string(self, **kwargs: str | list[str]) -> str:
+    def get_string(self, **kwargs: strs) -> str:
         options = self._get_options(kwargs)
         rows = self._get_rows(options)
 
@@ -145,7 +174,7 @@ class PlainVerticalTable(PrettyTable):
 
 def factory_styled_table_with_args(
     args: CustomNamespace,
-    output_fields: set[str] | Sequence[str] = DEFAULT_OUTPUT_FIELDS,
+    output_fields: SetLike = DEFAULT_OUTPUT_FIELDS,
 ) -> PrettyTable:
     table = PrettyTable()
     table.field_names = output_fields  # type: ignore[assignment]
@@ -220,7 +249,7 @@ def get_output_fields(args: CustomNamespace) -> list[str]:
 
     return output_fields
 
-
+# placeholder for consoles (from split-cli)
 def create_output_string(args: CustomNamespace) -> str:
     output_fields = get_output_fields(args)
 
@@ -237,3 +266,19 @@ def create_output_string(args: CustomNamespace) -> str:
     else:
         return table.get_string(fields=output_fields, sortby=sortby)
 
+
+def save_if_needs(*args, **kwargs) -> None:
+    raise NotImplementedError("Placeholder for consoles (from split-cli).")
+
+
+__all__ = [
+    """JsonPrettyTable""",
+    """JsonLicenseFinderTable""",
+    """CSVPrettyTable""",
+    """PlainVerticalTable""",
+    """factory_styled_table_with_args""",
+    """get_output_fields""",
+    """create_output_string""",
+    """save_if_needs""",
+    """output_colored""",
+]
