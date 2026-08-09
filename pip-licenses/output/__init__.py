@@ -32,9 +32,12 @@ from .. import (
     __pkgname__,
     __version__,
     annotations,
+<<<<<<< HEAD
     TYPE_CHECKING,
     SUMMARY_OUTPUT_FIELDS,
     DEFAULT_OUTPUT_FIELDS,
+=======
+>>>>>>> ff-2
 )
 
 # placeholder for strs
@@ -152,60 +155,9 @@ class CSVPrettyTable(PrettyTable):
         return "\n".join(lines)
 
 
-class PlainVerticalTable(PrettyTable):
-    """PrettyTable for outputting to a simple non-column based style.
+from .PlainVerticalTable import PlainVerticalTable
 
-    When used with --with-license-file, this style is similar to the default
-    style generated from Angular CLI's --extractLicenses flag.
-    """
-
-    def get_string(self, **kwargs: strs) -> str:
-        options = self._get_options(kwargs)
-        rows = self._get_rows(options)
-
-        output = ""
-        for row in rows:
-            for v in row:
-                output += f"{v}\n"
-            output += "\n"
-
-        return output
-
-
-def factory_styled_table_with_args(
-    args: CustomNamespace,
-    output_fields: SetLike = DEFAULT_OUTPUT_FIELDS,
-) -> PrettyTable:
-    table = PrettyTable()
-    table.field_names = output_fields  # type: ignore[assignment]
-    table.align = "l"  # type: ignore[assignment]
-    table.border = args.format_ in (
-        FormatArg.MARKDOWN,
-        FormatArg.RST,
-        FormatArg.CONFLUENCE,
-        FormatArg.JSON,
-    )
-    table.header = True
-
-    if args.format_ == FormatArg.MARKDOWN:
-        table.junction_char = "|"
-        table.hrules = HRuleStyle.HEADER
-    elif args.format_ == FormatArg.RST:
-        table.junction_char = "+"
-        table.hrules = HRuleStyle.ALL
-    elif args.format_ == FormatArg.CONFLUENCE:
-        table.junction_char = "|"
-        table.hrules = HRuleStyle.NONE
-    elif args.format_ == FormatArg.JSON:
-        table = JsonPrettyTable(table.field_names)
-    elif args.format_ == FormatArg.JSON_LICENSE_FINDER:
-        table = JsonLicenseFinderTable(table.field_names)
-    elif args.format_ == FormatArg.CSV:
-        table = CSVPrettyTable(table.field_names)
-    elif args.format_ == FormatArg.PLAIN_VERTICAL:
-        table = PlainVerticalTable(table.field_names)
-
-    return table
+from .tables import factory_styled_table_with_args
 
 
 def get_output_fields(args: CustomNamespace) -> list[str]:
@@ -271,12 +223,14 @@ def save_if_needs(*args, **kwargs) -> None:
     raise NotImplementedError("Placeholder for consoles (from split-cli).")
 
 
+# re-export for backwards compatibility and a stable API
 __all__ = [
     """JsonPrettyTable""",
     """JsonLicenseFinderTable""",
     """CSVPrettyTable""",
     """PlainVerticalTable""",
     """factory_styled_table_with_args""",
+    """tables""",
     """get_output_fields""",
     """create_output_string""",
     """save_if_needs""",
