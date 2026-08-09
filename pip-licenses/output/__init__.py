@@ -70,86 +70,9 @@ from prettytable import (
 )
 
 
-class JsonPrettyTable(PrettyTable):
-    """PrettyTable-like class exporting to JSON"""
-
-    def format_row(self, row: RowType) -> dict[str, strs]:
-        return dict(zip(self._field_names, row))
-
-    def get_string(self, **kwargs: strs) -> str:
-        # import included here in order to limit dependencies
-        # if not interested in JSON output,
-        # then the dependency is not required
-        import json
-
-        options = self._get_options(kwargs)
-        rows = self._get_rows(options)
-        lines = [self.format_row(row) for row in rows]
-        return json.dumps(lines, indent=2, sort_keys=True)
-
-
-class JsonLicenseFinderTable(JsonPrettyTable):
-    def format_row(self, row: RowType) -> dict[str, strs]:
-        resrow: dict[str, str | list[str]] = {}
-        for field, value in zip(self._field_names, row):
-            if field == "Name":
-                resrow["name"] = value
-
-            if field == "Version":
-                resrow["version"] = value
-
-            if field == "License":
-                resrow["licenses"] = [value]
-
-        return resrow
-
-    def get_string(self, **kwargs: strs) -> str:
-        # import included here in order to limit dependencies
-        # if not interested in JSON output,
-        # then the dependency is not required
-        import json
-
-        options = self._get_options(kwargs)
-        rows = self._get_rows(options)
-        lines = [self.format_row(row) for row in rows]
-        return json.dumps(lines, sort_keys=True)
-
-
-class CSVPrettyTable(PrettyTable):
-    """PrettyTable-like class exporting to CSV"""
-
-    def get_string(self, **kwargs: strs) -> str:
-        def esc_quotes(val: Union[bytes, str]) -> str:
-            """
-            Meta-escaping double quotes
-            https://tools.ietf.org/html/rfc4180
-            """
-            try:
-                return cast(str, val).replace('"', '""')
-            except UnicodeDecodeError:  # pragma: no cover
-                return cast(bytes, val).decode("utf-8").replace('"', '""')
-            except UnicodeEncodeError:  # pragma: no cover
-                return str(
-                    cast(str, val).encode("unicode_escape").replace('"', '""')  # type: ignore[arg-type]
-                )
-
-        options = self._get_options(kwargs)
-        rows = self._get_rows(options)
-        formatted_rows = self._format_rows(rows)
-
-        lines: list[str] = []
-        formatted_header = ",".join(
-            [f'"{esc_quotes(val)}"' for val in self._field_names]
-        )
-        lines.append(formatted_header)
-        lines.extend(
-            [
-                ",".join([f'"{esc_quotes(val)}"' for val in row])
-                for row in formatted_rows
-            ]
-        )
-
-        return "\n".join(lines)
+from .JsonPrettyTable import JsonPrettyTable
+from .JsonLicenseFinderTable import JsonLicenseFinderTable
+from .CSVPrettyTable import CSVPrettyTable
 
 
 class PlainVerticalTable(PrettyTable):
