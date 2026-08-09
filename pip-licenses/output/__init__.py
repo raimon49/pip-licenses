@@ -32,12 +32,9 @@ from .. import (
     __pkgname__,
     __version__,
     annotations,
-<<<<<<< HEAD
     TYPE_CHECKING,
     SUMMARY_OUTPUT_FIELDS,
     DEFAULT_OUTPUT_FIELDS,
-=======
->>>>>>> ff-2
 )
 
 # placeholder for strs
