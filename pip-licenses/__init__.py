@@ -39,6 +39,7 @@ from collections import Counter
 from collections.abc import Callable, Generator, Iterable, Iterator, Sequence
 from enum import Enum, auto
 from functools import partial
+from io import open as _real_io_open
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
@@ -46,8 +47,6 @@ from prettytable import HRuleStyle, PrettyTable, RowType
 
 from .tomli_bridge import tomllib
 
-
-open = open  # allow monkey patching
 
 __pkgname__ = "pip-licenses"
 __version__ = "6.0.0b4"  # (dev-v6.0 branch)
@@ -281,6 +280,16 @@ def get_sortby(args: CustomNamespace) -> str:
     return "Name"
 
 
+def load_config_from_file(pyproject_path: str) -> dict:
+    if Path(pyproject_path).exists():
+        with _real_io_open(pyproject_path, "rb") as f:
+            return tomllib.load(f).get("tool", {}).get(__pkgname__, {})
+    return {}
+
+
+open = _real_io_open  # noqa: PLW0127  # set to _real_io_open (before monkey patching)
+
+
 from .output import (
     JsonPrettyTable,
     JsonLicenseFinderTable,
@@ -319,13 +328,6 @@ def create_warn_string(args: CustomNamespace) -> str:
 
 # placeholder for something like:
 #import .cli as cli
-
-
-def load_config_from_file(pyproject_path: str) -> dict:
-    if Path(pyproject_path).exists():
-        with open(pyproject_path, "rb") as f:
-            return tomllib.load(f).get("tool", {}).get(__pkgname__, {})
-    return {}
 
 
 from .__main__ import main

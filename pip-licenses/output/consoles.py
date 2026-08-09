@@ -33,14 +33,15 @@ from . import (
     annotations,
 )
 
+from .. import open
+
 import sys
 
 # placeholder for imports like sys, OSError, etc.
 
-open = open  # allow monkey patching
+open = open  # noqa: PLW0127  # allow monkey patching
 
 # placeholder for importing colors
-
 
 def output_colored(code: str, text: str, is_bold: bool = False) -> str:
     """
