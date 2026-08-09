@@ -32,6 +32,7 @@ from .. import (
     __pkgname__,
     __version__,
     annotations,
+    TYPE_CHECKING,
 )
 
 
@@ -47,12 +48,13 @@ from prettytable import (
 import json
 
 
+from . import strs
 from .JsonPrettyTable import JsonPrettyTable
 
 
 class JsonLicenseFinderTable(JsonPrettyTable):
-    def format_row(self, row: RowType) -> dict[str, str | list[str]]:
-        resrow: dict[str, str | list[str]] = {}
+    def format_row(self, row: RowType) -> dict[str, strs]:
+        resrow: dict[str, strs] = {}
         for field, value in zip(self._field_names, row):
             if field == "Name":
                 resrow["name"] = value
@@ -65,7 +67,7 @@ class JsonLicenseFinderTable(JsonPrettyTable):
 
         return resrow
 
-    def get_string(self, **kwargs: str | list[str]) -> str:
+    def get_string(self, **kwargs: strs) -> str:
         options = self._get_options(kwargs)
         rows = self._get_rows(options)
         lines = [self.format_row(row) for row in rows]

@@ -32,6 +32,7 @@ from .. import (
     __pkgname__,
     __version__,
     annotations,
+    TYPE_CHECKING,
 )
 
 
@@ -47,13 +48,16 @@ from prettytable import (
 import json
 
 
+from . import strs
+
+
 class JsonPrettyTable(PrettyTable):
     """PrettyTable-like class exporting to JSON"""
 
-    def format_row(self, row: RowType) -> dict[str, str | list[str]]:
+    def format_row(self, row: RowType) -> dict[str, strs]:
         return dict(zip(self._field_names, row))
 
-    def get_string(self, **kwargs: str | list[str]) -> str:
+    def get_string(self, **kwargs: strs) -> str:
         options = self._get_options(kwargs)
         rows = self._get_rows(options)
         lines = [self.format_row(row) for row in rows]
