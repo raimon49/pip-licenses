@@ -32,6 +32,7 @@ from . import (
     __version__,
     __summary__,
     annotations,
+    TYPE_CHECKING,
     deduplicate_and_normalize,
     DEFAULT_OUTPUT_FIELDS,
     FIELD_NAMES,
@@ -46,6 +47,26 @@ from . import (
 )
 
 
+import sys
+
+# for typing
+from email.message import Message
+from typing import (
+    cast,
+    Union,
+)
+# NullableStr = Union[str, None]
+# strs = Union[str, list[str]]
+from collections.abc import Callable, Iterator
+from importlib import metadata as importlib_metadata
+from importlib.metadata import Distribution
+
+from .cli import (
+    pseudoChoices,
+    FromArg,
+    CustomNamespace,
+)
+
 SYSTEM_PACKAGES: list[str] = [
     __pkgname__,
     "pip",
@@ -57,7 +78,8 @@ SYSTEM_PACKAGES: list[str] = [
 if sys.version_info < (3, 11):
     SYSTEM_PACKAGES.append("tomli")
 
-def extract_homepage(metadata: Message) -> str | None:
+
+def extract_homepage(metadata: Message) -> Union[str, None]:
     """Extracts a homepage attribute from the package metadata.
 
     Retrieve home page from the PEP 753 `Project-URL` metadata.
@@ -98,7 +120,7 @@ def extract_homepage(metadata: Message) -> str | None:
     return None
 
 
-METADATA_KEYS: dict[str, list[Callable[[Message], str | None]]] = {
+METADATA_KEYS: dict[str, list[Callable[[Message], Union[str, None]]]] = {
     "home-page": [extract_homepage],
     "author": [
         lambda metadata: metadata.get("author"),
@@ -143,7 +165,16 @@ def _get_pkg_included_file(
     return (included_file, included_text)
 
 
-def _get_pkg_info(pkg: Distribution) -> dict[str, str | list[str]]:
+def _get_pkg_info(*args, **kwargs) -> dict[str, Union[str, list[str]]]:
+    pkg: Distribution = None
+    if len(args) > 0 and isinstance(args[0], Distribution):
+        pkg = cast(Distribution, args[0])
+        args = args[1:]
+    else:
+        pkg = kwargs.pop("pkg", None)
+    if not isinstance(pkg, Distribution):  # defensive code to support runtime typing
+        raise TypeError("[CWE-573] pkg must be a Distribution") from None
+
     license_file, license_text = _get_pkg_included_file(
         pkg,
         LEGACY_LICENSE_BY_FILE_PATTERN,
@@ -153,7 +184,7 @@ def _get_pkg_info(pkg: Distribution) -> dict[str, str | list[str]]:
         pkg,
         LEGACY_AUTHORS_BY_FILE_PATTERN,
     )
-    pkg_info: dict[str, str | list[str]] = {
+    pkg_info: dict[str, Union[str, list[str]]] = {
         "name": pkg.metadata["name"],
         "version": pkg.version,
         "namever": "{} {}".format(pkg.metadata["name"], pkg.version),
@@ -241,7 +272,7 @@ def select_license_by_source(
 
 def get_packages(
     args: CustomNamespace,
-) -> Iterator[dict[str, str | list[str]]]:
+) -> Iterator[dict[str, Union[str, list[str]]]]:
 
     if args.python == sys.executable:
         search_paths = sys.path
@@ -285,7 +316,7 @@ def get_packages(
         if not args.with_system and pkg_name in SYSTEM_PACKAGES:
             continue
 
-        pkg_info = _get_pkg_info(pkg)
+        pkg_info = _get_pkg_info(pkg, kwargs=args)
 
         license_names = select_license_by_source(
             args.from_,

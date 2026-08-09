@@ -39,8 +39,6 @@ from collections import Counter
 from collections.abc import Callable, Generator, Iterable, Iterator, Sequence
 from enum import Enum, auto
 from functools import partial
-from importlib import metadata as importlib_metadata
-from importlib.metadata import Distribution
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
@@ -48,14 +46,11 @@ from prettytable import HRuleStyle, PrettyTable, RowType
 
 from .tomli_bridge import tomllib
 
-if TYPE_CHECKING:  # pragma: no cover
-    from email.message import Message
-
 
 open = open  # allow monkey patching
 
 __pkgname__ = "pip-licenses"
-__version__ = "6.0.0b3"  # (dev-v6.0 branch)
+__version__ = "6.0.0b4"  # (dev-v6.0 branch)
 __summary__ = (
     "Dump the software license list of Python packages installed with pip."
 )
@@ -294,6 +289,8 @@ from .output import (
     get_output_fields,
     create_output_string,
     factory_styled_table_with_args,
+    save_if_needs,
+    output_colored,
 )
 
 
@@ -320,7 +317,7 @@ def create_warn_string(args: CustomNamespace) -> str:
     return "\n".join(warn_messages)
 
 
-# placeholder for somthing like:
+# placeholder for something like:
 #import .cli as cli
 
 
@@ -329,13 +326,6 @@ def load_config_from_file(pyproject_path: str) -> dict:
         with open(pyproject_path, "rb") as f:
             return tomllib.load(f).get("tool", {}).get(__pkgname__, {})
     return {}
-
-# placeholder for something like:
-# from .output.consoles import output_colored
-
-from output import (
-    save_if_needs,
-)
 
 
 from .__main__ import main

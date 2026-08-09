@@ -1,16 +1,9 @@
 #!/usr/bin/env python
 # vim:fenc=utf-8 ff=unix ft=python ts=4 sw=4 sts=4 si et
 """
-pip-licenses.tomil_support
+pip-licenses.output
 
-MIT-0 License OR MIT License
-
-Rationale: if the license is bigger than the actual code, then MIT-0 is
-sufficient, and compatible to just the MIT-0, so we'll be explicit here.
-
----
-
-MIT No Attribution (MIT-0 License)
+MIT License
 
 Copyright (c) 2018-2025 raimon
 Copyright (c) 2025-2026 Mr. Walls
@@ -20,7 +13,10 @@ of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
 to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 copies of the Software, and to permit persons to whom the Software is
-furnished to do so.
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -31,14 +27,43 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-import sys
 
-if sys.version_info >= (3, 11):
-    import tomllib
-else:
-    import tomli as tomllib  # type: ignore[import-not-found]  # ty: ignore[unused-type-ignore-comment]
+from .. import (
+    __pkgname__,
+    __version__,
+    annotations,
+    TYPE_CHECKING,
+)
+
+
+from prettytable import (
+    PrettyTable,
+    RowType,
+)
+
+
+# import included here in order to limit dependencies
+# if not interested in JSON output,
+# then the dependency is not required
+import json
+
+
+from . import strs
+
+
+class JsonPrettyTable(PrettyTable):
+    """PrettyTable-like class exporting to JSON"""
+
+    def format_row(self, row: RowType) -> dict[str, strs]:
+        return dict(zip(self._field_names, row))
+
+    def get_string(self, **kwargs: strs) -> str:
+        options = self._get_options(kwargs)
+        rows = self._get_rows(options)
+        lines = [self.format_row(row) for row in rows]
+        return json.dumps(lines, indent=2, sort_keys=True)
 
 
 __all__ = [
-   """tomllib""",
+    """JsonPrettyTable""",
 ]
