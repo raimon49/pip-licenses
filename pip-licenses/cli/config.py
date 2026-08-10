@@ -56,8 +56,11 @@ class CustomNamespace(argparse.Namespace):
     with_urls: bool
     with_description: bool
     with_license_file: bool
+    with_license_files: bool  # added in v6.0
     no_license_path: bool
     with_notice_file: bool
+    with_notice_files: bool  # added in v6.0
+    with_other_files: bool  # added in v6.0
     filter_strings: bool
     filter_code_page: str
     partial_match: bool

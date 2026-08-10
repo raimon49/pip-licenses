@@ -191,6 +191,56 @@ from .core import (
 )
 
 
+def _handle_multiple_value_field(
+    key: str, value: Iterator[str]
+) -> str | list[str]:
+    """Normalize a metadata field that may contain one or many values.
+
+    This helper converts an iterator of field values into the most convenient
+    representation based on the field name:
+
+    - If the field name ends with ``"s"`` (case-insensitive), the values are
+      treated as plural and returned as a list.
+    - Otherwise, the first value is returned as a single string.
+    - If a plural field has no values, ``["UNKNOWN"]`` is returned.
+    - If a singular field has no values, ``LICENSE_UNKNOWN`` is returned.
+
+    Args:
+        key: The field name used to decide whether the field should be treated
+            as singular or plural.
+        value: An iterator of string values for the field.
+
+    Returns:
+        Either:
+        - a list of strings for plural fields, or
+        - a single string for singular fields.
+
+    Examples:
+        A plural field returns all values as a list:
+
+        >>> _handle_multiple_value_field("authors", iter(["Alice", "Bob"]))
+        ['Alice', 'Bob']
+
+        A singular field returns the first value:
+
+        >>> _handle_multiple_value_field("license", iter(["MIT", "BSD"]))
+        'MIT'
+
+        An empty plural field falls back to ``["UNKNOWN"]``:
+
+        >>> _handle_multiple_value_field("authors", iter([]))
+        ['UNKNOWN']
+
+        An empty singular field falls back to ``LICENSE_UNKNOWN``:
+
+        >>> _handle_multiple_value_field("license", iter([]))
+        'UNKNOWN'
+    """
+    if key.lower().endswith("s"):
+        return list(value) or ["UNKNOWN"]
+    return cast(str, next(value, LICENSE_UNKNOWN))
+
+
 def create_licenses_table(
     args: CustomNamespace,
     output_fields: set[str] | Sequence[str] = DEFAULT_OUTPUT_FIELDS,
@@ -198,7 +248,7 @@ def create_licenses_table(
     table = factory_styled_table_with_args(args, output_fields)
 
     for pkg in get_packages(args):
-        row = []
+        row: list[str | list[str]] = []
         for field in output_fields:
             if field == "License":
                 license_set = select_license_by_source(
@@ -207,17 +257,52 @@ def create_licenses_table(
                     cast(str, pkg["license"]),
                     cast(str, pkg["license_expression"]),
                 )
-                license_str = "; ".join(sorted(license_set))
+                _sorted_license_set = (
+                    sorted(license_set) if license_set else []
+                )
+                _normalized_license_set = {
+                    normal_item
+                    for normal_item in _sorted_license_set
+                    if normal_item is not None
+                }
+                license_str = "; ".join(_normalized_license_set)
                 row.append(license_str)
             elif field == "License-Classifier":
                 row.append(
                     "; ".join(sorted(pkg["license_classifier"]))
                     or LICENSE_UNKNOWN
                 )
-            elif field.lower() in pkg:
+            elif field == "License-Expression":
+                row.append(
+                    cast(str, pkg["license_expression"]) or LICENSE_UNKNOWN
+                )
+            elif field == "License-Metadata":
+                row.append(cast(str, pkg["license"]) or LICENSE_UNKNOWN)
+            elif (field.lower() in pkg) or (hasattr(pkg, field.lower())):
                 row.append(cast(str, pkg[field.lower()]))
             else:
-                row.append(cast(str, pkg[FIELDS_TO_METADATA_KEYS[field]]))
+                if (field in FIELDS_TO_METADATA_KEYS) and (
+                    FIELDS_TO_METADATA_KEYS[field] in pkg
+                ):
+                    value = pkg[FIELDS_TO_METADATA_KEYS[field]]
+                    if value:
+                        if field in _MULTI_VALUE_KEYS:
+                            row.append(
+                                cast(
+                                    list[str],
+                                    _handle_multiple_value_field(
+                                        key=field,
+                                        value=cast(Iterator[str], [*value]),
+                                    ),
+                                )
+                            )
+                        else:
+                            row.append(cast(str, value))
+                    else:  # invalid value (e.g. None)
+                        row.append(LICENSE_UNKNOWN)
+                else:  # Unknown value (e.g. custom/future fields)
+                    row.append(LICENSE_UNKNOWN)
+
         table.add_row(row)
 
     return table

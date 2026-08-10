@@ -163,12 +163,23 @@ class CompatibleArgumentParser(argparse.ArgumentParser):
         return args_
 
     def _verify_args(self, args: CustomNamespace) -> None:
-        if args.with_license_file is False and (
-            args.no_license_path is True or args.with_notice_file is True
+        if (
+            args.with_license_file is False
+            and args.with_license_files is False
+        ) and (
+            args.no_license_path is True
+            or (
+                (
+                    args.with_notice_file is True
+                    or args.with_notice_files is True
+                )
+                or args.with_other_files is True
+            )
         ):
             self.error(
-                "'--no-license-path' and '--with-notice-file' require "
-                "the '--with-license-file' option to be set"
+                "'--no-license-path' and '--with-notice-file[s]' "
+                "as well as '--with-other-files' require "
+                "the '--with-license-file[s]' option to be set"
             )
         if args.filter_strings is False and args.filter_code_page != "latin1":
             self.error(
@@ -238,6 +249,7 @@ def create_parser(
     config_from_file = load_config_from_file(pyproject_path)
 
     common_options = parser.add_argument_group("Common options")
+    license_file_options = parser.add_argument_group("License file options")
     format_options = parser.add_argument_group("Format options")
     verify_options = parser.add_argument_group("Verify options")
 
@@ -379,7 +391,8 @@ def create_parser(
         default=config_from_file.get("no-version", False),
         help="dump without package version",
     )
-    format_options.add_argument(
+
+    license_file_options.add_argument(
         "-l",
         "--with-license-file",
         action="store_true",
@@ -389,19 +402,46 @@ def create_parser(
         "For structured formats (CSV, Markdown, reST), "
         "see README for workflow examples.",
     )
-    format_options.add_argument(
+    license_file_options.add_argument(
+        "--with-license-files",
+        action="store_true",
+        default=config_from_file.get("with-license-files", False),
+        help="dump with location of each license file and contents, most useful with JSON output",
+    )
+    license_file_options.add_argument(
         "--no-license-path",
         action="store_true",
         default=config_from_file.get("no-license-path", False),
         help="I|when specified together with option -l, "
         "suppress location of license file output",
     )
-    format_options.add_argument(
+    license_file_options.add_argument(
+        "--no-file-paths",
+        action="store_true",
+        default=config_from_file.get("no-file-paths", False),
+        help="I|Suppress location of file path outputs",
+    )
+    license_file_options.add_argument(
         "--with-notice-file",
         action="store_true",
         default=config_from_file.get("with-notice-file", False),
         help="I|when specified together with option -l, "
-        "dump with location of license file and contents",
+        "dump with location of up to one notice file and contents",
+    )
+    license_file_options.add_argument(
+        "--with-notice-files",
+        action="store_true",
+        default=config_from_file.get("with-notice-files", False),
+        help="I|when specified together with option -l, "
+        "dump with location of all notice files and contents",
+    )
+    license_file_options.add_argument(
+        "--with-other-files",
+        action="store_true",
+        default=config_from_file.get("with-other-files", False),
+        help="I|when specified together with option -l"
+        " or --with-license-files, dump with location"
+        " of other licensing-related files and contents",
     )
     format_options.add_argument(
         "--filter-strings",
