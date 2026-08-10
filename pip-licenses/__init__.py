@@ -70,6 +70,7 @@ from .constants import (
     LEGACY_LICENSE_BY_FILE_PATTERN,
     LEGACY_NOTICE_BY_FILE_PATTERN,
     LEGACY_AUTHORS_BY_FILE_PATTERN,
+    LICENSE_BY_OTHER_FILE_PATTERN,
 )
 
 
@@ -89,7 +90,7 @@ def normalize_pkg_name(pkg_name: str) -> str:
     return PATTERN_DELIMITER.sub("-", pkg_name).lower().strip()
 
 
-def normalize_version(version_string: None | str) -> str:
+def normalize_version(version_string: Union[str, None]) -> str:
     """
     Normalize a version string to a PEP 440 compliant format.
 
@@ -262,7 +263,7 @@ from .core import (
 )
 
 
-# this should go in sorting
+# this should go in sorting -- duplicate regression
 def get_sortby(args: CustomNamespace) -> str:
     if args.summary and args.order == OrderArg.COUNT:
         return "Count"

@@ -58,9 +58,12 @@ from .config import (
 if TYPE_CHECKING:
     from typing import (
         cast,
+# watch for PEP-3124
+#        overload,
 #        Union,
     )
 #    NullableInt = Union[int, None]
+
 
 # TODO: this is used elsewhere
 def get_sortby(args: CustomNamespace) -> str:
@@ -111,7 +114,7 @@ class CustomHelpFormatter(argparse.HelpFormatter):  # pragma: no cover
         max_help_position: int = 24,
         width: int = None,
     ) -> None:
-        max_help_position = 30
+        max_help_position = 30  # Minor Regression BUG from backport
         super().__init__(
             prog,
             indent_increment=indent_increment,

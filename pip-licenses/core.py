@@ -39,11 +39,13 @@ from . import (
     LEGACY_AUTHORS_BY_FILE_PATTERN,
     LEGACY_LICENSE_BY_FILE_PATTERN,
     LEGACY_NOTICE_BY_FILE_PATTERN,
+    LICENSE_BY_OTHER_FILE_PATTERN,
     LICENSE_UNKNOWN,
     normalize_pkg_name_and_version,
     normalize_pkg_name,
     SUMMARY_FIELD_NAMES,
     SUMMARY_OUTPUT_FIELDS,
+    FILE_MISSING,
 )
 
 
@@ -59,7 +61,10 @@ from typing import (
 # strs = Union[str, list[str]]
 from collections.abc import Callable, Iterator
 from importlib import metadata as importlib_metadata
-from importlib.metadata import Distribution
+from importlib.metadata import (
+    Distribution,
+    PackagePath,
+)
 
 from .cli import (
     pseudoChoices,
@@ -77,6 +82,90 @@ SYSTEM_PACKAGES: list[str] = [
 ]
 if sys.version_info < (3, 11):
     SYSTEM_PACKAGES.append("tomli")
+
+
+def extract_urls(metadata: Message) -> dict[str, Union[str, list[str], None]]:
+    """Extract normalized project URLs from message metadata.
+
+    This scans all ``Project-URL`` entries in the given metadata object and
+    builds a dictionary keyed by the lowercased, stripped, label value of
+    the pair (e.g., 'source' for 'Source, https://github.com/user/repo.git').
+
+    Each ``Project-URL`` entry is expected to contain exactly one comma
+    separating the label and URL, for example::
+
+        Project-URL: Homepage, https://github.com/raimon49/pip-licenses
+
+    Duplicate labels are merged into a list on the second occurrence of a key.
+    The first value remains a string until a duplicate is encountered.
+    Empty URL values are normalized to ``None``. For canonical Specification:
+    [Core Metadata 1.2 (PEP 753)](https://packaging.python.org/en/latest/specifications/core-metadata/#core-metadata-project-url).
+
+    Args:
+        metadata: A message-like object supporting ``get_all("Project-URL", [])``
+            and returning a sequence of comma-separated ``"name, url"`` strings.
+
+    Returns:
+        A mapping from normalized project names to:
+        - a stripped URL string,
+        - a list of URL strings if the same project name appears multiple times,
+        - or ``None`` if the URL portion is empty.
+
+    Raises:
+        ValueError: If a ``Project-URL`` entry does not contain a comma.
+
+    Examples:
+        Basic extraction:
+
+        >>> class DummyMessage:
+        ...     def __init__(self, values):
+        ...         self._values = values
+        ...     def get_all(self, key, default=None):
+        ...         return self._values if key == "Project-URL" else default
+        ...
+        >>> metadata = DummyMessage([
+        ...     "Homepage, https://github.com/raimon49/pip-licenses",
+        ...     "Bug Tracker, https://github.com/raimon49/pip-licenses/issues",
+        ... ])
+        >>> extract_urls(metadata)
+        {'homepage': 'https://github.com/raimon49/pip-licenses', 'bug tracker': 'https://github.com/raimon49/pip-licenses/issues'}
+
+        Duplicate labels are collected into a list:
+
+        >>> metadata = DummyMessage([
+        ...     "Homepage, https://github.com/raimon49/pip-licenses",
+        ...     "Homepage, https://pypi.org/project/pip-licenses",
+        ... ])
+        >>> extract_urls(metadata)
+        {'homepage': ['https://github.com/raimon49/pip-licenses', 'https://pypi.org/project/pip-licenses']}
+
+        Empty URLs become ``None``:
+
+        >>> metadata = DummyMessage([
+        ...     "Source,   ",
+        ... ])
+        >>> extract_urls(metadata)
+        {'source': None}
+    """
+    _urls: dict[str, Union[str, list[str], None]] = {}
+    for entry in metadata.get_all(PEP735_URL_KEY, []):
+        key, value = entry.split(",", 1)
+        _norm_key: str = key.strip().lower()
+        _norm_val = value.strip()
+        if _norm_key in _urls:
+            if not isinstance(_urls[_norm_key], list):
+                # MyPy is a bit lost by this point, (See Discussion in PR #346)
+                # https://github.com/raimon49/pip-licenses/pull/346#discussion_r3661511932
+                _urls[_norm_key] = [
+                    _urls[_norm_key],  # type: ignore[list-item]  # ty: ignore[unused-type-ignore-comment]
+                ]
+            if _norm_val not in set(
+                cast(list[str], _urls[_norm_key]),
+            ):  # deduplicate and merge by key
+                _urls[_norm_key].append(_norm_val)  # type: ignore[union-attr]  # ty: ignore[unused-type-ignore-comment]
+        else:
+            _urls[_norm_key] = _norm_val or None
+    return _urls
 
 
 def extract_homepage(metadata: Message) -> Union[str, None]:
