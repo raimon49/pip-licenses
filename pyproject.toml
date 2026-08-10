@@ -10,11 +10,11 @@ requires-python = ">=3.9"
 license = "MIT"
 license-files = ["LICENSE"]
 authors = [
-    {name = "raimon", email = "raimon49@hotmail.com"}, # 2018-2025 (retired)
-    {name = "Mr. Walls", email = "reactive-firewall@users.noreply.github.com"},
+    {"name" = "raimon", "email" = "raimon49@hotmail.com"}, # 2018-2025 (retired)
+    {"name" = "Mr. Walls", "email" = "reactive-firewall@users.noreply.github.com"},
 ]
 maintainers = [
-    {name = "Mr. Walls", email = "reactive-firewall@users.noreply.github.com"},
+    {"name" = "Mr. Walls", "email" = "reactive-firewall@users.noreply.github.com"},
 ]
 keywords = ["pip", "pypi", "package", "license", "check", "audit"]
 classifiers = [
@@ -36,7 +36,7 @@ dependencies = [
     "prettytable >= 3.12.0",
     "tomli >= 2;python_version<'3.11'"
 ]
-scripts = { "pip-licenses" = "piplicenses.__init__:main" }
+scripts = { "pip-licenses" = "piplicenses.__main__:main" }
 
 [project.optional-dependencies]
 dev = [
@@ -133,5 +133,5 @@ unused-ignore-comment = "warn"
 redundant-cast = "warn"
 
 [tool.coverage.run]
-include = ["piplicenses.py"]
+include = ["piplicenses/*.py"]
 

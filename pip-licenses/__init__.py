@@ -49,13 +49,11 @@ from .tomli_bridge import tomllib
 
 
 __pkgname__ = "pip-licenses"
-__version__ = "6.0.0b4"  # (dev-v6.0 branch)
-__summary__ = (
-    "Dump the software license list of Python packages installed with pip."
-)
+__version__ = "6.0.0b5"  # (dev-v6.0 branch)
 
 
 from .constants import (
+    __summary__,
     FIELD_NAMES,
     SUMMARY_FIELD_NAMES,
     DEFAULT_OUTPUT_FIELDS,
@@ -72,7 +70,6 @@ from .constants import (
     LEGACY_AUTHORS_BY_FILE_PATTERN,
     LICENSE_BY_OTHER_FILE_PATTERN,
 )
-
 
 
 def normalize_pkg_name(pkg_name: str) -> str:

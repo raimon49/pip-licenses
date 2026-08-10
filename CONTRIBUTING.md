@@ -18,6 +18,7 @@ The design policy of `pip-licenses` is as follows.
     * Dependencies are managed by [pip-tools](https://pypi.org/project/pip-tools/).
     * If you want to add dependency packages for development, edit [the dev entry in pyproject.toml](https://github.com/raimon49/pip-licenses/blob/master/pyproject.toml) file and run `make update-depends` .
     * If you want to install the code under development, run `make local-install` .
+    * If you want to test the code under development before pushing, run `make local-ci-check`
 
 ## Implementation and testing
 
@@ -25,7 +26,7 @@ The design policy of `pip-licenses` is as follows.
     * Tests can be run with `make test` .
 * Code conventions follow the [PEP 8](https://www.python.org/dev/peps/pep-0008/).
     * You can format the code by running `make lint` .
-* Send pull request to master branch. Maintainer(s) may adjust PRs to the appropriate development branch as realevant.
+* Send pull request to master branch. Maintainer(s) may adjust PRs to the appropriate development branch as relevant.
 
 ## Security policy
 
