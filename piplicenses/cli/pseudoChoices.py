@@ -30,9 +30,6 @@ SOFTWARE.
 from . import (
     __pkgname__,  # noqa: F401 -- Re-export as part of __main__ API
     __version__,  # noqa: F401 -- Re-export as part of __main__ API
-    annotations,  # noqa: F401 -- from piplicenses.__future__ -> piplicenses.cli
-    TYPE_CHECKING,  # noqa: F401 -- Re-export as part of our internal typing API
-# pseudoChoices does not seem to use annotations,
 )
 
 

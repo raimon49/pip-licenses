@@ -27,7 +27,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from __future__ import annotations  # noqa: I001 -- Should be first because __future__
 
 import re
 from collections import Counter
@@ -35,14 +34,19 @@ from collections.abc import Generator, Iterable, Iterator, Sequence
 from functools import partial
 from io import open as _real_io_open
 from pathlib import Path
-from typing import TYPE_CHECKING, cast
+# PEP 649 does not support annotations that are conditionally defined in the body of a module
+from typing import (
+    TYPE_CHECKING,  # DEPRECIATED in v6.0+ -- see PEP 749
+    cast,
+    Union,
+)
 from prettytable import PrettyTable
 # From our own stuff (pip-licenses)
 # start with "bridges" (e.g., shims)
 from .tomli_bridge import tomllib
 # Must declare this ASAP as most other component will re-import it
 __pkgname__ = "pip-licenses"  # expose package name with a dash (but canonicalized will ignore dash)
-__version__ = "6.0.0b5"  # (dev-v6.0 branch
+__version__ = "6.0.0b6"  # (dev-v6.0 branch
 # Rationale: Try to declare these early too,
 #   as most other component will also re-import this from the package scope
 #   this keeps the .constants package internal and somewhat hidden for now
@@ -198,7 +202,7 @@ from .core import (
 
 def _handle_multiple_value_field(
     key: str, value: Iterator[str]
-) -> str | list[str]:
+) -> Union[str, list[str]]:
     """Normalize a metadata field that may contain one or many values.
 
     This helper converts an iterator of field values into the most convenient
@@ -242,13 +246,21 @@ def _handle_multiple_value_field(
         'UNKNOWN'
     """
     if key.lower().endswith("s"):
-        return list(value) or ["UNKNOWN"]
+        return list(value) or [LICENSE_UNKNOWN]
     return cast(str, next(value, LICENSE_UNKNOWN))
+
+
+from .cli import (
+    CustomNamespace,
+# if not for regressions in testing,
+# perhaps, this should go in sorting (only used by piplicenses.output.create_output_string())
+    get_sortby,  # noqa: F401  # DEPRECIATED in v6.0+
+)
 
 
 def create_licenses_table(
     args: CustomNamespace,
-    output_fields: set[str] | Sequence[str] = DEFAULT_OUTPUT_FIELDS,
+    output_fields: Union[set[str], Sequence[str]] = DEFAULT_OUTPUT_FIELDS,
 ) -> PrettyTable:
     table = factory_styled_table_with_args(args, output_fields)
 
@@ -332,14 +344,6 @@ def create_summary_table(args: CustomNamespace) -> PrettyTable:
     for license, count in counts.items():
         table.add_row([count, license])
     return table
-
-
-from .cli import (
-    CustomNamespace,
-# if not for regressions in testing,
-# perhaps, this should go in sorting (only used by piplicenses.output.create_output_string())
-    get_sortby,  # noqa: F401  # DEPRECIATED in v6.0+
-)
 
 
 def load_config_from_file(pyproject_path: str) -> dict:

@@ -4,7 +4,11 @@
 
 (SUBJECT TO CHANGE IN NEXT RELEASE)
 
-#### From ALPHA (already backported)
+* Align with [PEP-749](https://peps.python.org/pep-0749) and deprecated use of `typing.TYPE_CHECKING` conditions
+* Fixed multiple typographical errors
+* Refactored most of the codebase to be more modular (WIP GHI #316)
+
+#### Including refactoring work from the pre-release (ALPHA)
 
 * Fixed priority logic regression from v5.5.x that lead to non-determinant ordering of multiple-source results, (WIP GHI #309), and possibly resolving? (GHI #330 - needs new testing)
 * Fixed multiple regressions in tests due to recent version bumps, closing GHI #337 & GHI #338

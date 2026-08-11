@@ -31,8 +31,6 @@ from .. import (
     __pkgname__,
     __version__,
     __summary__,
-    annotations,  # noqa: F401 -- from piplicenses.__future__
-    TYPE_CHECKING,  # noqa: F401 -- Re-export as part of our internal typing API
     cast,
 )
 

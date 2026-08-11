@@ -27,10 +27,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+
 from . import (
     __pkgname__,
     __version__,  # noqa: F401 -- Re-export as part of data API
-    annotations,  # noqa: F401 -- from piplicenses.__future__
     TYPE_CHECKING,  # noqa: F401 -- Re-export as part of our internal typing API
     deduplicate_and_normalize,
     LEGACY_AUTHORS_BY_FILE_PATTERN,

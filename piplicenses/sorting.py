@@ -29,8 +29,6 @@ SOFTWARE.
 from . import (
     __pkgname__,  # noqa: F401 -- Re-export as part of data API
     __version__,  # noqa: F401 -- Re-export as part of data API
-    annotations,  # noqa: F401 -- from piplicenses.__future__
-    TYPE_CHECKING,  # noqa: F401 -- Re-export as part of our internal typing API
 )
 
 from typing import Union

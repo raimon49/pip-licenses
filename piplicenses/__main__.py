@@ -63,5 +63,20 @@ def main() -> None:  # pragma: no cover
         print(warn_string, file=sys.stderr)
 
 
+__all__ = [
+#    """__doc__""",
+#    """__file__""",
+#    """__loader__""",
+#    """__name__""",
+#    """__package__""",
+#    """__path__""",
+    """__pkgname__""",
+#    """__spec__""",
+    """__summary__""",
+    """__version__""",
+    """main""",
+]
+
+
 if __name__ == "__main__":  # pragma: no cover
     main()
