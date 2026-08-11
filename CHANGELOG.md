@@ -17,7 +17,7 @@
   * [CVE-2026-4539 reDoS](https://github.com/advisories/GHSA-5239-wwwm-4pmq)
   * [CVE-2026-44432 Leak](https://github.com/advisories/GHSA-mf9v-mfxr-j63j)
   * [CVE-2026-44431](https://github.com/advisories/GHSA-qccp-gfcp-xxvc)
-* Updated testing in CI to resolve python3.9 coverage regresions
+* Updated testing in CI to resolve python3.9 coverage regressions
 
 ### ONLY ON pre-6.0.0 (ALPHA) (need to backport once work on #316 is stable):
 

@@ -28,27 +28,26 @@ SOFTWARE.
 """
 
 
-from . import (
-    __pkgname__,  # noqa: F401 -- Re-export as part of data API
-    __version__,  # noqa: F401 -- Re-export as part of data API
-    DEFAULT_OUTPUT_FIELDS,
-)
-from ..sorting import (
-    SetLike,
-)
-from ..cli import (
-    CustomNamespace
-)
-from ..cli.pseudoChoices import (
-    FormatArg,
-)
 from prettytable import (
     HRuleStyle,
     PrettyTable,
 )
-from .JsonPrettyTable import JsonPrettyTable  # the class
-from .JsonLicenseFinderTable import JsonLicenseFinderTable  # the class
+
+from ..cli import CustomNamespace
+from ..cli.pseudoChoices import (
+    FormatArg,
+)
+from ..sorting import (
+    SetLike,
+)
+from . import (
+    DEFAULT_OUTPUT_FIELDS,
+    __pkgname__,  # noqa: F401 -- Re-export as part of data API
+    __version__,  # noqa: F401 -- Re-export as part of data API
+)
 from .CSVPrettyTable import CSVPrettyTable  # the class
+from .JsonPrettyTable import JsonPrettyTable  # noqa: I1001  # the class
+from .JsonLicenseFinderTable import JsonLicenseFinderTable  # the class
 from .PlainVerticalTable import PlainVerticalTable  # the class
 
 

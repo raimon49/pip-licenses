@@ -33,13 +33,13 @@ from . import (
     argparse,
 )
 from .pseudoChoices import (
+    FormatArg,
     FromArg,
     OrderArg,
-    FormatArg,
 )
 
 
-class CustomNamespace(argparse.Namespace):
+class Configuration(argparse.Namespace):
     from_: FromArg
     order: OrderArg
     format_: FormatArg
@@ -64,10 +64,11 @@ class CustomNamespace(argparse.Namespace):
     allow_only: str = None
 
 
-Configuration = CustomNamespace
+CustomNamespace = Configuration
+"""DEPRECIATED in v6.0; use piplicenses.cli.config.Configuration instead."""
 
 
 __all__ = [
     """Configuration""",
-    """CustomNamespace""",
+    """CustomNamespace""",  # DEPRECIATED in v6.0+
 ]

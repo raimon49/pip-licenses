@@ -27,15 +27,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from . import (
-    __pkgname__,  # noqa: F401 -- Re-export as part of __main__ API
-    __version__,  # noqa: F401 -- Re-export as part of __main__ API
-)
-
-
 from enum import (
     Enum,
     auto,
+)
+
+from . import (
+    __pkgname__,  # noqa: F401 -- Re-export as part of __main__ API
+    __version__,  # noqa: F401 -- Re-export as part of __main__ API
 )
 
 

@@ -28,20 +28,17 @@ SOFTWARE.
 """
 
 from . import (
-    __pkgname__,  # noqa: F401 -- Re-export as part of __main__ API
-    __version__,  # noqa: F401 -- Re-export as part of __main__ API
-    __summary__,  # noqa: F401 -- Re-export as part of __main__ API
+    __pkgname__,
+    __summary__,
+    __version__,
     create_warn_string,  # TODO: this should be elsewhere
-# __main__ does not seem to use annotations,
 )
-
 from .cli import (
     create_parser,
 )
-
 from .output import (
-    save_if_needs,
     create_output_string,
+    save_if_needs,
 )
 
 # placeholder for other main entry point stuff E.g.,

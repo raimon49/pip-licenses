@@ -27,26 +27,25 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from .. import (
-    __pkgname__,
-    __version__,
-    __summary__,
-    cast,
-)
-
 import argparse
 import codecs
 import sys
-
 from collections.abc import Sequence
 from functools import partial
-from importlib import metadata as importlib_metadata  # noqa: F401 -- (used by piplicenses.core)
+from importlib import (
+    metadata as importlib_metadata,  # noqa: F401 -- (used by piplicenses.core)
+)
 from pathlib import Path
 
+from .. import (
+    __pkgname__,
+    __summary__,
+    __version__,
+    cast,
+)
 from .config import (
     CustomNamespace,  # to be deprecated in v6
 )
-
 
 #if TYPE_CHECKING:
 #    from typing import (
@@ -191,14 +190,14 @@ class CompatibleArgumentParser(argparse.ArgumentParser):
 
 
 from .pseudoChoices import (
-    NoValueEnum,
-    FromArg,
-    OrderArg,
     FormatArg,
-    value_to_enum_key,  # noqa: F401 -- Re-export as part of data API
-    enum_key_to_value,
+    FromArg,
+    NoValueEnum,
+    OrderArg,
     choices_from_enum,
+    enum_key_to_value,
     get_value_from_enum,
+    value_to_enum_key,  # noqa: F401 -- Re-export as part of data API
 )
 
 
@@ -221,7 +220,10 @@ class SelectAction(argparse.Action):
         setattr(namespace, self.dest, get_value_from_enum(enum_cls, values))
 
 
-from ..tomli_bridge import tomllib  # type: ignore[import-not-found]  # ty: ignore[unused-type-ignore-comment]
+from ..tomli_bridge import (
+    tomllib,  # type: ignore[import-not-found]  # ty: ignore[unused-type-ignore-comment]
+)
+
 
 # TODO: this probably goes in utils (and SHOULD NOT BE vulnerable to 'open' MOCKING)
 def load_config_from_file(pyproject_path: str) -> dict:

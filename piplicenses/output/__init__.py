@@ -28,18 +28,19 @@ SOFTWARE.
 """
 
 
-from .. import (
-    __pkgname__,  # noqa: F401 -- Re-export as part of data API
-    __version__,  # noqa: F401 -- Re-export as part of data API
-    SUMMARY_OUTPUT_FIELDS,
-    DEFAULT_OUTPUT_FIELDS,
-)
-
 # placeholder for strs
 from typing import (
-    cast,  # noqa: F401 -- (used by piplicenses.outpup.CSVPrettyTable)
     Union,
+    cast,  # noqa: F401 -- (used by piplicenses.output.CSVPrettyTable)
 )
+
+from .. import (
+    DEFAULT_OUTPUT_FIELDS,
+    SUMMARY_OUTPUT_FIELDS,
+    __pkgname__,  # noqa: F401 -- Re-export as part of data API
+    __version__,  # noqa: F401 -- Re-export as part of data API
+)
+
 #    because we are limmited in python3.9 still by https://docs.python.org/3.9/library/stdtypes.html#dict
 #    we create a simple value type for now:
 strs = Union[str, list[str]]
@@ -47,18 +48,18 @@ strs = Union[str, list[str]]
 # or perhaps just PEP-589 (TypedDict)
 
 
-from .consoles import (
-    save_if_needs,
-    output_colored,
-)
-
 from ..cli import (
     CustomNamespace,
 )
-
 from ..sorting import (
     SetLike,  # noqa: F401 -- Re-export as part of our internal typing API
 )
+from .consoles import (
+    output_colored,
+    save_if_needs,
+)
+from .CSVPrettyTable import CSVPrettyTable
+from .JsonLicenseFinderTable import JsonLicenseFinderTable
 
 # placeholder for
 #from prettytable import (
@@ -66,15 +67,8 @@ from ..sorting import (
 #    PrettyTable,
 #    RowType,
 #)
-
-
 from .JsonPrettyTable import JsonPrettyTable
-from .JsonLicenseFinderTable import JsonLicenseFinderTable
-from .CSVPrettyTable import CSVPrettyTable
-
-
 from .PlainVerticalTable import PlainVerticalTable
-
 from .tables import factory_styled_table_with_args
 
 
@@ -169,14 +163,14 @@ def create_output_string(args: CustomNamespace) -> str:
 
 # re-export for backwards compatibility and a stable API
 __all__ = [
-    """JsonPrettyTable""",
-    """JsonLicenseFinderTable""",
     """CSVPrettyTable""",
+    """JsonLicenseFinderTable""",
+    """JsonPrettyTable""",
     """PlainVerticalTable""",
-    """factory_styled_table_with_args""",
-    """tables""",
-    """get_output_fields""",
     """create_output_string""",
-    """save_if_needs""",
+    """factory_styled_table_with_args""",
+    """get_output_fields""",
     """output_colored""",
+    """save_if_needs""",
+    """tables""",
 ]

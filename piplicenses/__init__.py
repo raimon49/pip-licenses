@@ -33,17 +33,22 @@ from collections import Counter
 from collections.abc import Generator, Iterable, Iterator, Sequence
 from functools import partial
 from io import open as _real_io_open
+# TODO: or could use import builtins and builtins.io
 from pathlib import Path
+
 # PEP 649 does not support annotations that are conditionally defined in the body of a module
 from typing import (
     TYPE_CHECKING,  # DEPRECIATED in v6.0+ -- see PEP 749
-    cast,
     Union,
+    cast,
 )
+
 from prettytable import PrettyTable
+
 # From our own stuff (pip-licenses)
 # start with "bridges" (e.g., shims)
 from .tomli_bridge import tomllib
+
 # Must declare this ASAP as most other component will re-import it
 __pkgname__ = "pip-licenses"  # expose package name with a dash (but canonicalized will ignore dash)
 __version__ = "6.0.0b6"  # (dev-v6.0 branch
@@ -51,7 +56,6 @@ __version__ = "6.0.0b6"  # (dev-v6.0 branch
 #   as most other component will also re-import this from the package scope
 #   this keeps the .constants package internal and somewhat hidden for now
 from .constants import (
-    __summary__,  # noqa: F401 -- Re-export as part of API
     DEFAULT_OUTPUT_FIELDS,
     FALLBACK_URL_KEY,  # noqa: F401 -- (used by piplicenses.core)
     FIELD_NAMES,  # noqa: F401 -- Re-export as part of API
@@ -69,7 +73,9 @@ from .constants import (
     SUMMARY_FIELD_NAMES,
     SUMMARY_OUTPUT_FIELDS,  # noqa: F401 -- (used by piplicenses.output)
     VERSION_PATTERN,
+    __summary__,  # noqa: F401 -- Re-export as part of API
 )
+
 # Now import lightweight modules that don't need other stuff
 # DEPRECATED from public API as of v6.0.0
 #from .sorting import (
@@ -193,9 +199,9 @@ def deduplicate_and_normalize(
 
 # Next is the core functionality, needed by rest of package
 from .core import (
-    get_packages,
     SYSTEM_PACKAGES,  # noqa: F401 -- Re-export as part of API? (for v6.0.x; deprecate in 6.1.x)
     find_license_from_classifier,  # noqa: F401 -- Re-export as part of API
+    get_packages,
     select_license_by_source,
 )
 
@@ -252,8 +258,8 @@ def _handle_multiple_value_field(
 
 from .cli import (
     CustomNamespace,
-# if not for regressions in testing,
-# perhaps, this should go in sorting (only used by piplicenses.output.create_output_string())
+    # if not for regressions in testing,
+    # perhaps, this should go in sorting (only used by piplicenses.output.create_output_string())
     get_sortby,  # noqa: F401  # DEPRECIATED in v6.0+
 )
 
@@ -358,17 +364,17 @@ open = _real_io_open  # noqa: PLW0127  # set to _real_io_open (before monkey pat
 
 # Outoput/Tables API should be close to the end, logically
 from .output import (
-    JsonPrettyTable,  # noqa: F401 -- Re-export as part of API
-    JsonLicenseFinderTable,  # noqa: F401 -- Re-export as part of API
     CSVPrettyTable,  # noqa: F401 -- Re-export as part of API
+    JsonLicenseFinderTable,  # noqa: F401 -- Re-export as part of API
+    JsonPrettyTable,  # noqa: F401 -- Re-export as part of API
     PlainVerticalTable,  # noqa: F401 -- Re-export as part of API
-    get_output_fields,  # noqa: F401 -- Re-export as part of API
     create_output_string,  # noqa: F401 -- Re-export as part of API
     # if not for regressions in testing,
     # perhaps, this should be hidden (not really intended for API)
     factory_styled_table_with_args,
-    save_if_needs,  # noqa: F401 -- only exposed for monkey patching in tests
+    get_output_fields,  # noqa: F401 -- Re-export as part of API
     output_colored,
+    save_if_needs,  # noqa: F401 -- only exposed for monkey patching in tests
 )
 
 

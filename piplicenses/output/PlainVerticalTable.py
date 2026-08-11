@@ -28,17 +28,14 @@ SOFTWARE.
 """
 
 
-from .. import (
-    __pkgname__,  # noqa: F401 -- Re-export as part of data API
-    __version__,  # noqa: F401 -- Re-export as part of data API
-)
-
-
 from prettytable import (
     PrettyTable,
 )
 
-
+from .. import (
+    __pkgname__,  # noqa: F401 -- Re-export as part of data API
+    __version__,  # noqa: F401 -- Re-export as part of data API
+)
 from . import strs
 
 

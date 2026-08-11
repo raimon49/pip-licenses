@@ -28,14 +28,15 @@ SOFTWARE.
 """
 
 # Package constants
-from . import (
-    __pkgname__,  # noqa: F401 -- Re-export as part of data API
-    __version__,  # noqa: F401 -- Re-export as part of data API
-    Sequence,
-)
 from re import (
     Pattern,
     compile,
+)
+
+from . import (
+    Sequence,
+    __pkgname__,  # noqa: F401 -- Re-export as part of data API
+    __version__,  # noqa: F401 -- Re-export as part of data API
 )
 
 __summary__ = (

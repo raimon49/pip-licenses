@@ -26,12 +26,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+from typing import Union
+
 from . import (
     __pkgname__,  # noqa: F401 -- Re-export as part of data API
     __version__,  # noqa: F401 -- Re-export as part of data API
 )
-
-from typing import Union
 
 SetLike = Union[set[str], list[str], tuple, frozenset]
 

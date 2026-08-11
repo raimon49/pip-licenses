@@ -28,42 +28,41 @@ SOFTWARE.
 """
 
 
-from . import (
-    __pkgname__,
-    __version__,  # noqa: F401 -- Re-export as part of data API
-    TYPE_CHECKING,  # noqa: F401 -- Re-export as part of our internal typing API
-    deduplicate_and_normalize,
-    LEGACY_AUTHORS_BY_FILE_PATTERN,
-    LEGACY_LICENSE_BY_FILE_PATTERN,
-    LEGACY_NOTICE_BY_FILE_PATTERN,
-    LICENSE_BY_OTHER_FILE_PATTERN,
-    LICENSE_UNKNOWN,
-    normalize_pkg_name_and_version,
-    normalize_pkg_name,
-    FILE_MISSING,
-)
-
-
 import sys
 
-# for typing
-from email.message import Message
-from typing import (
-    cast,
-    Union,
-)
 # NullableStr = Union[str, None]
 # strs = Union[str, list[str]]
 from collections.abc import Callable, Iterator
+
+# for typing
+from email.message import Message
 from importlib import metadata as importlib_metadata
 from importlib.metadata import (
     Distribution,
     PackagePath,
 )
+from typing import (
+    Union,
+    cast,
+)
 
+from . import (
+    FILE_MISSING,
+    LEGACY_AUTHORS_BY_FILE_PATTERN,
+    LEGACY_LICENSE_BY_FILE_PATTERN,
+    LEGACY_NOTICE_BY_FILE_PATTERN,
+    LICENSE_BY_OTHER_FILE_PATTERN,
+    LICENSE_UNKNOWN,
+    TYPE_CHECKING,  # noqa: F401 -- Re-export as part of our internal typing API
+    __pkgname__,
+    __version__,  # noqa: F401 -- Re-export as part of data API
+    deduplicate_and_normalize,
+    normalize_pkg_name,
+    normalize_pkg_name_and_version,
+)
 from .cli import (
-    FromArg,
     CustomNamespace,
+    FromArg,
 )
 
 SYSTEM_PACKAGES: list[str] = [

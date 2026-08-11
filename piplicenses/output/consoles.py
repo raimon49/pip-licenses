@@ -27,14 +27,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+import sys
+
+from .. import open
 from . import (
     __pkgname__,  # noqa: F401 -- Re-export as part of data API
     __version__,  # noqa: F401 -- Re-export as part of data API
 )
-
-from .. import open
-
-import sys
 
 # placeholder for imports like sys, OSError, etc.
 
@@ -76,6 +75,6 @@ def save_if_needs(output_file: str, output_string: str) -> None:
 
 
 __all__ = [
-    """save_if_needs""",
     """output_colored""",
+    """save_if_needs""",
 ]

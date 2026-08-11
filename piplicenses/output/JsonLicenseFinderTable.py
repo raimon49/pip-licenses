@@ -28,23 +28,19 @@ SOFTWARE.
 """
 
 
-from .. import (
-    __pkgname__,  # noqa: F401 -- Re-export as part of data API
-    __version__,  # noqa: F401 -- Re-export as part of data API
-)
-
-
-from prettytable import (
-    RowType,
-)
-
-
 # import included here in order to limit dependencies
 # if not interested in JSON output,
 # then the dependency is not required
 import json
 
+from prettytable import (
+    RowType,
+)
 
+from .. import (
+    __pkgname__,  # noqa: F401 -- Re-export as part of data API
+    __version__,  # noqa: F401 -- Re-export as part of data API
+)
 from . import strs
 from .JsonPrettyTable import JsonPrettyTable
 
