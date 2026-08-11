@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # vim:fenc=utf-8 ff=unix ft=python ts=4 sw=4 sts=4 si et
 """
-pip-licenses.cli.config
+pip-licenses.output
 
 MIT License
 
@@ -27,51 +27,43 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from . import (
-    __pkgname__,
-    __version__,
-    annotations,
-    TYPE_CHECKING,
-)
 
-import argparse
-
-from .pseudoChoices import (
-    FromArg,
-    OrderArg,
-    FormatArg,
+from .. import (
+    __pkgname__,  # noqa: F401 -- Re-export as part of data API
+    __version__,  # noqa: F401 -- Re-export as part of data API
+    annotations,  # noqa: F401 -- from piplicenses.__future__ -> piplicenses.output
+    TYPE_CHECKING,  # noqa: F401 -- Re-export as part of our internal typing API
 )
 
 
-class CustomNamespace(argparse.Namespace):
-    from_: FromArg
-    order: OrderArg
-    format_: FormatArg
-    summary: bool
-    output_file: str
-    ignore_packages: list[str]
-    packages: list[str]
-    with_system: bool
-    with_authors: bool
-    with_urls: bool
-    with_description: bool
-    with_license_file: bool
-    with_license_files: bool  # added in v6.0
-    no_license_path: bool
-    with_notice_file: bool
-    with_notice_files: bool  # added in v6.0
-    with_other_files: bool  # added in v6.0
-    filter_strings: bool
-    filter_code_page: str
-    partial_match: bool
-    fail_on: str = None
-    allow_only: str = None
+from prettytable import (
+    PrettyTable,
+    RowType,
+)
 
 
-Configuration = CustomNamespace
+# import included here in order to limit dependencies
+# if not interested in JSON output,
+# then the dependency is not required
+import json
+
+
+from . import strs
+
+
+class JsonPrettyTable(PrettyTable):
+    """PrettyTable-like class exporting to JSON"""
+
+    def format_row(self, row: RowType) -> dict[str, strs]:
+        return dict(zip(self._field_names, row))
+
+    def get_string(self, **kwargs: strs) -> str:
+        options = self._get_options(kwargs)
+        rows = self._get_rows(options)
+        lines = [self.format_row(row) for row in rows]
+        return json.dumps(lines, indent=2, sort_keys=True)
 
 
 __all__ = [
-    """Configuration""",
-    """CustomNamespace""",
+    """JsonPrettyTable""",
 ]

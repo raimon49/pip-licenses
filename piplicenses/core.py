@@ -29,13 +29,10 @@ SOFTWARE.
 
 from . import (
     __pkgname__,
-    __version__,
-    __summary__,
-    annotations,
-    TYPE_CHECKING,
+    __version__,  # noqa: F401 -- Re-export as part of data API
+    annotations,  # noqa: F401 -- from piplicenses.__future__
+    TYPE_CHECKING,  # noqa: F401 -- Re-export as part of our internal typing API
     deduplicate_and_normalize,
-    DEFAULT_OUTPUT_FIELDS,
-    FIELD_NAMES,
     LEGACY_AUTHORS_BY_FILE_PATTERN,
     LEGACY_LICENSE_BY_FILE_PATTERN,
     LEGACY_NOTICE_BY_FILE_PATTERN,
@@ -43,8 +40,6 @@ from . import (
     LICENSE_UNKNOWN,
     normalize_pkg_name_and_version,
     normalize_pkg_name,
-    SUMMARY_FIELD_NAMES,
-    SUMMARY_OUTPUT_FIELDS,
     FILE_MISSING,
 )
 
@@ -67,7 +62,6 @@ from importlib.metadata import (
 )
 
 from .cli import (
-    pseudoChoices,
     FromArg,
     CustomNamespace,
 )
@@ -302,7 +296,7 @@ def _get_pkg_included_file(
     Attempt to find the package's included file on disk and return the
     tuple (included_file_path, included_file_contents).
     """
-    included_file = None
+    included_file = FILE_MISSING
     included_text = LICENSE_UNKNOWN
     matched_rel_paths = _filter_pkg_included_paths(pkg, file_names_rgx)
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # vim:fenc=utf-8 ff=unix ft=python ts=4 sw=4 sts=4 si et
 """
-pip-licenses
+pip-licenses.cli.pseudoChoices
 
 MIT License
 
@@ -28,9 +28,11 @@ SOFTWARE.
 """
 
 from . import (
-    __pkgname__,
-    __version__,
-    annotations,
+    __pkgname__,  # noqa: F401 -- Re-export as part of __main__ API
+    __version__,  # noqa: F401 -- Re-export as part of __main__ API
+    annotations,  # noqa: F401 -- from piplicenses.__future__ -> piplicenses.cli
+    TYPE_CHECKING,  # noqa: F401 -- Re-export as part of our internal typing API
+# pseudoChoices does not seem to use annotations,
 )
 
 

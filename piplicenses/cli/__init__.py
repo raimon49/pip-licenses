@@ -31,23 +31,18 @@ from .. import (
     __pkgname__,
     __version__,
     __summary__,
-    annotations,
-    TYPE_CHECKING,
+    annotations,  # noqa: F401 -- from piplicenses.__future__
+    TYPE_CHECKING,  # noqa: F401 -- Re-export as part of our internal typing API
+    cast,
 )
 
 import argparse
 import codecs
 import sys
 
-import os
-import re
-import subprocess
-
-from collections import Counter
-from collections.abc import Callable, Generator, Iterable, Iterator, Sequence
+from collections.abc import Sequence
 from functools import partial
-from importlib import metadata as importlib_metadata
-from importlib.metadata import Distribution
+from importlib import metadata as importlib_metadata  # noqa: F401 -- (used by piplicenses.core)
 from pathlib import Path
 
 from .config import (
@@ -55,17 +50,17 @@ from .config import (
 )
 
 
-if TYPE_CHECKING:
-    from typing import (
-        cast,
+#if TYPE_CHECKING:
+#    from typing import (
 # watch for PEP-3124
 #        overload,
 #        Union,
-    )
+#    )
 #    NullableInt = Union[int, None]
 
 
 # TODO: this is used elsewhere
+# perhaps, this should go in sorting?
 def get_sortby(args: CustomNamespace) -> str:
     if args.summary and args.order == OrderArg.COUNT:
         return "Count"
@@ -202,7 +197,7 @@ from .pseudoChoices import (
     FromArg,
     OrderArg,
     FormatArg,
-    value_to_enum_key,
+    value_to_enum_key,  # noqa: F401 -- Re-export as part of data API
     enum_key_to_value,
     choices_from_enum,
     get_value_from_enum,

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # vim:fenc=utf-8 ff=unix ft=python ts=4 sw=4 sts=4 si et
 """
-pip-licenses.output
+pip-licenses.__main__
 
 MIT License
 
@@ -27,53 +27,41 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-
-from .. import (
-    __pkgname__,
-    __version__,
-    annotations,
-    TYPE_CHECKING,
+from . import (
+    __pkgname__,  # noqa: F401 -- Re-export as part of __main__ API
+    __version__,  # noqa: F401 -- Re-export as part of __main__ API
+    __summary__,  # noqa: F401 -- Re-export as part of __main__ API
+    create_warn_string,  # TODO: this should be elsewhere
+# __main__ does not seem to use annotations,
 )
 
-
-from prettytable import (
-    PrettyTable,
-    RowType,
+from .cli import (
+    create_parser,
 )
 
+from .output import (
+    save_if_needs,
+    create_output_string,
+)
 
-# import included here in order to limit dependencies
-# if not interested in JSON output,
-# then the dependency is not required
-import json
-
-
-from . import strs
-from .JsonPrettyTable import JsonPrettyTable
+# placeholder for other main entry point stuff E.g.,
+# __module__ = "pip-licenses"
 
 
-class JsonLicenseFinderTable(JsonPrettyTable):
-    def format_row(self, row: RowType) -> dict[str, strs]:
-        resrow: dict[str, strs] = {}
-        for field, value in zip(self._field_names, row):
-            if field == "Name":
-                resrow["name"] = value
+def main() -> None:  # pragma: no cover
+    parser = create_parser()
+    args = parser.parse_args()
 
-            if field == "Version":
-                resrow["version"] = value
+    output_string = create_output_string(args)
 
-            if field == "License":
-                resrow["licenses"] = [value]
+    output_file = args.output_file
+    save_if_needs(output_file, output_string)
 
-        return resrow
-
-    def get_string(self, **kwargs: strs) -> str:
-        options = self._get_options(kwargs)
-        rows = self._get_rows(options)
-        lines = [self.format_row(row) for row in rows]
-        return json.dumps(lines, sort_keys=True)
+    print(output_string)
+    warn_string = create_warn_string(args)
+    if warn_string:
+        print(warn_string, file=sys.stderr)
 
 
-__all__ = [
-    """JsonLicenseFinderTable""",
-]
+if __name__ == "__main__":  # pragma: no cover
+    main()

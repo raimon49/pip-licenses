@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # vim:fenc=utf-8 ff=unix ft=python ts=4 sw=4 sts=4 si et
 """
-pip-licenses.output.consoles
+pip-licenses.cli.config
 
 MIT License
 
@@ -28,55 +28,48 @@ SOFTWARE.
 """
 
 from . import (
-    __pkgname__,
-    __version__,
-    annotations,
+    __pkgname__,  # noqa: F401 -- Re-export as part of data API
+    __version__,  # noqa: F401 -- Re-export as part of data API
+    annotations,  # noqa: F401 -- from piplicenses.__future__ -> piplicenses.cli
+    TYPE_CHECKING,  # noqa: F401 -- Re-export as part of our internal typing API
+    argparse,
+)
+from .pseudoChoices import (
+    FromArg,
+    OrderArg,
+    FormatArg,
 )
 
-from .. import open
 
-import sys
+class CustomNamespace(argparse.Namespace):
+    from_: FromArg
+    order: OrderArg
+    format_: FormatArg
+    summary: bool
+    output_file: str
+    ignore_packages: list[str]
+    packages: list[str]
+    with_system: bool
+    with_authors: bool
+    with_urls: bool
+    with_description: bool
+    with_license_file: bool
+    with_license_files: bool  # added in v6.0
+    no_license_path: bool
+    with_notice_file: bool
+    with_notice_files: bool  # added in v6.0
+    with_other_files: bool  # added in v6.0
+    filter_strings: bool
+    filter_code_page: str
+    partial_match: bool
+    fail_on: str = None
+    allow_only: str = None
 
-# placeholder for imports like sys, OSError, etc.
 
-open = open  # noqa: PLW0127  # allow monkey patching
-
-# placeholder for importing colors
-
-def output_colored(code: str, text: str, is_bold: bool = False) -> str:
-    """
-    Create function to output with color sequence
-    """
-    if is_bold:
-        code = f"1;{code}"
-
-    return f"\033[{code}m{text}\033[0m"
-
-
-def save_if_needs(output_file: str, output_string: str) -> None:
-    """
-    Save to path given by args
-
-    Raises:
-        SystemExit: on underling filesystem failures (OSError).
-    """
-    if output_file is None:
-        return
-
-    try:
-        with open(output_file, "w", encoding="utf-8") as f:
-            f.write(output_string)
-            if not output_string.endswith("\n"):
-                # Always end output files with a new line
-                f.write("\n")
-
-        sys.stdout.write(f"created path: {output_file}\n")
-        sys.exit(0)
-    except OSError as _cause:
-        raise SystemExit("check path: --output-file\n", 1) from _cause
+Configuration = CustomNamespace
 
 
 __all__ = [
-    """save_if_needs""",
-    """output_colored""",
+    """Configuration""",
+    """CustomNamespace""",
 ]

@@ -29,13 +29,16 @@ SOFTWARE.
 
 
 from .. import (
-    __pkgname__,
-    __version__,
+    __pkgname__,  # noqa: F401 -- Re-export as part of data API
+    __version__,  # noqa: F401 -- Re-export as part of data API
 )
 
 # Breaking change: version 6 will transition to support PEP-305 csv instead of pretty table (as csv is built-in)
 
-from . import strs
+from . import (
+    cast,
+    strs,
+)
 
 from prettytable import PrettyTable
 

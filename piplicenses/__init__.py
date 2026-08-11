@@ -27,49 +27,61 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from __future__ import annotations
+from __future__ import annotations  # noqa: I001 -- Should be first because __future__
 
-import argparse
-import codecs
-import os
 import re
-import subprocess
-import sys
 from collections import Counter
-from collections.abc import Callable, Generator, Iterable, Iterator, Sequence
-from enum import Enum, auto
+from collections.abc import Generator, Iterable, Iterator, Sequence
 from functools import partial
 from io import open as _real_io_open
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
-
-from prettytable import HRuleStyle, PrettyTable, RowType
-
+from prettytable import PrettyTable
+# From our own stuff (pip-licenses)
+# start with "bridges" (e.g., shims)
 from .tomli_bridge import tomllib
-
-
-__pkgname__ = "pip-licenses"
-__version__ = "6.0.0b5"  # (dev-v6.0 branch)
-
-
+# Must declare this ASAP as most other component will re-import it
+__pkgname__ = "pip-licenses"  # expose package name with a dash (but canonicalized will ignore dash)
+__version__ = "6.0.0b5"  # (dev-v6.0 branch
+# Rationale: Try to declare these early too,
+#   as most other component will also re-import this from the package scope
+#   this keeps the .constants package internal and somewhat hidden for now
 from .constants import (
-    __summary__,
-    FIELD_NAMES,
-    SUMMARY_FIELD_NAMES,
+    __summary__,  # noqa: F401 -- Re-export as part of API
     DEFAULT_OUTPUT_FIELDS,
-    SUMMARY_OUTPUT_FIELDS,
-    PEP735_URL_KEY,
-    FALLBACK_URL_KEY,
-    KNOWN_URL_SUB_KEYS,
-    PATTERN_DELIMITER,
-    VERSION_PATTERN,
+    FALLBACK_URL_KEY,  # noqa: F401 -- (used by piplicenses.core)
+    FIELD_NAMES,  # noqa: F401 -- Re-export as part of API
+    FIELDS_TO_METADATA_KEYS,
+    FILE_MISSING,  # noqa: F401 -- Re-export as part of API
+    KNOWN_URL_SUB_KEYS,  # noqa: F401 -- (used by piplicenses.core)
+    LEGACY_AUTHORS_BY_FILE_PATTERN,  # noqa: F401 -- (used by piplicenses.core)
+    LEGACY_LICENSE_BY_FILE_PATTERN,  # noqa: F401 -- (used by piplicenses.core)
+    LEGACY_NOTICE_BY_FILE_PATTERN,  # noqa: F401 -- (used by piplicenses.core)
+    LICENSE_BY_OTHER_FILE_PATTERN,  # noqa: F401 -- (used by piplicenses.core)
     LICENSE_UNKNOWN,
-    FILE_MISSING,
-    LEGACY_LICENSE_BY_FILE_PATTERN,
-    LEGACY_NOTICE_BY_FILE_PATTERN,
-    LEGACY_AUTHORS_BY_FILE_PATTERN,
-    LICENSE_BY_OTHER_FILE_PATTERN,
+    PATTERN_DELIMITER,
+    PEP735_URL_KEY,  # noqa: F401 -- Re-export as part of API
+    # placeholder for future PEP constants
+    SUMMARY_FIELD_NAMES,
+    SUMMARY_OUTPUT_FIELDS,  # noqa: F401 -- (used by piplicenses.output)
+    VERSION_PATTERN,
 )
+# Now import lightweight modules that don't need other stuff
+# DEPRECATED from public API as of v6.0.0
+#from .sorting import (
+#    case_insensitive_set_intersect,
+#    case_insensitive_partial_match_set_intersect,
+#    case_insensitive_partial_match_set_diff,
+#    case_insensitive_set_diff,
+#)
+
+
+# may not always need these in module scope
+if TYPE_CHECKING:
+    # TODO: this probably goes somewhere else
+    from .sorting import (
+        SetLike,  # noqa: F401 -- Re-export as part of our internal typing API
+    )
 
 
 def normalize_pkg_name(pkg_name: str) -> str:
@@ -175,19 +187,12 @@ def deduplicate_and_normalize(
             seen.add(norm_pkg)
             yield norm_pkg
 
-
-# Mapping of FIELD_NAMES to METADATA_KEYS where they differ by more than case
-FIELDS_TO_METADATA_KEYS: dict[str, str] = {
-    "URL": "home-page",
-    "Description": "summary",
-    "License-Metadata": "license",
-    "License-Classifier": "license_classifier",
-    "License-Expression": "license_expression",
-}
-
+# Next is the core functionality, needed by rest of package
 from .core import (
     get_packages,
-    SYSTEM_PACKAGES,
+    SYSTEM_PACKAGES,  # noqa: F401 -- Re-export as part of API? (for v6.0.x; deprecate in 6.1.x)
+    find_license_from_classifier,  # noqa: F401 -- Re-export as part of API
+    select_license_by_source,
 )
 
 
@@ -329,38 +334,12 @@ def create_summary_table(args: CustomNamespace) -> PrettyTable:
     return table
 
 
-# may not need these in module scope
-# TODO: remove these from module API (instead keep as only internal)
-from .sorting import (
-    case_insensitive_set_intersect,
-    case_insensitive_partial_match_set_intersect,
-    case_insensitive_partial_match_set_diff,
-    case_insensitive_set_diff,
+from .cli import (
+    CustomNamespace,
+# if not for regressions in testing,
+# perhaps, this should go in sorting (only used by piplicenses.output.create_output_string())
+    get_sortby,  # noqa: F401  # DEPRECIATED in v6.0+
 )
-
-
-from .core import (
-    find_license_from_classifier,
-    select_license_by_source,
-)
-
-
-# this should go in sorting -- duplicate regression
-def get_sortby(args: CustomNamespace) -> str:
-    if args.summary and args.order == OrderArg.COUNT:
-        return "Count"
-    elif args.summary or args.order == OrderArg.LICENSE:
-        return "License"
-    elif args.order == OrderArg.NAME:
-        return "Name"
-    elif args.order == OrderArg.AUTHOR and args.with_authors:
-        return "Author"
-    elif args.order == OrderArg.MAINTAINER and args.with_maintainers:
-        return "Maintainer"
-    elif args.order == OrderArg.URL and args.with_urls:
-        return "URL"
-
-    return "Name"
 
 
 def load_config_from_file(pyproject_path: str) -> dict:
@@ -373,15 +352,18 @@ def load_config_from_file(pyproject_path: str) -> dict:
 open = _real_io_open  # noqa: PLW0127  # set to _real_io_open (before monkey patching)
 
 
+# Outoput/Tables API should be close to the end, logically
 from .output import (
-    JsonPrettyTable,
-    JsonLicenseFinderTable,
-    CSVPrettyTable,
-    PlainVerticalTable,
-    get_output_fields,
-    create_output_string,
+    JsonPrettyTable,  # noqa: F401 -- Re-export as part of API
+    JsonLicenseFinderTable,  # noqa: F401 -- Re-export as part of API
+    CSVPrettyTable,  # noqa: F401 -- Re-export as part of API
+    PlainVerticalTable,  # noqa: F401 -- Re-export as part of API
+    get_output_fields,  # noqa: F401 -- Re-export as part of API
+    create_output_string,  # noqa: F401 -- Re-export as part of API
+    # if not for regressions in testing,
+    # perhaps, this should be hidden (not really intended for API)
     factory_styled_table_with_args,
-    save_if_needs,
+    save_if_needs,  # noqa: F401 -- only exposed for monkey patching in tests
     output_colored,
 )
 
@@ -411,6 +393,4 @@ def create_warn_string(args: CustomNamespace) -> str:
 
 # placeholder for something like:
 #import .cli as cli
-
-
-from .__main__ import main
+#from .__main__ import main

@@ -29,15 +29,14 @@ SOFTWARE.
 
 
 from .. import (
-    __pkgname__,
-    __version__,
-    annotations,
-    TYPE_CHECKING,
+    __pkgname__,  # noqa: F401 -- Re-export as part of data API
+    __version__,  # noqa: F401 -- Re-export as part of data API
+    annotations,  # noqa: F401 -- from piplicenses.__future__ -> piplicenses.output
+    TYPE_CHECKING,  # noqa: F401 -- Re-export as part of our internal typing API
 )
 
 
 from prettytable import (
-    PrettyTable,
     RowType,
 )
 
@@ -49,21 +48,31 @@ import json
 
 
 from . import strs
+from .JsonPrettyTable import JsonPrettyTable
 
 
-class JsonPrettyTable(PrettyTable):
-    """PrettyTable-like class exporting to JSON"""
-
+class JsonLicenseFinderTable(JsonPrettyTable):
     def format_row(self, row: RowType) -> dict[str, strs]:
-        return dict(zip(self._field_names, row))
+        resrow: dict[str, strs] = {}
+        for field, value in zip(self._field_names, row):
+            if field == "Name":
+                resrow["name"] = value
+
+            if field == "Version":
+                resrow["version"] = value
+
+            if field == "License":
+                resrow["licenses"] = [value]
+
+        return resrow
 
     def get_string(self, **kwargs: strs) -> str:
         options = self._get_options(kwargs)
         rows = self._get_rows(options)
         lines = [self.format_row(row) for row in rows]
-        return json.dumps(lines, indent=2, sort_keys=True)
+        return json.dumps(lines, sort_keys=True)
 
 
 __all__ = [
-    """JsonPrettyTable""",
+    """JsonLicenseFinderTable""",
 ]

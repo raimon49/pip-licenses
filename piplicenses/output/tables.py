@@ -29,9 +29,9 @@ SOFTWARE.
 
 
 from . import (
-    __pkgname__,
-    __version__,
-    annotations,
+    __pkgname__,  # noqa: F401 -- Re-export as part of data API
+    __version__,  # noqa: F401 -- Re-export as part of data API
+    annotations,  # noqa: F401 -- from piplicenses.__future__ -> piplicenses.output
     DEFAULT_OUTPUT_FIELDS,
 )
 from ..sorting import (
@@ -46,7 +46,6 @@ from ..cli.pseudoChoices import (
 from prettytable import (
     HRuleStyle,
     PrettyTable,
-    RowType,
 )
 from .JsonPrettyTable import JsonPrettyTable  # the class
 from .JsonLicenseFinderTable import JsonLicenseFinderTable  # the class

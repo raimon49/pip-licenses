@@ -29,17 +29,17 @@ SOFTWARE.
 
 
 from .. import (
-    __pkgname__,
-    __version__,
-    annotations,
-    TYPE_CHECKING,
+    __pkgname__,  # noqa: F401 -- Re-export as part of data API
+    __version__,  # noqa: F401 -- Re-export as part of data API
+    annotations,  # noqa: F401 -- from piplicenses.__future__ -> piplicenses.output
+    TYPE_CHECKING,  # noqa: F401 -- Re-export as part of our internal typing API
     SUMMARY_OUTPUT_FIELDS,
     DEFAULT_OUTPUT_FIELDS,
 )
 
 # placeholder for strs
 from typing import (
-    cast,
+    cast,  # noqa: F401 -- (used by piplicenses.outpup.CSVPrettyTable)
     Union,
 )
 #    because we are limmited in python3.9 still by https://docs.python.org/3.9/library/stdtypes.html#dict
@@ -59,14 +59,15 @@ from ..cli import (
 )
 
 from ..sorting import (
-    SetLike,
+    SetLike,  # noqa: F401 -- Re-export as part of our internal typing API
 )
 
-from prettytable import (
-    HRuleStyle,
-    PrettyTable,
-    RowType,
-)
+# placeholder for
+#from prettytable import (
+#    HRuleStyle,
+#    PrettyTable,
+#    RowType,
+#)
 
 
 from .JsonPrettyTable import JsonPrettyTable

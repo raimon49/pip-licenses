@@ -29,9 +29,9 @@ SOFTWARE.
 
 # Package constants
 from . import (
-    __pkgname__,
-    __version__,
-    annotations,
+    __pkgname__,  # noqa: F401 -- Re-export as part of data API
+    __version__,  # noqa: F401 -- Re-export as part of data API
+    annotations,  # noqa: F401 -- from piplicenses.__future__
     Sequence,
 )
 from re import (
@@ -57,6 +57,17 @@ FIELD_NAMES: set[str] = {
     "Description",
     "URL",
 }
+
+
+# Mapping of FIELD_NAMES to METADATA_KEYS where they differ by more than case
+FIELDS_TO_METADATA_KEYS: dict[str, str] = {
+    "URL": "home-page",
+    "Description": "summary",
+    "License-Metadata": "license",
+    "License-Classifier": "license_classifier",
+    "License-Expression": "license_expression",
+}
+
 
 # Placeholder for dynamic field names added in v6 (e.g., plural)
 
