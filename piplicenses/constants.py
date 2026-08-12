@@ -1,43 +1,43 @@
-#!/usr/bin/env python
 # vim:fenc=utf-8 ff=unix ft=python ts=4 sw=4 sts=4 si et
-"""
-pip-licenses
 
-MIT License
+# pip-licenses.data
+#
+# MIT License
+#
+# Copyright (c) 2018-2025 raimon
+# Copyright (c) 2025-2026 Mr. Walls
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
 
-Copyright (c) 2018-2025 raimon
-Copyright (c) 2025-2026 Mr. Walls
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-"""
-
-# Package constants
 from re import (
     Pattern,
     compile,
 )
+
 
 from . import (
     Sequence,
     __pkgname__,  # noqa: F401 -- Re-export as part of data API
     __version__,  # noqa: F401 -- Re-export as part of data API
 )
+
 
 __summary__ = (
     "Dump the software license list of Python packages installed with pip."
@@ -69,7 +69,20 @@ FIELDS_TO_METADATA_KEYS: dict[str, str] = {
 }
 
 
-# Placeholder for dynamic field names added in v6 (e.g., plural)
+# dynamic field names added in v6 (e.g., plural)
+DYNAMIC_FIELD_NAMES: set[str] = {
+    "LicenseFile",
+    "LicenseFiles",
+    "LicenseText",
+    "LicenseTexts",
+    "NoticeFile",
+    "NoticeFiles",
+    "NoticeText",
+    "NoticeTexts",
+    "OtherFiles",
+    "OtherTexts",
+}
+
 
 # unordered set (sorting should be done at output based on configuration)
 SUMMARY_FIELD_NAMES: set[str] = {
@@ -153,6 +166,7 @@ VERSION_PATTERN = r"""
 LICENSE_UNKNOWN: str = "UNKNOWN"
 """Placeholder when the license is undetermined"""
 
+
 # Morally, this should be typed as a path-like string
 FILE_MISSING: str = ""
 """Placeholder when the license file(s) is/are undetermined"""
@@ -160,11 +174,13 @@ FILE_MISSING: str = ""
 
 LEGACY_LICENSE_BY_FILE_PATTERN = r"""[Ll][Ii][Cc][Ee][Nn][CScs][Ee].*|[Cc][Oo][Pp][Yy][Ii][Nn][Gg].*"""
 
+
 # morally this is a glob (not a regex pattern)
 LEGACY_NOTICE_BY_FILE_PATTERN = r"""NOTICE.*"""
 
 
 LEGACY_AUTHORS_BY_FILE_PATTERN = r"""[Aa][Uu][Tt][Hh][Oo][Rr][Ss].*"""
+
 
 # TODO: [GHI-394](https://github.com/raimon49/pip-licenses/issues/349)
 LICENSE_BY_OTHER_FILE_PATTERN = r"[Aa][Uu][Tt][Hh][Oo][Rr][Ss].*|[Cc][Oo][Pp][Yy][Ii][Nn][Gg].*|[Ll][Ee][Gg][Aa][Ll].*"

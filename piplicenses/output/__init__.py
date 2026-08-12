@@ -1,47 +1,56 @@
 #!/usr/bin/env python
 # vim:fenc=utf-8 ff=unix ft=python ts=4 sw=4 sts=4 si et
+
+# pip-licenses.output
+#
+# MIT License
+#
+# Copyright (c) 2018-2025 raimon
+# Copyright (c) 2025-2026 Mr. Walls
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+
+"""pip-licenses.output
+
+To be documented.
 """
-pip-licenses.output
-
-MIT License
-
-Copyright (c) 2018-2025 raimon
-Copyright (c) 2025-2026 Mr. Walls
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-"""
 
 
-# placeholder for strs
+from functools import partial
 from typing import (
-    Union,
     cast,  # noqa: F401 -- (used by piplicenses.output.CSVPrettyTable)
+    Union,
 )
 
 from .. import (
-    DEFAULT_OUTPUT_FIELDS,
-    SUMMARY_OUTPUT_FIELDS,
     __pkgname__,  # noqa: F401 -- Re-export as part of data API
     __version__,  # noqa: F401 -- Re-export as part of data API
+    DEFAULT_OUTPUT_FIELDS,
+    DYNAMIC_FIELD_NAMES,  # noqa: F401 -- (used by piplicenses.output.tables)
+    FIELDS_TO_METADATA_KEYS,  # noqa: F401 -- (used by piplicenses.output.tables)
+    LICENSE_UNKNOWN,  # noqa: F401 -- (used by piplicenses.output.tables)
+    SUMMARY_FIELD_NAMES,  # noqa: F401 -- (used by piplicenses.output.tables)
+    SUMMARY_OUTPUT_FIELDS,
 )
 
-#    because we are limmited in python3.9 still by https://docs.python.org/3.9/library/stdtypes.html#dict
+#    because we are limited in python3.9 still by https://docs.python.org/3.9/library/stdtypes.html#dict
 #    we create a simple value type for now:
 strs = Union[str, list[str]]
 #    dict_for_rows = dict[str, strs]
@@ -49,7 +58,10 @@ strs = Union[str, list[str]]
 
 
 from ..cli import (
-    CustomNamespace,
+    FormatArg,  # used by create_output_string
+    FromArg,  # used by get_output_fields
+    Configuration,
+    get_sortby,
 )
 from ..sorting import (
     SetLike,  # noqa: F401 -- Re-export as part of our internal typing API
@@ -62,17 +74,21 @@ from .CSVPrettyTable import CSVPrettyTable
 from .JsonLicenseFinderTable import JsonLicenseFinderTable
 
 # placeholder for
-#from prettytable import (
+# from prettytable import (
 #    HRuleStyle,
 #    PrettyTable,
 #    RowType,
-#)
+# )
 from .JsonPrettyTable import JsonPrettyTable
 from .PlainVerticalTable import PlainVerticalTable
-from .tables import factory_styled_table_with_args
+from .tables import (
+    create_licenses_table,
+    create_summary_table,
+    factory_styled_table_with_args,
+)
 
 
-def get_output_fields(args: CustomNamespace) -> list[str]:
+def get_output_fields(args: Configuration) -> list[str]:
     if args.summary:
         return list(SUMMARY_OUTPUT_FIELDS)
 
@@ -144,7 +160,7 @@ def get_output_fields(args: CustomNamespace) -> list[str]:
     return output_fields
 
 # placeholder for consoles (from split-cli)
-def create_output_string(args: CustomNamespace) -> str:
+def create_output_string(args: Configuration) -> str:
     output_fields = get_output_fields(args)
 
     if args.summary:
@@ -161,13 +177,40 @@ def create_output_string(args: CustomNamespace) -> str:
         return table.get_string(fields=output_fields, sortby=sortby)
 
 
+def create_warn_string(args: Configuration) -> str:
+    from .cli import FormatArg  # workaround
+    warn_messages = []
+    warn = partial(output_colored, "33")
+
+    if args.with_license_file and args.format_ != FormatArg.JSON:
+        message = warn(
+            "Due to the length of these fields, this option is "
+            "best paired with --format=json."
+        )
+        warn_messages.append(message)
+
+    if args.summary and (args.with_authors or args.with_urls):
+        message = warn(
+            "When using this option, only --order=count or "
+            "--order=license has an effect for the --order "
+            "option. And using --with-authors and --with-urls "
+            "will be ignored."
+        )
+        warn_messages.append(message)
+
+    return "\n".join(warn_messages)
+
+
 # re-export for backwards compatibility and a stable API
 __all__ = [
     """CSVPrettyTable""",
     """JsonLicenseFinderTable""",
     """JsonPrettyTable""",
     """PlainVerticalTable""",
+    """create_licenses_table""",
     """create_output_string""",
+    """create_summary_table""",
+    """create_warn_string""",
     """factory_styled_table_with_args""",
     """get_output_fields""",
     """output_colored""",

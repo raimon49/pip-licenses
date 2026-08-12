@@ -27,23 +27,23 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-
 import re
-from collections import Counter
-from collections.abc import Generator, Iterable, Iterator, Sequence
-from functools import partial
+from collections.abc import (
+    Generator,
+    Iterable,
+    Sequence,  # noqa: F401 -- Re-export as part of internal typing API
+)
 from io import open as _real_io_open
 # TODO: or could use import builtins and builtins.io
 from pathlib import Path
+from prettytable import PrettyTable  # noqa: F401 -- Re-export as part of internal typing API
 
 # PEP 649 does not support annotations that are conditionally defined in the body of a module
 from typing import (
-    TYPE_CHECKING,  # DEPRECIATED in v6.0+ -- see PEP 749
+    cast,  # noqa: F401 -- Re-export as part of internal typing API?
+    TYPE_CHECKING,  # noqa: F401 -- DEPRECIATED in v6.0+ -- see PEP 749
     Union,
-    cast,
 )
-
-from prettytable import PrettyTable
 
 # From our own stuff (pip-licenses)
 # start with "bridges" (e.g., shims)
@@ -56,21 +56,22 @@ __version__ = "6.0.0b6"  # (dev-v6.0 branch
 #   as most other component will also re-import this from the package scope
 #   this keeps the .constants package internal and somewhat hidden for now
 from .constants import (
-    DEFAULT_OUTPUT_FIELDS,
+    DEFAULT_OUTPUT_FIELDS,  # noqa: F401 -- (used by piplicenses.output)
+    DYNAMIC_FIELD_NAMES,  # noqa: F401 -- (used by piplicenses.output.tables)
     FALLBACK_URL_KEY,  # noqa: F401 -- (used by piplicenses.core)
     FIELD_NAMES,  # noqa: F401 -- Re-export as part of API
-    FIELDS_TO_METADATA_KEYS,
+    FIELDS_TO_METADATA_KEYS,  # noqa: F401 -- (used by piplicenses.output)
     FILE_MISSING,  # noqa: F401 -- Re-export as part of API
     KNOWN_URL_SUB_KEYS,  # noqa: F401 -- (used by piplicenses.core)
     LEGACY_AUTHORS_BY_FILE_PATTERN,  # noqa: F401 -- (used by piplicenses.core)
     LEGACY_LICENSE_BY_FILE_PATTERN,  # noqa: F401 -- (used by piplicenses.core)
     LEGACY_NOTICE_BY_FILE_PATTERN,  # noqa: F401 -- (used by piplicenses.core)
     LICENSE_BY_OTHER_FILE_PATTERN,  # noqa: F401 -- (used by piplicenses.core)
-    LICENSE_UNKNOWN,
+    LICENSE_UNKNOWN,  # noqa: F401 -- Re-export as part of API
     PATTERN_DELIMITER,
     PEP735_URL_KEY,  # noqa: F401 -- Re-export as part of API
     # placeholder for future PEP constants
-    SUMMARY_FIELD_NAMES,
+    SUMMARY_FIELD_NAMES,  # noqa: F401 -- (used by piplicenses.output.tables)
     SUMMARY_OUTPUT_FIELDS,  # noqa: F401 -- (used by piplicenses.output)
     VERSION_PATTERN,
     __summary__,  # noqa: F401 -- Re-export as part of API
@@ -79,19 +80,16 @@ from .constants import (
 # Now import lightweight modules that don't need other stuff
 # DEPRECATED from public API as of v6.0.0
 #from .sorting import (
-#    case_insensitive_set_intersect,
-#    case_insensitive_partial_match_set_intersect,
 #    case_insensitive_partial_match_set_diff,
+#    case_insensitive_partial_match_set_intersect,
 #    case_insensitive_set_diff,
+#    case_insensitive_set_intersect,
 #)
 
-
-# may not always need these in module scope
-if TYPE_CHECKING:
-    # TODO: this probably goes somewhere else
-    from .sorting import (
-        SetLike,  # noqa: F401 -- Re-export as part of our internal typing API
-    )
+# TODO: this probably goes somewhere else
+from .sorting import (
+    SetLike,  # noqa: F401 -- Re-export as part of our internal typing API
+)
 
 
 def normalize_pkg_name(pkg_name: str) -> str:
@@ -201,165 +199,27 @@ def deduplicate_and_normalize(
 from .core import (
     SYSTEM_PACKAGES,  # noqa: F401 -- Re-export as part of API? (for v6.0.x; deprecate in 6.1.x)
     find_license_from_classifier,  # noqa: F401 -- Re-export as part of API
-    get_packages,
-    select_license_by_source,
+    get_packages,  # noqa: F401 -- Re-export as part of API
+    select_license_by_source,  # noqa: F401 -- Re-export as part of API
 )
 
 
-def _handle_multiple_value_field(
-    key: str, value: Iterator[str]
-) -> Union[str, list[str]]:
-    """Normalize a metadata field that may contain one or many values.
-
-    This helper converts an iterator of field values into the most convenient
-    representation based on the field name:
-
-    - If the field name ends with ``"s"`` (case-insensitive), the values are
-      treated as plural and returned as a list.
-    - Otherwise, the first value is returned as a single string.
-    - If a plural field has no values, ``["UNKNOWN"]`` is returned.
-    - If a singular field has no values, ``LICENSE_UNKNOWN`` is returned.
-
-    Args:
-        key: The field name used to decide whether the field should be treated
-            as singular or plural.
-        value: An iterator of string values for the field.
-
-    Returns:
-        Either:
-        - a list of strings for plural fields, or
-        - a single string for singular fields.
-
-    Examples:
-        A plural field returns all values as a list:
-
-        >>> _handle_multiple_value_field("authors", iter(["Alice", "Bob"]))
-        ['Alice', 'Bob']
-
-        A singular field returns the first value:
-
-        >>> _handle_multiple_value_field("license", iter(["MIT", "BSD"]))
-        'MIT'
-
-        An empty plural field falls back to ``["UNKNOWN"]``:
-
-        >>> _handle_multiple_value_field("authors", iter([]))
-        ['UNKNOWN']
-
-        An empty singular field falls back to ``LICENSE_UNKNOWN``:
-
-        >>> _handle_multiple_value_field("license", iter([]))
-        'UNKNOWN'
-    """
-    if key.lower().endswith("s"):
-        return list(value) or [LICENSE_UNKNOWN]
-    return cast(str, next(value, LICENSE_UNKNOWN))
-
-
 from .cli import (
-    CustomNamespace,
+    Configuration,  # noqa: F401 -- Re-export as part of API
     # if not for regressions in testing,
     # perhaps, this should go in sorting (only used by piplicenses.output.create_output_string())
     get_sortby,  # noqa: F401  # DEPRECIATED in v6.0+
 )
 
 
-def create_licenses_table(
-    args: CustomNamespace,
-    output_fields: Union[set[str], Sequence[str]] = DEFAULT_OUTPUT_FIELDS,
-) -> PrettyTable:
-    table = factory_styled_table_with_args(args, output_fields)
-
-    for pkg in get_packages(args):
-        row: list[str | list[str]] = []
-        for field in output_fields:
-            if field == "License":
-                license_set = select_license_by_source(
-                    args.from_,
-                    cast(list[str], pkg["license_classifier"]),
-                    cast(str, pkg["license"]),
-                    cast(str, pkg["license_expression"]),
-                )
-                _sorted_license_set = (
-                    sorted(license_set) if license_set else []
-                )
-                _normalized_license_set = {
-                    normal_item
-                    for normal_item in _sorted_license_set
-                    if normal_item is not None
-                }
-                license_str = "; ".join(_normalized_license_set)
-                row.append(license_str)
-            elif field == "License-Classifier":
-                row.append(
-                    "; ".join(sorted(pkg["license_classifier"]))
-                    or LICENSE_UNKNOWN
-                )
-            elif field == "License-Expression":
-                row.append(
-                    cast(str, pkg["license_expression"]) or LICENSE_UNKNOWN
-                )
-            elif field == "License-Metadata":
-                row.append(cast(str, pkg["license"]) or LICENSE_UNKNOWN)
-            elif (field.lower() in pkg) or (hasattr(pkg, field.lower())):
-                row.append(cast(str, pkg[field.lower()]))
-            else:
-                if (field in FIELDS_TO_METADATA_KEYS) and (
-                    FIELDS_TO_METADATA_KEYS[field] in pkg
-                ):
-                    value = pkg[FIELDS_TO_METADATA_KEYS[field]]
-                    if value:
-                        if field in _MULTI_VALUE_KEYS:
-                            row.append(
-                                cast(
-                                    list[str],
-                                    _handle_multiple_value_field(
-                                        key=field,
-                                        value=cast(Iterator[str], [*value]),
-                                    ),
-                                )
-                            )
-                        else:
-                            row.append(cast(str, value))
-                    else:  # invalid value (e.g. None)
-                        row.append(LICENSE_UNKNOWN)
-                else:  # Unknown value (e.g. custom/future fields)
-                    row.append(LICENSE_UNKNOWN)
-
-        table.add_row(row)
-
-    return table
-
-
-def create_summary_table(args: CustomNamespace) -> PrettyTable:
-    counts = Counter(
-        "; ".join(
-            sorted(
-                select_license_by_source(
-                    args.from_,
-                    cast(list[str], pkg["license_classifier"]),
-                    cast(str, pkg["license"]),
-                    cast(str, pkg["license_expression"]),
-                )
-            )
-        )
-        for pkg in get_packages(args)
-    )
-
-    table = factory_styled_table_with_args(args, SUMMARY_FIELD_NAMES)
-    for license, count in counts.items():
-        table.add_row([count, license])
-    return table
-
-
 def load_config_from_file(pyproject_path: str) -> dict:
     if Path(pyproject_path).exists():
-        with _real_io_open(pyproject_path, "rb") as f:
+        with _real_io_open(pyproject_path, "rb") as f:  # noqa: UP020 (use io.open)
             return tomllib.load(f).get("tool", {}).get(__pkgname__, {})
     return {}
 
 
-open = _real_io_open  # noqa: PLW0127  # set to _real_io_open (before monkey patching)
+open = _real_io_open  # set to _real_io_open (before monkey patching)
 
 
 # Outoput/Tables API should be close to the end, logically
@@ -368,37 +228,17 @@ from .output import (
     JsonLicenseFinderTable,  # noqa: F401 -- Re-export as part of API
     JsonPrettyTable,  # noqa: F401 -- Re-export as part of API
     PlainVerticalTable,  # noqa: F401 -- Re-export as part of API
+    create_licenses_table,  # noqa: F401 -- Re-export as part of API
     create_output_string,  # noqa: F401 -- Re-export as part of API
+    create_summary_table,  # noqa: F401 -- Re-export as part of API
+    create_warn_string,  # noqa: F401 -- Re-export as part of API
     # if not for regressions in testing,
     # perhaps, this should be hidden (not really intended for API)
-    factory_styled_table_with_args,
+    factory_styled_table_with_args,  # noqa: F401 -- Re-export as part of API
     get_output_fields,  # noqa: F401 -- Re-export as part of API
-    output_colored,
+    output_colored,  # noqa: F401 -- Re-export as part of API
     save_if_needs,  # noqa: F401 -- only exposed for monkey patching in tests
 )
-
-
-def create_warn_string(args: CustomNamespace) -> str:
-    warn_messages = []
-    warn = partial(output_colored, "33")
-
-    if args.with_license_file and args.format_ != FormatArg.JSON:
-        message = warn(
-            "Due to the length of these fields, this option is "
-            "best paired with --format=json."
-        )
-        warn_messages.append(message)
-
-    if args.summary and (args.with_authors or args.with_urls):
-        message = warn(
-            "When using this option, only --order=count or "
-            "--order=license has an effect for the --order "
-            "option. And using --with-authors and --with-urls "
-            "will be ignored."
-        )
-        warn_messages.append(message)
-
-    return "\n".join(warn_messages)
 
 
 # placeholder for something like:

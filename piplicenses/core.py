@@ -1,52 +1,60 @@
-#!/usr/bin/env python
 # vim:fenc=utf-8 ff=unix ft=python ts=4 sw=4 sts=4 si et
+
+# pip-licenses.core
+#
+# MIT License
+#
+# Copyright (c) 2018-2025 raimon
+# Copyright (c) 2025-2026 Mr. Walls
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
 """
 pip-licenses.core
 
-MIT License
+The core of the pip-licenses module.
 
-Copyright (c) 2018-2025 raimon
-Copyright (c) 2025-2026 Mr. Walls
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+To be documented.
 """
 
-
 import sys
-
-# NullableStr = Union[str, None]
-# strs = Union[str, list[str]]
 from collections.abc import Callable, Iterator
 
 # for typing
 from email.message import Message
+from functools import partial  # used in workaround for map
 from importlib import metadata as importlib_metadata
 from importlib.metadata import (
     Distribution,
     PackagePath,
 )
 from typing import (
-    Union,
+    Any,
     cast,
+    Union,
+    # NullableStr = Union[str, None]
+    # strs = Union[str, list[str]]
 )
 
 from . import (
+    re,  # import re
+    Path,  # from pathlib import Path
     FILE_MISSING,
     LEGACY_AUTHORS_BY_FILE_PATTERN,
     LEGACY_LICENSE_BY_FILE_PATTERN,
@@ -59,11 +67,21 @@ from . import (
     deduplicate_and_normalize,
     normalize_pkg_name,
     normalize_pkg_name_and_version,
+    PEP735_URL_KEY,
+    KNOWN_URL_SUB_KEYS,
+    FALLBACK_URL_KEY
 )
 from .cli import (
-    CustomNamespace,
+    Configuration,
     FromArg,
 )
+from .sorting import (
+    case_insensitive_partial_match_set_diff,
+    case_insensitive_partial_match_set_intersect,
+    case_insensitive_set_diff,
+    case_insensitive_set_intersect,
+)
+
 
 SYSTEM_PACKAGES: list[str] = [
     __pkgname__,
@@ -312,14 +330,14 @@ def _get_pkg_included_file(
     return (included_file, included_text)
 
 
-def filter_string(item: str) -> str:
+def _filter_string(item: str, config: Configuration) -> str:
     try:
         # TODO: this needs improved
         return item.encode(
-            args.filter_code_page, errors="ignore"
-        ).decode(args.filter_code_page)
+            config.filter_code_page, errors="ignore"
+        ).decode(config.filter_code_page)
     except AttributeError as _cause:  # pragma: no cover
-        _context_details = f"{item} can not be safely filtered with {args.filter_code_page}"
+        _context_details = f"{item} can not be safely filtered with {config.filter_code_page}"
         if not isinstance(item, str):
             _context_details = (
                 f"{type(item)} can not be filtered as a string"
@@ -329,22 +347,24 @@ def filter_string(item: str) -> str:
 
 def _do_filter_iteration(
     sub_item: Union[str, list[str], dict[str, Union[str, list[str], None]]],
+    config: Configuration,
 ) -> Union[str, list[str], dict[str, Union[str, list[str], None]]]:
     if isinstance(sub_item, list):
-        return list(map(filter_string, sub_item))
+        _f = partial(_filter_string, config=config)
+        return list(map(_f, sub_item))
     elif isinstance(sub_item, dict):
         _filtered_subset: dict[str, Union[str, list[str], None]] = (
             sub_item.copy()
         )
         for k, v in sub_item.items():
             if v is not None:  # Prune None values
-                _filtered_subset[k] = _do_filter_iteration(v)  # type: ignore[assignment]
+                _filtered_subset[k] = _do_filter_iteration(v, config)  # type: ignore[assignment]
         return _filtered_subset
     else:
-        return filter_string(cast(str, sub_item))
+        return _filter_string(cast(str, sub_item), config)
 
 
-def _get_pkg_info(*args, **kwargs) ->  dict[str, Union[str, list[str], dict[str, Union[str, list[str], None]]]]:
+def _get_pkg_info(*args: Any, **kwargs: Any) ->  dict[str, Union[str, list[str], dict[str, Union[str, list[str], None]]]]:
     pkg: Distribution = None
     if len(args) > 0 and isinstance(args[0], Distribution):
         pkg = cast(Distribution, args[0])
@@ -430,6 +450,8 @@ def _get_pkg_info(*args, **kwargs) ->  dict[str, Union[str, list[str], dict[str,
 
 
 def _get_python_sys_path(executable: str) -> list[str]:
+    import os
+    import subprocess
     script = "import sys; print(' '.join(filter(bool, sys.path)))"
     output = subprocess.run(
         [executable, "-c", script],
@@ -561,7 +583,7 @@ def fallback_license_retrieval(
 
 
 def get_packages(
-    args: CustomNamespace,
+    args: Configuration,
 ) -> Iterator[dict[str, Union[str, list[str], dict[str, Union[str, list[str], None]]]]]:
 
     if args.python == sys.executable:

@@ -1,37 +1,41 @@
 #!/usr/bin/env python
 # vim:fenc=utf-8 ff=unix ft=python ts=4 sw=4 sts=4 si et
-"""
-pip-licenses
 
-MIT License
+# pip-licenses.cli
+#
+# MIT License
+#
+# Copyright (c) 2018-2025 raimon
+# Copyright (c) 2025-2026 Mr. Walls
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
 
-Copyright (c) 2018-2025 raimon
-Copyright (c) 2025-2026 Mr. Walls
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+"""pip-licenses.cli
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+To be documented.
 """
 
 import argparse
 import codecs
 import sys
 from collections.abc import Sequence
-from functools import partial
 from importlib import (
     metadata as importlib_metadata,  # noqa: F401 -- (used by piplicenses.core)
 )
@@ -43,7 +47,9 @@ from .. import (
     __version__,
     cast,
 )
+from enum import Enum  # used by helper _expand_help
 from .config import (
+    Configuration,
     CustomNamespace,  # to be deprecated in v6
 )
 
@@ -58,7 +64,7 @@ from .config import (
 
 # TODO: this is used elsewhere
 # perhaps, this should go in sorting?
-def get_sortby(args: CustomNamespace) -> str:
+def get_sortby(args: Configuration) -> str:
     if args.summary and args.order == OrderArg.COUNT:
         return "Count"
     elif args.summary or args.order == OrderArg.LICENSE:
@@ -73,30 +79,6 @@ def get_sortby(args: CustomNamespace) -> str:
         return "URL"
 
     return "Name"
-
-
-def create_warn_string(args: CustomNamespace) -> str:
-    warn_messages = []
-    warn = partial(output_colored, "33")
-
-    if args.with_license_file and args.format_ != FormatArg.JSON:
-        message = warn(
-            "Due to the length of these fields, this option is "
-            "best paired with --format=json."
-        )
-        warn_messages.append(message)
-
-    if args.summary and (args.with_authors or args.with_urls):
-        message = warn(
-            "When using this option, only --order=count or "
-            "--order=license has an effect for the --order "
-            "option. And using --with-authors and --with-urls "
-            "will be ignored."
-        )
-        warn_messages.append(message)
-
-    return "\n".join(warn_messages)
-
 
 class CustomHelpFormatter(argparse.HelpFormatter):  # pragma: no cover
     def __init__(
@@ -150,11 +132,11 @@ class CompatibleArgumentParser(argparse.ArgumentParser):
         args: Sequence[str] = None,
         namespace: CustomNamespace = None,
     ) -> CustomNamespace:
-        args_ = cast(CustomNamespace, super().parse_args(args, namespace))
+        args_ = cast(Configuration, super().parse_args(args, namespace))
         self._verify_args(args_)
         return args_
 
-    def _verify_args(self, args: CustomNamespace) -> None:
+    def _verify_args(self, args: Configuration) -> None:
         if (
             args.with_license_file is False
             and args.with_license_files is False
@@ -202,8 +184,8 @@ from .pseudoChoices import (
 
 
 class SelectAction(argparse.Action):
-
-    MAP_DEST_TO_ENUM: dict[str, type[NoValueEnum]] = {
+    # See https://github.com/astral-sh/ruff/issues/5243
+    MAP_DEST_TO_ENUM: dict[str, type[NoValueEnum]] = {  # noqa: RUF100,RUF012
         "from_": FromArg,
         "order": OrderArg,
         "format_": FormatArg,
@@ -216,7 +198,7 @@ class SelectAction(argparse.Action):
         values: str,
         option_string: str = None,
     ) -> None:
-        enum_cls = MAP_DEST_TO_ENUM[self.dest]
+        enum_cls = type(self).MAP_DEST_TO_ENUM[self.dest]
         setattr(namespace, self.dest, get_value_from_enum(enum_cls, values))
 
 
