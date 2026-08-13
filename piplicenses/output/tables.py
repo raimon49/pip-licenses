@@ -32,17 +32,18 @@ pip-licenses.output.tables
 To be documented.
 """
 
-
 from collections import Counter
 from collections.abc import (
     Iterator,
     Sequence,
 )
+from typing import Union
+
 from prettytable import (
     HRuleStyle,
     PrettyTable,
 )
-from typing import Union
+
 from ..cli import (
     Configuration,
 )
@@ -50,8 +51,8 @@ from ..cli.pseudoChoices import (
     FormatArg,
 )
 from ..core import (
-    select_license_by_source,
     get_packages,
+    select_license_by_source,
 )
 from ..sorting import (
     SetLike,
@@ -67,14 +68,14 @@ from . import (
     cast,
 )
 from .CSVPrettyTable import CSVPrettyTable  # the class
+from .JsonLicenseFinderTable import JsonLicenseFinderTable  # the class
 from .JsonPrettyTable import JsonPrettyTable  # the class
-from .JsonLicenseFinderTable import JsonLicenseFinderTable # the class
 from .PlainVerticalTable import PlainVerticalTable  # the class
 
 
 def factory_styled_table_with_args(
     args: Configuration,
-    output_fields: SetLike = DEFAULT_OUTPUT_FIELDS,
+    output_fields: Union[SetLike, Sequence[str]] = DEFAULT_OUTPUT_FIELDS,
 ) -> PrettyTable:
     table = PrettyTable()
     table.field_names = output_fields  # type: ignore[assignment]
@@ -158,6 +159,7 @@ def _handle_multiple_value_field(
     return cast(str, next(value, LICENSE_UNKNOWN))
 
 
+# TODO: change to accept set-like
 def create_licenses_table(
     args: Configuration,
     output_fields: Union[set[str], Sequence[str]] = DEFAULT_OUTPUT_FIELDS,
@@ -165,7 +167,7 @@ def create_licenses_table(
     table = factory_styled_table_with_args(args, output_fields)
 
     for pkg in get_packages(args):
-        row: list[str | list[str]] = []
+        row: list[Union[str, list[str]]] = []
         for field in output_fields:
             if field == "License":
                 license_set = select_license_by_source(

@@ -34,15 +34,19 @@ from collections.abc import (
     Sequence,  # noqa: F401 -- Re-export as part of internal typing API
 )
 from io import open as _real_io_open
+
 # TODO: or could use import builtins and builtins.io
 from pathlib import Path
-from prettytable import PrettyTable  # noqa: F401 -- Re-export as part of internal typing API
 
 # PEP 649 does not support annotations that are conditionally defined in the body of a module
 from typing import (
-    cast,  # noqa: F401 -- Re-export as part of internal typing API?
     TYPE_CHECKING,  # noqa: F401 -- DEPRECIATED in v6.0+ -- see PEP 749
     Union,
+    cast,  # noqa: F401 -- Re-export as part of internal typing API?
+)
+
+from prettytable import (
+    PrettyTable,  # noqa: F401 -- Re-export as part of internal typing API
 )
 
 # From our own stuff (pip-licenses)
@@ -79,13 +83,12 @@ from .constants import (
 
 # Now import lightweight modules that don't need other stuff
 # DEPRECATED from public API as of v6.0.0
-#from .sorting import (
+# from .sorting import (
 #    case_insensitive_partial_match_set_diff,
 #    case_insensitive_partial_match_set_intersect,
 #    case_insensitive_set_diff,
 #    case_insensitive_set_intersect,
-#)
-
+# )
 # TODO: this probably goes somewhere else
 from .sorting import (
     SetLike,  # noqa: F401 -- Re-export as part of our internal typing API
@@ -195,20 +198,19 @@ def deduplicate_and_normalize(
             seen.add(norm_pkg)
             yield norm_pkg
 
+
 # Next is the core functionality, needed by rest of package
-from .core import (
-    SYSTEM_PACKAGES,  # noqa: F401 -- Re-export as part of API? (for v6.0.x; deprecate in 6.1.x)
-    find_license_from_classifier,  # noqa: F401 -- Re-export as part of API
-    get_packages,  # noqa: F401 -- Re-export as part of API
-    select_license_by_source,  # noqa: F401 -- Re-export as part of API
-)
-
-
 from .cli import (
     Configuration,  # noqa: F401 -- Re-export as part of API
     # if not for regressions in testing,
     # perhaps, this should go in sorting (only used by piplicenses.output.create_output_string())
     get_sortby,  # noqa: F401  # DEPRECIATED in v6.0+
+)
+from .core import (
+    SYSTEM_PACKAGES,  # noqa: F401 -- Re-export as part of API? (for v6.0.x; deprecate in 6.1.x)
+    find_license_from_classifier,  # noqa: F401 -- Re-export as part of API
+    get_packages,  # noqa: F401 -- Re-export as part of API
+    select_license_by_source,  # noqa: F401 -- Re-export as part of API
 )
 
 
@@ -222,7 +224,7 @@ def load_config_from_file(pyproject_path: str) -> dict:
 open = _real_io_open  # set to _real_io_open (before monkey patching)
 
 
-# Outoput/Tables API should be close to the end, logically
+# Output/Tables API should be close to the end, logically
 from .output import (
     CSVPrettyTable,  # noqa: F401 -- Re-export as part of API
     JsonLicenseFinderTable,  # noqa: F401 -- Re-export as part of API
@@ -240,7 +242,32 @@ from .output import (
     save_if_needs,  # noqa: F401 -- only exposed for monkey patching in tests
 )
 
+if "6.0." in __version__:
+    # DEPRECIATED in v6.0+ (but part of legacy API)
+    # the following are ONLY imported (and/or re-exported) as part
+    # of the pip licenses module to ensure no regressions when
+    # migrating to version 6.0 (and SUBJECT TO REMOVAL in v6.1+)
+    from .cli import (
+        CompatibleArgumentParser,  # noqa: F401 -- DEPRECIATED in v6.0+
+        FromArg,  # noqa: F401 -- DEPRECIATED in v6.0+
+        create_parser,  # noqa: F401 -- DEPRECIATED in v6.0+
+        enum_key_to_value,  # noqa: F401 -- DEPRECIATED in v6.0+
+        value_to_enum_key,  # noqa: F401 -- DEPRECIATED in v6.0+
+    )
+    from .core import (
+        extract_homepage,  # noqa: F401 -- DEPRECIATED in v6.0+
+        extract_urls,  # noqa: F401 -- DEPRECIATED in v6.0+
+        importlib_metadata,  # noqa: F401 -- DEPRECIATED in v6.0+
+    )
 
-# placeholder for something like:
-#import .cli as cli
-#from .__main__ import main
+if "6.0.0" in __version__:
+    # DEPRECIATED in v6.0+ (but part of legacy API)
+    # the following are ONLY imported (and/or re-exported) as part
+    # of the pip licenses module to ensure no regressions when
+    # migrating to version 6.0 (and SUBJECT TO REMOVAL in v6.0.1+)
+    from .sorting import (
+        case_insensitive_partial_match_set_diff,  # noqa: F401 -- DEPRECIATED in v6.0+ (will remove in 6.0.1)
+        case_insensitive_partial_match_set_intersect,  # noqa: F401 -- DEPRECIATED in v6.0+ (will remove in 6.0.1)
+        case_insensitive_set_diff,  # noqa: F401 -- DEPRECIATED in v6.0+ (will remove in 6.0.1)
+        case_insensitive_set_intersect,  # noqa: F401 -- DEPRECIATED in v6.0+ (will remove in 6.0.1)
+    )

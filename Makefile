@@ -210,6 +210,7 @@ full-clean:: local-uninstall clean
 	$(RM) -vr *.egg-info 2>$(ERROR_LOG_PATH) || true ;
 	$(RMDIR) -v ./__pycache__ 2>$(ERROR_LOG_PATH) || true ;
 	$(RMDIR) -v ./{piplicenses,tests}/__pycache__ 2>$(ERROR_LOG_PATH) || true ;
+	$(RMDIR) -v ./piplicenses/{cli,output}/__pycache__ 2>$(ERROR_LOG_PATH) || true ;
 	$(RMDIR) -v ./.coverage 2>$(ERROR_LOG_PATH) || true ;
 	$(RMDIR) -v ./.mypy_cache 2>$(ERROR_LOG_PATH) || true ;
 	$(RMDIR) -v ./.ruff_cache 2>$(ERROR_LOG_PATH) || true ;

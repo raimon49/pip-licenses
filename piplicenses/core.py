@@ -34,7 +34,10 @@ To be documented.
 """
 
 import sys
-from collections.abc import Callable, Iterator
+from collections.abc import (
+    Callable,
+    Iterator,
+)  # See https://github.com/raimon49/pip-licenses/issues/360
 
 # for typing
 from email.message import Message
@@ -45,31 +48,32 @@ from importlib.metadata import (
     PackagePath,
 )
 from typing import (
+    # See https://github.com/raimon49/pip-licenses/issues/360
     Any,
-    cast,
     Union,
     # NullableStr = Union[str, None]
     # strs = Union[str, list[str]]
+    cast,
 )
 
 from . import (
-    re,  # import re
-    Path,  # from pathlib import Path
+    FALLBACK_URL_KEY,
     FILE_MISSING,
+    KNOWN_URL_SUB_KEYS,
     LEGACY_AUTHORS_BY_FILE_PATTERN,
     LEGACY_LICENSE_BY_FILE_PATTERN,
     LEGACY_NOTICE_BY_FILE_PATTERN,
     LICENSE_BY_OTHER_FILE_PATTERN,
     LICENSE_UNKNOWN,
+    PEP735_URL_KEY,
     TYPE_CHECKING,  # noqa: F401 -- Re-export as part of our internal typing API
+    Path,  # from pathlib import Path
     __pkgname__,
     __version__,  # noqa: F401 -- Re-export as part of data API
     deduplicate_and_normalize,
     normalize_pkg_name,
     normalize_pkg_name_and_version,
-    PEP735_URL_KEY,
-    KNOWN_URL_SUB_KEYS,
-    FALLBACK_URL_KEY
+    re,  # import re
 )
 from .cli import (
     Configuration,
@@ -82,6 +86,8 @@ from .sorting import (
     case_insensitive_set_intersect,
 )
 
+# See https://github.com/raimon49/pip-licenses/issues/360
+NullableStrList = Union[list[Union[str, None]], None]
 
 SYSTEM_PACKAGES: list[str] = [
     __pkgname__,
@@ -275,7 +281,8 @@ def extract_license_from_classifiers(metadata: Message) -> list[str]:
 
 
 # placeholder for something like
-#Value: TypeAlias = Union[str, list[str], dict[str, Union[str, list[str], NoneType]], NoneType]
+# Value: TypeAlias = Union[str, list[str], dict[str, Union[str, list[str], NoneType]], NoneType]
+# See https://github.com/raimon49/pip-licenses/issues/360
 
 
 METADATA_KEYS: dict[
@@ -283,7 +290,9 @@ METADATA_KEYS: dict[
     list[
         Callable[
             [Message],
-            Union[str, list[str], dict[str, Union[str, list[str], None]], None],
+            Union[
+                str, list[str], dict[str, Union[str, list[str], None]], None
+            ],
         ]
     ],
 ] = {
@@ -301,14 +310,17 @@ METADATA_KEYS: dict[
     "license_expression": [
         lambda metadata: metadata.get("license-expression")
     ],
-    "license_files": [lambda metadata: metadata.get_all("License-File", [])],   # added in v6.0
+    "license_files": [
+        lambda metadata: metadata.get_all("License-File", [])
+    ],  # added in v6.0
     "summary": [lambda metadata: metadata.get("summary")],
     "urls": [extract_urls],  # added in v6.0
 }
 
+
 def _get_pkg_included_file(
-        pkg: Distribution, file_names_rgx: str
-    ) -> tuple[str, str]:
+    pkg: Distribution, file_names_rgx: str
+) -> tuple[str, str]:
     """
     Attempt to find the package's included file on disk and return the
     tuple (included_file_path, included_file_contents).
@@ -333,15 +345,15 @@ def _get_pkg_included_file(
 def _filter_string(item: str, config: Configuration) -> str:
     try:
         # TODO: this needs improved
-        return item.encode(
-            config.filter_code_page, errors="ignore"
-        ).decode(config.filter_code_page)
+        return item.encode(config.filter_code_page, errors="ignore").decode(
+            config.filter_code_page
+        )
     except AttributeError as _cause:  # pragma: no cover
-        _context_details = f"{item} can not be safely filtered with {config.filter_code_page}"
+        _context_details = (
+            f"{item} can not be safely filtered with {config.filter_code_page}"
+        )
         if not isinstance(item, str):
-            _context_details = (
-                f"{type(item)} can not be filtered as a string"
-            )
+            _context_details = f"{type(item)} can not be filtered as a string"
         raise ValueError(_context_details) from _cause
 
 
@@ -364,15 +376,23 @@ def _do_filter_iteration(
         return _filter_string(cast(str, sub_item), config)
 
 
-def _get_pkg_info(*args: Any, **kwargs: Any) ->  dict[str, Union[str, list[str], dict[str, Union[str, list[str], None]]]]:
-    pkg: Distribution = None
+def _get_pkg_info(
+    *args: Any, **kwargs: Any
+) -> dict[str, Union[str, list[str], dict[str, Union[str, list[str], None]]]]:
+    pkg = None
     if len(args) > 0 and isinstance(args[0], Distribution):
         pkg = cast(Distribution, args[0])
         args = args[1:]
     else:
         pkg = kwargs.pop("pkg", None)
-    if not isinstance(pkg, Distribution):  # defensive code to support runtime typing
+    if not isinstance(
+        pkg, Distribution
+    ):  # defensive code to support runtime typing
         raise TypeError("[CWE-573] pkg must be a Distribution") from None
+    _with_license_files = kwargs.pop("with_license_files", None)
+    _with_other_files = kwargs.pop("with_other_files", None)
+    _filter_strings = kwargs.pop("filter_strings", None)
+
     pkg_name: str = pkg.metadata["name"]
     normal_pkg_name = normalize_pkg_name(pkg_name)
     legacy_info = fallback_license_retrieval(pkg)
@@ -405,6 +425,7 @@ def _get_pkg_info(*args: Any, **kwargs: Any) ->  dict[str, Union[str, list[str],
     for field_name, field_selector_fns in METADATA_KEYS.items():
         value = None
         for field_selector_fn in field_selector_fns:
+            # See https://github.com/raimon49/pip-licenses/issues/360
             # Type hint of `Distribution.metadata` states `PackageMetadata`
             # but it's actually of type `email.message.Message`
             value = field_selector_fn(metadata)  # type: ignore[arg-type]
@@ -412,12 +433,19 @@ def _get_pkg_info(*args: Any, **kwargs: Any) ->  dict[str, Union[str, list[str],
                 break
         pkg_info[field_name] = value  # type: ignore[assignment]
 
-    if args.with_license_files:  # conditional for < v6+
+    if _with_license_files:  # conditional for < v6+
         pkg_texts: Union[list[Union[str, None]], None] = (
-            get_pkg_license_texts_from_disk(
+            _get_pkg_license_texts_from_disk(
                 pkg,
-                filelist=cast(list[str], pkg_info["license_files"])
-                if pkg_info["license_files"]
+                # See https://github.com/raimon49/pip-licenses/issues/360
+                # mypy demands this be a list[Union[str, None]] but
+                # we are actually checking for NoneType elements at runtime
+                # plus this is just a workaround to ensure no regressions,
+                # and refactoring is just technical-debt
+                filelist=cast(list[str], pkg_info["license_files"])  # type: ignore[arg-type]
+                if pkg_info[
+                    "license_files"
+                ]  # intent here is to skip '[]' and missing KvPs
                 else None,
             )
         )
@@ -426,25 +454,35 @@ def _get_pkg_info(*args: Any, **kwargs: Any) ->  dict[str, Union[str, list[str],
         ):  # https://github.com/raimon49/pip-licenses/pull/346#discussion_r3609573407
             pkg_info["license_texts"] = cast(list[str], pkg_texts)
 
-    if args.with_other_files:  # conditional for < v6+
+    if _with_other_files:  # conditional for < v6+
         pkg_info["other_files"] = list(
             _filter_pkg_included_files(pkg, LICENSE_BY_OTHER_FILE_PATTERN),
         )
         pkg_other_texts: Union[list[Union[str, None]], None] = (
-            get_pkg_license_texts_from_disk(
+            _get_pkg_license_texts_from_disk(
                 pkg,
-                filelist=cast(list[str], pkg_info["other_files"])
-                if pkg_info["other_files"]
+                # See https://github.com/raimon49/pip-licenses/issues/360
+                # mypy demands this be a list[Union[str, None]] but
+                # we are actually checking for NoneType elements at runtime
+                # plus this is just a workaround to ensure no regressions,
+                # and refactoring is just technical-debt
+                filelist=cast(list[str], pkg_info["other_files"])  # type: ignore[arg-type]
+                if pkg_info[
+                    "other_files"
+                ]  # intent here is to skip '[]' and missing KvPs
                 else None,
             )
         )
         if pkg_other_texts is not None:
             pkg_info["other_texts"] = cast(list[str], pkg_other_texts)
 
-    if args.filter_strings:
+    if _filter_strings:
         for key, val in pkg_info.items():
             if val is not None:  # ignore top-level None values
-                pkg_info[key] = _do_filter_iteration(val)
+                pkg_info[key] = _do_filter_iteration(
+                    val,
+                    config=Configuration(**kwargs),
+                )
 
     return pkg_info
 
@@ -452,6 +490,7 @@ def _get_pkg_info(*args: Any, **kwargs: Any) ->  dict[str, Union[str, list[str],
 def _get_python_sys_path(executable: str) -> list[str]:
     import os
     import subprocess
+
     script = "import sys; print(' '.join(filter(bool, sys.path)))"
     output = subprocess.run(
         [executable, "-c", script],
@@ -463,17 +502,17 @@ def _get_python_sys_path(executable: str) -> list[str]:
 
 
 def _filter_pkg_included_paths(
-        pkg: Distribution, file_names_rgx: str
-    ) -> set[PackagePath]:
-        """
-        Attempt to find the set of package's matching files included on-disk.
-        """
-        pkg_files = pkg.files or ()
-        pattern: re.Pattern = re.compile(file_names_rgx)
-        matched_rel_paths = {
-            file for file in pkg_files if pattern.match(file.name)
-        }
-        return matched_rel_paths
+    pkg: Distribution, file_names_rgx: str
+) -> set[PackagePath]:
+    """
+    Attempt to find the set of package's matching files included on-disk.
+    """
+    pkg_files = pkg.files or ()
+    pattern: re.Pattern = re.compile(file_names_rgx)
+    matched_rel_paths = {
+        file for file in pkg_files if pattern.match(file.name)
+    }
+    return matched_rel_paths
 
 
 def _filter_pkg_included_files(
@@ -496,7 +535,7 @@ def _filter_pkg_included_files(
     return included_files_set
 
 
-def get_pkg_license_texts_from_disk(
+def _get_pkg_license_texts_from_disk(
     pkg: Distribution, filelist: Union[list[Union[str, None]], None] = None
 ) -> Union[list[Union[str, None]], None]:
     if filelist:
@@ -508,7 +547,15 @@ def get_pkg_license_texts_from_disk(
                 )
                 if _fh:
                     license_texts.append(a_license_file_text)
-        return license_texts
+        # See https://github.com/raimon49/pip-licenses/issues/360
+        # mypy wants this be a list[Union[str, None]] but
+        # we are typicly returning a list of only strings or just '[]' at runtime,
+        # (but explicitly not prohibiting both strings and NoneTypes together,
+        # just everything else) which seems to be treated like
+        # an _implicit_ optional by mypy instead of the _explicit_ type it is.
+        # plus this is just a workaround to ensure no regressions,
+        # and refactoring is just technical-debt
+        return license_texts  # type: ignore[return-value]
     return None
 
 
@@ -584,7 +631,9 @@ def fallback_license_retrieval(
 
 def get_packages(
     args: Configuration,
-) -> Iterator[dict[str, Union[str, list[str], dict[str, Union[str, list[str], None]]]]]:
+) -> Iterator[
+    dict[str, Union[str, list[str], dict[str, Union[str, list[str], None]]]]
+]:
 
     if args.python == sys.executable:
         search_paths = sys.path

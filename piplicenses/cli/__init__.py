@@ -36,24 +36,26 @@ import argparse
 import codecs
 import sys
 from collections.abc import Sequence
+from enum import Enum  # used by helper _expand_help
 from importlib import (
     metadata as importlib_metadata,  # noqa: F401 -- (used by piplicenses.core)
 )
 from pathlib import Path
 
+# See https://docs.python.org/3.14/library/argparse.html#color
 from .. import (
+    Union,
     __pkgname__,
     __summary__,
     __version__,
     cast,
 )
-from enum import Enum  # used by helper _expand_help
 from .config import (
     Configuration,
     CustomNamespace,  # to be deprecated in v6
 )
 
-#if TYPE_CHECKING:
+# if TYPE_CHECKING:
 #    from typing import (
 # watch for PEP-3124
 #        overload,
@@ -80,21 +82,33 @@ def get_sortby(args: Configuration) -> str:
 
     return "Name"
 
-class CustomHelpFormatter(argparse.HelpFormatter):  # pragma: no cover
+
+# See https://docs.python.org/3.14/library/argparse.html#color
+DEFAULT_USE_COLOR: Union[bool, None] = (
+    True if sys.version_info >= (3, 14) else None
+)
+
+
+class CustomHelpFormatter(
+    argparse.ArgumentDefaultsHelpFormatter
+):  # pragma: no cover
     def __init__(
         self,
         prog: str,
         indent_increment: int = 2,
         max_help_position: int = 24,
-        width: int = None,
+        width: Union[int, None] = None,
+        color: Union[bool, None] = DEFAULT_USE_COLOR,
     ) -> None:
         max_help_position = 30  # Minor Regression BUG from backport
-        super().__init__(
-            prog,
-            indent_increment=indent_increment,
-            max_help_position=max_help_position,
-            width=width,
-        )
+        kwargs = {
+            "indent_increment": indent_increment,
+            "max_help_position": max_help_position,
+            "width": width,
+        }
+        if color is not None:
+            kwargs["color"] = color
+        super().__init__(prog, **kwargs)  # type: ignore[arg-type]
 
     def _format_action(self, action: argparse.Action) -> str:
         flag_indent_argument: bool = False
@@ -129,9 +143,11 @@ class CustomHelpFormatter(argparse.HelpFormatter):  # pragma: no cover
 class CompatibleArgumentParser(argparse.ArgumentParser):
     def parse_args(  # type: ignore[override]
         self,
-        args: Sequence[str] = None,
-        namespace: CustomNamespace = None,
+        args: Sequence[str] = [],
+        namespace: Union[CustomNamespace, None] = None,
     ) -> CustomNamespace:
+        if namespace is None:  # defensive code to support runtime typing
+            namespace = Configuration()
         args_ = cast(Configuration, super().parse_args(args, namespace))
         self._verify_args(args_)
         return args_
@@ -196,7 +212,7 @@ class SelectAction(argparse.Action):
         parser: argparse.ArgumentParser,
         namespace: argparse.Namespace,
         values: str,
-        option_string: str = None,
+        option_string: Union[str, None] = None,
     ) -> None:
         enum_cls = type(self).MAP_DEST_TO_ENUM[self.dest]
         setattr(namespace, self.dest, get_value_from_enum(enum_cls, values))
@@ -460,6 +476,7 @@ def create_parser(
 
     return parser
 
+
 # placeholder for compatibility shim, E.g.,
-#if __name__ == "__main__":  # pragma: no cover
+# if __name__ == "__main__":  # pragma: no cover
 #    ..__main__.main()

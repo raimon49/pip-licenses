@@ -39,5 +39,5 @@ else:
 
 
 __all__ = [
-   """tomllib""",
+    """tomllib""",
 ]

@@ -31,6 +31,14 @@
 To be documented.
 """
 
+from typing import (
+    # See https://github.com/raimon49/pip-licenses/issues/360
+    Union,
+    # NullableStr = Union[str, None]
+    # strs = Union[str, list[str]]
+    # _oneOrMoreStrs = Union[str, list[str]]
+    # _zeroOrMoreStrs = Union[str, list[NullableStr], None]
+)
 
 from . import (
     __pkgname__,  # noqa: F401 -- Re-export as part of data API
@@ -42,6 +50,18 @@ from .pseudoChoices import (
     FromArg,
     OrderArg,
 )
+
+NullableStr = Union[str, None]
+"""Explicitly required (e.g., not optional) value of type string, but can be set to None.
+
+Because the value is required even if intentionally empty, we allow
+None (e.g. nullified `\0` value) to be treated as a zero length null-terminated (empty) string.
+The type is not intended to be any kind of union semantically, only syntacticly for mypy.
+
+This is an internal type and is _not_ part of the public API. (convert to `type(str())` for that)
+
+See https://github.com/raimon49/pip-licenses/issues/360
+"""
 
 
 class Configuration(argparse.Namespace):
@@ -56,17 +76,21 @@ class Configuration(argparse.Namespace):
     with_authors: bool
     with_urls: bool
     with_description: bool
-    with_license_file: bool
+    with_license_file: bool  # DEPRECIATED in v6.1+
     with_license_files: bool  # added in v6.0
-    no_license_path: bool
-    with_notice_file: bool
+    no_license_path: bool  # DEPRECIATED in v6.1+ (TODO: use --without-license-path|--without-paths)
+    with_notice_file: bool  # DEPRECIATED in v6.1+
     with_notice_files: bool  # added in v6.0
     with_other_files: bool  # added in v6.0
     filter_strings: bool
     filter_code_page: str
     partial_match: bool
-    fail_on: str = None
-    allow_only: str = None
+    fail_on: NullableStr = (
+        None  # DEPRECIATED in v6.0+ (TODO: will need to handle lists)
+    )
+    allow_only: NullableStr = (
+        None  # DEPRECIATED in v6.0+ (TODO: will need to handle lists)
+    )
 
 
 CustomNamespace = Configuration

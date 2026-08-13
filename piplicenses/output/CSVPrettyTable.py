@@ -26,6 +26,8 @@
 # SOFTWARE.
 
 
+from typing import Union
+
 from prettytable import PrettyTable
 
 from .. import (
@@ -38,8 +40,6 @@ from . import (
     cast,
     strs,
 )
-
-from typing import Union
 
 encodeable = Union[bytes, str]
 

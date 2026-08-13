@@ -1,6 +1,6 @@
 # vim:fenc=utf-8 ff=unix ft=python ts=4 sw=4 sts=4 si et
 
-# pip-licenses.output.consols
+# pip-licenses.output.consoles
 #
 # MIT License
 #
@@ -25,19 +25,30 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import sys
 
+"""
+pip-licenses.output.consoles
+
+Console focused output definitions live here.
+To be documented?
+"""
+
+import sys
+from collections.abc import (
+    Callable,
+)  # See https://github.com/raimon49/pip-licenses/issues/360
+
+# from pip-licenses.io.open -> _real_io_open -> open (mockable)
 from .. import open
 from . import (
     __pkgname__,  # noqa: F401 -- Re-export as part of data API
     __version__,  # noqa: F401 -- Re-export as part of data API
 )
 
-# placeholder for imports like sys, OSError, etc.
-
-open = open  # noqa: PLW0127  # allow monkey patching
+open: Callable = open  # type: ignore[has-type]  # noqa: PLW0127  # allow monkey patching
 
 # placeholder for importing colors
+
 
 def output_colored(code: str, text: str, is_bold: bool = False) -> str:
     """

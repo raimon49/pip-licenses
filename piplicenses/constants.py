@@ -31,13 +31,11 @@ from re import (
     compile,
 )
 
-
 from . import (
     Sequence,
     __pkgname__,  # noqa: F401 -- Re-export as part of data API
     __version__,  # noqa: F401 -- Re-export as part of data API
 )
-
 
 __summary__ = (
     "Dump the software license list of Python packages installed with pip."
@@ -122,7 +120,7 @@ KNOWN_URL_SUB_KEYS = (
     "changelog",
     "documentation",
     "bug tracker",
-    )
+)
 
 
 PATTERN_DELIMITER: Pattern = compile(r"[-_.]+")
@@ -172,7 +170,9 @@ FILE_MISSING: str = ""
 """Placeholder when the license file(s) is/are undetermined"""
 
 
-LEGACY_LICENSE_BY_FILE_PATTERN = r"""[Ll][Ii][Cc][Ee][Nn][CScs][Ee].*|[Cc][Oo][Pp][Yy][Ii][Nn][Gg].*"""
+LEGACY_LICENSE_BY_FILE_PATTERN = (
+    r"""[Ll][Ii][Cc][Ee][Nn][CScs][Ee].*|[Cc][Oo][Pp][Yy][Ii][Nn][Gg].*"""
+)
 
 
 # morally this is a glob (not a regex pattern)

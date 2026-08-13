@@ -36,7 +36,6 @@ Usage to be documented. See the README.md for now.
 
 """
 
-
 from . import (
     __pkgname__,
     __summary__,
@@ -72,14 +71,14 @@ def main() -> None:  # pragma: no cover
 
 
 __all__ = [
-#    """__doc__""",
-#    """__file__""",
-#    """__loader__""",
-#    """__name__""",
-#    """__package__""",
-#    """__path__""",
+    #    """__doc__""",
+    #    """__file__""",
+    #    """__loader__""",
+    #    """__name__""",
+    #    """__package__""",
+    #    """__path__""",
     """__pkgname__""",
-#    """__spec__""",
+    #    """__spec__""",
     """__summary__""",
     """__version__""",
     """main""",

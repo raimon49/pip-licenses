@@ -32,22 +32,21 @@
 To be documented.
 """
 
-
 from functools import partial
 from typing import (
-    cast,  # noqa: F401 -- (used by piplicenses.output.CSVPrettyTable)
     Union,
+    cast,  # noqa: F401 -- (used by piplicenses.output.CSVPrettyTable)
 )
 
 from .. import (
-    __pkgname__,  # noqa: F401 -- Re-export as part of data API
-    __version__,  # noqa: F401 -- Re-export as part of data API
     DEFAULT_OUTPUT_FIELDS,
     DYNAMIC_FIELD_NAMES,  # noqa: F401 -- (used by piplicenses.output.tables)
     FIELDS_TO_METADATA_KEYS,  # noqa: F401 -- (used by piplicenses.output.tables)
     LICENSE_UNKNOWN,  # noqa: F401 -- (used by piplicenses.output.tables)
     SUMMARY_FIELD_NAMES,  # noqa: F401 -- (used by piplicenses.output.tables)
     SUMMARY_OUTPUT_FIELDS,
+    __pkgname__,  # noqa: F401 -- Re-export as part of data API
+    __version__,  # noqa: F401 -- Re-export as part of data API
 )
 
 #    because we are limited in python3.9 still by https://docs.python.org/3.9/library/stdtypes.html#dict
@@ -58,9 +57,9 @@ strs = Union[str, list[str]]
 
 
 from ..cli import (
+    Configuration,
     FormatArg,  # used by create_output_string
     FromArg,  # used by get_output_fields
-    Configuration,
     get_sortby,
 )
 from ..sorting import (
@@ -159,6 +158,7 @@ def get_output_fields(args: Configuration) -> list[str]:
 
     return output_fields
 
+
 # placeholder for consoles (from split-cli)
 def create_output_string(args: Configuration) -> str:
     output_fields = get_output_fields(args)
@@ -178,7 +178,8 @@ def create_output_string(args: Configuration) -> str:
 
 
 def create_warn_string(args: Configuration) -> str:
-    from .cli import FormatArg  # workaround
+    from ..cli import FormatArg  # workaround
+
     warn_messages = []
     warn = partial(output_colored, "33")
 
