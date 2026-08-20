@@ -64,6 +64,17 @@ FIELDS_TO_METADATA_KEYS: dict[str, str] = {
     "License-Metadata": "license",
     "License-Classifier": "license_classifier",
     "License-Expression": "license_expression",
+    # work-around
+    "LicenseFile": "license_files",
+    "LicenseFiles": "license_files",
+    "LicenseText": "license_texts",
+    "LicenseTexts": "license_texts",
+    "NoticeFile": "notice_files",
+    "NoticeFiles": "notice_files",
+    "NoticeText": "notice_texts",
+    "NoticeTexts": "notice_texts",
+    "OtherFiles": "other_files",
+    "OtherTexts": "other_texts",
 }
 
 
@@ -173,6 +184,9 @@ FILE_MISSING: str = ""
 LEGACY_LICENSE_BY_FILE_PATTERN = (
     r"""[Ll][Ii][Cc][Ee][Nn][CScs][Ee].*|[Cc][Oo][Pp][Yy][Ii][Nn][Gg].*"""
 )
+
+
+LEGACY_TOKEN: str = ";"
 
 
 # morally this is a glob (not a regex pattern)

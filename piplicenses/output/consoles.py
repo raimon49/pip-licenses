@@ -41,6 +41,8 @@ from collections.abc import (
 # from pip-licenses.io.open -> _real_io_open -> open (mockable)
 from .. import open
 from . import (
+    # See https://github.com/raimon49/pip-licenses/issues/360
+    Union,
     __pkgname__,  # noqa: F401 -- Re-export as part of data API
     __version__,  # noqa: F401 -- Re-export as part of data API
 )
@@ -60,14 +62,14 @@ def output_colored(code: str, text: str, is_bold: bool = False) -> str:
     return f"\033[{code}m{text}\033[0m"
 
 
-def save_if_needs(output_file: str, output_string: str) -> None:
+def save_if_needs(output_file: Union[str, None], output_string: str) -> None:
     """
     Save to path given by args
 
     Raises:
         SystemExit: on underling filesystem failures (OSError).
     """
-    if output_file is None:
+    if output_file is None or len(output_file) <= 0:
         return
 
     try:
@@ -78,9 +80,11 @@ def save_if_needs(output_file: str, output_string: str) -> None:
                 f.write("\n")
 
         sys.stdout.write(f"created path: {output_file}\n")
-        sys.exit(0)
+        sys.exit(
+            0
+        )  # TODO: refactor as raise SystemExit("Success", 0) from None
     except OSError as _cause:
-        raise SystemExit("check path: --output-file\n", 1) from _cause
+        raise SystemExit("check path: --output-file", 1) from _cause
 
 
 __all__ = [

@@ -44,6 +44,7 @@ from pathlib import Path
 
 # See https://docs.python.org/3.14/library/argparse.html#color
 from .. import (
+    LEGACY_TOKEN,  # noqa: F401 -- (used by piplicenses.cli.config)
     Union,
     __pkgname__,
     __summary__,
@@ -51,8 +52,9 @@ from .. import (
     cast,
 )
 from .config import (
+    DEFAULT_PYTHON,
     Configuration,
-    CustomNamespace,  # to be deprecated in v6
+    CustomNamespace,  # noqa: F401 -- to be deprecated in v6
 )
 
 # if TYPE_CHECKING:
@@ -143,14 +145,16 @@ class CustomHelpFormatter(
 class CompatibleArgumentParser(argparse.ArgumentParser):
     def parse_args(  # type: ignore[override]
         self,
-        args: Sequence[str] = [],
-        namespace: Union[CustomNamespace, None] = None,
-    ) -> CustomNamespace:
-        if namespace is None:  # defensive code to support runtime typing
-            namespace = Configuration()
-        args_ = cast(Configuration, super().parse_args(args, namespace))
-        self._verify_args(args_)
-        return args_
+        args: Union[Sequence[str], None] = None,
+        namespace: Union[argparse.Namespace, None] = None,
+    ) -> Configuration:
+        ns = super().parse_args(
+            args=args if args and len(args) > 0 else [],
+            namespace=namespace or None,
+        )
+        cfg = Configuration(**vars(ns))  # convert Namespace -> dataclass
+        self._verify_args(cfg)
+        return cfg
 
     def _verify_args(self, args: Configuration) -> None:
         if (
@@ -177,7 +181,7 @@ class CompatibleArgumentParser(argparse.ArgumentParser):
                 "option to be set"
             )
         try:
-            codecs.lookup(args.filter_code_page)
+            codecs.lookup(args.filter_code_page)  # type: ignore[arg-type]
         except LookupError:
             self.error(
                 f"invalid code page '{args.filter_code_page}' given "
@@ -236,7 +240,10 @@ def create_parser(
     pyproject_path: str = "pyproject.toml",
 ) -> CompatibleArgumentParser:
     parser = CompatibleArgumentParser(
-        description=__summary__, formatter_class=CustomHelpFormatter
+        prog=__pkgname__,  # added in v6.0+ -- to normalize usage and help
+        description=__summary__,
+        formatter_class=CustomHelpFormatter,
+        conflict_handler="resolve",  # added in v6.0+
     )
 
     config_from_file = load_config_from_file(pyproject_path)
@@ -246,23 +253,21 @@ def create_parser(
     format_options = parser.add_argument_group("Format options")
     verify_options = parser.add_argument_group("Verify options")
 
-    lit_prog_pat = "%(prog)s"
     parser.add_argument(
         "-v",
         "--version",
         action="version",
-        version=f"{lit_prog_pat} {__version__}",
+        version=f"{__pkgname__} {__version__}",
     )
 
     common_options.add_argument(
         "--python",
         type=str,
-        default=config_from_file.get("python", sys.executable),
+        default=config_from_file.get("python", DEFAULT_PYTHON),
         metavar="PYTHON_EXEC",
         help="R| path to python executable to search distributions from\n"
         "Package will be searched in the selected python's sys.path\n"
-        "By default, will search packages for current env executable\n"
-        "(default: sys.executable)",
+        "By default, will search packages for current env executable\n",
     )
 
     common_options.add_argument(
@@ -276,8 +281,7 @@ def create_parser(
         metavar="SOURCE",
         choices=choices_from_enum(FromArg),
         help="R|where to find license information\n"
-        '"meta", "classifier, "mixed", "all"\n'
-        "(default: %(default)s)",
+        '"meta", "classifier", "expression", "mixed", "all"\n',
     )
     common_options.add_argument(
         "-o",
@@ -289,11 +293,9 @@ def create_parser(
         ),
         metavar="COL",
         choices=choices_from_enum(OrderArg),
-        help="R|order by column\n"
-        '"name", "license", "author", "url"\n'
-        "(default: %(default)s)",
+        help='R|order by column\n"name", "license", "author", "url"\n',
     )
-    common_options.add_argument(
+    format_options.add_argument(
         "-f",
         "--format",
         dest="format_",
@@ -307,8 +309,7 @@ def create_parser(
         help="R|dump as set format style\n"
         '"plain", "plain-vertical" "markdown", "rst", \n'
         '"confluence", "html", "json", \n'
-        '"json-license-finder",  "csv"\n'
-        "(default: %(default)s)",
+        '"json-license-finder",  "csv"\n',
     )
     common_options.add_argument(
         "--summary",
@@ -327,7 +328,7 @@ def create_parser(
         "-i",
         "--ignore-packages",
         action="store",
-        type=str,
+        dest="ignore_packages",
         nargs="+",
         metavar="PKG",
         default=config_from_file.get("ignore-packages", []),
@@ -337,7 +338,7 @@ def create_parser(
         "-p",
         "--packages",
         action="store",
-        type=str,
+        dest="packages",
         nargs="+",
         metavar="PKG",
         default=config_from_file.get("packages", []),
@@ -372,17 +373,36 @@ def create_parser(
     )
     format_options.add_argument(
         "-d",
-        "--with-description",
+        "--with-descriptions",
         action="store_true",
+        dest="with_description",  # if "6.0." in __version__ else "with-descriptions",
         default=config_from_file.get("with-description", False),
         help="dump with short package description",
     )
     format_options.add_argument(
+        "--with-description",
+        action="store_true",
+        dest="with_description",  # if "6.0." in __version__ else "with-descriptions",
+        default=config_from_file.get("with-description", False),
+        help="See --with-descriptions"
+        "DEPRECATED; use --with-descriptions instead.",
+    )
+    format_options.add_argument(
         "-nv",
+        action="store_true",
+        dest="no_version",
+        default=config_from_file.get("no-version", False),
+        help="DEPRECATED (for backwards compatibility); "
+        "prefer --without-version instead.",
+    )
+    format_options.add_argument(
+        "--without-version",
         "--no-version",
         action="store_true",
+        dest="no_version",
         default=config_from_file.get("no-version", False),
-        help="dump without package version",
+        help="dump without package version. "
+        "DEPRECATED; use --without-version.",
     )
 
     license_file_options.add_argument(
@@ -393,7 +413,8 @@ def create_parser(
         help="dump with location of license file and "
         "contents, most useful with JSON output. "
         "For structured formats (CSV, Markdown, reST), "
-        "see README for workflow examples.",
+        "see README for workflow examples. "
+        "DEPRECATED; use --with-license-files.",
     )
     license_file_options.add_argument(
         "--with-license-files",
@@ -402,17 +423,21 @@ def create_parser(
         help="dump with location of each license file and contents, most useful with JSON output",
     )
     license_file_options.add_argument(
+        "--without-license-paths",
         "--no-license-path",
         action="store_true",
+        dest="no_license_path",
         default=config_from_file.get("no-license-path", False),
         help="I|when specified together with option -l, "
-        "suppress location of license file output",
+        "suppress location of license file(s) in output",
     )
     license_file_options.add_argument(
+        "--without-file-paths",
         "--no-file-paths",
-        action="store_true",
+        action="store_true",  # if "6.0." in __version__ else "store_false",
+        dest="no_file_paths",  # if "6.0." in __version__ else "show-file-paths",
         default=config_from_file.get("no-file-paths", False),
-        help="I|Suppress location of file path outputs",
+        help="I|Suppress location of file path(s) in output",
     )
     license_file_options.add_argument(
         "--with-notice-file",
@@ -451,6 +476,7 @@ def create_parser(
         help="I|specify code page for filtering (default: %(default)s)",
     )
 
+    # placeholder for warn-on
     verify_options.add_argument(
         "--fail-on",
         action="store",
@@ -475,8 +501,3 @@ def create_parser(
     )
 
     return parser
-
-
-# placeholder for compatibility shim, E.g.,
-# if __name__ == "__main__":  # pragma: no cover
-#    ..__main__.main()

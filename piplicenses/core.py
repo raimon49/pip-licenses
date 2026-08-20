@@ -41,7 +41,6 @@ from collections.abc import (
 
 # for typing
 from email.message import Message
-from functools import partial  # used in workaround for map
 from importlib import metadata as importlib_metadata
 from importlib.metadata import (
     Distribution,
@@ -320,12 +319,12 @@ METADATA_KEYS: dict[
 
 def _get_pkg_included_file(
     pkg: Distribution, file_names_rgx: str
-) -> tuple[str, str]:
+) -> tuple[Union[str, None], str]:
     """
     Attempt to find the package's included file on disk and return the
     tuple (included_file_path, included_file_contents).
     """
-    included_file = FILE_MISSING
+    included_file = None
     included_text = LICENSE_UNKNOWN
     matched_rel_paths = _filter_pkg_included_paths(pkg, file_names_rgx)
 
@@ -342,16 +341,14 @@ def _get_pkg_included_file(
     return (included_file, included_text)
 
 
-def _filter_string(item: str, config: Configuration) -> str:
+def _filter_string(item: str, encoding: str) -> str:
     try:
         # TODO: this needs improved
-        return item.encode(config.filter_code_page, errors="ignore").decode(
-            config.filter_code_page
+        return item.encode(encoding=encoding, errors="ignore").decode(
+            encoding=encoding
         )
     except AttributeError as _cause:  # pragma: no cover
-        _context_details = (
-            f"{item} can not be safely filtered with {config.filter_code_page}"
-        )
+        _context_details = f"{item} can not be safely filtered with {encoding}"
         if not isinstance(item, str):
             _context_details = f"{type(item)} can not be filtered as a string"
         raise ValueError(_context_details) from _cause
@@ -359,21 +356,30 @@ def _filter_string(item: str, config: Configuration) -> str:
 
 def _do_filter_iteration(
     sub_item: Union[str, list[str], dict[str, Union[str, list[str], None]]],
-    config: Configuration,
+    encoding: str,
 ) -> Union[str, list[str], dict[str, Union[str, list[str], None]]]:
     if isinstance(sub_item, list):
-        _f = partial(_filter_string, config=config)
-        return list(map(_f, sub_item))
+        # it is unclear if this needs further testing or just does not work with partials
+        # _f = partial(_filter_string, encoding=encoding)
+        # return list(map(_f, sub_item))
+        _filtered_sublist = [
+            _filter_string(_next_item, encoding=encoding)
+            for _next_item in sub_item
+            if _next_item is not None and len(_next_item) > 0
+        ]
+        return _filtered_sublist
     elif isinstance(sub_item, dict):
         _filtered_subset: dict[str, Union[str, list[str], None]] = (
             sub_item.copy()
         )
         for k, v in sub_item.items():
             if v is not None:  # Prune None values
-                _filtered_subset[k] = _do_filter_iteration(v, config)  # type: ignore[assignment]
+                _filtered_subset[k] = _do_filter_iteration(
+                    v, encoding=encoding
+                )  # type: ignore[assignment]
         return _filtered_subset
     else:
-        return _filter_string(cast(str, sub_item), config)
+        return _filter_string(cast(str, sub_item), encoding=encoding)
 
 
 def _get_pkg_info(
@@ -384,14 +390,31 @@ def _get_pkg_info(
         pkg = cast(Distribution, args[0])
         args = args[1:]
     else:
-        pkg = kwargs.pop("pkg", None)
+        pkg = kwargs.pop("pkg", None)  # TODO: needs new test-case
     if not isinstance(
         pkg, Distribution
     ):  # defensive code to support runtime typing
         raise TypeError("[CWE-573] pkg must be a Distribution") from None
-    _with_license_files = kwargs.pop("with_license_files", None)
-    _with_other_files = kwargs.pop("with_other_files", None)
-    _filter_strings = kwargs.pop("filter_strings", None)
+    _config: Union[Configuration, None] = kwargs.get("config")
+    # Morally this should include a "and isinstance(_config, Configuration)"
+    _conf_is_truthy: bool = _config is not None
+    _with_license_files: bool = kwargs.get(
+        "with_license_files",
+        _config.with_license_files  # type: ignore[union-attr]
+        if _conf_is_truthy
+        else kwargs.get(
+            "with_license_file",
+            _config.with_license_file if _conf_is_truthy else False,  # type: ignore[union-attr]
+        ),  # type: ignore[union-attr]
+    )
+    _with_other_files: bool = kwargs.get(
+        "with_other_files",
+        _config.with_other_files if _conf_is_truthy else False,  # type: ignore[union-attr]
+    )
+    _filter_strings: bool = kwargs.get(
+        "filter_strings",
+        _config.filter_strings if _conf_is_truthy else False,  # type: ignore[union-attr]
+    )
 
     pkg_name: str = pkg.metadata["name"]
     normal_pkg_name = normalize_pkg_name(pkg_name)
@@ -477,11 +500,17 @@ def _get_pkg_info(
             pkg_info["other_texts"] = cast(list[str], pkg_other_texts)
 
     if _filter_strings:
+        _filter_code_page: str = str(
+            kwargs.get(
+                "filter_code_page",
+                _config.filter_code_page if _conf_is_truthy else "latin1",  # type: ignore[union-attr]
+            )
+        )
         for key, val in pkg_info.items():
             if val is not None:  # ignore top-level None values
                 pkg_info[key] = _do_filter_iteration(
                     val,
-                    config=Configuration(**kwargs),
+                    encoding=_filter_code_page,
                 )
 
     return pkg_info
@@ -498,6 +527,7 @@ def _get_python_sys_path(executable: str) -> list[str]:
         env={**os.environ, "PYTHONPATH": "", "VIRTUAL_ENV": ""},
         check=False,
     )
+    # TODO: add encoding="utf-8"
     return output.stdout.decode().strip().split()
 
 
@@ -618,9 +648,8 @@ def fallback_license_retrieval(
     author_file, author_text = _get_pkg_included_file(
         pkg, LEGACY_AUTHORS_BY_FILE_PATTERN
     )
-    FILE_MISSING = ""
     return {
-        "license_file": license_file or LICENSE_UNKNOWN,
+        "license_file": license_file or FILE_MISSING,
         "license_text": license_text or LICENSE_UNKNOWN,
         "notice_file": notice_file or FILE_MISSING,
         "notice_text": notice_text or FILE_MISSING,
@@ -629,20 +658,37 @@ def fallback_license_retrieval(
     }
 
 
+def _check_python_arg_for_search_path(
+    config: Configuration,
+) -> Union[set, list, tuple]:
+    """Determine the search path based on the given configuration.
+
+    Namely, checks for the configuration's `python` value and extracts its
+    sys.path value.
+    May spawn a sub-shell, depending on the given python.
+    """
+    # Morally this should be a setlike of pathlike values
+    _search_path: list = []
+    if config.python == sys.executable:
+        _search_path = sys.path
+    else:
+        _search_path = _get_python_sys_path(config.python)
+    return _search_path
+
+
 def get_packages(
     args: Configuration,
 ) -> Iterator[
     dict[str, Union[str, list[str], dict[str, Union[str, list[str], None]]]]
 ]:
-
-    if args.python == sys.executable:
-        search_paths = sys.path
-    else:
-        search_paths = _get_python_sys_path(args.python)
-
+    # for now, let's over-simplify the search-path to a string list
+    search_paths: list[str] = list(
+        _check_python_arg_for_search_path(config=args)
+    )
     pkgs = importlib_metadata.distributions(path=search_paths)
     ignore_pkgs_as_normalize = [
-        normalize_pkg_name_and_version(pkg) for pkg in args.ignore_packages
+        normalize_pkg_name_and_version(badpkg)
+        for badpkg in args.ignore_packages
     ]
     pkgs_as_normalize = list(deduplicate_and_normalize(args.packages))
 
@@ -677,7 +723,7 @@ def get_packages(
         if not args.with_system and pkg_name in SYSTEM_PACKAGES:
             continue
 
-        pkg_info = _get_pkg_info(pkg, kwargs=args)
+        pkg_info = _get_pkg_info(pkg, **vars(args))
 
         license_names = select_license_by_source(
             args.from_,
@@ -697,14 +743,15 @@ def get_packages(
                     license_names, fail_on_licenses
                 )
             if failed_licenses:
-                sys.stderr.write(
+                _fail_message = (
                     "fail-on license {} was found for package {}:{}\n".format(
                         "; ".join(sorted(failed_licenses)),
                         pkg_info["name"],
                         pkg_info["version"],
                     )
                 )
-                sys.exit(1)
+                sys.stderr.write(_fail_message)
+                raise SystemExit(_fail_message, 1) from None
 
         if allow_only_licenses:
             uncommon_licenses = set()
@@ -720,14 +767,15 @@ def get_packages(
                 )
 
             if len(uncommon_licenses) == len(license_names):
-                sys.stderr.write(
+                _not_allowed_message = (
                     "license {} not in allow-only licenses was found"
-                    " for package {}:{}\n".format(
-                        "; ".join(sorted(uncommon_licenses)),
-                        pkg_info["name"],
-                        pkg_info["version"],
-                    )
+                    " for package {}:{}\n"
+                ).format(
+                    "; ".join(sorted(uncommon_licenses)),
+                    pkg_info["name"],
+                    pkg_info["version"],
                 )
-                sys.exit(1)
+                sys.stderr.write(_not_allowed_message)
+                raise SystemExit(_not_allowed_message, 1) from None
 
         yield pkg_info

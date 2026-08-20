@@ -55,7 +55,7 @@ from .tomli_bridge import tomllib
 
 # Must declare this ASAP as most other component will re-import it
 __pkgname__ = "pip-licenses"  # expose package name with a dash (but canonicalized will ignore dash)
-__version__ = "6.0.0b6"  # (dev-v6.0 branch
+__version__ = "6.0.0b7"  # (dev-v6.0 branch
 # Rationale: Try to declare these early too,
 #   as most other component will also re-import this from the package scope
 #   this keeps the .constants package internal and somewhat hidden for now
@@ -70,6 +70,7 @@ from .constants import (
     LEGACY_AUTHORS_BY_FILE_PATTERN,  # noqa: F401 -- (used by piplicenses.core)
     LEGACY_LICENSE_BY_FILE_PATTERN,  # noqa: F401 -- (used by piplicenses.core)
     LEGACY_NOTICE_BY_FILE_PATTERN,  # noqa: F401 -- (used by piplicenses.core)
+    LEGACY_TOKEN,  # noqa: F401 -- (used by piplicenses.cli.config)
     LICENSE_BY_OTHER_FILE_PATTERN,  # noqa: F401 -- (used by piplicenses.core)
     LICENSE_UNKNOWN,  # noqa: F401 -- Re-export as part of API
     PATTERN_DELIMITER,
