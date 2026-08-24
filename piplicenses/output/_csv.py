@@ -25,44 +25,66 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from prettytable import (
-    PrettyTable,
-)
+
+from typing import Union
 
 from .. import (
     __pkgname__,  # noqa: F401 -- Re-export as part of data API
     __version__,  # noqa: F401 -- Re-export as part of data API
 )
-from . import strs
+
+# Breaking change: version 6 will transition to support PEP-305 csv instead of pretty table (as csv is built-in)
+from . import (
+    cast,
+    strs,
+)
+from ._prettytable_bridge import PrettyTable
+
+encodeable = Union[bytes, str]
 
 
-class PlainVerticalTable(PrettyTable):
-    """PrettyTable for outputting to a simple non-column based style.
+COMMA: str = ","
+"""Just the comma in CSV."""
 
-    When used with --with-license-file, this style is similar to the default
-    style generated from Angular CLI's --extractLicenses flag.
-    """
+
+class CSVPrettyTable(PrettyTable):
+    """PrettyTable-like class exporting to CSV"""
 
     def get_string(self, **kwargs: strs) -> str:
+        def _esc_quotes(val: encodeable) -> str:
+            """
+            Meta-escaping double quotes
+            https://tools.ietf.org/html/rfc4180
+            """
+            try:
+                return cast(str, val).replace('"', '""')
+            except UnicodeDecodeError:  # pragma: no cover
+                return cast(bytes, val).decode("utf-8").replace('"', '""')
+            except UnicodeEncodeError:  # pragma: no cover
+                return str(
+                    cast(str, val).encode("unicode_escape").replace('"', '""')  # type: ignore[arg-type]
+                )
+
         options = self._get_options(kwargs)
         rows = self._get_rows(options)
+        formatted_rows = self._format_rows(rows)
 
-        output = ""
-        for row in rows:
-            index = 0
-            while index < len(row):
-                col = row[index]
-                if isinstance(col, list):
-                    for entry in col:
-                        output += f"{entry}\n"
-                else:
-                    output += f"{col}\n"
-                index += 1
-            output += "\n"
+        lines: list[str] = []
+        formatted_header = COMMA.join(
+            [f'"{_esc_quotes(val)}"' for val in self._field_names]
+        )
+        lines.append(formatted_header)
+        lines.extend(
+            [
+                COMMA.join([f'"{_esc_quotes(val)}"' for val in row])
+                for row in formatted_rows
+            ]
+        )
 
-        return output
+        return "\n".join(lines)
 
 
 __all__ = [
-    """PlainVerticalTable""",
+    """COMMA""",
+    """CSVPrettyTable""",
 ]

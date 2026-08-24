@@ -31,40 +31,30 @@
 # then the dependency is not required
 import json
 
-from prettytable import (
-    RowType,
-)
-
 from .. import (
     __pkgname__,  # noqa: F401 -- Re-export as part of data API
     __version__,  # noqa: F401 -- Re-export as part of data API
 )
 from . import strs
-from .JsonPrettyTable import JsonPrettyTable
+from ._prettytable_bridge import (
+    PrettyTable,
+    RowType,
+)
 
 
-class JsonLicenseFinderTable(JsonPrettyTable):
+class JsonPrettyTable(PrettyTable):
+    """PrettyTable-like class exporting to JSON"""
+
     def format_row(self, row: RowType) -> dict[str, strs]:
-        resrow: dict[str, strs] = {}
-        for field, value in zip(self._field_names, row):
-            if field == "Name":
-                resrow["name"] = value
-
-            if field == "Version":
-                resrow["version"] = value
-
-            if field == "License":
-                resrow["licenses"] = [value]
-
-        return resrow
+        return dict(zip(self._field_names, row))
 
     def get_string(self, **kwargs: strs) -> str:
         options = self._get_options(kwargs)
         rows = self._get_rows(options)
         lines = [self.format_row(row) for row in rows]
-        return json.dumps(lines, sort_keys=True)
+        return json.dumps(lines, indent=2, sort_keys=True)
 
 
 __all__ = [
-    """JsonLicenseFinderTable""",
+    """JsonPrettyTable""",
 ]

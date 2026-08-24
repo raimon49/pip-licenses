@@ -39,15 +39,10 @@ from collections.abc import (
 )
 from typing import Union
 
-from prettytable import (
-    HRuleStyle,
-    PrettyTable,
-)
-
 from ..cli import (
     Configuration,
 )
-from ..cli.pseudoChoices import (
+from ..cli.pseudo_choices import (
     FormatArg,
 )
 from ..core import (
@@ -67,10 +62,14 @@ from . import (
     __version__,  # noqa: F401 -- Re-export as part of data API
     cast,
 )
-from .CSVPrettyTable import CSVPrettyTable  # the class
-from .JsonLicenseFinderTable import JsonLicenseFinderTable  # the class
-from .JsonPrettyTable import JsonPrettyTable  # the class
-from .PlainVerticalTable import PlainVerticalTable  # the class
+from ._csv import CSVPrettyTable  # the class
+from ._json import JsonPrettyTable  # the class
+from ._license_finder_json import JsonLicenseFinderTable  # the class
+from ._plain_vertical import PlainVerticalTable  # the class
+from ._prettytable_bridge import (
+    HRuleStyle,
+    PrettyTable,
+)
 
 
 def factory_styled_table_with_args(

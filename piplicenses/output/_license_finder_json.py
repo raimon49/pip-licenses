@@ -26,66 +26,44 @@
 # SOFTWARE.
 
 
-from typing import Union
-
-from prettytable import PrettyTable
+# import included here in order to limit dependencies
+# if not interested in JSON output,
+# then the dependency is not required
+import json
 
 from .. import (
     __pkgname__,  # noqa: F401 -- Re-export as part of data API
     __version__,  # noqa: F401 -- Re-export as part of data API
 )
-
-# Breaking change: version 6 will transition to support PEP-305 csv instead of pretty table (as csv is built-in)
-from . import (
-    cast,
-    strs,
+from . import strs
+from ._json import JsonPrettyTable
+from ._prettytable_bridge import (
+    RowType,
 )
 
-encodeable = Union[bytes, str]
 
+class JsonLicenseFinderTable(JsonPrettyTable):
+    def format_row(self, row: RowType) -> dict[str, strs]:
+        resrow: dict[str, strs] = {}
+        for field, value in zip(self._field_names, row):
+            if field == "Name":
+                resrow["name"] = value
 
-COMMA: str = ","
-"""Just the comma in CSV."""
+            if field == "Version":
+                resrow["version"] = value
 
+            if field == "License":
+                resrow["licenses"] = [value]
 
-class CSVPrettyTable(PrettyTable):
-    """PrettyTable-like class exporting to CSV"""
+        return resrow
 
     def get_string(self, **kwargs: strs) -> str:
-        def _esc_quotes(val: encodeable) -> str:
-            """
-            Meta-escaping double quotes
-            https://tools.ietf.org/html/rfc4180
-            """
-            try:
-                return cast(str, val).replace('"', '""')
-            except UnicodeDecodeError:  # pragma: no cover
-                return cast(bytes, val).decode("utf-8").replace('"', '""')
-            except UnicodeEncodeError:  # pragma: no cover
-                return str(
-                    cast(str, val).encode("unicode_escape").replace('"', '""')  # type: ignore[arg-type]
-                )
-
         options = self._get_options(kwargs)
         rows = self._get_rows(options)
-        formatted_rows = self._format_rows(rows)
-
-        lines: list[str] = []
-        formatted_header = COMMA.join(
-            [f'"{_esc_quotes(val)}"' for val in self._field_names]
-        )
-        lines.append(formatted_header)
-        lines.extend(
-            [
-                COMMA.join([f'"{_esc_quotes(val)}"' for val in row])
-                for row in formatted_rows
-            ]
-        )
-
-        return "\n".join(lines)
+        lines = [self.format_row(row) for row in rows]
+        return json.dumps(lines, sort_keys=True)
 
 
 __all__ = [
-    """COMMA""",
-    """CSVPrettyTable""",
+    """JsonLicenseFinderTable""",
 ]

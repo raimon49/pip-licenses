@@ -191,7 +191,7 @@ class CompatibleArgumentParser(argparse.ArgumentParser):
             )
 
 
-from .pseudoChoices import (
+from .pseudo_choices import (
     FormatArg,
     FromArg,
     NoValueEnum,

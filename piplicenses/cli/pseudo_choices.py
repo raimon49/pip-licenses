@@ -1,6 +1,6 @@
 # vim:fenc=utf-8 ff=unix ft=python ts=4 sw=4 sts=4 si et
 
-# pip-licenses.cli.pseudoChoices
+# pip-licenses.cli.pseudo_choices
 #
 # MIT-0 License OR MIT License
 #
@@ -29,7 +29,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-"""pip-licenses.cli.pseudoChoices
+"""pip-licenses.cli.pseudo_choices
 
 Shims to use pseudo-Enums (NoValueEnum) as objects for choices in argparsers.
 """

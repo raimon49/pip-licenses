@@ -10,9 +10,6 @@ updates:
     target-branch: "master"
     versioning-strategy: increase
     rebase-strategy: "disabled"
-    groups:
-      production-dependencies:
-        dependency-type: "production"
     allow:
       - dependency-name: "prettytable"
         dependency-type: "direct"
@@ -20,10 +17,21 @@ updates:
         dependency-type: "production"
       - dependency-name: "wcwidth"
         dependency-type: "production"
+      # allow build/packaging transitive packages
+      # (will only ever approve if already in pyproject.toml)
+      - dependency-name: "build"
+        dependency-type: "indirect"
+      - dependency-name: "setuptools"
+        dependency-type: "indirect"
+      - dependency-name: "setuptools_scm"
+        dependency-type: "indirect"
+      - dependency-name: "pip"
+        dependency-type: "indirect"
     ignore:
       - dependency-name: "*"
     exclude-paths:
-      - "dev-requirements.txt"
+      - "requirements.txt"
+      - "*-requirements.txt"
       - "docker/*"
     assignees:
       - "reactive-firewall"
@@ -33,10 +41,27 @@ updates:
     schedule:
       interval: "weekly"
       day: "friday"
+  - package-ecosystem: "pip"  # See documentation for possible values
+    directory: "/"  # Location of package manifests
+    target-branch: "master"
+    versioning-strategy: lockfile-only
+    allow:
+      - dependency-type: "direct"
+    exclude-paths:
+      - "pyproject.toml"
+      - "docker/*"
+    assignees:
+      - "reactive-firewall"
+    commit-message:
+      prefix: "[SYNC] "
+      include: "scope"
+    schedule:
+      interval: "weekly"
+      day: "friday"
   - package-ecosystem: "github-actions"  # See documentation for possible values
     directory: ".github/workflows/"  # Location of package manifests
     target-branch: "master"
-    rebase-strategy: "disabled"
+    # rebase-strategy: "disabled"  # enabled by default
     assignees:
       - "reactive-firewall"
     commit-message:

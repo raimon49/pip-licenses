@@ -1415,6 +1415,7 @@ def test_allow_only(monkeypatch: pytest.MonkeyPatch) -> None:
         "BSD-3-Clause",  # v6 considers this unique
         "BSD-2-Clause",  # v6 considers this unique
         "Apache Software License",
+        "Apache-2.0 OR BSD-2-Clause",  # v6 considers this unique (e.g., packaging==26.2)
         "Mozilla Public License 2.0 (MPL 2.0)",
         "Python Software Foundation License",
         "Public Domain",
@@ -1449,11 +1450,12 @@ def test_allow_only(monkeypatch: pytest.MonkeyPatch) -> None:
         )
     )  # GHI #292 -- MIT License has become abbreviated to just MIT for some
     # GHI #338 -- filelock <3.23.0 reports Unlicense instead of MIT
+    # GHI #364 -- circa v6.0.0b8 packaging reports a licence-expression exactly
 
 
 def test_allow_only_partial(monkeypatch: pytest.MonkeyPatch) -> None:
     licenses = (
-        "Bsd",
+        "Bsd",  # GHI #364 -- in v6 even matches bsd from a license-expression with an 'OR'
         "Apache",
         "Mozilla Public License 2.0 (MPL 2.0)",
         "Python Software Foundation License",
@@ -1493,9 +1495,10 @@ def test_allow_only_with_empty_tokens(
     # same as test_allow_only but with extra semicolons/whitespace
     licenses = (
         "Bsd License",
-        "BSD-2-Clause",
-        "BSD-3-Clause",
+        "BSD-3-Clause",  # v6 considers this unique
+        "BSD-2-Clause",  # v6 considers this unique
         "Apache Software License",
+        "Apache-2.0 OR BSD-2-Clause",  # v6 considers this unique (e.g., packaging==26.2)
         "Mozilla Public License 2.0 (MPL 2.0)",
         "Python Software Foundation License",
         "Public Domain",
@@ -1517,19 +1520,12 @@ def test_allow_only_with_empty_tokens(
 
     assert "" == mocked_stdout.printed.strip()
     assert (
-        (
-            "license MIT License not in allow-only licenses was found for package"
-            in mocked_stderr.printed
-        )
-        or (
-            "license MIT not in allow-only licenses was found for package"
-            in mocked_stderr.printed
-        )
-        or (
-            "license Unlicense not in allow-only licenses was found for package"
-            in mocked_stderr.printed
-        )
-    )  # GHI #292 -- MIT License has become abbreviated to just MIT for some
+        " not in allow-only licenses was found for package"
+        in mocked_stderr.printed
+    ) and (
+        "license MIT" in mocked_stderr.printed
+        or "license Unlicense" in mocked_stderr.printed
+    )  # GHI #292 -- partial match may omit 'License'
     # GHI #338 -- filelock <3.23.0 reports Unlicense instead of MIT
 
 

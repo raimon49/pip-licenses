@@ -35,7 +35,7 @@ To be documented.
 from functools import partial
 from typing import (
     Union,
-    cast,  # noqa: F401 -- (used by piplicenses.output.CSVPrettyTable)
+    cast,  # noqa: F401 -- (used by piplicenses.output._csv)
 )
 
 from .. import (
@@ -65,21 +65,30 @@ from ..cli import (
 from ..sorting import (
     SetLike,  # noqa: F401 -- Re-export as part of our internal typing API
 )
-from .consoles import (
-    output_colored,
-    save_if_needs,
-)
-from .CSVPrettyTable import CSVPrettyTable
-from .JsonLicenseFinderTable import JsonLicenseFinderTable
+
+# See https://docs.python.org/3/reference/simple_stmts.html#the-import-statement
+from ._csv import CSVPrettyTable
+
+# See https://docs.python.org/3/reference/simple_stmts.html#the-import-statement
+# Must import JsonPrettyTable before JsonLicenseFinderTable
+from ._json import JsonPrettyTable
+
+# See https://docs.python.org/3/reference/simple_stmts.html#the-import-statement
+# Must import JsonLicenseFinderTable after JsonPrettyTable
+from ._license_finder_json import JsonLicenseFinderTable
 
 # placeholder for
-# from prettytable import (
+# from ._prettytable_bridge import (
 #    HRuleStyle,
 #    PrettyTable,
 #    RowType,
 # )
-from .JsonPrettyTable import JsonPrettyTable
-from .PlainVerticalTable import PlainVerticalTable
+# See https://docs.python.org/3/reference/simple_stmts.html#the-import-statement
+from ._plain_vertical import PlainVerticalTable
+from .consoles import (
+    output_colored,
+    save_if_needs,
+)
 from .tables import (
     create_licenses_table,
     create_summary_table,
@@ -159,7 +168,6 @@ def get_output_fields(args: Configuration) -> list[str]:
     return output_fields
 
 
-# placeholder for consoles (from split-cli)
 def create_output_string(args: Configuration) -> str:
     output_fields = get_output_fields(args)
 

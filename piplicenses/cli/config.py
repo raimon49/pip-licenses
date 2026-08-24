@@ -54,7 +54,7 @@ from . import (
     argparse,
     sys,
 )
-from .pseudoChoices import (
+from .pseudo_choices import (
     FormatArg,
     FromArg,
     OrderArg,

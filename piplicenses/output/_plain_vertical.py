@@ -25,37 +25,43 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-
-# import included here in order to limit dependencies
-# if not interested in JSON output,
-# then the dependency is not required
-import json
-
-from prettytable import (
-    PrettyTable,
-    RowType,
-)
-
 from .. import (
     __pkgname__,  # noqa: F401 -- Re-export as part of data API
     __version__,  # noqa: F401 -- Re-export as part of data API
 )
 from . import strs
+from ._prettytable_bridge import (
+    PrettyTable,
+)
 
 
-class JsonPrettyTable(PrettyTable):
-    """PrettyTable-like class exporting to JSON"""
+class PlainVerticalTable(PrettyTable):
+    """PrettyTable for outputting to a simple non-column based style.
 
-    def format_row(self, row: RowType) -> dict[str, strs]:
-        return dict(zip(self._field_names, row))
+    When used with --with-license-file, this style is similar to the default
+    style generated from Angular CLI's --extractLicenses flag.
+    """
 
     def get_string(self, **kwargs: strs) -> str:
         options = self._get_options(kwargs)
         rows = self._get_rows(options)
-        lines = [self.format_row(row) for row in rows]
-        return json.dumps(lines, indent=2, sort_keys=True)
+
+        output = ""
+        for row in rows:
+            index = 0
+            while index < len(row):
+                col = row[index]
+                if isinstance(col, list):
+                    for entry in col:
+                        output += f"{entry}\n"
+                else:
+                    output += f"{col}\n"
+                index += 1
+            output += "\n"
+
+        return output
 
 
 __all__ = [
-    """JsonPrettyTable""",
+    """PlainVerticalTable""",
 ]
