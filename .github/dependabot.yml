@@ -6,9 +6,9 @@
 version: 2
 updates:
   - package-ecosystem: "pip"  # See documentation for possible values
-    directory: "/"  # Location of package manifests
+    directory: "/"  # Default location of package manifests (e.g., pyproject.toml)
     target-branch: "master"
-    versioning-strategy: increase
+    versioning-strategy: increase-if-necessary
     rebase-strategy: "disabled"
     allow:
       - dependency-name: "prettytable"
@@ -43,7 +43,7 @@ updates:
       day: "friday"
   - package-ecosystem: "pip"  # See documentation for possible values
     directory: "/"  # Location of package manifests
-    target-branch: "master"
+    target-branch: "next" # different to allow dependabot to work
     versioning-strategy: lockfile-only
     allow:
       - dependency-type: "direct"
