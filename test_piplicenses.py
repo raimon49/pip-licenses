@@ -14,7 +14,11 @@ from importlib.metadata import Distribution
 from pathlib import Path
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any
-from unittest.mock import MagicMock
+from unittest.mock import (
+    MagicMock,
+    Mock,  # used by LoadConfigFromFileTests
+    patch,  # used by LoadConfigFromFileTests
+)
 
 import docutils.frontend
 import docutils.parsers.rst
@@ -1308,6 +1312,178 @@ class TestUtilities(unittest.TestCase):
             _handle_multiple_value_field("ChangelogS", iter(["v1", "v2"])),
             ["v1", "v2"],
         )
+
+
+class LoadConfigFromFileTests(unittest.TestCase):
+    import piplicenses as config_module
+
+    def setUp(self) -> None:
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        self.tmp_path = Path(self.temp_dir.name)
+
+        self.package_name = "pip-licenses"
+        self.package_name_patch = patch.object(
+            self.config_module,
+            "__pkgname__",
+            self.package_name,
+        )
+        self.package_name_patch.start()
+        self.addCleanup(self.package_name_patch.stop)
+
+    def test_returns_package_configuration(self) -> None:
+        pyproject_path = self.tmp_path / "pyproject.toml"
+        pyproject_path.write_bytes(
+            b"""
+[tool.pip-licenses]
+enabled = true
+timeout = 30
+features = ["a", "b"]
+
+[tool.other_tool]
+value = "ignored"
+"""
+        )
+
+        result = self.config_module.load_config_from_file(str(pyproject_path))
+
+        self.assertEqual(
+            result,
+            {
+                "enabled": True,
+                "timeout": 30,
+                "features": ["a", "b"],
+            },
+        )
+
+    def test_returns_empty_dict_when_file_does_not_exist(self) -> None:
+        pyproject_path = self.tmp_path / "does-not-exist.toml"
+
+        result = self.config_module.load_config_from_file(str(pyproject_path))
+
+        self.assertEqual(result, {})
+
+    def test_returns_empty_dict_when_tool_table_is_missing(self) -> None:
+        pyproject_path = self.tmp_path / "pyproject.toml"
+        pyproject_path.write_text(
+            """
+[project]
+name = "example"
+""",
+            encoding="utf-8",
+        )
+
+        result = self.config_module.load_config_from_file(str(pyproject_path))
+
+        self.assertEqual(result, {})
+
+    def test_returns_empty_dict_when_package_table_is_missing(self) -> None:
+        pyproject_path = self.tmp_path / "pyproject.toml"
+        pyproject_path.write_text(
+            """
+[tool.other_tool]
+enabled = true
+""",
+            encoding="utf-8",
+        )
+
+        result = self.config_module.load_config_from_file(str(pyproject_path))
+
+        self.assertEqual(result, {})
+
+    def test_ignores_unrelated_top_level_tables(self) -> None:
+        pyproject_path = self.tmp_path / "pyproject.toml"
+        pyproject_path.write_text(
+            f"""
+[build-system]
+requires = ["setuptools"]
+
+[project]
+name = "example"
+
+[tool.{self.package_name}]
+setting = "expected"
+""",
+            encoding="utf-8",
+        )
+
+        result = self.config_module.load_config_from_file(str(pyproject_path))
+
+        self.assertEqual(result, {"setting": "expected"})
+
+    def test_propagates_open_error(self) -> None:
+        pyproject_path = self.tmp_path / "pyproject.toml"
+        pyproject_path.write_text("", encoding="utf-8")
+
+        open_error = PermissionError("permission denied")
+
+        with (
+            patch.object(
+                self.config_module,
+                "_real_io_open",
+                Mock(side_effect=open_error),
+            ),
+            self.assertRaisesRegex(
+                PermissionError,
+                "permission denied",
+            ),
+        ):
+            self.config_module.load_config_from_file(str(pyproject_path))
+
+    def test_propagates_toml_decode_error(self) -> None:
+        pyproject_path = self.tmp_path / "pyproject.toml"
+        pyproject_path.write_text(
+            """
+[tool.pip-licenses
+invalid = true
+""",
+            encoding="utf-8",
+        )
+
+        with self.assertRaises(Exception):  # noqa: B017 -- e.g., almost anything other than SystemExit or nothing
+            self.config_module.load_config_from_file(str(pyproject_path))
+
+    def test_handles_missing_and_empty_tables(self) -> None:
+        test_cases = [
+            ({}, {}),
+            ({"tool": {}}, {}),
+            ({"tool": {"unrelated_package": {}}}, {}),
+            ({"tool": {"pip-licenses": {}}}, {}),
+            (
+                {"tool": {"pip-licenses": {"enabled": False}}},
+                {"enabled": False},
+            ),
+            (
+                {"tool": {"pip-licenses": {"value": None}}},
+                {"value": None},
+            ),
+            (
+                {
+                    "tool": {
+                        "pip-licenses": {
+                            "nested": {"key": "value"},
+                        }
+                    }
+                },
+                {"nested": {"key": "value"}},
+            ),
+        ]
+
+        for toml_data, expected in test_cases:
+            with self.subTest(toml_data=toml_data):
+                pyproject_path = self.tmp_path / "pyproject.toml"
+                pyproject_path.write_bytes(b"placeholder")
+
+                with patch.object(
+                    self.config_module.tomllib,
+                    "load",
+                    Mock(return_value=toml_data),
+                ):
+                    result = self.config_module.load_config_from_file(
+                        str(pyproject_path)
+                    )
+
+                self.assertEqual(result, expected)
 
 
 INVALID_PATH_FIXTURE = "/var/some/unlikly/path/that/should/not/be"
