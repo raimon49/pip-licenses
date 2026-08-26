@@ -61,6 +61,9 @@ from piplicenses import (
     select_license_by_source,
     value_to_enum_key,
 )
+
+# GHI-81 -- EXPERIMENTAL exact import module subject to change
+from piplicenses.cli.config import Configuration
 from piplicenses.output.tables import _handle_multiple_value_field
 
 if TYPE_CHECKING:
@@ -1484,6 +1487,46 @@ invalid = true
                     )
 
                 self.assertEqual(result, expected)
+
+
+class CoreHelperTestCase(unittest.TestCase):
+    def test_equivilant_call_of_get_pkg_info_when_passing_kwargs_with_pkg(
+        self,
+    ) -> None:  # descriptive name WIP
+        """Tests that positional and key-word args are equivalent for `piplicenses.core._get_pkg_info`."""
+        _test_packages = piplicenses.importlib_metadata.distributions(
+            path=" ".join(sys.path).split()
+        )
+        _test_configuration = (
+            Configuration()
+        )  # e.g., empty API piplicenses.cli.config.Configuration
+        for _test_pkg in _test_packages:
+            self.assertEqual(
+                piplicenses.core._get_pkg_info(
+                    _test_pkg, **vars(_test_configuration)
+                ),  # reference positional form
+                piplicenses.core._get_pkg_info(
+                    pkg=_test_pkg, **vars(_test_configuration)
+                ),  # test key-word form
+            )  # GHI-366 -- See https://github.com/raimon49/pip-licenses/issues/366
+
+    def test_bad_call_of_get_pkg_info_when_passing_junk(self) -> None:
+        """Tests that args for `piplicenses.core._get_pkg_info` are type validated at runtime.
+
+        Unlike static type hints, (which are for developers), this tests that the given `pkg`,
+        either as a positional, or as a key-word argument, is indeed a Python Distribution object.
+        This ensures a modest limit to typical `kwargs.pop` unboxing issues.
+        """
+        _test_configuration = (
+            Configuration()
+        )  # e.g., empty API piplicenses.cli.config.Configuration
+        _test_pkg = (
+            unittest  # e.g., a module is not the same as a Python Package
+        )
+        with self.assertRaises(TypeError):
+            _ = piplicenses.core._get_pkg_info(
+                pkg=_test_pkg, **vars(_test_configuration)
+            )  # test key-word form
 
 
 INVALID_PATH_FIXTURE = "/var/some/unlikly/path/that/should/not/be"
