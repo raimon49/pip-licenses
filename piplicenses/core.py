@@ -342,10 +342,7 @@ METADATA_KEYS: dict[
 ] = {
     "home-page": [extract_homepage],
     "author": [extract_authors],
-    "maintainer": [
-        lambda metadata: metadata.get("Maintainer"),
-        lambda metadata: metadata.get("Maintainer-email"),
-    ],
+    "maintainer": [extract_maintainers],
     "license": [lambda metadata: metadata.get("License")],
     "license_classifier": [extract_license_from_classifiers],  # added in v6.0
     "license_expression": [

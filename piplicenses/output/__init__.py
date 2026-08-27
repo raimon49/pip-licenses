@@ -150,6 +150,7 @@ def get_output_fields(args: Configuration) -> list[str]:
     _format_supports_file_text_data = False
     if args.format_ in (
         FormatArg.JSON,
+        FormatArg.PLAIN,
         FormatArg.PLAIN_VERTICAL,
         FormatArg.HTML,
     ):

@@ -863,8 +863,22 @@ class TestGetLicenses(CommandLineTestCase):
         args = self.parser.parse_args(format_html_args)
         output_string = create_output_string(args)
 
-        self.assertIn("<table>", output_string)
+        self.assertIn("<table", output_string)
+        self.assertIn("<thead>", output_string)
+        self.assertIn("<tbody>", output_string)
+        self.assertIn("<tr>", output_string)
+        self.assertIn("<td>", output_string)
         self.assertIn("Filipe La&#237;ns", output_string)  # author of "build"
+
+    def test_format_html_has_attributes(self) -> None:
+        format_html_args = ["--format=html"]
+        args = self.parser.parse_args(format_html_args)
+        output_string = create_output_string(args)
+
+        self.assertIn("<table id", output_string)  # added in version 6.0+
+        self.assertIn(
+            'class="pip_licenses_table">', output_string
+        )  # added in version 6.0+
 
     def test_format_json(self) -> None:
         format_json_args = ["--format=json", "--with-authors"]

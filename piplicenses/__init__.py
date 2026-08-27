@@ -55,7 +55,7 @@ from .tomli_bridge import tomllib
 
 # Must declare this ASAP as most other component will re-import it
 __pkgname__ = "pip-licenses"  # expose package name with a dash (but canonicalized will ignore dash)
-__version__ = "6.0.0b9"  # (PEP-440 version)
+__version__ = "6.0.0b10"  # (PEP-440 version)
 # Rationale: Try to declare these early too,
 #   as most other component will also re-import this from the package scope
 #   this keeps the .constants package internal and somewhat hidden for now
