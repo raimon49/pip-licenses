@@ -32,6 +32,7 @@
 To be documented.
 """
 
+import hashlib
 from functools import partial
 from typing import (
     Union,
@@ -107,6 +108,7 @@ def get_output_fields(args: Configuration) -> list[str]:
         output_fields.append("License-Classifier")
         output_fields.append("License-Expression")
     else:
+        # TODO: handle combos for JSON, and plain vertical
         output_fields.append("License")
 
     if args.with_authors:
@@ -123,49 +125,74 @@ def get_output_fields(args: Configuration) -> list[str]:
 
     if args.no_version:
         output_fields.remove("Version")
-
-    # TODO: This workaround for GHI-71 (and related GHI-242) is from Alpha-v6.0.0 and
-    # was inspired by stefan6419846/pip-licenses-cli#32 (and thus CAN NOT be included as is)
-    # because this is really more about argument parsing and validation it is considered a
-    # REGRESSION for the rest of the v6-beta path and should be removed by 6.1.x
+    # see PEP-387
+    # see https://docs.python.org/3/library/exceptions.html#PendingDeprecationWarning
     # e.g., if not ("6.1" in __version__ and "6" in __version__ and "6.0" not in __version__):
     if args.with_license_files and args.format_ not in [
         FormatArg.JSON,
         FormatArg.PLAIN_VERTICAL,
     ]:
-        if args.format_ != FormatArg.HTML:
+        if args.format_ not in (
+            FormatArg.MARKDOWN,
+            FormatArg.RST,
+            FormatArg.CONFLUENCE,
+            FormatArg.HTML,
+        ):
             args.with_license_files = False  # unsupported combo
+        # these are only supported in JSON and plain vertical
         args.with_notice_file = False
         args.with_notice_files = False
         args.with_other_files = False
-    # ... else: raise NotImplemented("overdue tech-debt") from None
 
     if args.no_file_paths:
         args.no_license_path = True
+
+    _format_supports_file_text_data = False
+    if args.format_ in (
+        FormatArg.JSON,
+        FormatArg.PLAIN_VERTICAL,
+        FormatArg.HTML,
+    ):
+        _format_supports_file_text_data = True
 
     if args.with_license_file or args.with_license_files:
         if not args.no_license_path:
             output_fields.append(
                 "LicenseFiles" if args.with_license_files else "LicenseFile"
             )
-
-        output_fields.append(
-            "LicenseTexts" if args.with_license_files else "LicenseText"
-        )
+        if _format_supports_file_text_data:
+            output_fields.append(
+                "LicenseTexts" if args.with_license_files else "LicenseText"
+            )
 
         if args.with_notice_file or args.with_notice_files:
             if not args.no_file_paths:
                 output_fields.append(
                     "NoticeFiles" if args.with_notice_files else "NoticeFile"
                 )
-            output_fields.append("NoticeText")
+            if _format_supports_file_text_data:
+                output_fields.append("NoticeText")
 
         if args.with_other_files:
             if not args.no_file_paths:
                 output_fields.append("OtherFiles")
-            output_fields.append("OtherText")
+            if _format_supports_file_text_data:
+                output_fields.append("OtherText")
 
     return output_fields
+
+
+def _create_stable_table_id(table_as_string: str) -> str:
+    """Normalized SHA-256 hash based ID for the table with the given table string"""
+    _seed = b""
+    if table_as_string:
+        # this is rather expensive but should ensure a stable result
+        _seed = table_as_string.encode(
+            encoding="utf-8", errors="backslashreplace"
+        )
+    _hashed_table = hashlib.sha3_256(_seed, usedforsecurity=False)
+    _composed_id: str = f"pipl_tbl_{_hashed_table.hexdigest()}"
+    return _composed_id
 
 
 def create_output_string(args: Configuration) -> str:
@@ -179,7 +206,14 @@ def create_output_string(args: Configuration) -> str:
     sortby = get_sortby(args)
 
     if args.format_ == FormatArg.HTML:
-        html = table.get_html_string(fields=output_fields, sortby=sortby)
+        _tbl_id = _create_stable_table_id(
+            table.get_string(fields=output_fields, sortby=sortby)
+        )
+        html = table.get_html_string(
+            fields=output_fields,
+            sortby=sortby,
+            attributes={"id": _tbl_id, "class": "pip_licenses_table"},
+        )
         return html.encode("ascii", errors="xmlcharrefreplace").decode("ascii")
     else:
         return table.get_string(fields=output_fields, sortby=sortby)

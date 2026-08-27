@@ -274,13 +274,58 @@ def extract_homepage(metadata: Message) -> Union[str, None]:
 
 
 def extract_license_from_classifiers(metadata: Message) -> list[str]:
-    classifiers: list[str] = metadata.get_all("classifier", [])
-    license_classifiers: list[str] = find_license_from_classifier(classifiers)
+    classifiers: list[str] = metadata.get_all("Classifier", [])
+    license_classifiers: list[str] = sorted(
+        find_license_from_classifier(classifiers)
+    )
+    # TODO: raise warning if metadata indicates version is 2.4+ -- see PEP 639
     return license_classifiers
 
 
+def extract_authors(metadata: Message) -> list[str]:
+    _combined_authors = set()
+    # start with Core Metadata 1.0 authors
+    # see https://packaging.python.org/en/latest/specifications/core-metadata/#author
+    _auths = metadata.get_all("Author", [])
+    if len(_auths) >= 1:
+        # the spec just expects a single string instance,
+        # but better to handle count-agnostically
+        for _auth in _auths:
+            _combined_authors.add(_auth.strip())
+    # continue with Core Metadata 1.0 and inspect RFC-822 style author-email entries
+    # see https://packaging.python.org/en/latest/specifications/core-metadata/#author-email
+    _emails = metadata.get_all("Author-Email", [])
+    # Per RFC-822, this field may contain multiple comma-separated e-mail addresses:
+    for _auth_entry in _emails:
+        _combined_authors.add(_auth_entry.split(" <")[0])
+    # TODO: should normalize as per RFC-822
+    return sorted(_combined_authors)
+
+
+def extract_maintainers(metadata: Message) -> list[str]:
+    _combined_maintainers = set()
+    # start with Core Metadata 1.2 Maintainers
+    # see https://packaging.python.org/en/latest/specifications/core-metadata/#maintainer
+    _auths = metadata.get_all("Maintainer", [])
+    if len(_auths) >= 1:
+        # the spec just expects a single string instance,
+        # but better to handle count-agnostically
+        for _auth in _auths:
+            _combined_maintainers.add(_auth.strip())
+    # continue with Core Metadata 1.2 and inspect RFC-822 style maintainer-email entries
+    # see https://packaging.python.org/en/latest/specifications/core-metadata/#maintainer-email
+    _emails = metadata.get_all("Maintainer-Email", [])
+    # Per RFC-822, this field may contain multiple comma-separated e-mail addresses:
+    for _auth_entry in _emails:
+        _combined_maintainers.add(_auth_entry.split(" <")[0])
+    # TODO: should normalize as per RFC-822
+    return sorted(_combined_maintainers)
+
+
 # placeholder for something like
-# Value: TypeAlias = Union[str, list[str], dict[str, Union[str, list[str], NoneType]], NoneType]
+# Value: TypeAlias = Union[str, list[str], dict[str, Union[str, list[str], None]], None]
+# E.g., Value: TypeAlias = Union[strs, dict[str, Union[strs, None]], None]
+# E.g., Value: TypeAlias = Optional[Union[strs, dict[str, Optional[strs]]]]
 # See https://github.com/raimon49/pip-licenses/issues/360
 
 
@@ -296,23 +341,20 @@ METADATA_KEYS: dict[
     ],
 ] = {
     "home-page": [extract_homepage],
-    "author": [
-        lambda metadata: metadata.get("author"),
-        lambda metadata: metadata.get("author-email"),
-    ],
+    "author": [extract_authors],
     "maintainer": [
-        lambda metadata: metadata.get("maintainer"),
-        lambda metadata: metadata.get("maintainer-email"),
+        lambda metadata: metadata.get("Maintainer"),
+        lambda metadata: metadata.get("Maintainer-email"),
     ],
-    "license": [lambda metadata: metadata.get("license")],
+    "license": [lambda metadata: metadata.get("License")],
     "license_classifier": [extract_license_from_classifiers],  # added in v6.0
     "license_expression": [
-        lambda metadata: metadata.get("license-expression")
+        lambda metadata: metadata.get("License-expression")
     ],
     "license_files": [
         lambda metadata: metadata.get_all("License-File", [])
     ],  # added in v6.0
-    "summary": [lambda metadata: metadata.get("summary")],
+    "summary": [lambda metadata: metadata.get("Summary")],
     "urls": [extract_urls],  # added in v6.0
 }
 
@@ -717,7 +759,7 @@ def get_packages(
         ):
             continue
 
-        if pkgs_as_normalize and pkg_name.lower() not in pkgs_as_normalize:
+        if pkgs_as_normalize and pkg_name not in pkgs_as_normalize:
             continue
 
         if not args.with_system and pkg_name in SYSTEM_PACKAGES:
