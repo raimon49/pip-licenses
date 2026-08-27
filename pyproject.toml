@@ -33,7 +33,7 @@ classifiers = [
 	"Typing :: Typed"
 ]
 dependencies = [
-    "prettytable >= 3.12.0",
+    "prettytable >= 3.12.0",  # 3.16.0 is the last to support 3.9
     "tomli >= 2;python_version<'3.11'"
 ]
 scripts = { "pip-licenses" = "piplicenses.__main__:main" }

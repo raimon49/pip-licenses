@@ -330,7 +330,7 @@ class Configuration(argparse.Namespace):
             "with_urls",
             "with_description",
             "with_license_files",
-            "with_notice_file",
+            "with_notice_file",  # BUG
             "with_notice_files",
             "with_other_files",
             "without_license_paths",

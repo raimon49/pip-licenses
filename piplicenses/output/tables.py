@@ -86,6 +86,10 @@ def factory_styled_table_with_args(
         FormatArg.JSON,
     )
     table.header = True
+    if hasattr(table, "break_on_hyphens") and table.border:
+        table.break_on_hyphens = (
+            False  # changed in v6.0+ -- to support PrettyTable 3.12-3.16
+        )
 
     if args.format_ == FormatArg.MARKDOWN:
         table.junction_char = "|"
@@ -205,7 +209,7 @@ def create_licenses_table(
                     value = pkg[FIELDS_TO_METADATA_KEYS[field]]
                     if value:
                         if field in DYNAMIC_FIELD_NAMES:
-                            row.append(
+                            _value_as_list = sorted(
                                 cast(
                                     list[str],
                                     _handle_multiple_value_field(
@@ -214,6 +218,15 @@ def create_licenses_table(
                                     ),
                                 )
                             )
+                            if args.format_ in (
+                                FormatArg.JSON,
+                                FormatArg.PLAIN_VERTICAL,
+                            ):  # Prototype
+                                row.append(
+                                    _value_as_list,
+                                )
+                            else:
+                                row.append(", ".join(_value_as_list))
                         else:
                             row.append(cast(str, value))
                     else:  # invalid value (e.g. None)
