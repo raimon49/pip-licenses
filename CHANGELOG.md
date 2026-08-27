@@ -4,22 +4,26 @@
 
 (SUBJECT TO CHANGE IN NEXT RELEASE)
 
+* Improved stability of internal API, to pave the way for an up-coming public API
+* Implements support of file-paths for most formats
 * Align with [PEP-749](https://peps.python.org/pep-0749) and deprecated use of `typing.TYPE_CHECKING` conditions
 * Fixed multiple typographical errors
-* Refactored most of the codebase to be more modular (WIP GHI #316)
+* Refactored most of the codebase to be more modular, closing GHI #316
+  * Resolved various new & related, test-coverage gaps closing GHI #365 & GHI #366
+* Including refactoring work from the pre-release (reworked from ALPHA)
+  * Improved handling of multiple license files in a single package
+  * Implemented new flags (WIP GHI #242)
+    * normalized `--with` versus `--without` flag style
+  * Fixed priority logic regression from v5.5.x that lead to non-determinant ordering of multiple-source results, (WIP GHI #309), and possibly resolving? (GHI #330 - needs new testing)
+  * Fixed multiple regressions in tests due to recent version bumps, closing GHI #337 & GHI #338
+  * Updated various portions of the README document (WIP), closing GHI #328
+  * Fixed multiple false positives including:
+    * [CVE-2026-4539 reDoS](https://github.com/advisories/GHSA-5239-wwwm-4pmq)
+    * [CVE-2026-44432 Leak](https://github.com/advisories/GHSA-mf9v-mfxr-j63j)
+    * [CVE-2026-44431](https://github.com/advisories/GHSA-qccp-gfcp-xxvc)
+  * Updated testing in CI to resolve python3.9 coverage regressions
 
-#### Including refactoring work from the pre-release (ALPHA)
-
-* Fixed priority logic regression from v5.5.x that lead to non-determinant ordering of multiple-source results, (WIP GHI #309), and possibly resolving? (GHI #330 - needs new testing)
-* Fixed multiple regressions in tests due to recent version bumps, closing GHI #337 & GHI #338
-* Updated various portions of the README document (WIP), closing GHI #328
-* Fixed multiple false positives including:
-  * [CVE-2026-4539 reDoS](https://github.com/advisories/GHSA-5239-wwwm-4pmq)
-  * [CVE-2026-44432 Leak](https://github.com/advisories/GHSA-mf9v-mfxr-j63j)
-  * [CVE-2026-44431](https://github.com/advisories/GHSA-qccp-gfcp-xxvc)
-* Updated testing in CI to resolve python3.9 coverage regressions
-
-### ONLY ON pre-6.0.0 (ALPHA) (need to backport once work on #316 is stable):
+### ONLY ON pre-6.0.0 (ALPHA):
 
   * Improved handling of multiple license files in a single package (WIP GHI #71)
   * Implemented new flags (WIP GHI #242)
