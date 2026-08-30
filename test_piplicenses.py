@@ -627,7 +627,7 @@ class TestGetLicenses(CommandLineTestCase):
         ignore_pkg_name = "prettytable"
         ignore_packages_args = [
             f"--ignore-packages={ignore_pkg_name}",
-            "--with-system",
+            "--include-system",
         ]
         args = self.parser.parse_args(ignore_packages_args)
         table = create_licenses_table(args)
@@ -639,7 +639,7 @@ class TestGetLicenses(CommandLineTestCase):
         ignore_pkg_name = "pip-licenses"
         ignore_packages_args = [
             "--ignore-packages=pip_licenses",
-            "--with-system",
+            "--include-system",
         ]
         args = self.parser.parse_args(ignore_packages_args)
         table = create_licenses_table(args)
@@ -653,7 +653,7 @@ class TestGetLicenses(CommandLineTestCase):
         ignore_pkg_spec = f"{ignore_pkg_name}:1.99.99"
         ignore_packages_args = [
             f"--ignore-packages={ignore_pkg_spec}",
-            "--with-system",
+            "--include-system",
         ]
         args = self.parser.parse_args(ignore_packages_args)
         table = create_licenses_table(args)
@@ -675,7 +675,7 @@ class TestGetLicenses(CommandLineTestCase):
         pkg_name = "typing_extensions"
         only_packages_args = [
             "--packages=typing-extensions",
-            "--with-system",
+            "--include-system",
         ]
         args = self.parser.parse_args(only_packages_args)
         table = create_licenses_table(args)
@@ -683,9 +683,9 @@ class TestGetLicenses(CommandLineTestCase):
         pkg_name_columns = self._create_pkg_name_columns(table)
         self.assertListEqual([pkg_name], pkg_name_columns)
 
-    def test_with_packages_with_system(self) -> None:
+    def test_with_packages_include_from_system(self) -> None:
         pkg_name = "prettytable"
-        only_packages_args = [f"--packages={pkg_name}", "--with-system"]
+        only_packages_args = [f"--packages={pkg_name}", "--include-system"]
         args = self.parser.parse_args(only_packages_args)
         table = create_licenses_table(args)
 

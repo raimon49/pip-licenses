@@ -160,7 +160,7 @@ class Configuration(argparse.Namespace):
 
     # flags / booleans -- default to False (behave as if option omitted)
     summary: bool = False
-    with_system: bool = False
+    include_from_system: bool = False
     with_urls: bool = False
     with_description: bool = False
     if "6.0" in __version__:
@@ -324,7 +324,7 @@ class Configuration(argparse.Namespace):
 
         booleans = {
             "summary",
-            "with_system",
+            "include_from_system",
             "with_authors",
             "with_maintainers",
             "with_urls",
@@ -468,6 +468,33 @@ class Configuration(argparse.Namespace):
             self.with_notice_files = value is True
 
     elif "6.0" in __version__:
+        # DEPRECIATED in v6.0; use include_from_system instead.
+        @property  # type: ignore[no-redef]
+        def with_system(self) -> bool:
+            """DEPRECIATED in v6.0; use include_from_system instead."""
+            import warnings
+
+            warnings.warn(
+                "DEPRECIATED in v6.0; use include_from_system instead."
+                "This will be an error in the future.",
+                stacklevel=2,
+            )
+            return self.include_from_system
+
+        # DEPRECIATED in v6.0; use include_from_system instead.
+        @with_system.setter
+        def with_system(self, value: Union[bool, None]) -> None:
+            """DEPRECIATED in v6.0; use include_from_system instead."""
+            import warnings
+
+            warnings.warn(
+                "DEPRECIATED in v6.0; use include_from_system instead."
+                "This will be an error in the future."
+                "See https://github.com/raimon49/pip-licenses/issues/349",
+                stacklevel=2,
+            )
+            self.include_from_system = value is True
+
         # added in v6.0
         @property  # type: ignore[no-redef]
         def without_version(self) -> bool:

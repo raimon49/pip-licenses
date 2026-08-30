@@ -755,7 +755,7 @@ def get_packages(
         if pkgs_as_normalize and pkg_name not in pkgs_as_normalize:
             continue
 
-        if not args.with_system and pkg_name in SYSTEM_PACKAGES:
+        if not args.include_from_system and pkg_name in SYSTEM_PACKAGES:
             continue
 
         pkg_info = _get_pkg_info(pkg, **vars(args))

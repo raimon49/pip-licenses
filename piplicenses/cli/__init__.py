@@ -239,6 +239,78 @@ def load_config_from_file(pyproject_path: str) -> dict:
     return {}  # universal fallback to simple empty load
 
 
+def _add_scope_arguments_to_parser(
+    parser: CompatibleArgumentParser,
+    include_system_pkg_default: bool,
+    from_default: str,
+) -> CompatibleArgumentParser:
+    """Internal helper function.
+
+    Not part of any public API. Do not rely on this function outside of this defining module.
+    """
+    if parser is not None:
+        scope_group = parser.add_argument_group(
+            "Scope",
+            "Options to fine-tune source of packages {__pkgname__} will consider.",
+        )
+        system_toggle = scope_group.add_mutually_exclusive_group()
+        system_toggle.add_argument(
+            "-s",
+            "--include-system",
+            action="store_true",
+            dest="include_from_system",
+            default=include_system_pkg_default is True,
+            help="dump with system packages",
+        )
+        system_toggle.add_argument(
+            "--with-system",
+            action="store_true",
+            dest="include_from_system",
+            default=include_system_pkg_default is True,
+            help="DEPRECATED; use --include-system instead.",
+        )
+        system_toggle.add_argument(
+            "--ignore-system",
+            action="store_false",
+            dest="include_from_system",
+            help="Omit trivial system packages.",
+            default=include_system_pkg_default,
+        )
+        scope_group.add_argument(
+            "--from",
+            dest="from_",
+            action=SelectAction,
+            type=str,
+            default=get_value_from_enum(FromArg, from_default),
+            metavar="SOURCE",
+            choices=choices_from_enum(FromArg),
+            help="R|where to find license information\n"
+            '"meta", "classifier", "expression", "mixed", "all"\n',
+        )
+    return parser
+
+
+def _migrate_with_system_helper(config_from_file: dict) -> bool:
+    """Use --include-system instead.
+
+    Helper for migration in version v6.0.0
+    """
+    import warnings
+
+    _conf_stub: bool = config_from_file.get(
+        "with-system",  # DEPRECATED in v6.0+
+        False,
+    )
+    if _conf_stub is True:
+        warnings.warn(
+            "DEPRECIATED in v6.0; use include-system instead."
+            "This will be an error in the future."
+            "See https://github.com/raimon49/pip-licenses/issues/349",
+            stacklevel=2,
+        )
+    return _conf_stub
+
+
 def create_parser(
     pyproject_path: str = "pyproject.toml",
 ) -> CompatibleArgumentParser:
@@ -250,7 +322,14 @@ def create_parser(
     )
 
     config_from_file = load_config_from_file(pyproject_path)
-
+    parser = _add_scope_arguments_to_parser(
+        parser=parser,
+        include_system_pkg_default=config_from_file.get(
+            "include-system",
+            _migrate_with_system_helper(config_from_file),
+        ),
+        from_default=config_from_file.get("from", "mixed"),
+    )
     common_options = parser.add_argument_group("Common options")
     license_file_options = parser.add_argument_group("License file options")
     format_options = parser.add_argument_group("Format options")
@@ -273,19 +352,6 @@ def create_parser(
         "By default, will search packages for current env executable\n",
     )
 
-    common_options.add_argument(
-        "--from",
-        dest="from_",
-        action=SelectAction,
-        type=str,
-        default=get_value_from_enum(
-            FromArg, config_from_file.get("from", "mixed")
-        ),
-        metavar="SOURCE",
-        choices=choices_from_enum(FromArg),
-        help="R|where to find license information\n"
-        '"meta", "classifier", "expression", "mixed", "all"\n',
-    )
     common_options.add_argument(
         "-o",
         "--order",
@@ -347,13 +413,7 @@ def create_parser(
         default=config_from_file.get("packages", []),
         help="only include selected packages in output",
     )
-    format_options.add_argument(
-        "-s",
-        "--with-system",
-        action="store_true",
-        default=config_from_file.get("with-system", False),
-        help="dump with system packages",
-    )
+
     format_options.add_argument(
         "-a",
         "--with-authors",

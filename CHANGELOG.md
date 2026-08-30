@@ -2,8 +2,10 @@
 
 ### pre-6.0.0 (BETA WIP)
 
+
 (SUBJECT TO CHANGE IN NEXT RELEASE)
 
+* Replaced `--with-system` with `--include-system` & `--ignore-system`
 * Improved stability of internal API, to pave the way for an up-coming public API
 * Implements support of file-paths for most formats
 * Align with [PEP-749](https://peps.python.org/pep-0749) and deprecated use of `typing.TYPE_CHECKING` conditions
