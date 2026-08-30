@@ -72,6 +72,7 @@ from . import (
     deduplicate_and_normalize,
     normalize_pkg_name,
     normalize_pkg_name_and_version,
+    normalize_version,
     re,  # import re
 )
 from .cli import (
@@ -343,7 +344,7 @@ METADATA_KEYS: dict[
     "home-page": [extract_homepage],
     "author": [extract_authors],
     "maintainer": [extract_maintainers],
-    "license": [lambda metadata: metadata.get("License")],
+    "license_metadata": [lambda metadata: metadata.get("License")],
     "license_classifier": [extract_license_from_classifiers],  # added in v6.0
     "license_expression": [
         lambda metadata: metadata.get("License-expression")
@@ -429,7 +430,7 @@ def _get_pkg_info(
         pkg = cast(Distribution, args[0])
         args = args[1:]
     else:
-        pkg = kwargs.pop("pkg", None)  # TODO: needs new test-case
+        pkg = kwargs.pop("pkg", None)
     if not isinstance(
         pkg, Distribution
     ):  # defensive code to support runtime typing
@@ -457,19 +458,14 @@ def _get_pkg_info(
 
     pkg_name: str = pkg.metadata["name"]
     normal_pkg_name = normalize_pkg_name(pkg_name)
+    normal_pkg_version = normalize_version(pkg.version)
     legacy_info = fallback_license_retrieval(pkg)
     pkg_info: dict[
         str, Union[str, list[str], dict[str, Union[str, list[str], None]]]
     ] = {
         "name": pkg_name,
-        "version": pkg.version,
-        "namever": f"{normal_pkg_name} {pkg.version}",
-        "licensefile": legacy_info["license_file"],  # DEPRECIATED in v6.0+
-        "licensetext": legacy_info["license_text"],  # DEPRECIATED in v6.0+
-        "noticefile": legacy_info["notice_file"],  # DEPRECIATED in v6.0+
-        "noticetext": legacy_info["notice_text"],  # DEPRECIATED in v6.0+
-        "otherfile": legacy_info["author_file"],  # DEPRECIATED in v6.0+
-        "othertext": legacy_info["author_text"],  # DEPRECIATED in v6.0+
+        "version": normal_pkg_version,
+        "namever": f"{normal_pkg_name} {normal_pkg_version}",
     }
     # filter the legacy info and union
     pkg_info |= {
@@ -618,7 +614,7 @@ def _get_pkg_license_texts_from_disk(
                     license_texts.append(a_license_file_text)
         # See https://github.com/raimon49/pip-licenses/issues/360
         # mypy wants this be a list[Union[str, None]] but
-        # we are typicly returning a list of only strings or just '[]' at runtime,
+        # we are typically returning a list of only strings or just '[]' at runtime,
         # (but explicitly not prohibiting both strings and NoneTypes together,
         # just everything else) which seems to be treated like
         # an _implicit_ optional by mypy instead of the _explicit_ type it is.
@@ -663,10 +659,10 @@ def select_license_by_source(
         return {license_meta}
 
 
-# TODO: cleanup fix for GHI-309 (DO NOT MERGE YET)
+# TODO: Prototype fix for GHI-309 (DO NOT RELEASE YET)
 def fallback_license_retrieval(
     pkg: Distribution,
-) -> dict[str, str]:
+) -> dict[str, Union[str, None]]:
     """
     Fallback logic for retrieving licenses and other metadata files.
 
@@ -691,9 +687,9 @@ def fallback_license_retrieval(
         "license_file": license_file or FILE_MISSING,
         "license_text": license_text or LICENSE_UNKNOWN,
         "notice_file": notice_file or FILE_MISSING,
-        "notice_text": notice_text or FILE_MISSING,
+        "notice_text": notice_text or None,
         "author_file": author_file or FILE_MISSING,
-        "author_text": author_text or FILE_MISSING,
+        "author_text": author_text or None,
     }
 
 
@@ -747,8 +743,8 @@ def get_packages(
 
     for pkg in pkgs:
         pkg_name = normalize_pkg_name(pkg.metadata["name"])
-        pkg_version = pkg.metadata["version"]
-        pkg_name_and_version = f"{pkg_name}:{pkg_version}"
+        pkg_version = normalize_version(pkg.metadata["version"])
+        pkg_name_and_version = f"{pkg_name}:{pkg_version}"  # same as normalize_pkg_name_and_version
 
         if (
             pkg_name.lower() in ignore_pkgs_as_normalize
@@ -767,9 +763,10 @@ def get_packages(
         license_names = select_license_by_source(
             args.from_,
             cast(list[str], pkg_info["license_classifier"]),
-            cast(str, pkg_info["license"]),
+            cast(str, pkg_info["license_metadata"]),
             cast(str, pkg_info["license_expression"]),
         )
+        pkg_info["license"] = sorted(license_names)  # cached for API
 
         if fail_on_licenses:
             failed_licenses = set()

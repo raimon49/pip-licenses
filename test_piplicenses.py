@@ -9,6 +9,7 @@ import sys
 import tempfile
 import unittest
 import venv
+import warnings
 from enum import Enum, auto
 from importlib.metadata import Distribution
 from pathlib import Path
@@ -105,7 +106,9 @@ def importlib_metadata_distributions_mocked(
             return self.__msg[key]
 
     packages = list(importlib_metadata_distributions_orig(*args, **kwargs))
-    packages[-1] = DistributionMocker(packages[-1])  # type: ignore[abstract]
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        packages[-1] = DistributionMocker(packages[-1])  # type: ignore[abstract]
     return packages
 
 

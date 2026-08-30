@@ -108,8 +108,11 @@ class CustomHelpFormatter(
             "max_help_position": max_help_position,
             "width": width,
         }
-        if color is not None:
-            kwargs["color"] = color
+        if DEFAULT_USE_COLOR is not None:
+            if color is not None:
+                kwargs["color"] = color
+        else:
+            kwargs.pop("color", None)
         super().__init__(prog, **kwargs)  # type: ignore[arg-type]
 
     def _format_action(self, action: argparse.Action) -> str:

@@ -159,7 +159,12 @@ def _handle_multiple_value_field(
     """
     if key.lower().endswith("s"):
         return list(value) or [LICENSE_UNKNOWN]
-    return cast(str, next(value, LICENSE_UNKNOWN))
+    return cast(
+        str,
+        next(iter(value), LICENSE_UNKNOWN)
+        if not isinstance(value, str)
+        else value or LICENSE_UNKNOWN,
+    )
 
 
 # TODO: change to accept set-like
@@ -176,7 +181,7 @@ def create_licenses_table(
                 license_set = select_license_by_source(
                     args.from_,
                     cast(list[str], pkg["license_classifier"]),
-                    cast(str, pkg["license"]),
+                    cast(str, pkg["license_metadata"]),
                     cast(str, pkg["license_expression"]),
                 )
                 _sorted_license_set = (
@@ -199,7 +204,9 @@ def create_licenses_table(
                     cast(str, pkg["license_expression"]) or LICENSE_UNKNOWN
                 )
             elif field == "License-Metadata":
-                row.append(cast(str, pkg["license"]) or LICENSE_UNKNOWN)
+                row.append(
+                    cast(str, pkg["license_metadata"]) or LICENSE_UNKNOWN
+                )
             elif (field.lower() in pkg) or (hasattr(pkg, field.lower())):
                 row.append(cast(str, pkg[field.lower()]))
             else:
@@ -246,7 +253,7 @@ def create_summary_table(args: Configuration) -> PrettyTable:
                 select_license_by_source(
                     args.from_,
                     cast(list[str], pkg["license_classifier"]),
-                    cast(str, pkg["license"]),
+                    cast(str, pkg["license_metadata"]),
                     cast(str, pkg["license_expression"]),
                 )
             )

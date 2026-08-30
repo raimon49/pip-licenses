@@ -61,7 +61,7 @@ FIELD_NAMES: set[str] = {
 FIELDS_TO_METADATA_KEYS: dict[str, str] = {
     "URL": "home-page",
     "Description": "summary",
-    "License-Metadata": "license",
+    "License-Metadata": "license_metadata",
     "License-Classifier": "license_classifier",
     "License-Expression": "license_expression",
     # work-around
