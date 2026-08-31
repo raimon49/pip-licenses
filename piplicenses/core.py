@@ -283,6 +283,12 @@ def extract_license_from_classifiers(metadata: Message) -> list[str]:
     return license_classifiers
 
 
+def extract_license_files(metadata: Message) -> list[str]:
+    _meta_files: list[str] = metadata.get_all("License-File", [])
+    license_files: list[str] = sorted(_meta_files)
+    return license_files
+
+
 def extract_authors(metadata: Message) -> list[str]:
     _combined_authors = set()
     # start with Core Metadata 1.0 authors
@@ -349,9 +355,7 @@ METADATA_KEYS: dict[
     "license_expression": [
         lambda metadata: metadata.get("License-expression")
     ],
-    "license_files": [
-        lambda metadata: metadata.get_all("License-File", [])
-    ],  # added in v6.0
+    "license_files": [extract_license_files],  # added in v6.0
     "summary": [lambda metadata: metadata.get("Summary")],
     "urls": [extract_urls],  # added in v6.0
 }

@@ -158,7 +158,10 @@ def _handle_multiple_value_field(
         'UNKNOWN'
     """
     if key.lower().endswith("s"):
-        return list(value) or [LICENSE_UNKNOWN]
+        if isinstance(value, (str, bytes)):
+            return [value or LICENSE_UNKNOWN]
+        else:
+            return sorted(value) or [LICENSE_UNKNOWN]
     return cast(
         str,
         next(iter(value), LICENSE_UNKNOWN)
@@ -216,14 +219,12 @@ def create_licenses_table(
                     value = pkg[FIELDS_TO_METADATA_KEYS[field]]
                     if value:
                         if field in DYNAMIC_FIELD_NAMES:
-                            _value_as_list = sorted(
-                                cast(
-                                    list[str],
-                                    _handle_multiple_value_field(
-                                        key=field,
-                                        value=cast(Iterator[str], [*value]),
-                                    ),
-                                )
+                            _value_as_list = cast(
+                                list[str],
+                                _handle_multiple_value_field(
+                                    key=field,
+                                    value=cast(Iterator[str], [*value]),
+                                ),
                             )
                             if args.format_ in (
                                 FormatArg.JSON,
@@ -233,7 +234,10 @@ def create_licenses_table(
                                     _value_as_list,
                                 )
                             else:
-                                row.append(", ".join(_value_as_list))
+                                if not isinstance(value, str):
+                                    row.append(", ".join(_value_as_list))
+                                else:
+                                    row.append(cast(str, value))
                         else:
                             row.append(cast(str, value))
                     else:  # invalid value (e.g. None)

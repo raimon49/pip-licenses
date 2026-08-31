@@ -243,6 +243,9 @@ def _add_scope_arguments_to_parser(
     parser: CompatibleArgumentParser,
     include_system_pkg_default: bool,
     from_default: str,
+    default_python: str,
+    ignore_by_default: list,
+    include_by_default: list,
 ) -> CompatibleArgumentParser:
     """Internal helper function.
 
@@ -287,6 +290,35 @@ def _add_scope_arguments_to_parser(
             help="R|where to find license information\n"
             '"meta", "classifier", "expression", "mixed", "all"\n',
         )
+        scope_group.add_argument(
+            "--python",
+            type=str,
+            default=default_python,
+            metavar="PYTHON_EXEC",
+            help="R| path to python executable to search distributions from\n"
+            "Package will be searched in the selected python's sys.path\n"
+            "By default, will search packages for current env executable\n",
+        )
+        scope_group.add_argument(
+            "-i",
+            "--ignore-packages",
+            action="store",
+            dest="ignore_packages",
+            nargs="+",
+            metavar="PKG",
+            default=ignore_by_default,
+            help="ignore selected package names in dumped list",
+        )
+        scope_group.add_argument(
+            "-p",
+            "--packages",
+            action="store",
+            dest="packages",
+            nargs="+",
+            metavar="PKG",
+            default=include_by_default,
+            help="only include selected packages in output",
+        )
     return parser
 
 
@@ -329,6 +361,9 @@ def create_parser(
             _migrate_with_system_helper(config_from_file),
         ),
         from_default=config_from_file.get("from", "mixed"),
+        default_python=config_from_file.get("python", DEFAULT_PYTHON),
+        ignore_by_default=config_from_file.get("ignore-packages", []),
+        include_by_default=config_from_file.get("packages", []),
     )
     common_options = parser.add_argument_group("Common options")
     license_file_options = parser.add_argument_group("License file options")
@@ -340,16 +375,6 @@ def create_parser(
         "--version",
         action="version",
         version=f"{__pkgname__} {__version__}",
-    )
-
-    common_options.add_argument(
-        "--python",
-        type=str,
-        default=config_from_file.get("python", DEFAULT_PYTHON),
-        metavar="PYTHON_EXEC",
-        help="R| path to python executable to search distributions from\n"
-        "Package will be searched in the selected python's sys.path\n"
-        "By default, will search packages for current env executable\n",
     )
 
     common_options.add_argument(
@@ -392,26 +417,6 @@ def create_parser(
         default=config_from_file.get("output-file"),
         type=str,
         help="save license list to file",
-    )
-    common_options.add_argument(
-        "-i",
-        "--ignore-packages",
-        action="store",
-        dest="ignore_packages",
-        nargs="+",
-        metavar="PKG",
-        default=config_from_file.get("ignore-packages", []),
-        help="ignore package name in dumped list",
-    )
-    common_options.add_argument(
-        "-p",
-        "--packages",
-        action="store",
-        dest="packages",
-        nargs="+",
-        metavar="PKG",
-        default=config_from_file.get("packages", []),
-        help="only include selected packages in output",
     )
 
     format_options.add_argument(

@@ -107,6 +107,7 @@ def get_output_fields(args: Configuration) -> list[str]:
         output_fields.append("License-Metadata")
         output_fields.append("License-Classifier")
         output_fields.append("License-Expression")
+        args.with_license_files = True  # overwrite
     else:
         # TODO: handle combos for JSON, and plain vertical
         output_fields.append("License")
@@ -133,10 +134,11 @@ def get_output_fields(args: Configuration) -> list[str]:
         FormatArg.PLAIN_VERTICAL,
     ]:
         if args.format_ not in (
-            FormatArg.MARKDOWN,
-            FormatArg.RST,
             FormatArg.CONFLUENCE,
             FormatArg.HTML,
+            FormatArg.MARKDOWN,
+            FormatArg.PLAIN,
+            FormatArg.RST,
         ):
             args.with_license_files = False  # unsupported combo
         # these are only supported in JSON and plain vertical
@@ -150,7 +152,7 @@ def get_output_fields(args: Configuration) -> list[str]:
     _format_supports_file_text_data = False
     if args.format_ in (
         FormatArg.JSON,
-        FormatArg.PLAIN,
+        FormatArg.PLAIN,  # still a bit unwieldy
         FormatArg.PLAIN_VERTICAL,
         FormatArg.HTML,
     ):

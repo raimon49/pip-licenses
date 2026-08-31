@@ -455,10 +455,10 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertNotIn("OtherText", output_string)
 
     def test_with_license_files_invalid(self) -> None:
-        with_license_file_args = ["--with-license-files"]
-        # TODO: refactor when implementing default format support
-        # currently only HTML will be supported initially
-        # so without --format=html files should be ignored
+        with_license_file_args = [
+            "--with-license-files",
+            "--format=json-license-finder",
+        ]  # changed in v6.0.0b11
         args = self.parser.parse_args(with_license_file_args)
 
         output_fields = get_output_fields(args)
@@ -471,8 +471,30 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertNotIn("OtherText", output_fields)
 
         output_string = create_output_string(args)
-        self.assertNotIn("LicenseFiles", output_string)
+        self.assertNotIn("LicenseFiles", output_string)  # changed in v6.0.0b11
         self.assertNotIn("LicenseText", output_string)
+        self.assertNotIn("NoticeFile", output_string)
+        self.assertNotIn("NoticeFiles", output_string)
+        self.assertNotIn("NoticeText", output_string)
+        self.assertNotIn("OtherFiles", output_string)
+        self.assertNotIn("OtherText", output_string)
+
+    def test_with_license_files_plain(self) -> None:
+        with_license_file_args = ["--with-license-files"]
+        args = self.parser.parse_args(with_license_file_args)
+
+        output_fields = get_output_fields(args)
+        self.assertNotEqual(output_fields, list(DEFAULT_OUTPUT_FIELDS))
+        self.assertIn("LicenseFiles", output_fields)  # changed in v6.0.0b11
+        self.assertNotIn("LicenseFile", output_fields)  # changed in v6.0.0b11
+        self.assertNotIn("LicenseText", output_fields)
+        self.assertNotIn("NoticeFile", output_fields)
+        self.assertNotIn("NoticeText", output_fields)
+        self.assertNotIn("OtherFiles", output_fields)
+        self.assertNotIn("OtherText", output_fields)
+
+        output_string = create_output_string(args)
+        self.assertIn("LicenseFiles", output_string)  # changed in v6.0.0b11
         self.assertNotIn("NoticeFile", output_string)
         self.assertNotIn("NoticeFiles", output_string)
         self.assertNotIn("NoticeText", output_string)
