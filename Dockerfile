@@ -1,5 +1,5 @@
-FROM python:3.11-slim-bullseye
-LABEL maintainer="raimon <raimon49@hotmail.com>"
+FROM python:3.14-slim-trixie
+LABEL maintainer="reactive-firewall <reactive-firewall@users.noreply.github.com>"
 
 ARG APPDIR=/opt/piplicenses
 

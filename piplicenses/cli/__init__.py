@@ -1,0 +1,571 @@
+#!/usr/bin/env python
+# vim:fenc=utf-8 ff=unix ft=python ts=4 sw=4 sts=4 si et
+
+# pip-licenses.cli
+#
+# MIT License
+#
+# Copyright (c) 2018-2025 raimon
+# Copyright (c) 2025-2026 Mr. Walls
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+
+"""pip-licenses.cli
+
+To be documented.
+"""
+
+import argparse
+import codecs
+import sys
+from collections.abc import Sequence
+from enum import Enum  # used by helper _expand_help
+from importlib import (
+    metadata as importlib_metadata,  # noqa: F401 -- (used by piplicenses.core)
+)
+from pathlib import Path
+
+# See https://docs.python.org/3.14/library/argparse.html#color
+from .. import (
+    LEGACY_TOKEN,  # noqa: F401 -- (used by piplicenses.cli.config)
+    Union,
+    __pkgname__,
+    __summary__,
+    __version__,
+    cast,
+)
+from .config import (
+    DEFAULT_PYTHON,
+    Configuration,
+    CustomNamespace,  # noqa: F401 -- to be deprecated in v6
+)
+
+# if TYPE_CHECKING:
+#    from typing import (
+# watch for PEP-3124
+#        overload,
+#        Union,
+#    )
+#    NullableInt = Union[int, None]
+
+
+# TODO: this is used elsewhere
+# perhaps, this should go in sorting?
+def get_sortby(args: Configuration) -> str:
+    if args.summary and args.order == OrderArg.COUNT:
+        return "Count"
+    elif args.summary or args.order == OrderArg.LICENSE:
+        return "License"
+    elif args.order == OrderArg.NAME:
+        return "Name"
+    elif args.order == OrderArg.AUTHOR and args.with_authors:
+        return "Author"
+    elif args.order == OrderArg.MAINTAINER and args.with_maintainers:
+        return "Maintainer"
+    elif args.order == OrderArg.URL and args.with_urls:
+        return "URL"
+
+    return "Name"
+
+
+# See https://docs.python.org/3.15/library/argparse.html#color
+DEFAULT_USE_COLOR: Union[bool, None] = (
+    True if sys.version_info >= (3, 14) else None
+)
+
+
+class CustomHelpFormatter(
+    argparse.ArgumentDefaultsHelpFormatter
+):  # pragma: no cover
+    def __init__(
+        self,
+        prog: str,
+        indent_increment: int = 2,
+        max_help_position: int = 24,
+        width: Union[int, None] = None,
+        color: Union[bool, None] = DEFAULT_USE_COLOR,
+    ) -> None:
+        max_help_position = 30  # Minor Regression BUG from backport
+        kwargs = {
+            "indent_increment": indent_increment,
+            "max_help_position": max_help_position,
+            "width": width,
+        }
+        if DEFAULT_USE_COLOR is not None:
+            if color is not None:
+                kwargs["color"] = color
+        else:
+            kwargs.pop("color", None)
+        super().__init__(prog, **kwargs)  # type: ignore[arg-type]
+
+    def _format_action(self, action: argparse.Action) -> str:
+        flag_indent_argument: bool = False
+        text = self._expand_help(action)
+        separator_pos = text[:3].find("|")
+        if separator_pos != -1 and "I" in text[:separator_pos]:
+            self._indent()
+            flag_indent_argument = True
+        help_str = super()._format_action(action)
+        if flag_indent_argument:
+            self._dedent()
+        return help_str
+
+    def _expand_help(self, action: argparse.Action) -> str:
+        if isinstance(action.default, Enum):
+            default_value = enum_key_to_value(action.default)
+            return cast(str, self._get_help_string(action)) % {
+                "default": default_value
+            }
+        return super()._expand_help(action)
+
+    def _split_lines(self, text: str, width: int) -> list[str]:
+        separator_pos = text[:3].find("|")
+        if separator_pos != -1:
+            flag_splitlines: bool = "R" in text[:separator_pos]
+            text = text[separator_pos + 1:]  # fmt: skip
+            if flag_splitlines:
+                return text.splitlines()
+        return super()._split_lines(text, width)
+
+
+class CompatibleArgumentParser(argparse.ArgumentParser):
+    def parse_args(  # type: ignore[override]
+        self,
+        args: Union[Sequence[str], None] = None,
+        namespace: Union[argparse.Namespace, None] = None,
+    ) -> Configuration:
+        ns = super().parse_args(
+            args=args if args and len(args) > 0 else [],
+            namespace=namespace or None,
+        )
+        cfg = Configuration(**vars(ns))  # convert Namespace -> dataclass
+        self._verify_args(cfg)
+        return cfg
+
+    def _verify_args(self, args: Configuration) -> None:
+        if (
+            args.with_license_file is False
+            and args.with_license_files is False
+        ) and (
+            args.no_license_path is True
+            or (
+                (
+                    args.with_notice_file is True
+                    or args.with_notice_files is True
+                )
+                or args.with_other_files is True
+            )
+        ):
+            self.error(
+                "'--no-license-path' and '--with-notice-file[s]' "
+                "as well as '--with-other-files' require "
+                "the '--with-license-file[s]' option to be set"
+            )
+        if args.filter_strings is False and args.filter_code_page != "latin1":
+            self.error(
+                "'--filter-code-page' requires the '--filter-strings' "
+                "option to be set"
+            )
+        try:
+            codecs.lookup(args.filter_code_page)  # type: ignore[arg-type]
+        except LookupError:
+            self.error(
+                f"invalid code page '{args.filter_code_page}' given "
+                "for '--filter-code-page, check "
+                "https://docs.python.org/3/library/codecs.html#standard-encodings "
+                "for valid code pages"
+            )
+
+
+from .pseudo_choices import (
+    FormatArg,
+    FromArg,
+    NoValueEnum,
+    OrderArg,
+    choices_from_enum,
+    enum_key_to_value,
+    get_value_from_enum,
+    value_to_enum_key,  # noqa: F401 -- Re-export as part of data API
+)
+
+
+class SelectAction(argparse.Action):
+    # See https://github.com/astral-sh/ruff/issues/5243
+    MAP_DEST_TO_ENUM: dict[str, type[NoValueEnum]] = {  # noqa: RUF100,RUF012
+        "from_": FromArg,
+        "order": OrderArg,
+        "format_": FormatArg,
+    }
+
+    def __call__(  # type: ignore[override]
+        self,
+        parser: argparse.ArgumentParser,
+        namespace: argparse.Namespace,
+        values: str,
+        option_string: Union[str, None] = None,
+    ) -> None:
+        enum_cls = type(self).MAP_DEST_TO_ENUM[self.dest]
+        setattr(namespace, self.dest, get_value_from_enum(enum_cls, values))
+
+
+from ..tomli_bridge import (
+    tomllib,  # type: ignore[import-not-found]  # ty: ignore[unused-type-ignore-comment]
+)
+
+
+# TODO: this probably goes in utils (and SHOULD NOT BE vulnerable to 'open' MOCKING)
+def load_config_from_file(pyproject_path: str) -> dict:
+    if Path(pyproject_path).exists():
+        with open(pyproject_path, "rb") as f:
+            return tomllib.load(f).get("tool", {}).get(__pkgname__, {})
+        # always has implicit f.close() from 'with' so no need to re-close
+    return {}  # universal fallback to simple empty load
+
+
+def _add_scope_arguments_to_parser(
+    parser: CompatibleArgumentParser,
+    include_system_pkg_default: bool,
+    from_default: str,
+    default_python: str,
+    ignore_by_default: list,
+    include_by_default: list,
+) -> CompatibleArgumentParser:
+    """Internal helper function.
+
+    Not part of any public API. Do not rely on this function outside of this defining module.
+    """
+    if parser is not None:
+        scope_group = parser.add_argument_group(
+            "Scope",
+            "Options to fine-tune source of packages {__pkgname__} will consider.",
+        )
+        system_toggle = scope_group.add_mutually_exclusive_group()
+        system_toggle.add_argument(
+            "-s",
+            "--include-system",
+            action="store_true",
+            dest="include_from_system",
+            default=include_system_pkg_default is True,
+            help="dump with system packages",
+        )
+        system_toggle.add_argument(
+            "--with-system",
+            action="store_true",
+            dest="include_from_system",
+            default=include_system_pkg_default is True,
+            help="DEPRECATED; use --include-system instead.",
+        )
+        system_toggle.add_argument(
+            "--ignore-system",
+            action="store_false",
+            dest="include_from_system",
+            help="Omit trivial system packages.",
+            default=include_system_pkg_default,
+        )
+        scope_group.add_argument(
+            "--from",
+            dest="from_",
+            action=SelectAction,
+            type=str,
+            default=get_value_from_enum(FromArg, from_default),
+            metavar="SOURCE",
+            choices=choices_from_enum(FromArg),
+            help="R|where to find license information\n"
+            '"meta", "classifier", "expression", "mixed", "all"\n',
+        )
+        scope_group.add_argument(
+            "--python",
+            type=str,
+            default=default_python,
+            metavar="PYTHON_EXEC",
+            help="R| path to python executable to search distributions from\n"
+            "Package will be searched in the selected python's sys.path\n"
+            "By default, will search packages for current env executable\n",
+        )
+        scope_group.add_argument(
+            "-i",
+            "--ignore-packages",
+            action="store",
+            dest="ignore_packages",
+            nargs="+",
+            metavar="PKG",
+            default=ignore_by_default,
+            help="ignore selected package names in dumped list",
+        )
+        scope_group.add_argument(
+            "-p",
+            "--packages",
+            action="store",
+            dest="packages",
+            nargs="+",
+            metavar="PKG",
+            default=include_by_default,
+            help="only include selected packages in output",
+        )
+    return parser
+
+
+def _migrate_with_system_helper(config_from_file: dict) -> bool:
+    """Use --include-system instead.
+
+    Helper for migration in version v6.0.0
+    """
+    import warnings
+
+    _conf_stub: bool = config_from_file.get(
+        "with-system",  # DEPRECATED in v6.0+
+        False,
+    )
+    if _conf_stub is True:
+        warnings.warn(
+            "DEPRECIATED in v6.0; use include-system instead."
+            "This will be an error in the future."
+            "See https://github.com/raimon49/pip-licenses/issues/349",
+            stacklevel=2,
+        )
+    return _conf_stub
+
+
+def create_parser(
+    pyproject_path: str = "pyproject.toml",
+) -> CompatibleArgumentParser:
+    parser = CompatibleArgumentParser(
+        prog=__pkgname__,  # added in v6.0+ -- to normalize usage and help
+        description=__summary__,
+        formatter_class=CustomHelpFormatter,
+        conflict_handler="resolve",  # added in v6.0+
+    )
+
+    config_from_file = load_config_from_file(pyproject_path)
+    parser = _add_scope_arguments_to_parser(
+        parser=parser,
+        include_system_pkg_default=config_from_file.get(
+            "include-system",
+            _migrate_with_system_helper(config_from_file),
+        ),
+        from_default=config_from_file.get("from", "mixed"),
+        default_python=config_from_file.get("python", DEFAULT_PYTHON),
+        ignore_by_default=config_from_file.get("ignore-packages", []),
+        include_by_default=config_from_file.get("packages", []),
+    )
+    common_options = parser.add_argument_group("Common options")
+    license_file_options = parser.add_argument_group("License file options")
+    format_options = parser.add_argument_group("Format options")
+    verify_options = parser.add_argument_group("Verify options")
+
+    parser.add_argument(
+        "-v",
+        "--version",
+        action="version",
+        version=f"{__pkgname__} {__version__}",
+    )
+
+    common_options.add_argument(
+        "-o",
+        "--order",
+        action=SelectAction,
+        type=str,
+        default=get_value_from_enum(
+            OrderArg, config_from_file.get("order", "name")
+        ),
+        metavar="COL",
+        choices=choices_from_enum(OrderArg),
+        help='R|order by column\n"name", "license", "author", "url"\n',
+    )
+    format_options.add_argument(
+        "-f",
+        "--format",
+        dest="format_",
+        action=SelectAction,
+        type=str,
+        default=get_value_from_enum(
+            FormatArg, config_from_file.get("format", "plain")
+        ),
+        metavar="STYLE",
+        choices=choices_from_enum(FormatArg),
+        help="R|dump as set format style\n"
+        '"plain", "plain-vertical" "markdown", "rst", \n'
+        '"confluence", "html", "json", \n'
+        '"json-license-finder",  "csv"\n',
+    )
+    common_options.add_argument(
+        "--summary",
+        action="store_true",
+        default=config_from_file.get("summary", False),
+        help="dump summary of each license",
+    )
+    common_options.add_argument(
+        "--output-file",
+        action="store",
+        default=config_from_file.get("output-file"),
+        type=str,
+        help="save license list to file",
+    )
+
+    format_options.add_argument(
+        "-a",
+        "--with-authors",
+        action="store_true",
+        default=config_from_file.get("with-authors", False),
+        help="dump with package authors",
+    )
+    format_options.add_argument(
+        "--with-maintainers",
+        action="store_true",
+        default=config_from_file.get("with-maintainers", False),
+        help="dump with package maintainers",
+    )
+    format_options.add_argument(
+        "-u",
+        "--with-urls",
+        action="store_true",
+        default=config_from_file.get("with-urls", False),
+        help="dump with package urls",
+    )
+    format_options.add_argument(
+        "-d",
+        "--with-descriptions",
+        action="store_true",
+        dest="with_description",  # if "6.0." in __version__ else "with-descriptions",
+        default=config_from_file.get("with-description", False),
+        help="dump with short package description",
+    )
+    format_options.add_argument(
+        "--with-description",
+        action="store_true",
+        dest="with_description",  # if "6.0." in __version__ else "with-descriptions",
+        default=config_from_file.get("with-description", False),
+        help="See --with-descriptions"
+        "DEPRECATED; use --with-descriptions instead.",
+    )
+    format_options.add_argument(
+        "-nv",
+        action="store_true",
+        dest="no_version",
+        default=config_from_file.get("no-version", False),
+        help="DEPRECATED (for backwards compatibility); "
+        "prefer --without-version instead.",
+    )
+    format_options.add_argument(
+        "--without-version",
+        "--no-version",
+        action="store_true",
+        dest="no_version",
+        default=config_from_file.get("no-version", False),
+        help="dump without package version. "
+        "DEPRECATED; use --without-version.",
+    )
+
+    license_file_options.add_argument(
+        "-l",
+        "--with-license-file",
+        action="store_true",
+        default=config_from_file.get("with-license-file", False),
+        help="dump with location of license file and "
+        "contents, most useful with JSON output. "
+        "For structured formats (CSV, Markdown, reST), "
+        "see README for workflow examples. "
+        "DEPRECATED; use --with-license-files.",
+    )
+    license_file_options.add_argument(
+        "--with-license-files",
+        action="store_true",
+        default=config_from_file.get("with-license-files", False),
+        help="dump with location of each license file and contents, most useful with JSON output",
+    )
+    license_file_options.add_argument(
+        "--without-license-paths",
+        "--no-license-path",
+        action="store_true",
+        dest="no_license_path",
+        default=config_from_file.get("no-license-path", False),
+        help="I|when specified together with option -l, "
+        "suppress location of license file(s) in output",
+    )
+    license_file_options.add_argument(
+        "--without-file-paths",
+        "--no-file-paths",
+        action="store_true",  # if "6.0." in __version__ else "store_false",
+        dest="no_file_paths",  # if "6.0." in __version__ else "show-file-paths",
+        default=config_from_file.get("no-file-paths", False),
+        help="I|Suppress location of file path(s) in output",
+    )
+    license_file_options.add_argument(
+        "--with-notice-file",
+        action="store_true",
+        default=config_from_file.get("with-notice-file", False),
+        help="I|when specified together with option -l, "
+        "dump with location of up to one notice file and contents",
+    )
+    license_file_options.add_argument(
+        "--with-notice-files",
+        action="store_true",
+        default=config_from_file.get("with-notice-files", False),
+        help="I|when specified together with option -l, "
+        "dump with location of all notice files and contents",
+    )
+    license_file_options.add_argument(
+        "--with-other-files",
+        action="store_true",
+        default=config_from_file.get("with-other-files", False),
+        help="I|when specified together with option -l"
+        " or --with-license-files, dump with location"
+        " of other licensing-related files and contents",
+    )
+    format_options.add_argument(
+        "--filter-strings",
+        action="store_true",
+        default=config_from_file.get("filter-strings", False),
+        help="filter input according to code page",
+    )
+    format_options.add_argument(
+        "--filter-code-page",
+        action="store",
+        type=str,
+        default=config_from_file.get("filter-code-page", "latin1"),
+        metavar="CODE",
+        help="I|specify code page for filtering (default: %(default)s)",
+    )
+
+    # placeholder for warn-on
+    verify_options.add_argument(
+        "--fail-on",
+        action="store",
+        type=str,
+        default=config_from_file.get("fail-on", None),
+        help="fail (exit with code 1) on the first occurrence "
+        "of the licenses of the semicolon-separated list",
+    )
+    verify_options.add_argument(
+        "--allow-only",
+        action="store",
+        type=str,
+        default=config_from_file.get("allow-only", None),
+        help="fail (exit with code 1) on the first occurrence "
+        "of the licenses not in the semicolon-separated list",
+    )
+    verify_options.add_argument(
+        "--partial-match",
+        action="store_true",
+        default=config_from_file.get("partial-match", False),
+        help="enables partial matching for --allow-only/--fail-on",
+    )
+
+    return parser

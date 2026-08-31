@@ -113,7 +113,18 @@ docker/*
 
 # macOS
 .DS_Store
+*.icns
+Icon*
 
 # IDE
+*~
 .idea
 *.iml
+
+# Xcode
+*.workflow/xcuserdata
+*.xcodeproj/xcuserdata
+*.workflow/xcuserdata/*
+*.xcodeproj/project.workflow/xcuserdata/*
+swiftpm
+IDEWorkspaceChecks.plist

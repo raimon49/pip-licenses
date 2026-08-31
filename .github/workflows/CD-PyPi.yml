@@ -11,8 +11,8 @@ on:
 permissions: {}
 
 env:
-  # Define Python versions at the top level -- Expected format: X.Y (e.g., 3.13)
-  PYTHON_DEFAULT: "${{ vars.PYTHON_DEFAULT || '3.13' }}"
+  # Define Python versions at the top level -- Expected format: X.Y (e.g., 3.14)
+  PYTHON_DEFAULT: "${{ vars.PYTHON_DEFAULT || '3.14' }}"
 
 jobs:
   pypi-publish:
@@ -40,13 +40,13 @@ jobs:
       build_status: ${{ steps.build.outcome }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - id: build-python
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
-          python-version: "${{ env.PYTHON_DEFAULT || 3.13 }}"
+          python-version: "${{ env.PYTHON_DEFAULT || 3.14 }}"
       - id: output_python
         name: "bootstrap Python"
         shell: bash
@@ -60,7 +60,7 @@ jobs:
       - name: Setup build tools
         id: build_deps
         shell: bash
-        run: pip install --no-input --user "pip>=26.0" "setuptools>=82.0" "wheel>=0.45" "build>=1.2.1"
+        run: pip install --no-input --user "pip>=26.0.1" "setuptools>=83.0" "wheel>=0.47" "build>=1.2.1"
       - name: Pre-Clean
         id: clean
         shell: bash
@@ -77,15 +77,15 @@ jobs:
         run: |
           shasum -a 512 dist/* > build.checksums.txt
       - name: "Attest Build with Checksums"
-        id: multicast-build-chksum-attest
+        id: piplicenses-build-chksum-attest
         if: ${{ !cancelled() && (github.repository == 'raimon49/pip-licenses') && startsWith(github.ref, 'refs/tags/') }}
-        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
           subject-checksums: build.checksums.txt
           github-token: ${{ github.token }}
       - name: Publish package distributions to PyPI
         if: ${{ success() }}
-        uses: pypa/gh-action-pypi-publish@release/v1 # no SHA -- MUST us 'v1' here or PyPi will reject
+        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33  # v1.14.2
         with:
           skip-existing: true
           packages-dir: dist/

@@ -1,0 +1,821 @@
+# vim:fenc=utf-8 ff=unix ft=python ts=4 sw=4 sts=4 si et
+
+# pip-licenses.core
+#
+# MIT License
+#
+# Copyright (c) 2018-2025 raimon
+# Copyright (c) 2025-2026 Mr. Walls
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+"""
+pip-licenses.core
+
+The core of the pip-licenses module.
+
+To be documented.
+"""
+
+import sys
+from collections.abc import (
+    Callable,
+    Iterator,
+)  # See https://github.com/raimon49/pip-licenses/issues/360
+
+# for typing
+from email.message import Message
+from importlib import metadata as importlib_metadata
+from importlib.metadata import (
+    Distribution,
+    PackagePath,
+)
+from typing import (
+    # See https://github.com/raimon49/pip-licenses/issues/360
+    Any,
+    Union,
+    # NullableStr = Union[str, None]
+    # strs = Union[str, list[str]]
+    cast,
+)
+
+from . import (
+    FALLBACK_URL_KEY,
+    FILE_MISSING,
+    KNOWN_URL_SUB_KEYS,
+    LEGACY_AUTHORS_BY_FILE_PATTERN,
+    LEGACY_LICENSE_BY_FILE_PATTERN,
+    LEGACY_NOTICE_BY_FILE_PATTERN,
+    LICENSE_BY_OTHER_FILE_PATTERN,
+    LICENSE_UNKNOWN,
+    PEP735_URL_KEY,
+    TYPE_CHECKING,  # noqa: F401 -- Re-export as part of our internal typing API
+    Path,  # from pathlib import Path
+    __pkgname__,
+    __version__,  # noqa: F401 -- Re-export as part of data API
+    deduplicate_and_normalize,
+    normalize_pkg_name,
+    normalize_pkg_name_and_version,
+    normalize_version,
+    re,  # import re
+)
+from .cli import (
+    Configuration,
+    FromArg,
+)
+from .sorting import (
+    case_insensitive_partial_match_set_diff,
+    case_insensitive_partial_match_set_intersect,
+    case_insensitive_set_diff,
+    case_insensitive_set_intersect,
+)
+
+# See https://github.com/raimon49/pip-licenses/issues/360
+NullableStrList = Union[list[Union[str, None]], None]
+
+SYSTEM_PACKAGES: list[str] = [
+    __pkgname__,
+    "pip",
+    "prettytable",
+    "wcwidth",
+    "setuptools",
+    "wheel",
+]
+if sys.version_info < (3, 11):
+    SYSTEM_PACKAGES.append("tomli")
+
+
+def extract_urls(metadata: Message) -> dict[str, Union[str, list[str], None]]:
+    """Extract normalized project URLs from message metadata.
+
+    This scans all ``Project-URL`` entries in the given metadata object and
+    builds a dictionary keyed by the lowercased, stripped, label value of
+    the pair (e.g., 'source' for 'Source, https://github.com/user/repo.git').
+
+    Each ``Project-URL`` entry is expected to contain exactly one comma
+    separating the label and URL, for example::
+
+        Project-URL: Homepage, https://github.com/raimon49/pip-licenses
+
+    Duplicate labels are merged into a list on the second occurrence of a key.
+    The first value remains a string until a duplicate is encountered.
+    Empty URL values are normalized to ``None``. For canonical Specification:
+    [Core Metadata 1.2 (PEP 753)](https://packaging.python.org/en/latest/specifications/core-metadata/#core-metadata-project-url).
+
+    Args:
+        metadata: A message-like object supporting ``get_all("Project-URL", [])``
+            and returning a sequence of comma-separated ``"name, url"`` strings.
+
+    Returns:
+        A mapping from normalized project names to:
+        - a stripped URL string,
+        - a list of URL strings if the same project name appears multiple times,
+        - or ``None`` if the URL portion is empty.
+
+    Raises:
+        ValueError: If a ``Project-URL`` entry does not contain a comma.
+
+    Examples:
+        Basic extraction:
+
+        >>> class DummyMessage:
+        ...     def __init__(self, values):
+        ...         self._values = values
+        ...     def get_all(self, key, default=None):
+        ...         return self._values if key == "Project-URL" else default
+        ...
+        >>> metadata = DummyMessage([
+        ...     "Homepage, https://github.com/raimon49/pip-licenses",
+        ...     "Bug Tracker, https://github.com/raimon49/pip-licenses/issues",
+        ... ])
+        >>> extract_urls(metadata)
+        {'homepage': 'https://github.com/raimon49/pip-licenses', 'bug tracker': 'https://github.com/raimon49/pip-licenses/issues'}
+
+        Duplicate labels are collected into a list:
+
+        >>> metadata = DummyMessage([
+        ...     "Homepage, https://github.com/raimon49/pip-licenses",
+        ...     "Homepage, https://pypi.org/project/pip-licenses",
+        ... ])
+        >>> extract_urls(metadata)
+        {'homepage': ['https://github.com/raimon49/pip-licenses', 'https://pypi.org/project/pip-licenses']}
+
+        Empty URLs become ``None``:
+
+        >>> metadata = DummyMessage([
+        ...     "Source,   ",
+        ... ])
+        >>> extract_urls(metadata)
+        {'source': None}
+    """
+    _urls: dict[str, Union[str, list[str], None]] = {}
+    for entry in metadata.get_all(PEP735_URL_KEY, []):
+        key, value = entry.split(",", 1)
+        _norm_key: str = key.strip().lower()
+        _norm_val = value.strip()
+        if _norm_key in _urls:
+            if not isinstance(_urls[_norm_key], list):
+                # MyPy is a bit lost by this point, (See Discussion in PR #346)
+                # https://github.com/raimon49/pip-licenses/pull/346#discussion_r3661511932
+                _urls[_norm_key] = [
+                    _urls[_norm_key],  # type: ignore[list-item]  # ty: ignore[unused-type-ignore-comment]
+                ]
+            if _norm_val not in set(
+                cast(list[str], _urls[_norm_key]),
+            ):  # deduplicate and merge by key
+                _urls[_norm_key].append(_norm_val)  # type: ignore[union-attr]  # ty: ignore[unused-type-ignore-comment]
+        else:
+            _urls[_norm_key] = _norm_val or None
+    return _urls
+
+
+def extract_homepage(metadata: Message) -> Union[str, None]:
+    """Extracts a homepage attribute from the package metadata.
+
+    Retrieve home page from the PEP 753 `Project-URL` metadata.
+    As a fallback, try the Core Metadata 1.0 home-page attribute.
+    If all else fails, try other PEP 753 `Project-URL` labels.
+
+    Args:
+        metadata: The package metadata to extract the home page from.
+
+    Returns:
+        The home page if applicable, None otherwise.
+
+    Raises:
+        ValueError: Raised when called with incompatible package
+                    metadata. May indicate a
+                    CWE-20 in caller. Mitigates theoretical CWE-1287
+                    by raising.
+    """
+    # Morally, this should be typed as a dict[str, str | list[str]] (but we'll handle None too)
+    candidates: dict[str, Union[str, list[str], None]] = extract_urls(metadata)
+
+    def _help_get_first_of_many(
+        raw_input: Union[str, list[str], None],
+    ) -> Union[str, None]:
+        """Selects a up to a single string from the given input.
+
+        Utility; Not part of exposed API. Helps by handling the
+        zero-one-infinity principle.
+
+        Pseudo-logic:
+          A. Unless the input is non-None, just return None.
+          B. If input is a string, then just return the input string.
+          C. Otherwise if input is a list and has at least one value,
+             then return the first value as a string.
+          D. Otherwise raise a ValueError (likely a regression)
+
+        Args:
+            raw_input: One or more strings. (optional)
+
+        Returns:
+            The first input string (if applicable), None otherwise.
+
+        Raises:
+            ValueError: Raised when called with incompatible package
+                        metadata. May indicate a CWE-20 in caller.
+                        Mitigates theoretical CWE-1287 by raising.
+        """
+        if raw_input is not None:
+            if isinstance(raw_input, str):
+                return raw_input
+            elif raw_input[0]:
+                return cast(
+                    str, raw_input[0]
+                )  # overkill explicit cast (for linters)
+            else:  # pragma: no cover
+                raise ValueError(
+                    "BUG-242: If you encounter this error, please file a regression bug."
+                    "You have found a regression bug caused by changes introduced by "
+                    "[GHI #242](https://github.com/raimon49/pip-licenses/issues/242)"
+                ) from None
+        return None
+
+    # start with Core Metadata 1.2 (PEP 753)
+    # https://packaging.python.org/en/latest/specifications/core-metadata/#core-metadata-project-url
+    homepage = candidates.get(KNOWN_URL_SUB_KEYS[0])
+    if homepage is not None:
+        return _help_get_first_of_many(homepage)
+
+    # fall back to deprecated Core Metadata 1.0
+    # https://packaging.python.org/en/latest/specifications/core-metadata/#home-page
+    homepage = metadata.get(FALLBACK_URL_KEY, None)
+    if homepage is not None:
+        return _help_get_first_of_many(homepage)
+
+    _has_something_flag = False
+    # if all else fails, try alternative Core Metadata 1.2 labels
+    # https://packaging.python.org/en/latest/specifications/well-known-project-urls/#well-known-labels
+    for priority_key in KNOWN_URL_SUB_KEYS[1:]:
+        if priority_key in candidates:
+            _has_something_flag = True
+            _val = _help_get_first_of_many(candidates[priority_key])
+            if _val:
+                return _val
+    if _has_something_flag:
+        return LICENSE_UNKNOWN
+    return None
+
+
+def extract_license_from_classifiers(metadata: Message) -> list[str]:
+    classifiers: list[str] = metadata.get_all("Classifier", [])
+    license_classifiers: list[str] = sorted(
+        find_license_from_classifier(classifiers)
+    )
+    # TODO: raise warning if metadata indicates version is 2.4+ -- see PEP 639
+    return license_classifiers
+
+
+def extract_license_files(metadata: Message) -> list[str]:
+    _meta_files: list[str] = metadata.get_all("License-File", [])
+    license_files: list[str] = sorted(_meta_files)
+    return license_files
+
+
+def extract_authors(metadata: Message) -> list[str]:
+    _combined_authors = set()
+    # start with Core Metadata 1.0 authors
+    # see https://packaging.python.org/en/latest/specifications/core-metadata/#author
+    _auths = metadata.get_all("Author", [])
+    if len(_auths) >= 1:
+        # the spec just expects a single string instance,
+        # but better to handle count-agnostically
+        for _auth in _auths:
+            _combined_authors.add(_auth.strip())
+    # continue with Core Metadata 1.0 and inspect RFC-822 style author-email entries
+    # see https://packaging.python.org/en/latest/specifications/core-metadata/#author-email
+    _emails = metadata.get_all("Author-Email", [])
+    # Per RFC-822, this field may contain multiple comma-separated e-mail addresses:
+    for _auth_entry in _emails:
+        _combined_authors.add(_auth_entry.split(" <")[0])
+    # TODO: should normalize as per RFC-822
+    return sorted(_combined_authors)
+
+
+def extract_maintainers(metadata: Message) -> list[str]:
+    _combined_maintainers = set()
+    # start with Core Metadata 1.2 Maintainers
+    # see https://packaging.python.org/en/latest/specifications/core-metadata/#maintainer
+    _auths = metadata.get_all("Maintainer", [])
+    if len(_auths) >= 1:
+        # the spec just expects a single string instance,
+        # but better to handle count-agnostically
+        for _auth in _auths:
+            _combined_maintainers.add(_auth.strip())
+    # continue with Core Metadata 1.2 and inspect RFC-822 style maintainer-email entries
+    # see https://packaging.python.org/en/latest/specifications/core-metadata/#maintainer-email
+    _emails = metadata.get_all("Maintainer-Email", [])
+    # Per RFC-822, this field may contain multiple comma-separated e-mail addresses:
+    for _auth_entry in _emails:
+        _combined_maintainers.add(_auth_entry.split(" <")[0])
+    # TODO: should normalize as per RFC-822
+    return sorted(_combined_maintainers)
+
+
+# placeholder for something like
+# Value: TypeAlias = Union[str, list[str], dict[str, Union[str, list[str], None]], None]
+# E.g., Value: TypeAlias = Union[strs, dict[str, Union[strs, None]], None]
+# E.g., Value: TypeAlias = Optional[Union[strs, dict[str, Optional[strs]]]]
+# See https://github.com/raimon49/pip-licenses/issues/360
+
+
+METADATA_KEYS: dict[
+    str,
+    list[
+        Callable[
+            [Message],
+            Union[
+                str, list[str], dict[str, Union[str, list[str], None]], None
+            ],
+        ]
+    ],
+] = {
+    "home-page": [extract_homepage],
+    "author": [extract_authors],
+    "maintainer": [extract_maintainers],
+    "license_metadata": [lambda metadata: metadata.get("License")],
+    "license_classifier": [extract_license_from_classifiers],  # added in v6.0
+    "license_expression": [
+        lambda metadata: metadata.get("License-expression")
+    ],
+    "license_files": [extract_license_files],  # added in v6.0
+    "summary": [lambda metadata: metadata.get("Summary")],
+    "urls": [extract_urls],  # added in v6.0
+}
+
+
+def _get_pkg_included_file(
+    pkg: Distribution, file_names_rgx: str
+) -> tuple[Union[str, None], str]:
+    """
+    Attempt to find the package's included file on disk and return the
+    tuple (included_file_path, included_file_contents).
+    """
+    included_file = None
+    included_text = LICENSE_UNKNOWN
+    matched_rel_paths = _filter_pkg_included_paths(pkg, file_names_rgx)
+
+    for rel_path in matched_rel_paths:
+        abs_path = Path(str(pkg.locate_file(rel_path)))
+        if not abs_path.is_file():
+            continue  # pragma: no cover
+        included_file = str(abs_path)
+        with open(
+            abs_path, encoding="utf-8", errors="backslashreplace"
+        ) as included_file_handle:
+            included_text = included_file_handle.read()
+        break
+    return (included_file, included_text)
+
+
+def _filter_string(item: str, encoding: str) -> str:
+    try:
+        # TODO: this needs improved
+        return item.encode(encoding=encoding, errors="ignore").decode(
+            encoding=encoding
+        )
+    except AttributeError as _cause:  # pragma: no cover
+        _context_details = f"{item} can not be safely filtered with {encoding}"
+        if not isinstance(item, str):
+            _context_details = f"{type(item)} can not be filtered as a string"
+        raise ValueError(_context_details) from _cause
+
+
+def _do_filter_iteration(
+    sub_item: Union[str, list[str], dict[str, Union[str, list[str], None]]],
+    encoding: str,
+) -> Union[str, list[str], dict[str, Union[str, list[str], None]]]:
+    if isinstance(sub_item, list):
+        # it is unclear if this needs further testing or just does not work with partials
+        # _f = partial(_filter_string, encoding=encoding)
+        # return list(map(_f, sub_item))
+        _filtered_sublist = [
+            _filter_string(_next_item, encoding=encoding)
+            for _next_item in sub_item
+            if _next_item is not None and len(_next_item) > 0
+        ]
+        return _filtered_sublist
+    elif isinstance(sub_item, dict):
+        _filtered_subset: dict[str, Union[str, list[str], None]] = (
+            sub_item.copy()
+        )
+        for k, v in sub_item.items():
+            if v is not None:  # Prune None values
+                _filtered_subset[k] = _do_filter_iteration(
+                    v, encoding=encoding
+                )  # type: ignore[assignment]
+        return _filtered_subset
+    else:
+        return _filter_string(cast(str, sub_item), encoding=encoding)
+
+
+def _get_pkg_info(
+    *args: Any, **kwargs: Any
+) -> dict[str, Union[str, list[str], dict[str, Union[str, list[str], None]]]]:
+    pkg = None
+    if len(args) > 0 and isinstance(args[0], Distribution):
+        pkg = cast(Distribution, args[0])
+        args = args[1:]
+    else:
+        pkg = kwargs.pop("pkg", None)
+    if not isinstance(
+        pkg, Distribution
+    ):  # defensive code to support runtime typing
+        raise TypeError("[CWE-573] pkg must be a Distribution") from None
+    _config: Union[Configuration, None] = kwargs.get("config")
+    # Morally this should include a "and isinstance(_config, Configuration)"
+    _conf_is_truthy: bool = _config is not None
+    _with_license_files: bool = kwargs.get(
+        "with_license_files",
+        _config.with_license_files  # type: ignore[union-attr]
+        if _conf_is_truthy
+        else kwargs.get(
+            "with_license_file",
+            _config.with_license_file if _conf_is_truthy else False,  # type: ignore[union-attr]
+        ),  # type: ignore[union-attr]
+    )
+    _with_other_files: bool = kwargs.get(
+        "with_other_files",
+        _config.with_other_files if _conf_is_truthy else False,  # type: ignore[union-attr]
+    )
+    _filter_strings: bool = kwargs.get(
+        "filter_strings",
+        _config.filter_strings if _conf_is_truthy else False,  # type: ignore[union-attr]
+    )
+
+    pkg_name: str = pkg.metadata["name"]
+    normal_pkg_name = normalize_pkg_name(pkg_name)
+    normal_pkg_version = normalize_version(pkg.version)
+    legacy_info = fallback_license_retrieval(pkg)
+    pkg_info: dict[
+        str, Union[str, list[str], dict[str, Union[str, list[str], None]]]
+    ] = {
+        "name": pkg_name,
+        "version": normal_pkg_version,
+        "namever": f"{normal_pkg_name} {normal_pkg_version}",
+    }
+    # filter the legacy info and union
+    pkg_info |= {
+        leg_key: leg_value
+        for leg_key, leg_value in legacy_info.items()
+        if (
+            leg_value
+            and (leg_value is not None)
+            and (len(leg_value) > 0)
+            and (leg_value is not LICENSE_UNKNOWN)
+        )
+    }
+
+    metadata = pkg.metadata
+    for field_name, field_selector_fns in METADATA_KEYS.items():
+        value = None
+        for field_selector_fn in field_selector_fns:
+            # See https://github.com/raimon49/pip-licenses/issues/360
+            # Type hint of `Distribution.metadata` states `PackageMetadata`
+            # but it's actually of type `email.message.Message`
+            value = field_selector_fn(metadata)  # type: ignore[arg-type]
+            if value:
+                break
+        pkg_info[field_name] = value  # type: ignore[assignment]
+
+    if _with_license_files:  # conditional for < v6+
+        pkg_texts: Union[list[Union[str, None]], None] = (
+            _get_pkg_license_texts_from_disk(
+                pkg,
+                # See https://github.com/raimon49/pip-licenses/issues/360
+                # mypy demands this be a list[Union[str, None]] but
+                # we are actually checking for NoneType elements at runtime
+                # plus this is just a workaround to ensure no regressions,
+                # and refactoring is just technical-debt
+                filelist=cast(list[str], pkg_info["license_files"])  # type: ignore[arg-type]
+                if pkg_info[
+                    "license_files"
+                ]  # intent here is to skip '[]' and missing KvPs
+                else None,
+            )
+        )
+        if (
+            pkg_texts and None not in pkg_texts
+        ):  # https://github.com/raimon49/pip-licenses/pull/346#discussion_r3609573407
+            pkg_info["license_texts"] = cast(list[str], pkg_texts)
+
+    if _with_other_files:  # conditional for < v6+
+        pkg_info["other_files"] = list(
+            _filter_pkg_included_files(pkg, LICENSE_BY_OTHER_FILE_PATTERN),
+        )
+        pkg_other_texts: Union[list[Union[str, None]], None] = (
+            _get_pkg_license_texts_from_disk(
+                pkg,
+                # See https://github.com/raimon49/pip-licenses/issues/360
+                # mypy demands this be a list[Union[str, None]] but
+                # we are actually checking for NoneType elements at runtime
+                # plus this is just a workaround to ensure no regressions,
+                # and refactoring is just technical-debt
+                filelist=cast(list[str], pkg_info["other_files"])  # type: ignore[arg-type]
+                if pkg_info[
+                    "other_files"
+                ]  # intent here is to skip '[]' and missing KvPs
+                else None,
+            )
+        )
+        if pkg_other_texts is not None:
+            pkg_info["other_texts"] = cast(list[str], pkg_other_texts)
+
+    if _filter_strings:
+        _filter_code_page: str = str(
+            kwargs.get(
+                "filter_code_page",
+                _config.filter_code_page if _conf_is_truthy else "latin1",  # type: ignore[union-attr]
+            )
+        )
+        for key, val in pkg_info.items():
+            if val is not None:  # ignore top-level None values
+                pkg_info[key] = _do_filter_iteration(
+                    val,
+                    encoding=_filter_code_page,
+                )
+
+    return pkg_info
+
+
+def _get_python_sys_path(executable: str) -> list[str]:
+    import os
+    import subprocess
+
+    script = "import sys; print(' '.join(filter(bool, sys.path)))"
+    output = subprocess.run(
+        [executable, "-c", script],
+        capture_output=True,
+        env={**os.environ, "PYTHONPATH": "", "VIRTUAL_ENV": ""},
+        check=False,
+    )
+    # TODO: add encoding="utf-8"
+    return output.stdout.decode().strip().split()
+
+
+def _filter_pkg_included_paths(
+    pkg: Distribution, file_names_rgx: str
+) -> set[PackagePath]:
+    """
+    Attempt to find the set of package's matching files included on-disk.
+    """
+    pkg_files = pkg.files or ()
+    pattern: re.Pattern = re.compile(file_names_rgx)
+    matched_rel_paths = {
+        file for file in pkg_files if pattern.match(file.name)
+    }
+    return matched_rel_paths
+
+
+def _filter_pkg_included_files(
+    pkg: Distribution, file_names_rgx: str
+) -> set[str]:
+    """
+    Attempt to find the set of package's matching files included on-disk.
+
+    Matching pathstrings are returned as relative paths to the package on-disk.
+    """
+    matched_rel_paths = _filter_pkg_included_paths(pkg, file_names_rgx)
+    included_files_set: set[str] = set()
+    for rel_path in matched_rel_paths:
+        abs_path = Path(str(pkg.locate_file(rel_path)))
+        if not abs_path.is_file():
+            continue  # pragma: no cover
+        included_file = str(rel_path)
+        included_files_set.add(included_file)
+
+    return included_files_set
+
+
+def _get_pkg_license_texts_from_disk(
+    pkg: Distribution, filelist: Union[list[Union[str, None]], None] = None
+) -> Union[list[Union[str, None]], None]:
+    if filelist:
+        license_texts = []
+        for a_license_file in filelist:
+            if a_license_file:
+                _fh, a_license_file_text = _get_pkg_included_file(
+                    pkg, a_license_file
+                )
+                if _fh:
+                    license_texts.append(a_license_file_text)
+        # See https://github.com/raimon49/pip-licenses/issues/360
+        # mypy wants this be a list[Union[str, None]] but
+        # we are typically returning a list of only strings or just '[]' at runtime,
+        # (but explicitly not prohibiting both strings and NoneTypes together,
+        # just everything else) which seems to be treated like
+        # an _implicit_ optional by mypy instead of the _explicit_ type it is.
+        # plus this is just a workaround to ensure no regressions,
+        # and refactoring is just technical-debt
+        return license_texts  # type: ignore[return-value]
+    return None
+
+
+def find_license_from_classifier(classifiers: list[str]) -> list[str]:
+    licenses = []
+    for classifier in filter(lambda c: c.startswith("License"), classifiers):
+        license = classifier.split(" :: ")[-1]
+
+        # Through the declaration of 'Classifier: License :: OSI Approved'
+        if license != "OSI Approved":
+            licenses.append(license)
+
+    return licenses
+
+
+def select_license_by_source(
+    from_source: FromArg,
+    license_classifier: list[str],
+    license_meta: str,
+    license_expression: str,
+) -> set[str]:
+    # TODO: 242 -- fix case of from mixed where license expression is present && other values are too.
+    if license_expression and license_expression != LICENSE_UNKNOWN:
+        return {license_expression}
+
+    license_classifier_set = (
+        set(license_classifier) if license_classifier else {LICENSE_UNKNOWN}
+    )
+    if (
+        from_source == FromArg.CLASSIFIER
+        or from_source == FromArg.MIXED
+        and len(license_classifier) > 0
+    ):
+        return license_classifier_set
+    else:
+        return {license_meta}
+
+
+# TODO: Prototype fix for GHI-309 (DO NOT RELEASE YET)
+def fallback_license_retrieval(
+    pkg: Distribution,
+) -> dict[str, Union[str, None]]:
+    """
+    Fallback logic for retrieving licenses and other metadata files.
+
+    See also https://github.com/raimon49/pip-licenses/issues/309
+
+    Parameters:
+    - pkg: The package object or identifier.
+
+    Returns:
+    - A dictionary containing license details and other metadata.
+    """
+    license_file, license_text = _get_pkg_included_file(
+        pkg, LEGACY_LICENSE_BY_FILE_PATTERN
+    )
+    notice_file, notice_text = _get_pkg_included_file(
+        pkg, LEGACY_NOTICE_BY_FILE_PATTERN
+    )
+    author_file, author_text = _get_pkg_included_file(
+        pkg, LEGACY_AUTHORS_BY_FILE_PATTERN
+    )
+    return {
+        "license_file": license_file or FILE_MISSING,
+        "license_text": license_text or LICENSE_UNKNOWN,
+        "notice_file": notice_file or FILE_MISSING,
+        "notice_text": notice_text or None,
+        "author_file": author_file or FILE_MISSING,
+        "author_text": author_text or None,
+    }
+
+
+def _check_python_arg_for_search_path(
+    config: Configuration,
+) -> Union[set, list, tuple]:
+    """Determine the search path based on the given configuration.
+
+    Namely, checks for the configuration's `python` value and extracts its
+    sys.path value.
+    May spawn a sub-shell, depending on the given python.
+    """
+    # Morally this should be a setlike of pathlike values
+    _search_path: list = []
+    if config.python == sys.executable:
+        _search_path = sys.path
+    else:
+        _search_path = _get_python_sys_path(config.python)
+    return _search_path
+
+
+def get_packages(
+    args: Configuration,
+) -> Iterator[
+    dict[str, Union[str, list[str], dict[str, Union[str, list[str], None]]]]
+]:
+    # for now, let's over-simplify the search-path to a string list
+    search_paths: list[str] = list(
+        _check_python_arg_for_search_path(config=args)
+    )
+    pkgs = importlib_metadata.distributions(path=search_paths)
+    ignore_pkgs_as_normalize = [
+        normalize_pkg_name_and_version(badpkg)
+        for badpkg in args.ignore_packages
+    ]
+    pkgs_as_normalize = list(deduplicate_and_normalize(args.packages))
+
+    fail_on_licenses = set()
+    if args.fail_on:
+        # filter None types out
+        fail_on_licenses = set(
+            filter(None, map(str.strip, args.fail_on.split(";")))
+        )
+
+    allow_only_licenses = set()
+    if args.allow_only:
+        # filter None types out
+        allow_only_licenses = set(
+            filter(None, map(str.strip, args.allow_only.split(";")))
+        )
+
+    for pkg in pkgs:
+        pkg_name = normalize_pkg_name(pkg.metadata["name"])
+        pkg_version = normalize_version(pkg.metadata["version"])
+        pkg_name_and_version = f"{pkg_name}:{pkg_version}"  # same as normalize_pkg_name_and_version
+
+        if (
+            pkg_name.lower() in ignore_pkgs_as_normalize
+            or pkg_name_and_version.lower() in ignore_pkgs_as_normalize
+        ):
+            continue
+
+        if pkgs_as_normalize and pkg_name not in pkgs_as_normalize:
+            continue
+
+        if not args.include_from_system and pkg_name in SYSTEM_PACKAGES:
+            continue
+
+        pkg_info = _get_pkg_info(pkg, **vars(args))
+
+        license_names = select_license_by_source(
+            args.from_,
+            cast(list[str], pkg_info["license_classifier"]),
+            cast(str, pkg_info["license_metadata"]),
+            cast(str, pkg_info["license_expression"]),
+        )
+        pkg_info["license"] = sorted(license_names)  # cached for API
+
+        if fail_on_licenses:
+            failed_licenses = set()
+            if not args.partial_match:
+                failed_licenses = case_insensitive_set_intersect(
+                    license_names, fail_on_licenses
+                )
+            else:
+                failed_licenses = case_insensitive_partial_match_set_intersect(
+                    license_names, fail_on_licenses
+                )
+            if failed_licenses:
+                _fail_message = (
+                    "fail-on license {} was found for package {}:{}\n".format(
+                        "; ".join(sorted(failed_licenses)),
+                        pkg_info["name"],
+                        pkg_info["version"],
+                    )
+                )
+                sys.stderr.write(_fail_message)
+                raise SystemExit(_fail_message, 1) from None
+
+        if allow_only_licenses:
+            uncommon_licenses = set()
+            if not args.partial_match:
+                uncommon_licenses = case_insensitive_set_diff(
+                    license_names, allow_only_licenses
+                )
+            else:
+                uncommon_licenses = set(
+                    case_insensitive_partial_match_set_diff(
+                        license_names, allow_only_licenses
+                    )
+                )
+
+            if len(uncommon_licenses) == len(license_names):
+                _not_allowed_message = (
+                    "license {} not in allow-only licenses was found"
+                    " for package {}:{}\n"
+                ).format(
+                    "; ".join(sorted(uncommon_licenses)),
+                    pkg_info["name"],
+                    pkg_info["version"],
+                )
+                sys.stderr.write(_not_allowed_message)
+                raise SystemExit(_not_allowed_message, 1) from None
+
+        yield pkg_info
