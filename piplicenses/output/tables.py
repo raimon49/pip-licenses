@@ -63,6 +63,13 @@ from . import (
     cast,
 )
 from ._csv import CSVPrettyTable  # the class
+from ._html_helpers import (
+    # generate_html_id,
+    format_license_files_html,  # noqa: F401 -- Re-export as part of data API
+    # wrap_tag,
+    # wrap_pre,
+    wrap_ul,
+)
 from ._json import JsonPrettyTable  # the class
 from ._license_finder_json import JsonLicenseFinderTable  # the class
 from ._plain_vertical import PlainVerticalTable  # the class
@@ -226,7 +233,11 @@ def create_licenses_table(
                                     value=cast(Iterator[str], [*value]),
                                 ),
                             )
-                            if args.format_ in (
+                            if args.format_ is FormatArg.HTML:
+                                row.append(
+                                    wrap_ul(_value_as_list),
+                                )
+                            elif args.format_ in (
                                 FormatArg.JSON,
                                 FormatArg.PLAIN_VERTICAL,
                             ):  # Prototype
