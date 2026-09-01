@@ -69,6 +69,7 @@ from ..sorting import (
 
 # See https://docs.python.org/3/reference/simple_stmts.html#the-import-statement
 from ._csv import CSVPrettyTable
+from ._html_helpers import unescape_ul_li
 
 # See https://docs.python.org/3/reference/simple_stmts.html#the-import-statement
 # Must import JsonPrettyTable before JsonLicenseFinderTable
@@ -217,7 +218,10 @@ def create_output_string(args: Configuration) -> str:
             sortby=sortby,
             attributes={"id": _tbl_id, "class": "pip_licenses_table"},
         )
-        return html.encode("ascii", errors="xmlcharrefreplace").decode("ascii")
+        _round_trip_html = html.encode(
+            "ascii", errors="xmlcharrefreplace"
+        ).decode("ascii")
+        return unescape_ul_li(_round_trip_html)  # new in v6.0
     else:
         return table.get_string(fields=output_fields, sortby=sortby)
 
