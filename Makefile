@@ -138,7 +138,7 @@ DEV_DEPENDS:='dev-requirements'
 .SUFFIXES: .py .pyc .pyi
 
 .DEFAULT_GOAL:= help
-.PHONY: help, setup, local-install, local-uninstall, update-depends, lint, test, deploy, test-deploy, build, clean, full-clean, un-setup
+.PHONY: help, setup-venv setup-examples setup, local-install, local-uninstall, update-depends, lint, test, deploy, test-deploy, build, clean, full-clean, un-setup
 
 help:
 	$(QUIET)$(ECHO) 'Usage: make <subcommand>'
@@ -164,8 +164,15 @@ $(VENV_NAME): venv
 	test -d ${VENV_NAME} || $(PYTHON) -m venv --without-pip --clear $(VENV_NAME) ;
 	$(QUIET)test -d $@ || exit 1 ;
 
-setup: $(VENV_NAME) $(VENV_NAME)/bin/python
+setup-venv: $(VENV_NAME) $(VENV_NAME)/bin/python
 	$(QUIET)$(VENV_NAME)/bin/python -B -m ensurepip -vvv || exit 2 ;
+
+setup-examples: $(VENV_NAME) $(VENV_NAME)/bin/python setup-venv local-install
+	$(QUIET)test -d docs/examples || exit 31 ;
+	$(QUIET)$(VENV_NAME)/bin/python -B -m pip install "django==6.0.6" || exit 32 ;
+	$(QUIET)$(VENV_NAME)/bin/python -B -m pip install "pytz==2026.2" || exit 33 ;
+
+setup: $(VENV_NAME) $(VENV_NAME)/bin/python setup-venv setup-venv
 	$(VENV_NAME)/bin/python -B -m pip $(PIP_PREFIX_FLAGS) install $(PIP_COMMON_FLAGS) -r $(DEV_DEPENDS).txt
 
 local-install: $(VENV_NAME)/bin/python

@@ -75,7 +75,7 @@ repository = "https://github.com/raimon49/pip-licenses.git"
 #content-type = "text/markdown; charset=UTF-8; variant=GFM"
 
 [tool.setuptools]
-py-modules = ["pip-licenses"]
+py-modules = ["piplicenses"]  # PEP-508 normalized module name (e.g., without dash)
 
 [tool.setuptools.dynamic]
 version = {attr = "piplicenses.__version__"}
@@ -114,7 +114,7 @@ extend-select = [
 extend-ignore = [
 	"C401",   # Unnecessary generator (rewrite as a set comprehension)
 	"F841",   # Local variable is assigned to but never used
-	"FA100",  # DEPRECATED in v6.0+  # See new typing PEPs (TODO: enumerate)
+	"FA100",  # DEPRECATED in v6.0+  # See new typing PEPs  # see [PEP-749](https://peps.python.org/pep-0749)
 	"SIM300", # Yoda condition detected
 	"RUF005", # Consider unpacking instead of concatenation
 	"RUF012", # Unnecessary noise about Python language (In Python defaults are always mutable)  # See https://github.com/astral-sh/ruff/issues/5243

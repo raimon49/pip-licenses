@@ -108,6 +108,9 @@ ENV/
 docker/*
 !docker/.gitkeep
 
+# ignore github_assets
+docs/.github_assets
+
 # Windows
 [Dd]esktop.ini
 
