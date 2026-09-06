@@ -119,6 +119,9 @@ docs/.github_assets
 *.icns
 Icon*
 
+# ignore graffle diagrams
+*.graffle
+
 # IDE
 *~
 .idea
@@ -127,7 +130,9 @@ Icon*
 # Xcode
 *.workflow/xcuserdata
 *.xcodeproj/xcuserdata
+*.xcworkspace/xcuserdata
 *.workflow/xcuserdata/*
 *.xcodeproj/project.workflow/xcuserdata/*
+*.xcodeproj/project.xcworkspace/*
 swiftpm
 IDEWorkspaceChecks.plist

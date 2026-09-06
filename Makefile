@@ -172,7 +172,7 @@ setup-examples: $(VENV_NAME) $(VENV_NAME)/bin/python setup-venv local-install
 	$(QUIET)$(VENV_NAME)/bin/python -B -m pip install "django==6.0.6" || exit 32 ;
 	$(QUIET)$(VENV_NAME)/bin/python -B -m pip install "pytz==2026.2" || exit 33 ;
 
-setup: $(VENV_NAME) $(VENV_NAME)/bin/python setup-venv setup-venv
+setup: $(VENV_NAME) $(VENV_NAME)/bin/python setup-venv
 	$(VENV_NAME)/bin/python -B -m pip $(PIP_PREFIX_FLAGS) install $(PIP_COMMON_FLAGS) -r $(DEV_DEPENDS).txt
 
 local-install: $(VENV_NAME)/bin/python
@@ -190,6 +190,9 @@ update-depends:
 	pip-compile --extra dev --no-strip-extras -o dev-requirements.in --quiet --rebuild -U pyproject.toml
 	sed -r -e $(DEV_PAT) dev-requirements.in | tee dev-requirements.txt
 	$(QUITE)$(RM) dev-requirements.in 2>$(ERROR_LOG_PATH) || true ;
+
+update-demo:
+	$(QUIET)$(ECHO) "Not implemented at this time."
 
 # developer workflow targets
 
