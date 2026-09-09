@@ -67,7 +67,7 @@
 # License name matching is case-insensitive.
 #
 # Prerequisites:
-#   pip install 'Django==6.0.6' 'pytz==2026.2' pip-licenses
+#   pip install 'cffi==2.1.1' 'packaging==26.3' pip-licenses
 #
 # Note: This example will fail if MIT License or BSD License packages are found.
 

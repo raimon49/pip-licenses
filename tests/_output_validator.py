@@ -113,7 +113,7 @@ class OutputValidator:
             return True, "Output pattern found in README examples"
 
         # Try to find specific version strings that examples use
-        if "6.0.6" in output.stdout or "2026.2" in output.stdout:
+        if "2.1.1" in output.stdout or "26.3" in output.stdout:
             return True, "Example versions found in output"
 
         # For JSON/CSV formats, check for common structure

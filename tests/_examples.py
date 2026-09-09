@@ -29,7 +29,6 @@ tests._examples
 To be documented?
 """
 
-import os
 import re
 import subprocess
 
@@ -37,6 +36,12 @@ import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
+
+# import env hardening helpers for ExampleRunner
+from ._example_env import (
+    examples_env,
+    sanitized_environment,
+)
 
 # MARK: Data Classes
 
@@ -68,11 +73,27 @@ class ExampleScript:
         Raises:
             ValueError: If script name doesn't match expected pattern
         """
-        name = script_path.name
+        name = None  # was script_path.name
         # Extract numeric prefix from name like '01-basic-usage.sh'
+        # see https://regex101.com/r/U4SbUa/2
+        _PATTERN = r"""^(?P<fullexamplesdir>(?P<repopath>(?:\/)(?:(?:[-\w]+[^\/\b\W]*)(?:\/))*)?(?P<examplesdir>(?:docs)(?:\/)(?:examples)(?:\/)))?(?P<dirname>(?P<dirNum>[0-9]+)(?:[x0-9])?(?P<prefix>\-[^\/]*))(?:\/)(?P<filename>(?P<fileNum>(?P=dirNum)(?:[0-9]?))(?:(?P=prefix)(?P<baseName>[^\/]*)\.sh))$"""
+        # Python's `re` syntax uses (?P<name>...) for named groups and
+        # (?P=name) for named back-references.
+        pattern = re.compile(
+            _PATTERN,
+            re.UNICODE | re.MULTILINE | re.VERBOSE,
+        )
+        _match_path = re.search(pattern, str(script_path.as_posix()))
+        if _match_path:
+            _groups = _match_path.groupdict()
+            if "filename" in _groups:
+                name = _groups["filename"]
+        if not name:
+            msg = f"Script path doesn't match expected pattern: {script_path.as_posix()}"
+            raise ValueError(msg)
         match = re.match(r"(\d+)-", name)
         if not match:
-            msg = f"Script name doesn't match expected pattern: {name}"
+            msg = f"Script name doesn't match expected pattern: {script_path.name}"
             raise ValueError(msg)
 
         number = int(match.group(1))
@@ -130,7 +151,7 @@ class ExampleRunner:
             env: Environment variables for subprocess (uses current env if None)
         """
         self.timeout = timeout
-        self.env = env or os.environ.copy()
+        self.env = sanitized_environment(extra=env) if env else examples_env()
 
     def run(self, script: ExampleScript) -> ExampleOutput:
         """Execute an example script.
@@ -141,9 +162,14 @@ class ExampleRunner:
         Returns:
             ExampleOutput with results
         """
+        _args = [
+            "bash",
+            "-c",
+            f"source {script.path!s}",
+        ]
         try:
             result = subprocess.run(
-                ["bash", str(script.path)],
+                _args,
                 capture_output=True,
                 text=True,
                 timeout=self.timeout,

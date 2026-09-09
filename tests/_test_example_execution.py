@@ -44,6 +44,7 @@ from . import (
     unittest,
 )
 from .test_readme_examples import (
+    default_examples_dir,
     discover_examples,
 )
 
@@ -62,7 +63,13 @@ class TestExampleExecution(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         """Set up class-level fixtures."""
+        _example_working_dir = default_examples_dir()
+        _runner_env = {
+            "PWD": _example_working_dir,
+            "OLDPWD": _example_working_dir,
+        }
         cls.runner = ExampleRunner(timeout=30)
+        # instead of cls.runner = ExampleRunner(timeout=30, env=_runner_env)
         cls.discovered_examples = discover_examples()
 
     def test_all_examples_run(self) -> None:
@@ -72,19 +79,37 @@ class TestExampleExecution(unittest.TestCase):
 
         failed = []
         for example in self.discovered_examples:
-            output = self.runner.run(example)
+            with self.subTest(name=example.name):
+                output = self.runner.run(example)
 
-            # Some scripts may fail due to missing dependencies
-            # We just verify they executed without fatal errors
-            if output.error:
-                # Skip with error context
-                print(f"Skipped {example.name}: {output.error}")
-                continue
+                # Some scripts may fail due to missing dependencies
+                # We just verify they executed without fatal errors
+                if output.error:
+                    # Skip with error context
+                    print(f"Skipped {example.name}: {output.error}")
+                    continue
+                # instead of self.assertIsTrue(output.success, "Examples should not fail!")
 
-            # If script execution itself failed (not prerequisites),
-            # record it but continue
-            if output.exit_code != 0 and "not installed" not in output.stderr:
-                failed.append((example.name, output.stderr))
+                # If script execution itself failed (not prerequisites),
+                # record it but continue
+                if not output.success:
+                    if "not installed" not in output.stderr:
+                        failed.append((example.name, output.stderr))
+                else:
+                    # should not need to skip, ok to fail on real failure
+                    self.assertIsNotNone(
+                        output.stdout, "Examples must not be empty!"
+                    )
+                    self.assertIn(
+                        "demo",
+                        output.output,
+                        "Examples should have a demo prompt!",
+                    )
+                    self.assertIn(
+                        "pip-licenses ",
+                        output.output,
+                        "Examples must be about pip-licenses!",
+                    )  # THIS MAY CHANGE SLIGHTLY AFTER GHI #81 (as API may use PEP508 name)
 
         if failed:
             msg = "Some examples failed to execute:\n"

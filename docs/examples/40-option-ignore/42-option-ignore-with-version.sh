@@ -66,7 +66,7 @@
 # Use package:version syntax to ignore only that specific version.
 #
 # Prerequisites:
-#   pip install 'Django==6.0.6' 'pytz==2026.2' pip-licenses
+#   pip install 'cffi==2.1.1' 'packaging==26.3' pip-licenses
 
 set -euo pipefail
 
@@ -81,7 +81,7 @@ check_required_packages || exit 1
 init_demo
 
 # Run the example - ignore package with specific version
-run_command "pip-licenses --with-system --ignore-packages django pytz:2026.2"
+run_command "pip-licenses --with-system --ignore-packages cffi packaging:26.3"
 pause 2.2
 
 printf '\r\n'

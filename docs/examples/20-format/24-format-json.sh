@@ -67,7 +67,7 @@
 # Alias: --format=j
 #
 # Prerequisites:
-#   pip install 'Django==6.0.6' 'pytz==2026.2' pip-licenses
+#   pip install 'cffi==2.1.1' 'packaging==26.3' pip-licenses
 
 set -euo pipefail
 

@@ -66,7 +66,7 @@
 # When enabled, substring matches are accepted instead of requiring full license name matches.
 #
 # Prerequisites:
-#   pip install 'Django==6.0.6' 'pytz==2026.2' pip-licenses
+#   pip install 'cffi==2.1.1' 'packaging==26.3' pip-licenses
 #
 # Note: This example demonstrates substring matching with --allow-only.
 

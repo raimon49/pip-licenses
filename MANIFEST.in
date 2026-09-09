@@ -3,3 +3,8 @@ prune docker
 exclude .gitignore
 exclude CONTRIBUTING.md
 exclude Dockerfile
+exclude docs/examples/*
+exclude docs/scripts/*
+exclude docs/**/*.sh
+exclude docs/*
+prune docs

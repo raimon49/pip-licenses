@@ -66,7 +66,7 @@
 # By default, pip-licenses orders by package name. Use --order to change the sort column.
 #
 # Prerequisites:
-#   pip install 'Django==6.0.6' 'pytz==2026.2' pip-licenses
+#   pip install 'cffi==2.1.1' 'packaging==26.3' pip-licenses
 
 set -euo pipefail
 

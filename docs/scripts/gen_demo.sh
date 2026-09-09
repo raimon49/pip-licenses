@@ -63,6 +63,7 @@
 
 set -euo pipefail
 
+# only one demo right now (TODO: automate rest of demo workflow)
 RECORDING=$(dirname "${0}")/../examples/00-demo/00-example-demo.tty ;
 DEMO_CMD_PATH=$(dirname "${0}")/../examples/00-demo/00-example-demo.sh ;
 # see-also Makefile
@@ -82,7 +83,16 @@ trap cleanup EXIT
 
 printf '%s\n' "Setting up demo environment..." ;
 
-make setup-examples && make local-install ;
+# subprocess isolation
+(
+    set -euo pipefail
+    make setup-examples
+    make local-install
+    # Run examples
+) || {
+    make un-setup 2>/dev/null || true
+    exit $?
+}
 
 printf '%s\n' "Activating demo environment..."
 

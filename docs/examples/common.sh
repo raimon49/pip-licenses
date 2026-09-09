@@ -118,18 +118,35 @@ check_pip_licenses() {
 
 # Get the Python interpreter being used
 get_python_interpreter() {
-    command -v python3 || command -v python
+    local PYTHON_TOOL
+    PYTHON_TOOL=$(command -v python3) || PYTHON_TOOL=$(command -v python)
+    # Verify path is canonical (no symlink traversal)
+    if ! resolved=$(realpath -- "${PYTHON_TOOL}"); then
+        log_error "Could not resolve Python interpreter path"
+        return 1
+    fi
+    # Require an executable Python binary under /usr or /opt
+    # ... or a Homebrew cellar path (to a framework)
+    if [[ ! -x "$resolved" ||
+          ! "$resolved" =~ ^/(usr|opt|.*/Cellar/python.*/.*/Python.framework)/.*/python([0-9]+([.][0-9]+)*)?$ ]]; then
+        log_error "Python interpreter path validation failed: $resolved"
+        return 1
+    fi
+    # after checking symlink resolution: allow venv symlink
+    printf '%s\n' "${PYTHON_TOOL}" ;
+    return $?
 }
 
 get_python_pip() {
+    local PYTHON_TOOL;
     PYTHON_TOOL=$(get_python_interpreter);
     ${PYTHON_TOOL} -B -m pip $@ ;
 }
 
 # Check if required packages are installed
 check_required_packages() {
-    local required_packages=("Django" "pytz")
-
+    local required_packages=("cffi" "packaging")
+    log_info "Will use python interpreter at:"$(get_python_interpreter)"." ;
     for pkg in "${required_packages[@]}"; do
         if ! get_python_pip list 2>/dev/null | tail -n+3 2>/dev/null | grep -q -Ee "^${pkg} "; then
             log_warn "Package ${pkg} is not installed"
@@ -154,17 +171,18 @@ is_system_env() {
 }
 
 # Validate that examples use pinned versions
+# must match pinned version in example-requirements.txt
 validate_pinned_versions() {
-    local django_version="6.0.6"
-    local pytz_version="2026.2"
+    local cffi_version="2.1.1"
+    local packaging_version="26.3"
 
-    if ! pip show django | grep -q "Version: ${django_version}"; then
-        log_warn "Django version mismatch (expected: ${django_version})"
+    if ! get_python_pip show cffi | grep -q "Version: ${cffi_version}"; then
+        log_warn "cffi version mismatch (expected: ${cffi_version})"
         return 1
     fi
 
-    if ! pip show pytz | grep -q "Version: ${pytz_version}"; then
-        log_warn "pytz version mismatch (expected: ${pytz_version})"
+    if ! get_python_pip show packaging | grep -q "Version: ${packaging_version}"; then
+        log_warn "packaging version mismatch (expected: ${packaging_version})"
         return 1
     fi
 
@@ -199,12 +217,16 @@ type_command() {
 # Show the prompt, type a command, then execute it.
 # Usage: run_command pip-licenses --format=json
 run_command() {
-    command=$1
+    local -a cmd_array=("$@")
+    # instead of command=$1
     local exit_code
 
     # printf '\r%s' "$prompt"
-    type_command "$command"
-    sh -c "$command" || exit_code=$?
+    type_command "$(printf '%s ' "${cmd_array[@]}")"
+    # instead of type_command "$command"
+    # Execute as subprocess array (Minimize shell interpretation)
+    bash -c "$(printf '%s ' "${cmd_array[@]}")" || exit_code=$?
+    # instead of sh -c "$command" || exit_code=$?
     printf '\n%s' "$prompt"
     return "${exit_code:-0}"
 }
@@ -233,9 +255,3 @@ verify_success() {
     fi
 }
 
-# Export for use in subshells
-# take care to avoid shellshock
-export -f log_info log_error log_success log_warn
-export -f check_pip_licenses check_required_packages
-export -f is_venv_active is_system_env
-export -f get_python_interpreter

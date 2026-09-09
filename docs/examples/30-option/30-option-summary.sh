@@ -66,7 +66,7 @@
 # The --summary option outputs a count of packages per license instead of listing individual packages.
 #
 # Prerequisites:
-#   pip install 'Django==6.0.6' 'pytz==2026.2' pip-licenses
+#   pip install 'cffi==2.1.1' 'packaging==26.3' pip-licenses
 
 set -euo pipefail
 

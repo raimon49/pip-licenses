@@ -69,25 +69,19 @@ class TestExampleReproducibility(unittest.TestCase):
         cls.discovered_examples = discover_examples()
 
     def test_readme_contains_examples(self) -> None:
-        """Verify README contains bash code blocks.
-
-        This implementation still uses the `bash` anchor;
-        eventually, that will change to something like the following, in 6.x:
-
-            example_blocks = re.findall(
-                r"```console\n(.*?)```", self.readme_content, re.DOTALL
-            )
-            self.assertGreater(
-                len(example_blocks), 0, "No console examples found in README"
-            )
-
-        """
+        """Verify README contains bash code blocks."""
         # Look for bash code blocks
         bash_blocks = re.findall(
             r"```bash\n(.*?)```", self.readme_content, re.DOTALL
         )
         self.assertGreater(
             len(bash_blocks), 0, "No bash examples found in README"
+        )
+        example_blocks = re.findall(
+            r"```console\n(.*?)```", self.readme_content, re.DOTALL
+        )
+        self.assertGreater(
+            len(example_blocks), 0, "No console examples found in README"
         )
 
     def test_examples_match_readme_patterns(self) -> None:

@@ -60,16 +60,13 @@
 #    even if the above stated remedy fails of its essential purpose.
 ################################################################################
 #
-# Option: --allow-only
+# Option: --with-authors
 #
-# This example demonstrates license verification using the --allow-only option.
-# The tool exits with code 1 if any installed package has a license NOT in the allow-only list.
-# License name matching is case-insensitive.
+# This example demonstrates including author information in the output.
+# The --with-authors option adds a column showing package authors.
 #
 # Prerequisites:
 #   pip install 'cffi==2.1.1' 'packaging==26.3' pip-licenses
-#
-# Note: This example should succeed as both packages are in the allowed license list.
 
 set -euo pipefail
 
@@ -83,11 +80,8 @@ check_required_packages || exit 1
 
 init_demo
 
-# take care with the nested quotes
-CMD_LINE_TEXT=$(printf 'pip-licenses %s' "--allow-only=\"MIT License;BSD License\"" ;)
-
-# Run the example - allow only specific licenses
-run_command "${CMD_LINE_TEXT}"
+# Run the example - include author information
+runcommand "pip-licenses --with-authors"
 pause 2.2
 
 printf '\r\n'

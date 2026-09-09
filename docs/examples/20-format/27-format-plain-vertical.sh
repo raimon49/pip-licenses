@@ -67,9 +67,9 @@
 # --extractLicenses flag, minimizing rightward drift.
 #
 # Prerequisites:
-#   pip install 'pytest==9.1.1' pip-licenses
+#   pip install 'cfii==2.1.1' pip-licenses
 #
-# Note: This example uses pytest instead of Django/pytz to show the --with-license-file option.
+# Note: This example uses pytest instead of cffi/packaging to show the --with-license-file option.
 
 set -euo pipefail
 
@@ -80,10 +80,10 @@ source "${SCRIPT_DIR}/../../examples/common.sh"
 # Verify prerequisites
 check_pip_licenses || exit 1
 
-# Check for pytest
-if ! get_python_pip list 2>/dev/null | tail -n+3 2>/dev/null | grep -q -Ee "^pytest "; then
-    log_warn "pytest is not installed"
-    log_info "Install with: pip install pytest"
+# Check for cffi
+if ! get_python_pip list 2>/dev/null | tail -n+3 2>/dev/null | grep -q -Ee "^cffi "; then
+    log_warn "cffi is not installed"
+    log_info "Install with: pip install cfii"
     exit 1
 fi
 
@@ -92,7 +92,7 @@ init_demo
 
 # Run the example - plain-vertical format with license file
 # Note: Using --packages to isolate pytest output, using --no-license-path for cleaner output
-run_command "pip-licenses --packages pytest --format=plain-vertical --with-license-file --no-license-path"
+run_command "pip-licenses --packages cffi --format=plain-vertical --with-license-file --no-license-path"
 pause 2.2
 
 printf '\r\n'

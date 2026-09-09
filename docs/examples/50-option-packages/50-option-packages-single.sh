@@ -66,10 +66,10 @@
 # The --packages option limits output to specified packages only.
 #
 # Prerequisites:
-#   pip install 'Django==6.0.6' 'pytz==2026.2' pip-licenses
+#   pip install 'cffi==2.1.1' 'packaging==26.3' pip-licenses
 #
 # Expected behavior:
-#   Only Django should be displayed
+#   Only cffi should be displayed
 
 set -euo pipefail
 
@@ -84,7 +84,7 @@ check_required_packages || exit 1
 init_demo
 
 # Run the example - show single package
-run_command "pip-licenses --packages django"
+run_command "pip-licenses --packages cffi"
 pause 2.2
 
 printf '\r\n'

@@ -60,16 +60,13 @@
 #    even if the above stated remedy fails of its essential purpose.
 ################################################################################
 #
-# Option: --allow-only
+# Option: --from=mixed
 #
-# This example demonstrates license verification using the --allow-only option.
-# The tool exits with code 1 if any installed package has a license NOT in the allow-only list.
-# License name matching is case-insensitive.
+# This example demonstrates an edge-case found in GHI-327 and clearifys expected behavior.
+# The --from=? option selects the source of the package licenses to extract.
 #
 # Prerequisites:
 #   pip install 'cffi==2.1.1' 'packaging==26.3' pip-licenses
-#
-# Note: This example should succeed as both packages are in the allowed license list.
 
 set -euo pipefail
 
@@ -79,15 +76,27 @@ source "${SCRIPT_DIR}/../../examples/common.sh"
 
 # Verify prerequisites
 check_pip_licenses || exit 1
-check_required_packages || exit 1
+#check_required_packages || exit 1
+
+# Check for cffi
+if ! get_python_pip list 2>/dev/null | tail -n+3 2>/dev/null | grep -q -Ee "^aniso8601 "; then
+    log_warn "aniso8601 is not installed"
+    log_info "Install with: pip install aniso8601"
+    exit 1
+fi
 
 init_demo
 
-# take care with the nested quotes
-CMD_LINE_TEXT=$(printf 'pip-licenses %s' "--allow-only=\"MIT License;BSD License\"" ;)
+run_command "# this is what pip shows:"
+# handle pip carfully here
+type_command "pip show aniso8601"
+get_python_pip show aniso8601 | grep -vE -e "^Location: "
+pause 0.9
+printf "\r%s" "demo$ " ;
 
-# Run the example - allow only specific licenses
-run_command "${CMD_LINE_TEXT}"
+run_command "# this is what pip-licenses shows:"
+# Run the example - output to file
+run_command "pip-licenses -p aniso8601 --from=mixed --with-system"
 pause 2.2
 
 printf '\r\n'

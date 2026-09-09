@@ -52,14 +52,16 @@ class TestValidationIntegration(unittest.TestCase):
     def setUp(self) -> None:
         """Set up test fixtures."""
         self.validator = OutputValidator()
-        self.pinnedName = "Django"
-        self.pinnedVersion = "6.0.6"
+        self.pinnedName = "cffi"
+        self.pinnedVersion = "2.1.1"
         self.PinnedExpectedLicense = "BSD-3-Clause"
 
     def test_validator_success_validation(self) -> None:
         """Test success validation logic."""
         # Create a successful output
-        script = ExampleScript.from_path(Path("./01-basic-usage.sh"))
+        script = ExampleScript.from_path(
+            Path("./01-basic/01-basic-usage.sh")
+        )  # REGRESSION HERE
         output = ExampleOutput(
             script=script,
             exit_code=0,
@@ -72,7 +74,7 @@ class TestValidationIntegration(unittest.TestCase):
 
     def test_validator_failure_detection(self) -> None:
         """Test failure detection."""
-        script = ExampleScript.from_path(Path("./01-basic-usage.sh"))
+        script = ExampleScript.from_path(Path("./01-basic/01-basic-usage.sh"))
         output = ExampleOutput(
             script=script,
             exit_code=1,
@@ -89,7 +91,7 @@ class TestValidationIntegration(unittest.TestCase):
     def test_validator_readme_check(self) -> None:
         """Test README validation."""
         readme_content = load_readme()
-        script = ExampleScript.from_path(Path("./01-basic-usage.sh"))
+        script = ExampleScript.from_path(Path("./01-basic/01-basic-usage.sh"))
         output = ExampleOutput(
             script=script,
             exit_code=0,

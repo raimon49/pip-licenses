@@ -135,16 +135,29 @@ trap cleanup EXIT
 
 printf '%s\n' "Setting up example environment..." ;
 
-make setup-examples && make local-install ;
+# subprocess isolation
+(
+    set -euo pipefail
+    make setup-examples
+    make local-install
+    # Run examples
+) || {
+    make un-setup 2>/dev/null || true
+    exit $?
+}
 
 printf '%s\n' "Activating example environment..."
 
-source ./"${VENV_NAME}/bin/activate"
-
-printf '%s\n' "Running: ${EXAMPLE_CMD_PATH:-}" ;
-
-# run the example
-source "${EXAMPLE_CMD_PATH}" | tee "$TRANSCRIPT" ;
+# subprocess isolation
+{
+    source ./"${VENV_NAME}/bin/activate"
+    printf '%s\n' "Running: ${EXAMPLE_CMD_PATH:-}" ;
+    # run the example
+    source "${EXAMPLE_CMD_PATH}" | tee "$TRANSCRIPT" ;
+} || {
+    deactivate 2>/dev/null || true
+    exit $?
+}
 
 make un-setup >/dev/null ;
 

@@ -45,7 +45,7 @@ Follows S.O.L.I.D. principles:
 Compatible with both unittest (native) and pytest frameworks.
 """
 
-# import os
+import os
 import re
 import sys
 
@@ -59,6 +59,18 @@ from ._examples import (
 )
 
 # MARK: Discovery Functions
+
+
+def default_examples_dir() -> Path:
+    """Convenience function to simplify finding the dir ../../docs/examples/"""
+    _repo_root = Path(__file__).parent.parent
+    _examples_dir = _repo_root / "docs" / "examples"
+
+    if not _examples_dir.exists():
+        msg = f"Examples directory not found: {_examples_dir}"
+        raise FileNotFoundError(msg) from None
+
+    return _examples_dir
 
 
 def discover_examples(
@@ -76,13 +88,11 @@ def discover_examples(
         FileNotFoundError: If examples directory doesn't exist
     """
     if examples_dir is None:
-        # Find docs/examples relative to this file
-        repo_root = Path(__file__).parent.parent
-        examples_dir = repo_root / "docs" / "examples"
-
+        examples_dir = default_examples_dir()
+    # re-check to avoid TOCTOU race
     if not examples_dir.exists():
         msg = f"Examples directory not found: {examples_dir}"
-        raise FileNotFoundError(msg)
+        raise FileNotFoundError(msg) from None
 
     # see [https://regex101.com/r/Ea5FgZ/1](https://regex101.com/?regex=%5E%28%3F%3Cdirname%3E%28%3F%3CdirNum%3E%5B0-9%5D%2B%29%28%3F%3A%5Bx0-9%5D%29%3F%28%3F%3Cprefix%3E%5C-%5B%5E%5C%2F%5D*%29%29%28%3F%3A%5C%2F%29%28%3F%3Cfilename%3E%28%3F%3CfileNum%3E%28%3FP%3DdirNum%29%28%3F%3A%5B0-9%5D%3F%29%29%28%3F%3A%28%3FP%3Dprefix%29%28%3F%3CbaseName%3E%5B%5E%5C%2F%5D*%29%5C.sh%29%29%24&testString=00-demo%2F00-example-demo.sh%0A01-basic%2F01-basic-usage.sh%0A02-usage%2F02-usage-venv.sh%0A10-option-order%2F10-option-order-licenese.sh%0A10-option-order%2F11-option-order-name.sh%0A13-junk%2Fnot-a-13-match.sh%0A13-junk%2Fjunk-also-not-a-match.sh%0A13-junk%2F43-not-a-match.sh%0A20-format%2F20-format-markdown.sh%0A20-format%2F21-format-rst.sh%0A20-format%2F22-format-confluence.sh%0A20-format%2F23-format-html.sh%0A20-format%2F24-format-json.sh%0A20-format%2F25-format-json-licensefinder.sh%0A20-format%2F26-format-csv.sh%0A20-format%2F27-format-plain-vertical.sh&flags=gm&flavor=pcre2&delimiter=%2F)
     _PATTERN = r"""^(?P<dirname>(?P<dirNum>[0-9]+)(?:[x0-9])?(?P<prefix>\-[^\/]*))(?:\/)(?P<filename>(?P<fileNum>(?P=dirNum)(?:[0-9]?))(?:(?P=prefix)(?P<baseName>[^\/]*)\.sh))$"""
@@ -101,13 +111,18 @@ def discover_examples(
         if not script_path.is_file():
             continue
 
+        # mod_path = script_path.relative_to(os.getcwd()).as_posix()
         relative_path = script_path.relative_to(examples_dir).as_posix()
 
         if pattern.fullmatch(relative_path) is None:
             continue
 
         try:
-            scripts.append(ExampleScript.from_path(script_path))
+            dot_path = Path(os.getcwd())
+            full_script_path = (
+                dot_path / script_path.relative_to(os.getcwd()).as_posix()
+            )
+            scripts.append(ExampleScript.from_path(full_script_path))
         except ValueError as e:
             print(f"Skipping {script_path}: {e}", file=sys.stderr)
 

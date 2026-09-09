@@ -66,7 +66,7 @@
 # Multiple package names can be separated by spaces.
 #
 # Prerequisites:
-#   pip install 'Django==6.0.6' 'pytz==2026.2' pip-licenses
+#   pip install 'cffi==2.1.1' 'packaging==26.3' pip-licenses
 
 set -euo pipefail
 
@@ -81,7 +81,7 @@ check_required_packages || exit 1
 init_demo
 
 # Run the example - ignore multiple packages with system packages
-run_command "pip-licenses --with-system --ignore-packages django pip pip-licenses"
+run_command "pip-licenses --with-system --ignore-packages cffi pip pip-licenses"
 pause 2.2
 
 printf '\r\n'

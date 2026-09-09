@@ -66,7 +66,7 @@
 # The --output-file option writes the result to a specified path instead of stdout.
 #
 # Prerequisites:
-#   pip install 'Django==6.0.6' 'pytz==2026.2' pip-licenses
+#   pip install 'cffi==2.1.1' 'packaging==26.3' pip-licenses
 
 set -euo pipefail
 
@@ -79,8 +79,18 @@ check_pip_licenses || exit 1
 check_required_packages || exit 1
 
 # Create temporary directory for output
-OUTPUT_DIR=$(mktemp -d)
-trap "rm -rf ${OUTPUT_DIR}" EXIT
+OUTPUT_DIR=$(mktemp -d) || { log_error "Failed to create temp dir"; exit 1; }
+trap "rm -rf ${OUTPUT_DIR} || :" EXIT
+
+# Verify ownership before cleanup
+if [[ -d "${OUTPUT_DIR}" ]]; then
+    # Verify directory owner is current user
+    owner=$(stat -c '%U' "${OUTPUT_DIR}" 2>/dev/null || stat -f '%Su' "${OUTPUT_DIR}" 2>/dev/null)
+    if [[ "${owner}" != "${USER}" ]]; then
+        log_error "Temp directory ownership violation detected"
+        exit 1  # abort on TOCTUC violation
+    fi
+fi
 
 init_demo
 

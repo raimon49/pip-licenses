@@ -66,10 +66,10 @@
 # The --ignore-packages option excludes specified packages from the license report.
 #
 # Prerequisites:
-#   pip install 'Django==6.0.6' 'pytz==2026.2' pip-licenses
+#   pip install 'cffi==2.1.1' 'packaging==26.3' pip-licenses
 #
 # Expected behavior:
-#   Only pytz should be displayed (Django is ignored)
+#   Only packaging should be displayed (cffi is ignored)
 
 set -euo pipefail
 
@@ -84,7 +84,7 @@ check_required_packages || exit 1
 init_demo
 
 # Run the example - ignore single package
-run_command "pip-licenses --ignore-packages django"
+run_command "pip-licenses --ignore-packages cffi"
 pause 2.2
 
 printf '\r\n'

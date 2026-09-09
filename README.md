@@ -101,18 +101,20 @@ Simply invoke the command to scan the current environment:
 
 `pip-licenses`
 
-Alternatively execute the command within `virtualenv` (or the legacy `venv`) environment.
+[Example 01](./docs/examples/01-basic/01-basic-usage.md)
 
-```bash
-# Install packages in your venv environment
-(venv) $ pip install Django pip-licenses
+```console
+demo$ pip-licenses
+ Name       Version  License                    
+ cffi       2.1.1    MIT-0                      
+ packaging  26.3     Apache-2.0 OR BSD-2-Clause 
+ pycparser  3.0      BSD-3-Clause               
 
-# Check the licenses with your venv environment
-(venv) $ pip-licenses
- Name    Version  License
- Django  6.0.6    BSD-3-Clause
- pytz    2026.2   MIT License
+
 ```
+
+> [!TIP]
+> Alternatively execute the command within `virtualenv` (or the legacy `venv`) environment.
 
 ## Command-Line Options
 
@@ -133,10 +135,14 @@ Alternatively execute the command within `virtualenv` (or the legacy `venv`) env
 
 By default, this tools finds the packages from the environment pip-licenses is launched from, by searching in current python's `sys.path` folders. In the case you want to search for packages in an other environment (e.g. if you want to run pip-licenses from its own isolated environment), you can specify a path to a python executable. The packages will be searched for in the given python's `sys.path`, free of pip-licenses dependencies.
 
-```bash
-(venv) $ pip-licenses --with-system | grep pip
- pip           26.2     MIT
- pip-licenses  6.0.0    MIT
+[Example 56](./docs/examples/50-option-packages/56-option-packages-system.md)
+
+```console
+demo$ pip-licenses --with-system | grep pip 
+ pip           26.2.1    MIT                        
+ pip-licenses  6.0.0b11  MIT                        
+
+
 ```
 
 ```bash
@@ -152,25 +158,32 @@ By default, this tool finds the license from [Trove Classifiers](https://pypi.or
 
 For example, even if you check with the `pip show` command, the license is displayed as `UNKNOWN` or simply empty.
 
-```bash
-(venv) $ pip show aniso8601
+[Example 32](./docs/examples/30-option/32-option-from-mixed.md)
+
+```console
+demo$ # this is what pip shows: 
+
+demo$ pip show aniso8601
 Name: aniso8601
 Version: 10.0.1
 Summary: A library for parsing ISO 8601 strings.
 Home-page: https://codeberg.org/nielsenb-jf/aniso8601
 Author: Brandon Nielsen
 Author-email: nielsenb@jetfuse.net
-License:
-Requires:
-Required-by:
+License: 
+Requires: 
+Required-by: 
+
+demo$ # this is what pip-licenses shows: 
+
+demo$ pip-licenses -p aniso8601 --from=mixed --with-system 
+ Name       Version  License     
+ aniso8601  10.0.1   BSD License 
+
+
 ```
 
 The mixed mode (`--from=mixed`) of this tool works well and looks for licenses.
-
-```bash
-(venv) $ pip-licenses --from=mixed --with-system | grep aniso8601
- aniso8601          10.0.1   BSD License
-```
 
 In mixed mode, it first tries to look for licenses in the Trove Classifiers. When not found in the Trove Classifiers, the license declared in Metadata is displayed.
 

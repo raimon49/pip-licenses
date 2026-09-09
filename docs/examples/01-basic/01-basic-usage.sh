@@ -66,12 +66,12 @@
 # It shows the default output format with installed packages and their licenses.
 #
 # Prerequisites:
-#   pip install 'Django==6.0.6' 'pytz==2026.2' pip-licenses
+#   pip install 'cffi==2.1.1' 'packaging==26.3' pip-licenses
 #
-# Expected output:
-#   Name    Version  License
-#   Django  6.0.6    BSD-3-Clause
-#   pytz    2026.2   MIT License
+# Expected output (whitespace may differ):
+#   Name       Version  License
+#   cffi       2.1.1    MIT-0
+#   packaging  26.3     Apache-2.0 OR BSD-2-Clause
 
 set -euo pipefail
 
