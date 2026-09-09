@@ -177,7 +177,7 @@ def _handle_multiple_value_field(
     )
 
 
-# TODO: change to accept set-like
+# TODO: change to accept set-like (instead of "; " delim string)
 def create_licenses_table(
     args: Configuration,
     output_fields: Union[set[str], Sequence[str]] = DEFAULT_OUTPUT_FIELDS,

@@ -1,0 +1,15 @@
+# Examples Fixtures
+# These are arbitrary (historically picked from top 20 PyPi lists) packages,
+# used only for generating demonstrative examples (e.g., typically by
+# maintainers), and are NOT considered pip-license dependencies in any
+# form (On the rationale: it is trivial to configure to use other packages).
+#
+# Historical circa v6.0.0
+# https://pypi.org/project/cffi/2.1.1/
+cffi==2.1.1
+# Historical circa v6.0.0
+# https://pypi.org/project/packaging/26.3/
+packaging==26.3
+# GHI-327
+# https://pypi.org/project/aniso8601/
+aniso8601==10.0.1
