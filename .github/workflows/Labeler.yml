@@ -1,0 +1,23 @@
+---
+name: "Pull Request Labeler"
+on:  # yamllint disable-line rule:truthy
+  pull_request_target:
+    types: [opened, reopened]
+    branches: ["master", "next"]
+
+# Declare default permissions as none.
+permissions: {}
+
+jobs:
+  triage:
+    permissions:
+      actions: read
+      contents: read
+      packages: none
+      pull-requests: write
+      security-events: none
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/labeler@f27b608878404679385c85cfa523b85ccb86e213 # v6.1.0
+      with:
+        repo-token: "${{ secrets.GITHUB_TOKEN }}"
