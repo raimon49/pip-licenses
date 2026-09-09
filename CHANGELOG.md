@@ -4,6 +4,13 @@
 
 (SUBJECT TO CHANGE IN NEXT RELEASE)
 
+### 6.0.0b12 (Unreleased BETA)
+
+* added `--simple-match` to complement `--partial-match`
+* Started to improve examples in documentation through reproducible automation.
+  * added some new tooling to support new automations.
+  * reconfigured build to exclude much of the new developer automation (to keep distribution clean)
+
 ### 6.0.0b11 (Pre-released BETA):
 
 * Replaced `--with-system` with `--include-system` & `--ignore-system`
