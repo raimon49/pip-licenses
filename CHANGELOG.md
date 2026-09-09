@@ -1,13 +1,25 @@
 ## CHANGELOG
 
-### pre-6.0.0 (BETA WIP)
-
+### 6.0.0 (BETA WIP)
 
 (SUBJECT TO CHANGE IN NEXT RELEASE)
 
+### 6.0.0b12 (Unreleased BETA)
+
+* added `--simple-match` to complement `--partial-match`
+* Started to improve examples in documentation through reproducible automation.
+  * added some new tooling to support new automations.
+  * reconfigured build to exclude much of the new developer automation (to keep distribution clean)
+
+### 6.0.0b11 (Pre-released BETA):
+
 * Replaced `--with-system` with `--include-system` & `--ignore-system`
+* Improved new support of multiple file-paths for HTML resolving GHI #239
+
+### 6.0.0b10 (Pre-released BETA):
+
 * Improved stability of internal API, to pave the way for an up-coming public API
-* Implements support of file-paths for most formats
+* Implemented support of file-paths for most formats
 * Align with [PEP-749](https://peps.python.org/pep-0749) and deprecated use of `typing.TYPE_CHECKING` conditions
 * Fixed multiple typographical errors
 * Refactored most of the codebase to be more modular, closing GHI #316
@@ -17,6 +29,7 @@
   * Implemented new flags (WIP GHI #242)
     * normalized `--with` versus `--without` flag style
   * Fixed priority logic regression from v5.5.x that lead to non-determinant ordering of multiple-source results, (WIP GHI #309), and possibly resolving? (GHI #330 - needs new testing)
+    * Fixed the `--from=all` flag
   * Fixed multiple regressions in tests due to recent version bumps, closing GHI #337 & GHI #338
   * Updated various portions of the README document (WIP), closing GHI #328
   * Fixed multiple false positives including:
@@ -25,7 +38,7 @@
     * [CVE-2026-44431](https://github.com/advisories/GHSA-qccp-gfcp-xxvc)
   * Updated testing in CI to resolve python3.9 coverage regressions
 
-### ONLY ON pre-6.0.0 (ALPHA):
+### 6.0.0a1 (Pre-released ALPHA) [YANKED]:
 
   * Improved handling of multiple license files in a single package (WIP GHI #71)
   * Implemented new flags (WIP GHI #242)

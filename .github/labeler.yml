@@ -1,0 +1,69 @@
+# .github/labeler.yml
+---
+# Add 'dependencies' label when needed
+dependencies:
+  - changed-files:
+    - any-glob-to-any-file:
+      - pyproject.toml
+      - piplicenses/tomli_bridge.py
+      - piplicenses/output/_prettytable_bridge.py
+
+# Add 'python' label to any python file changes
+python:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/**/*.py'
+      - '**/*.py'
+      - '*.py'
+
+# Add 'chore' label to any Makefile / lock file changes
+chore:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*.makefile'
+      - '**/*.make'
+      - '**/makefile'
+      - Makefile
+      - requirements.txt
+      - docs/examples/examples-requirements.txt
+      - dev-requirements.txt
+
+# Add 'documentation' label to any documentation file changes
+documentation:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '*.md'
+      - './**/*.md'
+      - 'docs/**/*'
+      - 'docs/*'
+      - '.readthedocs.yaml'
+      - CHANGELOG.md
+      - CONTRIBUTING.md
+      - README.md
+      - LICENSE
+      - LICENSE.md
+      - SECURITY.md
+
+# Add 'github_actions' label to any testing file changes
+github_actions:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'tests/*.py'
+      - test_pip-licenses.py
+      - dev-requirements.txt
+      - tests/requirements.txt
+      - 'tests/fixtures/*'
+      - '.github/workflows/*.yml'
+
+# Add Special Case labels to any special-case file changes
+
+invalid:
+  - changed-files:
+    - any-glob-to-any-file:
+      - .stickler.yml
+      - .hound.yml
+      - setup.py
+      - .markdownlint.yml
+      - '.git_skipList'
+      - 'py.typed'
+

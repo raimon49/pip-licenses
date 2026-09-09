@@ -343,6 +343,79 @@ def _migrate_with_system_helper(config_from_file: dict) -> bool:
     return _conf_stub
 
 
+def _add_verification_arguments_to_parser(
+    parser: CompatibleArgumentParser,
+    partial_match_default: bool,
+    warn_by_default: list,  # unused atm
+    allow_by_default: list,  # unused atm
+    fail_by_default: Union[
+        str, None
+    ],  # will change to support lists in future
+    require_by_default: Union[
+        str, None
+    ],  # will change to support lists in future
+) -> CompatibleArgumentParser:
+    """Internal helper function.
+
+    Not part of any public API. Do not rely on this function outside of this defining module.
+    """
+    if parser is not None:
+        verify_group = parser.add_argument_group(
+            "Verification",
+            "Options to verify licensing state of packages.",
+        )
+        # placeholder for warn-on
+        if "6.1" in __version__:
+            verify_group.add_argument(
+                "-W",
+                "--warn-on",
+                action="store",
+                dest="warn_on",
+                nargs="+",
+                metavar="PKG",
+                default=warn_by_default,
+                help="warn (emitted to stderr) on the each occurrence "
+                "of the licenses of the selected package. May be used multiple times.",
+            )
+            raise NotImplementedError(
+                "Forgot to implement this feature. See GHI-274"
+            ) from None
+            # TODO: GHI-274 placeholder for allow-package
+            # (e.g. ignore by package name rather than licenses)
+        verify_group.add_argument(
+            "--fail-on",
+            action="store",
+            type=str,
+            default=fail_by_default,
+            help="fail (exit with code 1) on the first occurrence "
+            "of the licenses of the semicolon-separated list",
+        )
+        verify_group.add_argument(
+            "--allow-only",
+            action="store",
+            type=str,
+            default=require_by_default,
+            help="fail (exit with code 1) on the first occurrence "
+            "of the licenses not in the semicolon-separated list",
+        )
+        partial_toggle = verify_group.add_mutually_exclusive_group()
+        partial_toggle.add_argument(
+            "--partial-match",
+            action="store_true",
+            dest="partial_match",
+            default=partial_match_default is True,
+            help="enables partial matching for --allow-only/--fail-on",
+        )
+        partial_toggle.add_argument(
+            "--simple-match",
+            action="store_false",
+            dest="partial_match",
+            default=partial_match_default is True,
+            help="avoids partial matching for --allow-only/--fail-on",
+        )
+    return parser
+
+
 def create_parser(
     pyproject_path: str = "pyproject.toml",
 ) -> CompatibleArgumentParser:
@@ -365,10 +438,21 @@ def create_parser(
         ignore_by_default=config_from_file.get("ignore-packages", []),
         include_by_default=config_from_file.get("packages", []),
     )
+    parser = _add_verification_arguments_to_parser(
+        parser=parser,
+        partial_match_default=config_from_file.get("partial-match", False),
+        warn_by_default=config_from_file.get("warn-on", []),
+        allow_by_default=config_from_file.get("allow-package", []),
+        fail_by_default=cast(
+            Union[str, None], config_from_file.get("fail-on", None)
+        ),
+        require_by_default=cast(
+            Union[str, None], config_from_file.get("allow-only", None)
+        ),
+    )
     common_options = parser.add_argument_group("Common options")
     license_file_options = parser.add_argument_group("License file options")
     format_options = parser.add_argument_group("Format options")
-    verify_options = parser.add_argument_group("Verify options")
 
     parser.add_argument(
         "-v",
@@ -542,30 +626,6 @@ def create_parser(
         default=config_from_file.get("filter-code-page", "latin1"),
         metavar="CODE",
         help="I|specify code page for filtering (default: %(default)s)",
-    )
-
-    # placeholder for warn-on
-    verify_options.add_argument(
-        "--fail-on",
-        action="store",
-        type=str,
-        default=config_from_file.get("fail-on", None),
-        help="fail (exit with code 1) on the first occurrence "
-        "of the licenses of the semicolon-separated list",
-    )
-    verify_options.add_argument(
-        "--allow-only",
-        action="store",
-        type=str,
-        default=config_from_file.get("allow-only", None),
-        help="fail (exit with code 1) on the first occurrence "
-        "of the licenses not in the semicolon-separated list",
-    )
-    verify_options.add_argument(
-        "--partial-match",
-        action="store_true",
-        default=config_from_file.get("partial-match", False),
-        help="enables partial matching for --allow-only/--fail-on",
     )
 
     return parser
