@@ -79,7 +79,9 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# TODO: add validation checks (files missing? etc.)
+# trivial checks
+test -x `command -v ttyrec` || exit 126 ;  # skip if tool missing
+test -f "${DEMO_CMD_PATH}" || exit 126 ;  # skip if demo missing
 
 printf '%s\n' "Setting up demo environment..." ;
 

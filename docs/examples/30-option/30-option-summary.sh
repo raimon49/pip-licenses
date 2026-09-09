@@ -82,7 +82,7 @@ check_required_packages || exit 1
 init_demo
 
 # Run the example - summary output
-run_command "pip-licenses --summary --from=classifier --include-system"
+run_command "pip-licenses --summary --include-system"
 pause 2.2
 
 printf '\r\n'

@@ -193,7 +193,7 @@ update-depends:
 	$(QUITE)$(RM) dev-requirements.in 2>$(ERROR_LOG_PATH) || true ;
 
 update-demo:
-	$(QUIET)$(ECHO) "Not implemented at this time."
+	$(QUIET)$(ECHO) "Not implemented at this time. See ./docs/scripts/gen_demo.sh"
 
 # developer workflow targets
 
