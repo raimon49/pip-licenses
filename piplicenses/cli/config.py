@@ -162,7 +162,10 @@ class Configuration(argparse.Namespace):
     summary: bool = False
     include_from_system: bool = False
     with_urls: bool = False
-    with_description: bool = False
+    if "6.0" in __version__:
+        with_description: bool = False  # DEPRECIATED in v6.1+
+    else:
+        with_descriptions: bool = False
     if "6.0" in __version__:
         with_license_file: bool = False  # DEPRECIATED in v6.1+
     with_license_files: bool = False  # added in v6.0
@@ -175,23 +178,21 @@ class Configuration(argparse.Namespace):
     if "6.0" in __version__:
         no_file_paths: bool = False  # DEPRECIATED in v6.1+
     else:
-        without_file_paths: bool = (
-            False  # (TODO: use --without-license-path|--without-paths)
-        )
+        without_file_paths: bool = False  # (TODO: use --without-paths)
     with_authors: bool = False
     with_maintainers: bool = False  # added in v6.0
     if "6.0" in __version__:
         with_notice_file: bool = False  # DEPRECIATED in v6.1+
     with_notice_files: bool = False  # added in v6.0
     with_other_files: bool = False  # added in v6.0
+    without_notice_paths: bool = False  # added in v6.0
+    without_other_paths: bool = False  # added in v6.0
+    # placeholder -- for with/without authors stuff
     filter_strings: bool = False
     partial_match: bool = False
     if "6.0" in __version__:
         no_version: bool = False  # DEPRECIATED in v6.1+
-    else:
-        without_version: bool = (
-            False  # (TODO: use --without-license-path|--without-paths)
-        )
+    without_version: bool = False
     # string / optional values
     output_file: Optional[str] = None
     filter_code_page: Optional[str] = None
@@ -206,6 +207,8 @@ class Configuration(argparse.Namespace):
     # sequence values
     ignore_packages: set[str] = field(default_factory=set)
     packages: set[str] = field(default_factory=set)
+    warn_on: set[str] = field(default_factory=set)
+    allow_packages: set[str] = field(default_factory=set)
 
     def __post_init__(self) -> None:
         # Ensure values passed via __init__ are normalized to sets. Dataclass __init__
@@ -218,6 +221,10 @@ class Configuration(argparse.Namespace):
             self.ignore_packages = self._normalize_to_set(self.ignore_packages)
         if not isinstance(self.packages, set):
             self.packages = self._normalize_to_set(self.packages)
+        if not isinstance(self.allow_packages, set):
+            self.allow_packages = self._normalize_to_set(self.allow_packages)
+        if not isinstance(self.warn_on, set):
+            self.warn_on = self._normalize_to_set(self.warn_on)
 
     @staticmethod
     def _normalize_to_set(value: Union[Iterable[str], None]) -> set[str]:
@@ -260,6 +267,11 @@ class Configuration(argparse.Namespace):
         if not isinstance(name, str):
             raise AttributeError(name) from TypeError(name)  # noqa: TRY004 -- it's both
 
+        _with_descriptions_map = [
+            "with_description",
+            "with_descriptions",
+        ]
+
         _with_license_files_map = [
             "with_license_file",
             "with_license_files",
@@ -293,6 +305,7 @@ class Configuration(argparse.Namespace):
         _pre_processed_name: str = name.strip().lower()
 
         for _mapping in (
+            _with_descriptions_map,
             _with_license_files_map,
             _with_notice_files_map,
             _without_license_paths_map,
@@ -328,17 +341,27 @@ class Configuration(argparse.Namespace):
             "with_authors",
             "with_maintainers",
             "with_urls",
-            "with_description",
+            "with_description"
+            if "6.0." in __version__
+            else "with_descriptions",
             "with_license_files",
             "with_notice_files",
             "with_other_files",
             "without_license_paths",
+            "without_notice_paths",
+            "without_other_paths",
             "without_file_paths",
             "filter_strings",
             "partial_match",
             "without_version",
         }
-        sets = {"ignore_packages", "packages"}
+        sets = {
+            "ignore_packages",
+            "packages",
+            "allow_packages",
+            "warn_on",
+            # TODO: "fail_on", "allow_on",
+        }
 
         _normalized_name = self.__substitute_attr__(name)
 
@@ -365,6 +388,14 @@ class Configuration(argparse.Namespace):
     @packages_set.setter
     def packages_set(self, value: Union[Iterable[str], None]) -> None:
         self.packages = self._normalize_to_set(value)
+
+    @property
+    def allow_packages_set(self) -> set[str]:
+        return set(self.allow_packages or set())
+
+    @allow_packages_set.setter
+    def allow_packages_set(self, value: Union[Iterable[str], None]) -> None:
+        self.allow_packages = self._normalize_to_set(value)
 
     if "6.1" in __version__:
         # DEPRECIATED in v6.0; use without_* instead.
@@ -426,6 +457,26 @@ class Configuration(argparse.Namespace):
                 stacklevel=2,
             )
             self.without_license_paths = value is True
+
+        # DEPRECIATED in v6.0; use without_* instead.
+        @property  # type: ignore[no-redef]
+        def with_description(self) -> bool:
+            """DEPRECIATED in v6.1; use with_descriptions instead."""
+            warnings.warn(
+                "DEPRECIATED in v6.1; use with_descriptions instead.",
+                stacklevel=2,
+            )
+            return self.with_descriptions
+
+        # DEPRECIATED in v6.0; use without_* instead.
+        @with_description.setter
+        def with_description(self, value: Union[bool, None]) -> None:
+            """DEPRECIATED in v6.1; use with_descriptions instead."""
+            warnings.warn(
+                "DEPRECIATED in v6.1; use with_descriptions instead.",
+                stacklevel=2,
+            )
+            self.with_descriptions = value is True
 
         # DEPRECIATED in v6.0; use with_*s instead.
         @property  # type: ignore[no-redef]
@@ -497,26 +548,6 @@ class Configuration(argparse.Namespace):
 
         # added in v6.0
         @property  # type: ignore[no-redef]
-        def without_version(self) -> bool:
-            """ADDED in v6.0; Same as no_version.
-
-            Previous to v6.0 there was no standardization of what are now:
-            with/without prefixes.
-            """
-            return self.no_version
-
-        # added in v6.0
-        @without_version.setter
-        def without_version(self, value: Union[bool, None]) -> None:
-            """ADDED in v6.0; Same as no_version.
-
-            Previous to v6.0 there was no standardization of what are now:
-            with/without prefixes.
-            """
-            self.no_version = value is True
-
-        # added in v6.0
-        @property  # type: ignore[no-redef]
         def without_file_paths(self) -> bool:
             """ADDED in v6.0; Same as no_file_paths.
 
@@ -554,6 +585,26 @@ class Configuration(argparse.Namespace):
             with/without prefixes.
             """
             self.no_license_path = value is True
+
+        # added in v6.0
+        @property  # type: ignore[no-redef]
+        def with_descriptions(self) -> bool:
+            """ADDED in v6.0; Same as with_description.
+
+            Previous to v6.0 there was no standardization of what are now:
+            with/without prefixes.
+            """
+            return self.with_description
+
+        # added in v6.0
+        @with_descriptions.setter
+        def with_descriptions(self, value: Union[bool, None]) -> None:
+            """ADDED in v6.0; Same as with_description.
+
+            Previous to v6.0 there was no standardization of what are now:
+            with/without prefixes.
+            """
+            self.with_description = value is True
 
 
 CustomNamespace = Configuration

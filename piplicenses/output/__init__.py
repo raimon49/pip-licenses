@@ -125,7 +125,7 @@ def get_output_fields(args: Configuration) -> list[str]:
     if args.with_description:
         output_fields.append("Description")
 
-    if args.no_version:
+    if args.without_version:
         output_fields.remove("Version")
     # see PEP-387
     # see https://docs.python.org/3/library/exceptions.html#PendingDeprecationWarning

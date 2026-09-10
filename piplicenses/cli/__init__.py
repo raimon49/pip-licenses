@@ -178,6 +178,28 @@ class CompatibleArgumentParser(argparse.ArgumentParser):
                 "as well as '--with-other-files' require "
                 "the '--with-license-file[s]' option to be set"
             )
+        if args.partial_match is True and (
+            (args.fail_on is None or len(args.fail_on) <= 0)
+            and (args.allow_on is None or len(args.allow_on) <= 0)
+            and (
+                (
+                    "6.1" in __version__
+                    and (args.warn_on is None or len(args.allow_on) <= 0)
+                )
+                or True
+            )
+        ):
+            self.error(
+                "'--partial-match' and '--simple-match' "
+                "require at least one of "
+                "the '--fail-on'/'--allow-only' options to be set."
+                # An empty string will also not count.
+            )
+            # TODO: GHI-274 refactor for allow-package (name WIP)
+            # e.g., "as well as '--allow-package' require "
+            # TODO: GHI-274 refactor for warn-on
+            # e.g., ".../'--warn-on' options ..."
+
         if args.filter_strings is False and args.filter_code_page != "latin1":
             self.error(
                 "'--filter-code-page' requires the '--filter-strings' "
@@ -266,18 +288,19 @@ def _add_scope_arguments_to_parser(
             help="dump with system packages",
         )
         system_toggle.add_argument(
+            "--ignore-system",
+            action="store_false",
+            dest="include_from_system",
+            help="R|Omit trivial system packages.\n"
+            "e.g., 'include-system=False'.",
+            default=include_system_pkg_default,
+        )
+        system_toggle.add_argument(
             "--with-system",
             action="store_true",
             dest="include_from_system",
             default=include_system_pkg_default is True,
             help="DEPRECATED; use --include-system instead.",
-        )
-        system_toggle.add_argument(
-            "--ignore-system",
-            action="store_false",
-            dest="include_from_system",
-            help="Omit trivial system packages.",
-            default=include_system_pkg_default,
         )
         scope_group.add_argument(
             "--from",
@@ -295,29 +318,31 @@ def _add_scope_arguments_to_parser(
             type=str,
             default=default_python,
             metavar="PYTHON_EXEC",
-            help="R| path to python executable to search distributions from\n"
+            help="R|path to python executable to search distributions from\n"
             "Package will be searched in the selected python's sys.path\n"
             "By default, will search packages for current env executable\n",
         )
         scope_group.add_argument(
             "-i",
             "--ignore-packages",
-            action="store",
+            action="extend",
             dest="ignore_packages",
             nargs="+",
             metavar="PKG",
             default=ignore_by_default,
-            help="ignore selected package names in dumped list",
+            help="R|ignore selected package names and omit from output.\n"
+            "May be used multiple times.",
         )
         scope_group.add_argument(
             "-p",
             "--packages",
-            action="store",
+            action="extend",
             dest="packages",
             nargs="+",
             metavar="PKG",
             default=include_by_default,
-            help="only include selected packages in output",
+            help="R|only include selected packages in output.\n"
+            "May be used multiple times.",
         )
     return parser
 
@@ -331,6 +356,48 @@ def _migrate_with_system_helper(config_from_file: dict) -> bool:
 
     _conf_stub: bool = config_from_file.get(
         "with-system",  # DEPRECATED in v6.0+
+        False,
+    )
+    if _conf_stub is True:
+        warnings.warn(
+            "DEPRECIATED in v6.0; use include-system instead."
+            "This will be an error in the future."
+            "See https://github.com/raimon49/pip-licenses/issues/349",
+            stacklevel=2,
+        )
+    return _conf_stub
+
+
+def _migrate_no_version_helper(config_from_file: dict) -> bool:
+    """Use --without-version instead.
+
+    Helper for migration in version v6.0.0
+    """
+    import warnings
+
+    _conf_stub: bool = config_from_file.get(
+        "no-version",  # DEPRECATED in v6.0+
+        False,
+    )
+    if _conf_stub is True:
+        warnings.warn(
+            "DEPRECIATED in v6.0; use without-version instead."
+            "This will be an error in the future."
+            "See https://github.com/raimon49/pip-licenses/issues/349",
+            stacklevel=2,
+        )
+    return _conf_stub
+
+
+def _migrate_no_license_path_helper(config_from_file: dict) -> bool:
+    """Use --without-license-paths instead.
+
+    Helper for migration in version v6.0.0
+    """
+    import warnings
+
+    _conf_stub: bool = config_from_file.get(
+        "no-license-path",  # DEPRECATED in v6.0+
         False,
     )
     if _conf_stub is True:
@@ -363,31 +430,40 @@ def _add_verification_arguments_to_parser(
         verify_group = parser.add_argument_group(
             "Verification",
             "Options to verify licensing state of packages.",
+            # after GHI-274 WILL CHANGE to "Options to stipulate licensing policy for packages.",
         )
         # placeholder for warn-on
         if "6.1" in __version__:
             verify_group.add_argument(
                 "-W",
                 "--warn-on",
-                action="store",
+                action="extend",
                 dest="warn_on",
                 nargs="+",
-                metavar="PKG",
+                metavar="WARN_ON",
                 default=warn_by_default,
-                help="warn (emitted to stderr) on the each occurrence "
-                "of the licenses of the selected package. May be used multiple times.",
+                help="R|warn (emitted to stderr) on the each occurrence\n"
+                "of the specified licenses, but do not fail. Useful for\n"
+                "licenses that have complex conditions (e.g., attribution,\n"
+                "user notices, etc.). May be used multiple times.",
             )
-            raise NotImplementedError(
-                "Forgot to implement this feature. See GHI-274"
-            ) from None
-            # TODO: GHI-274 placeholder for allow-package
-            # (e.g. ignore by package name rather than licenses)
+            verify_group.add_argument(
+                "--allow-packages",
+                action="extend",
+                dest="allow_packages",
+                nargs="+",
+                metavar="SAFE_PKG",
+                default=warn_by_default,
+                help="R|mark selected package(s) as explicitly permitted.\n"
+                "Essentially ignores the selected packages when matching.\n"
+                "May be used multiple times.",
+            )
         verify_group.add_argument(
             "--fail-on",
             action="store",
             type=str,
             default=fail_by_default,
-            help="fail (exit with code 1) on the first occurrence "
+            help="R|fail (exit with code 1) on the first occurrence\n"
             "of the licenses of the semicolon-separated list",
         )
         verify_group.add_argument(
@@ -395,7 +471,7 @@ def _add_verification_arguments_to_parser(
             action="store",
             type=str,
             default=require_by_default,
-            help="fail (exit with code 1) on the first occurrence "
+            help="R|fail (exit with code 1) on the first occurrence\n"
             "of the licenses not in the semicolon-separated list",
         )
         partial_toggle = verify_group.add_mutually_exclusive_group()
@@ -404,14 +480,177 @@ def _add_verification_arguments_to_parser(
             action="store_true",
             dest="partial_match",
             default=partial_match_default is True,
-            help="enables partial matching for --allow-only/--fail-on",
+            help="I|enables partial matching for --allow-only/--fail-on",
         )
         partial_toggle.add_argument(
-            "--simple-match",
+            "--simple-match",  # added in v6.0+
             action="store_false",
             dest="partial_match",
             default=partial_match_default is True,
-            help="avoids partial matching for --allow-only/--fail-on",
+            help="I|avoids partial matching for --allow-only/--fail-on",
+        )
+    return parser
+
+
+def _add_format_arguments_to_parser(
+    parser: CompatibleArgumentParser,
+    format_default: str,
+    with_authors_default: bool,
+    with_maintainers_default: bool,
+    with_urls_default: bool,
+    with_descriptions_default: bool,
+    with_version_default: bool,
+    filter_string_default: bool,
+    filter_code_default: str,
+) -> CompatibleArgumentParser:
+    """Internal helper function.
+
+    Not part of any public API. Do not rely on this function outside of this defining module.
+    """
+    if parser is not None:
+        format_group = parser.add_argument_group(
+            "Formatting",
+            "Options to customize the output format.",
+        )
+        format_group.add_argument(
+            "-f",
+            "--format",
+            dest="format_",
+            action=SelectAction,
+            type=str,
+            default=get_value_from_enum(
+                FormatArg,
+                format_default,
+            ),
+            metavar="STYLE",
+            choices=choices_from_enum(FormatArg),
+            help="R|dump as set format style\n"
+            '"plain", "plain-vertical" "markdown", "rst", \n'
+            '"confluence", "html", "json", \n'
+            '"json-license-finder",  "csv"\n',
+        )
+
+        format_toggle_authors = format_group.add_mutually_exclusive_group()
+        format_toggle_authors.add_argument(
+            "-a",
+            "--with-authors",
+            action="store_true",
+            dest="with_authors",
+            default=with_authors_default,
+            help="dump with package authors",
+        )
+        format_toggle_authors.add_argument(
+            "--without-authors",
+            action="store_false",
+            dest="with_authors",
+            default=with_authors_default,
+            help="dump with package authors",
+        )
+        format_toggle_maintainers = format_group.add_mutually_exclusive_group()
+        format_toggle_maintainers.add_argument(
+            "--with-maintainers",
+            action="store_true",
+            dest="with_maintainers",
+            default=with_maintainers_default,
+            help="dump with package maintainers",
+        )
+        format_toggle_maintainers.add_argument(
+            "--without-maintainers",
+            action="store_false",
+            dest="with_maintainers",
+            default=with_maintainers_default,
+            help="omit package maintainers.",
+        )
+        format_toggle_urls = format_group.add_mutually_exclusive_group()
+        format_toggle_urls.add_argument(
+            "-u",
+            "--with-urls",
+            action="store_true",
+            dest="with_urls",
+            default=with_urls_default,
+            help="dump with package urls",
+        )
+        format_toggle_urls.add_argument(
+            "--without-urls",
+            action="store_false",
+            dest="with_urls",
+            default=with_urls_default,
+            help="dump with package urls",
+        )
+        format_toggle_description = format_group.add_mutually_exclusive_group()
+        format_toggle_description.add_argument(
+            "-d",
+            "--with-descriptions",
+            action="store_true",
+            dest="with_description"
+            if "6.0." in __version__
+            else "with_descriptions",
+            default=with_descriptions_default,
+            help="dump with short package description",
+        )
+        format_toggle_description.add_argument(
+            "--with-description",
+            action="store_true",
+            dest="with_description"
+            if "6.0." in __version__
+            else "with_descriptions",
+            default=with_descriptions_default,
+            help="See --with-descriptions"
+            "DEPRECATED; use --with-descriptions instead.",
+        )
+        format_toggle_description.add_argument(
+            "--without-descriptions",
+            action="store_false",
+            dest="with_description"
+            if "6.0." in __version__
+            else "with_descriptions",
+            default=with_descriptions_default,
+            help="Omits package descriptions. Inverse of --with-descriptions.",
+        )
+        format_toggle_version = format_group.add_mutually_exclusive_group()
+        format_toggle_version.add_argument(
+            "--without-version",
+            action="store_true",
+            dest="without_version",
+            default=with_version_default,
+            help="dump without package version.",
+        )
+        format_toggle_version.add_argument(
+            "--with-version",
+            action="store_false",
+            dest="without_version",
+            default=with_version_default,
+            help="dump without package version.",
+        )
+        format_toggle_version.add_argument(
+            "-nv",
+            action="store_true",
+            dest="without_version",
+            default=with_version_default,
+            help="DEPRECATED (for backwards compatibility); "
+            "prefer --without-version instead.",
+        )
+        format_toggle_version.add_argument(
+            "--no-version",
+            action="store_true",
+            dest="without_version",
+            default=with_version_default,
+            help="dump without package version. "
+            "DEPRECATED; use --without-version.",
+        )
+        format_group.add_argument(
+            "--filter-strings",
+            action="store_true",
+            default=filter_string_default,
+            help="filter input according to code page.",
+        )
+        format_group.add_argument(
+            "--filter-code-page",
+            action="store",
+            type=str,
+            default=filter_code_default,
+            metavar="CODE",
+            help="I|specify code page for filtering.",
         )
     return parser
 
@@ -441,8 +680,12 @@ def create_parser(
     parser = _add_verification_arguments_to_parser(
         parser=parser,
         partial_match_default=config_from_file.get("partial-match", False),
-        warn_by_default=config_from_file.get("warn-on", []),
-        allow_by_default=config_from_file.get("allow-package", []),
+        warn_by_default=config_from_file.get(
+            "warn-on", []
+        ),  # GH-274 currently unused
+        allow_by_default=config_from_file.get(
+            "allow-packages", []
+        ),  # GH-274 currently unused
         fail_by_default=cast(
             Union[str, None], config_from_file.get("fail-on", None)
         ),
@@ -450,9 +693,34 @@ def create_parser(
             Union[str, None], config_from_file.get("allow-only", None)
         ),
     )
-    common_options = parser.add_argument_group("Common options")
+    mode_options = parser.add_argument_group(
+        "Mode",
+        "Options to select between modes. The default mode"
+        "(no mode option), is to just dump the licenses",
+    )
     license_file_options = parser.add_argument_group("License file options")
-    format_options = parser.add_argument_group("Format options")
+    # placeholder for format stuff
+    _add_format_arguments_to_parser(
+        parser=parser,
+        format_default=config_from_file.get("format", "plain"),
+        with_authors_default=config_from_file.get("with-authors", False),
+        with_maintainers_default=config_from_file.get(
+            "with-maintainers", False
+        ),
+        with_urls_default=config_from_file.get("with-urls", False),
+        with_descriptions_default=config_from_file.get(
+            "with-descriptions",
+            config_from_file.get(
+                "with-description", False
+            ),  # kept for backwards compatibility
+        ),
+        with_version_default=config_from_file.get(
+            "without-version",
+            _migrate_no_version_helper(config_from_file),
+        ),
+        filter_string_default=config_from_file.get("filter-strings", False),
+        filter_code_default=config_from_file.get("filter-code-page", "latin1"),
+    )
 
     parser.add_argument(
         "-v",
@@ -460,8 +728,22 @@ def create_parser(
         action="version",
         version=f"{__pkgname__} {__version__}",
     )
+    mode_options.add_argument(
+        "--summary",
+        action="store_true",
+        default=config_from_file.get("summary", False),
+        help="dump summary of each license",
+    )
+    mode_options.add_argument(
+        "--output-file",
+        action="store",
+        type=lambda x: Path(x),
+        default=config_from_file.get("output-file"),
+        metavar="OUT",
+        help=f"causes {__pkgname__}, to instead output to the specified file",
+    )
 
-    common_options.add_argument(
+    mode_options.add_argument(
         "-o",
         "--order",
         action=SelectAction,
@@ -472,89 +754,6 @@ def create_parser(
         metavar="COL",
         choices=choices_from_enum(OrderArg),
         help='R|order by column\n"name", "license", "author", "url"\n',
-    )
-    format_options.add_argument(
-        "-f",
-        "--format",
-        dest="format_",
-        action=SelectAction,
-        type=str,
-        default=get_value_from_enum(
-            FormatArg, config_from_file.get("format", "plain")
-        ),
-        metavar="STYLE",
-        choices=choices_from_enum(FormatArg),
-        help="R|dump as set format style\n"
-        '"plain", "plain-vertical" "markdown", "rst", \n'
-        '"confluence", "html", "json", \n'
-        '"json-license-finder",  "csv"\n',
-    )
-    common_options.add_argument(
-        "--summary",
-        action="store_true",
-        default=config_from_file.get("summary", False),
-        help="dump summary of each license",
-    )
-    common_options.add_argument(
-        "--output-file",
-        action="store",
-        default=config_from_file.get("output-file"),
-        type=str,
-        help="save license list to file",
-    )
-
-    format_options.add_argument(
-        "-a",
-        "--with-authors",
-        action="store_true",
-        default=config_from_file.get("with-authors", False),
-        help="dump with package authors",
-    )
-    format_options.add_argument(
-        "--with-maintainers",
-        action="store_true",
-        default=config_from_file.get("with-maintainers", False),
-        help="dump with package maintainers",
-    )
-    format_options.add_argument(
-        "-u",
-        "--with-urls",
-        action="store_true",
-        default=config_from_file.get("with-urls", False),
-        help="dump with package urls",
-    )
-    format_options.add_argument(
-        "-d",
-        "--with-descriptions",
-        action="store_true",
-        dest="with_description",  # if "6.0." in __version__ else "with-descriptions",
-        default=config_from_file.get("with-description", False),
-        help="dump with short package description",
-    )
-    format_options.add_argument(
-        "--with-description",
-        action="store_true",
-        dest="with_description",  # if "6.0." in __version__ else "with-descriptions",
-        default=config_from_file.get("with-description", False),
-        help="See --with-descriptions"
-        "DEPRECATED; use --with-descriptions instead.",
-    )
-    format_options.add_argument(
-        "-nv",
-        action="store_true",
-        dest="no_version",
-        default=config_from_file.get("no-version", False),
-        help="DEPRECATED (for backwards compatibility); "
-        "prefer --without-version instead.",
-    )
-    format_options.add_argument(
-        "--without-version",
-        "--no-version",
-        action="store_true",
-        dest="no_version",
-        default=config_from_file.get("no-version", False),
-        help="dump without package version. "
-        "DEPRECATED; use --without-version.",
     )
 
     license_file_options.add_argument(
@@ -578,8 +777,13 @@ def create_parser(
         "--without-license-paths",
         "--no-license-path",
         action="store_true",
-        dest="no_license_path",
-        default=config_from_file.get("no-license-path", False),
+        dest="no_license_path"
+        if "6.0." in __version__
+        else "without_license_paths",
+        default=config_from_file.get(
+            "without-license-paths",
+            _migrate_no_license_path_helper(config_from_file),
+        ),
         help="I|when specified together with option -l, "
         "suppress location of license file(s) in output",
     )
@@ -588,7 +792,10 @@ def create_parser(
         "--no-file-paths",
         action="store_true",  # if "6.0." in __version__ else "store_false",
         dest="no_file_paths",  # if "6.0." in __version__ else "show-file-paths",
-        default=config_from_file.get("no-file-paths", False),
+        default=config_from_file.get(
+            "no-file-paths",  # if "6.0." in __version__ else "show-file-paths",
+            False,  # if "6.0." in __version__ else True,
+        ),
         help="I|Suppress location of file path(s) in output",
     )
     license_file_options.add_argument(
@@ -606,6 +813,14 @@ def create_parser(
         "dump with location of all notice files and contents",
     )
     license_file_options.add_argument(
+        "--without-notice-paths",  # added in v6.0+
+        action="store_true",  # if "6.0." in __version__ else "store_const",
+        dest="without_notice_paths",
+        default=config_from_file.get("without-notice-paths", False),
+        help="I|when specified together with option --with-notice-files, "
+        "suppress location of notice file(s) in output",
+    )
+    license_file_options.add_argument(
         "--with-other-files",
         action="store_true",
         default=config_from_file.get("with-other-files", False),
@@ -613,19 +828,13 @@ def create_parser(
         " or --with-license-files, dump with location"
         " of other licensing-related files and contents",
     )
-    format_options.add_argument(
-        "--filter-strings",
-        action="store_true",
-        default=config_from_file.get("filter-strings", False),
-        help="filter input according to code page",
-    )
-    format_options.add_argument(
-        "--filter-code-page",
-        action="store",
-        type=str,
-        default=config_from_file.get("filter-code-page", "latin1"),
-        metavar="CODE",
-        help="I|specify code page for filtering (default: %(default)s)",
+    license_file_options.add_argument(
+        "--without-other-paths",  # added in v6.0+
+        action="store_true",  # if "6.0." in __version__ else "store_const",
+        dest="without_other_paths",
+        default=config_from_file.get("without-other-paths", False),
+        help="I|when specified together with option --with-other-files or --with-notice-files, "
+        "suppress location of other file(s) in output",
     )
 
     return parser
