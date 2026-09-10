@@ -6,6 +6,11 @@
 
 ### 6.0.0b12 (Unreleased BETA)
 
+* added `--without-authors` to complement `--with-authors`
+* added `--without-maintainers` to complement `--with-maintainers`
+* added `--without-urls` to complement `--with-urls`
+* added `--without-descriptions` to complement `--with-descriptions`
+* added `--with-version` to complement `--without-version`
 * added `--simple-match` to complement `--partial-match`
 * Started to improve examples in documentation through reproducible automation.
   * added some new tooling to support new automations.
