@@ -43,7 +43,7 @@ from . import (
     ExampleScript,  # extra -- only used for guiding mypy
     unittest,
 )
-from .test_readme_examples import (
+from ._readme_utils import (
     default_examples_dir,
     discover_examples,
 )

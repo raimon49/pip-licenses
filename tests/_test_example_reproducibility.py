@@ -42,7 +42,7 @@ from typing import (
 from . import (
     unittest,
 )
-from .test_readme_examples import (
+from ._readme_utils import (
     discover_examples,
     load_readme,
 )

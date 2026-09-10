@@ -9,7 +9,7 @@ from ._examples import (
     ExampleScript,
 )
 from ._output_validator import OutputValidator
-from .test_readme_examples import (
+from ._readme_utils import (
     discover_examples,
     load_readme,
 )

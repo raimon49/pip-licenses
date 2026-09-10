@@ -12,7 +12,7 @@
 * added `--without-descriptions` to complement `--with-descriptions`
 * added `--with-version` to complement `--without-version`
 * added `--simple-match` to complement `--partial-match`
-* Started to improve examples in documentation through reproducible automation.
+* Started to improve examples in documentation through reproducible automation, closing GHI #354.
   * added some new tooling to support new automations.
   * reconfigured build to exclude much of the new developer automation (to keep distribution clean)
 

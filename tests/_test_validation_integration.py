@@ -41,7 +41,7 @@ from . import (
     OutputValidator,
     unittest,
 )
-from .test_readme_examples import (
+from ._readme_utils import (
     load_readme,
 )
 
