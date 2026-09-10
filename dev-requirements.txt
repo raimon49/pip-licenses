@@ -133,7 +133,7 @@ typing-extensions==4.15.0
     #   exceptiongroup
     #   mypy
     #   virtualenv
-urllib3==2.6.3
+urllib3==2.7.0
     # via
     #   id
     #   requests
