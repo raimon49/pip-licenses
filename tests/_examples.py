@@ -99,9 +99,42 @@ class ExampleScript:
         number = int(match.group(1))
         return cls(path=script_path, name=name, number=number)
 
+    def _sort_key(self) -> tuple[int, str]:
+        return self.number, self.name
+
     def __lt__(self, other: "ExampleScript") -> bool:
         """Allow sorting by numeric prefix."""
-        return self.number < other.number
+        if not isinstance(other, ExampleScript):
+            return NotImplemented
+        return self._sort_key() < other._sort_key()
+
+    def __le__(self, other: "ExampleScript") -> bool:
+        if not isinstance(other, ExampleScript):
+            return NotImplemented
+        return self._sort_key() <= other._sort_key()
+
+    def __gt__(self, other: "ExampleScript") -> bool:
+        if not isinstance(other, ExampleScript):
+            return NotImplemented
+        return self._sort_key() > other._sort_key()
+
+    def __ge__(self, other: "ExampleScript") -> bool:
+        if not isinstance(other, ExampleScript):
+            return NotImplemented
+        return self._sort_key() >= other._sort_key()
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, ExampleScript):
+            return False  # never equal
+        return self._sort_key() == other._sort_key()
+
+    def __ne__(self, other: object) -> bool:
+        if not isinstance(other, ExampleScript):
+            return True  # always unequal
+        return self._sort_key() != other._sort_key()
+
+    def __hash__(self) -> int:
+        return hash(self._sort_key())
 
 
 @dataclass
