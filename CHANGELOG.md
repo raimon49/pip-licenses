@@ -6,6 +6,7 @@
 
 ### 6.0.0b12 (Unreleased BETA)
 
+* resolved import regressions, closing GHI #379
 * added `--without-authors` to complement `--with-authors`
 * added `--without-maintainers` to complement `--with-maintainers`
 * added `--without-urls` to complement `--with-urls`

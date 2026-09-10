@@ -65,7 +65,6 @@ from . import (
 from ._csv import CSVPrettyTable  # the class
 from ._html_helpers import (
     # generate_html_id,
-    format_license_files_html,  # noqa: F401 -- Re-export as part of data API
     # wrap_tag,
     # wrap_pre,
     wrap_ul,

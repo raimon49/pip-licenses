@@ -116,68 +116,6 @@ def generate_html_id(base: str, suffix: Union[str, None] = None) -> str:
     return id_val
 
 
-def format_license_files_html(
-    paths: Union[Iterable[str], None],
-    contents: Union[Iterable[str], None],
-    *,
-    include_paths: bool = True,
-    use_id_for_pairing: bool = False,
-    id_base: Union[str, None] = None,
-) -> str:
-    """Format one-or-more license file paths and their corresponding contents into HTML.
-
-    Args:
-      paths: iterable of file paths (may be None or contain LICENSE_UNKNOWN-like markers)
-      contents: iterable of texts corresponding to the same order as `paths`. May be None.
-      include_paths: whether to include the file path text as part of each <li>
-      use_id_for_pairing: when True add id attributes to <li> blocks to help pairing
-      id_base: optional base to generate ids from (e.g., package name), helps uniqueness
-
-    Behavior:
-      - If both paths and contents are provided, each list element will render:
-         <li id="..."><strong>path</strong>\n<pre>contents</pre></li>
-      - If contents is missing but paths are present, each <li> will contain the escaped path.
-      - If paths are missing but contents present, each <li> will contain the contents (preformatted).
-
-    Returns:
-      A string containing a <ul> ... </ul> HTML fragment.
-    """
-    # Turn inputs into lists for indexing
-    paths_list = list(paths or [])
-    contents_list = list(contents or [])
-
-    # If lengths differ, pair by index and use fallback empty string
-    max_len = max(len(paths_list), len(contents_list), 1)
-    items: list[str] = []
-    for i in range(max_len):
-        p = paths_list[i] if i < len(paths_list) else ""
-        c = contents_list[i] if i < len(contents_list) else ""
-
-        parts: list[str] = []
-        if include_paths and p:
-            # show path in bold (escaped)
-            parts.append(f"<strong>{escape_html(p)}</strong>")
-
-        if c:
-            # put contents inside pre to preserve formatting
-            parts.append(wrap_pre(c))
-        elif not parts:
-            # nothing to show for this item
-            parts.append(escape_html(p or ""))
-
-        inner = "\n".join(parts)
-        if use_id_for_pairing:
-            id_attr = {"id": generate_html_id(id_base or "license", str(i))}
-            # wrap inner into a div for semantic pairing
-            items.append(wrap_tag("div", inner, attrs=id_attr, inline=False))
-        else:
-            items.append(inner)
-
-    # li_attrs are left None; caller may pass CSS classes via attrs argument if needed
-    html = wrap_ul(items)
-    return html
-
-
 def replace_ul_li_tag(match: re.Match) -> str:
     return f"<{match.group(1)}{match.group(2)}>"
 
@@ -189,7 +127,8 @@ def unescape_ul_li(text: str) -> str:
 
 # re-export for backwards compatibility and a stable API
 __all__ = [
-    """format_license_files_html""",
+    # """format_license_files_html""",  # added in v6.0.0b11 and removed in v6.0.0b12
+    """escape_html""",  # caution - not part of public api
     """generate_html_id""",
     """replace_ul_li_tag""",
     """unescape_ul_li""",
