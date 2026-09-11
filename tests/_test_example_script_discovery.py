@@ -30,7 +30,7 @@ To be documented?
 """
 
 # import os
-import re  # noqa: F401 -- used by TestExampleScriptDiscovery.test_example_script_naming
+# import re  # used by TestExampleScriptDiscovery.test_example_script_naming
 from pathlib import Path
 from typing import (
     # See https://github.com/raimon49/pip-licenses/issues/360
