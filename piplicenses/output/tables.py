@@ -63,6 +63,12 @@ from . import (
     cast,
 )
 from ._csv import CSVPrettyTable  # the class
+from ._html_helpers import (
+    # generate_html_id,
+    # wrap_tag,
+    # wrap_pre,
+    wrap_ul,
+)
 from ._json import JsonPrettyTable  # the class
 from ._license_finder_json import JsonLicenseFinderTable  # the class
 from ._plain_vertical import PlainVerticalTable  # the class
@@ -170,7 +176,7 @@ def _handle_multiple_value_field(
     )
 
 
-# TODO: change to accept set-like
+# TODO: change to accept set-like (instead of "; " delim string)
 def create_licenses_table(
     args: Configuration,
     output_fields: Union[set[str], Sequence[str]] = DEFAULT_OUTPUT_FIELDS,
@@ -226,7 +232,11 @@ def create_licenses_table(
                                     value=cast(Iterator[str], [*value]),
                                 ),
                             )
-                            if args.format_ in (
+                            if args.format_ is FormatArg.HTML:
+                                row.append(
+                                    wrap_ul(_value_as_list),
+                                )
+                            elif args.format_ in (
                                 FormatArg.JSON,
                                 FormatArg.PLAIN_VERTICAL,
                             ):  # Prototype
