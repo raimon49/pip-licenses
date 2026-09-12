@@ -63,13 +63,12 @@ class TestExampleExecution(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         """Set up class-level fixtures."""
-        # _example_working_dir = default_examples_dir()
-        #_runner_env = {
-        #     "PWD": _example_working_dir,
-        #     "OLDPWD": _example_working_dir,
-        # }
-        cls.runner = ExampleRunner(timeout=30)
-        # instead of cls.runner = ExampleRunner(timeout=30, env=_runner_env)
+        _example_working_dir = default_examples_dir()
+        _runner_env = {
+            "PWD": _example_working_dir,
+            "OLDPWD": _example_working_dir,
+        }
+        cls.runner = ExampleRunner(timeout=30, env=_runner_env)
         cls.discovered_examples = discover_examples()
 
     def test_all_examples_run(self) -> None:
