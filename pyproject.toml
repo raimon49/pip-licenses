@@ -119,7 +119,6 @@ extend-ignore = [
 	"RUF005", # Consider unpacking instead of concatenation
 	"RUF012", # Unnecessary noise about Python language (In Python defaults are always mutable)  # See https://github.com/astral-sh/ruff/issues/5243
 	"RUF021", # Parenthesize `a and b` expressions when chaining `and` and `or` together, to make the precedence clear
-	"RUF013", # Ignore PEP484 until GHI-316 is resolved
 ]
 isort.known-first-party = ["piplicenses"]
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?)(_{2,2})?)$"  # See https://regex101.com/r/U0tpDT/2

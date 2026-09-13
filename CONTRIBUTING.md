@@ -4,10 +4,44 @@
 
 The design policy of `pip-licenses` is as follows.
 
-* Focus only on outputting license information of Python packages installed in user's environment.
-* Support Python 3.9 or later.
+* Try to adhere to [S.O.L.I.D.](https://en.wikipedia.org/wiki/SOLID) principles
+
+### Key Components
+
+```mermaid
+block-beta
+  columns 3
+  in(["in"])
+  space
+  out(["out"])
+  block:cli["piplicenses.cli"]
+    config
+    pseudoChoices
+  end
+  block:core["piplicenses.core"]
+   space
+  end
+  block:output["piplicenses.output"]
+    json
+    csv
+    plainVertical
+  end
+  cli --> core
+  core --> output
+```
+
+* Key Components by focus:
+  * `piplicense.cli.*` -- Focus on the command-line input/parsing interface
+  * `piplicenses.core` -- Focus only on gathering/auditing license information from Python packages installed in user's environment.
+  * `piplicenses.output.*` -- Focus only on outputting license information of Python packages installed in user's environment.
+  * `piplicenses.__init__.py` -- Focus only on imports and publishing an A.P.I.
+
+### Compatibility
+
+* Support Python 3.9 and later.
 * External packages that depend on runtime are [prettytable](https://pypi.org/project/prettytable/) and [tomli](https://pypi.org/project/tomli/) only.
-    * Expect to be able to use [importlib\_metadata](https://importlib_metadata.readthedocs.io/) APIs.
+    * Expect to be able to use [importlib\_metadata](https://importlib_metadata.readthedocs.io/) APIs in `piplicenses.core`.
+* Use builtins (e.g., `os`/`Paths`/`sys`/`io`/etc.) to avoid OS incompatibilities when needed.
 
 ## Setup
 
@@ -26,7 +60,7 @@ The design policy of `pip-licenses` is as follows.
     * Tests can be run with `make test` .
 * Code conventions follow the [PEP 8](https://www.python.org/dev/peps/pep-0008/).
     * You can format the code by running `make lint` .
-* Send pull request to master branch. Maintainer(s) may adjust PRs to the appropriate development branch as relevant.
+* Send pull request to "next" branch. Maintainer(s) may adjust PRs to the appropriate development branch as relevant.
 
 ## Security policy
 

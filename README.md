@@ -4,7 +4,9 @@
 
 Dump the software license list of Python packages installed with pip.
 
-## Table of Contents
+<img width="785" height="265" alt="demo_preview" src="https://github.com/user-attachments/assets/910cae21-dd6e-4ee3-9861-171b7c454dc6" />
+
+<details><summary>Table of Contents</summary>
 
 * [Description](#description)
 * [Installation](#installation)
@@ -49,6 +51,8 @@ Dump the software license list of Python packages installed with pip.
     * [Dependencies](#dependencies)
 * [Uninstallation](#uninstallation)
 * [Contributing](#contributing)
+
+</details>
 
 ## Description
 
