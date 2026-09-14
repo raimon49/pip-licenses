@@ -67,7 +67,7 @@ from piplicenses import (
 from piplicenses.cli.config import Configuration
 from piplicenses.output.tables import _handle_multiple_value_field
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # TODO: refactor to bridge module for PEP-749 changes
     if sys.version_info >= (3, 10):
         from importlib.metadata._meta import PackageMetadata
     else:
@@ -1595,8 +1595,7 @@ class MockStdStream:
 
 
 def test_output_file_success(monkeypatch: pytest.MonkeyPatch) -> None:
-    if TYPE_CHECKING:
-        import io
+    import io  # always import for guiding mypy, as per PEP-749
 
     def mocked_open(*args: Any, **kwargs: Any) -> io.TextIOWrapper:
         import tempfile
