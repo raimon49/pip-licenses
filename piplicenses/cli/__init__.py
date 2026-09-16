@@ -35,6 +35,8 @@ To be documented.
 import argparse
 import codecs
 import sys
+# See https://github.com/raimon49/pip-licenses/issues/360
+# should just bridge this import
 from collections.abc import Sequence
 from enum import Enum  # used by helper _expand_help
 from importlib import (

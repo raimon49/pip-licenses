@@ -31,6 +31,8 @@
 To be documented.
 """
 
+# See https://github.com/raimon49/pip-licenses/issues/360
+# should just bridge this import
 from collections.abc import Iterable
 from dataclasses import (
     dataclass,
