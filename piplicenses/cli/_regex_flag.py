@@ -36,7 +36,6 @@ See [GHI-360](https://github.com/raimon49/pip-licenses/issues/360).
 import re
 from enum import (
     Flag,
-    auto,
 )
 # See https://github.com/raimon49/pip-licenses/issues/360
 # should just bridge this import
@@ -53,6 +52,9 @@ Not part of the public API. Subject to sudden changes, or removal.
 """
 
 
+# See https://github.com/raimon49/pip-licenses/issues/360
+# morally this is a special boolean of typing.TypeIs[re.Pattern] but that requires python3.13+
+# see typing.TypeIs
 def _is_pattern(value: object) -> bool:
     """Return whether value is exactly a compiled regular expression."""
     return type(value) is _PATTERN_TYPE
@@ -61,7 +63,7 @@ def _is_pattern(value: object) -> bool:
 class RegexFlag(Flag):
     """A Flag whose members each contain a regular expression."""
 
-    def __new__(cls, value: int, pattern: re.Pattern):
+    def __new__(cls, value: int, pattern: re.Pattern) -> "RegexFlag":
         if not _is_pattern(pattern):
             raise TypeError(
                 "pattern must be an instance of type re.Pattern"
@@ -70,7 +72,7 @@ class RegexFlag(Flag):
         obj._value_ = value
         return obj
 
-    def __init__(self, value: int, pattern: re.Pattern):
+    def __init__(self, value: int, pattern: re.Pattern) -> None:
         self.pattern = pattern
 
     @property
