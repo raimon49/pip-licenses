@@ -121,6 +121,17 @@ ifeq "$(RMDIR)" ""
 	RMDIR=$(RM)rd
 endif
 
+ifeq "$(ZIPINFO)" ""
+	ZIPINFO_CMD=$(COMMAND) zipinfo
+	ifneq "$(ZIPINFO_CMD)" ""
+		ZIPINFO_ARGS=
+	else
+		ZIPINFO_CMD=$(COMMAND) unzip
+		ZIPINFO_ARGS=-Z
+	endif
+	ZIPINFO=$(ZIPINFO_CMD) $(ZIPINFO_ARGS)
+endif
+
 ifeq "$(VENV_NAME)" ""
 	ifeq "$(REPO_NAME)" ""
 		# based on remote (requires remote named origin)
@@ -176,6 +187,9 @@ setup-examples: $(VENV_NAME) $(VENV_NAME)/bin/python setup-venv local-install
 setup: $(VENV_NAME) $(VENV_NAME)/bin/python setup-venv
 	$(VENV_NAME)/bin/python -B -m pip $(PIP_PREFIX_FLAGS) install $(PIP_COMMON_FLAGS) -r $(DEV_DEPENDS).txt
 
+local-build:
+	$(VENV_NAME)/bin/python -B
+
 local-install: $(VENV_NAME)/bin/python
 	$(VENV_NAME)/bin/python -m pip $(PIP_PREFIX_FLAGS) install $(PIP_COMMON_FLAGS) -e .
 
@@ -198,7 +212,10 @@ update-demo:
 # developer workflow targets
 
 build: clean
-	$(VENV_NAME)/bin/python -m build
+	$(VENV_NAME)/bin/python -B -m build || $(PYTHON) -m build || exit 125; # fail if unsuccessful
+	test -f dist/pip_licenses-*-py3-*.whl || exit 41; # fail if not found
+	test -r dist/pip_licenses-*-py3-*.whl || exit 42; # fail if not readable
+	$(ZIPINFO) -1 dist/pip_licenses-*-py3-*.whl "piplicenses/__main__.py" || $(ZIPINFO) -1 dist/pip_licenses-*-py3-*.whl
 
 lint:
 	$(VENV_NAME)/bin/python -m ruff --config pyproject.toml check --output-format=github .

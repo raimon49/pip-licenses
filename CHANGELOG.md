@@ -4,7 +4,12 @@
 
 (SUBJECT TO CHANGE IN NEXT RELEASE)
 
-### 6.0.0b12 (Unreleased BETA)
+#### 6.0.0b13 (Unreleased BETA)
+
+* Improved Dockerfile
+* Prototyped building docker-image in CI/CD
+
+#### 6.0.0b12 (Unreleased BETA)
 
 * resolved import regressions, closing GHI #379
 * added `--without-authors` to complement `--with-authors`
@@ -17,12 +22,12 @@
   * added some new tooling to support new automations.
   * reconfigured build to exclude much of the new developer automation (to keep distribution clean)
 
-### 6.0.0b11 (Pre-released BETA):
+#### 6.0.0b11 (Pre-released BETA):
 
 * Replaced `--with-system` with `--include-system` & `--ignore-system`
 * Improved new support of multiple file-paths for HTML resolving GHI #239
 
-### 6.0.0b10 (Pre-released BETA):
+#### 6.0.0b10 (Pre-released BETA):
 
 * Improved stability of internal API, to pave the way for an up-coming public API
 * Implemented support of file-paths for most formats
@@ -44,7 +49,7 @@
     * [CVE-2026-44431](https://github.com/advisories/GHSA-qccp-gfcp-xxvc)
   * Updated testing in CI to resolve python3.9 coverage regressions
 
-### 6.0.0a1 (Pre-released ALPHA) [YANKED]:
+#### 6.0.0a1 (Pre-released ALPHA) [YANKED]:
 
   * Improved handling of multiple license files in a single package (WIP GHI #71)
   * Implemented new flags (WIP GHI #242)
