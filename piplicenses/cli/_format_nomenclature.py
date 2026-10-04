@@ -49,15 +49,18 @@ All Templates expect a `delimiter` (e.g., "-" (dash) or "_" (underscore))
 and a base `dest` (e.g., "")
 
 See [GHI-375](https://github.com/raimon49/pip-licenses/issues/375).
+
+[GHI-81](https://github.com/raimon49/pip-licenses/issues/81):
+Not part of the _public_ API. Subject to sudden changes, or removal.
 """
 
 # These may be used to add localizations eventually.
 
 from string import Template
-
+from typing import Literal
 
 # See https://github.com/raimon49/pip-licenses/issues/360
-FORMAT_ENABLE_PREFIX: str = "with"
+FORMAT_ENABLE_PREFIX: Literal["show", "include", "with", "enable"] = "with"
 """This prefix is used for names used in enabling format fields of the config.
 
 Not part of the public API. Subject to sudden changes, or removal.
@@ -69,68 +72,80 @@ FORMAT_DISABLE_PREFIX: str = f"{FORMAT_ENABLE_PREFIX}out"
 Not part of the public API. Subject to sudden changes, or removal.
 """
 
-FORMAT_FILES_SUFFIX: str = "files"
+FORMAT_FILES_SUFFIX: Literal["contents", "files"] = "files"
 """This suffix is used for names used in overriding files-format fields of the config.
 
 Not part of the public API. Subject to sudden changes, or removal.
 """
 
-FORMAT_PATHS_SUFFIX: str = "paths"
+FORMAT_PATHS_SUFFIX: Literal["paths"] = "paths"
 """This suffix is used for names used in overriding file-paths-format fields flags of the config.
 
 Not part of the public API. Subject to sudden changes, or removal.
 """
 
-FORMAT_TOGGLE_FIELD: Template = Template(f"{FORMAT_ENABLE_PREFIX}$delimiter$dest")
+DELIMITER: Literal["delimiter"] = "delimiter"
+"""This is the VAR name for delimiters in format templates.
+
+Not part of the public API. Subject to sudden changes, or removal.
+"""
+
+DEST: Literal["dest"] = "dest"
+"""This is the VAR name for destination bases in format templates.
+
+Not part of the public API. Subject to sudden changes, or removal.
+"""
+
+SUFFIX: Literal["suffix"] = "suffix"
+"""This is the VAR name for suffix in format override templates.
+
+Not part of the public API. Subject to sudden changes, or removal.
+"""
+
+FORMAT_TOGGLE_FIELD: Template = Template(
+    f"{FORMAT_ENABLE_PREFIX}$delimiter$dest"
+)
 """This template is for generating flag and config names from a base dest.
 
 Not part of the public API. Subject to sudden changes, or removal.
 """
 
-FORMAT_TOGGLE_ON: Template = Template(f"$delimiter$delimiter{FORMAT_ENABLE_PREFIX}$delimiter$dest")
+FORMAT_TOGGLE_ON: Template = Template(
+    f"$delimiter${{delimiter}}{FORMAT_ENABLE_PREFIX}$delimiter$dest"
+)
 """This template is for generating enable flag names from a base dest.
 
 Not part of the public API. Subject to sudden changes, or removal.
 """
 
-FORMAT_TOGGLE_OFF: Template = Template(f"$delimiter$delimiter{FORMAT_DISABLE_PREFIX}$delimiter$dest")
+FORMAT_TOGGLE_OFF: Template = Template(
+    f"$delimiter${{delimiter}}{FORMAT_DISABLE_PREFIX}$delimiter$dest"
+)
 """This template is for generating suppression flag names from a base dest.
 
 Not part of the public API. Subject to sudden changes, or removal.
 """
 
-FORMAT_OVERRIDE_FILES_FIELD: Template = Template(f"{FORMAT_ENABLE_PREFIX}$delimiter$dest$delimiter{FORMAT_FILES_SUFFIX}")
+FORMAT_OVERRIDE_FIELD: Template = Template(
+    f"{FORMAT_ENABLE_PREFIX}$delimiter$dest$delimiter$suffix"
+)
 """This template is for generating flag and config names for file overrides from a base dest.
 
 Not part of the public API. Subject to sudden changes, or removal.
 """
 
-FORMAT_OVERRIDE_FILES_ON: Template = Template(f"$delimiter$delimiter{FORMAT_ENABLE_PREFIX}$delimiter$dest$delimiter{FORMAT_FILES_SUFFIX}")
-"""This template is for generating enable flag names for file overrides from a base dest.
+FORMAT_OVERRIDE_FIELD_ON: Template = Template(
+    f"$delimiter${{delimiter}}{FORMAT_ENABLE_PREFIX}$delimiter$dest$delimiter$suffix"
+)
+"""This template is for generating enable flag names for overrides from a base dest.
 
 Not part of the public API. Subject to sudden changes, or removal.
 """
 
-FORMAT_OVERRIDE_FILES_OFF: Template = Template(f"$delimiter$delimiter{FORMAT_DISABLE_PREFIX}$delimiter$dest$delimiter{FORMAT_FILES_SUFFIX}")
-"""This template is for generating suppression flag names for file overrides from a base dest.
-
-Not part of the public API. Subject to sudden changes, or removal.
-"""
-
-FORMAT_OVERRIDE_PATHS_FIELD: Template = Template(f"{FORMAT_ENABLE_PREFIX}$delimiter$dest$delimiter{FORMAT_PATHS_SUFFIX}")
-"""This template is for generating flag and config names for file-path overrides from a base dest.
-
-Not part of the public API. Subject to sudden changes, or removal.
-"""
-
-FORMAT_OVERRIDE_PATHS_ON: Template = Template(f"$delimiter$delimiter{FORMAT_ENABLE_PREFIX}$delimiter$dest$delimiter{FORMAT_PATHS_SUFFIX}")
-"""This template is for generating enable flag names for file-path overrides from a base dest.
-
-Not part of the public API. Subject to sudden changes, or removal.
-"""
-
-FORMAT_OVERRIDE_PATHS_OFF: Template = Template(f"$delimiter$delimiter{FORMAT_DISABLE_PREFIX}$delimiter$dest$delimiter{FORMAT_PATHS_SUFFIX}")
-"""This template is for generating suppression flag names for file-path overrides from a base dest.
+FORMAT_OVERRIDE_FIELD_OFF: Template = Template(
+    f"$delimiter${{delimiter}}{FORMAT_DISABLE_PREFIX}$delimiter$dest$delimiter$suffix"
+)
+"""This template is for generating suppression flag names for overrides from a base dest.
 
 Not part of the public API. Subject to sudden changes, or removal.
 """
@@ -142,16 +157,16 @@ def _require_nonempty_string(value: object, context: str) -> str:
     Developer note: Subclasses of str are also invalid if they behave
     as false-y. (e.g., length is just the default).
     """
-    _context: str = context if context else "value"
+    _context: str = context or "value"
     if not isinstance(value, str):
         raise TypeError(
             f"{_context} must be a string, got {type(value).__name__}"
         ) from None
     if not value:
-         # See https://docs.python.org/3/library/stdtypes.html#truth-value-testing
-         if len(value) > 0:
-             # handle subclasses that are false but non-empty
-             raise ValueError(f"{_context} must not be false-y") from None
+        # See https://docs.python.org/3/library/stdtypes.html#truth-value-testing
+        if len(value) > 0:
+            # handle subclasses that are false but non-empty
+            raise ValueError(f"{_context} must not be false-y") from None
         # otherwise treat false as empty
         raise ValueError(f"{_context} must not be empty") from None
     return value
@@ -166,18 +181,17 @@ def _normalize_to_config_form(hint: str) -> str:
     # validate first
     _hint = _require_nonempty_string(
         value=hint,
-        context="Can not normalize value to a config key;"
+        context="Can not normalize value to a config key;",
     )
     # else can try to normalize (best-effort for now)
     # if we pull in re (via an import re), then we could consider:
     # re.sub(r"[ _.\-\t\n\r]+", "_", _hint)
     _to_be_stripped_chars: str = " _.-\t\n\r"
-    return _hint.replace(
-        "-", "_"
-    ).lower().lstrip(
-        _to_be_stripped_chars
-    ).strip(
-        _to_be_stripped_chars
+    return (
+        _hint.replace("-", "_")
+        .lower()
+        .lstrip(_to_be_stripped_chars)
+        .strip(_to_be_stripped_chars)
     )
 
 
@@ -191,15 +205,22 @@ def _generate_all_config_forms(hint: str) -> list[str]:
 
     Not part of the public API. Subject to sudden changes, or removal.
     """
-    # validate and map first
-    _mappings: dict = {delimiter="_", dest=_normalize_to_config_form(hint)}
-    return [
-        template.substitute(_mappings) for template in [
-            FORMAT_TOGGLE_FIELD,
-            FORMAT_OVERRIDE_FILES_FIELD,
-            FORMAT_OVERRIDE_PATHS_FIELD,
-        ]
+    # validate first
+    _mapping_base: dict = {
+        DELIMITER: "_",
+        DEST: _normalize_to_config_form(hint),
+    }
+    # and map out
+    _mapping_files_override: dict = {SUFFIX: FORMAT_FILES_SUFFIX}
+    _mapping_files_override.update(_mapping_base.copy())
+    _mapping_paths_override: dict = {SUFFIX: FORMAT_PATHS_SUFFIX}
+    _mapping_paths_override.update(_mapping_base.copy())
+    _mappings: list[tuple[Template, dict]] = [
+        (FORMAT_TOGGLE_FIELD, _mapping_base),
+        (FORMAT_OVERRIDE_FIELD, _mapping_files_override),
+        (FORMAT_OVERRIDE_FIELD, _mapping_paths_override),
     ]
+    return [template.substitute(mapping) for template, mapping in _mappings]
 
 
 def _generate_only_config_form(hint: str) -> list[str]:
@@ -213,7 +234,7 @@ def _generate_only_config_form(hint: str) -> list[str]:
     Not part of the public API. Subject to sudden changes, or removal.
     """
     # validate and map first
-    _mappings: dict = {delimiter="_", dest=_normalize_to_config_form(hint)}
+    _mappings: dict = {DELIMITER: "_", DEST: _normalize_to_config_form(hint)}
     return [
         FORMAT_TOGGLE_FIELD.substitute(_mappings),
     ]
@@ -238,14 +259,49 @@ def reduce_to_config_form(base_hint: str) -> str:
         return _hint.replace(FORMAT_DISABLE_PREFIX, FORMAT_ENABLE_PREFIX, 1)
     # otherwise consider prefix is missing and needs a template
     # then map next
-    _mappings: dict = {delimiter="_", dest=_hint}
+    # morally should be dict[Literal, str]
+    _mappings: dict = {DELIMITER: "_", DEST: _hint}
     # then transform and re-normalize
     return _normalize_to_config_form(
         FORMAT_TOGGLE_FIELD.substitute(_mappings),
     )
 
 
-def _generate_expected_config_forms(hint: str, has_overrides: bool) -> list[str]:
+# See https://github.com/raimon49/pip-licenses/issues/360
+# See https://github.com/raimon49/pip-licenses/issues/359
+# placeholder for transient config file Format mapping types
+
+
+def generate_config_mapping(hint: str) -> dict[str, str]:
+    """Attempt to heuristically generate a list of each config key form for the given hint.
+
+    In general will return a form of each FIELD template based on:
+    `template.substitute({delimiter="_", dest=hint}) for template in` _all field templates_.
+
+    Caution: Not all returned values are guaranteed to be actual implemented config keys.
+
+    Not part of the public API. Subject to sudden changes, or removal.
+    """
+    # validate and map first
+    _mappings: dict = {DELIMITER: "_", DEST: _normalize_to_config_form(hint)}
+    return {
+        "field": FORMAT_TOGGLE_FIELD.substitute(_mappings),
+        FORMAT_FILES_SUFFIX: Template(
+            FORMAT_OVERRIDE_FIELD.safe_substitute(_mappings)
+        ).substitute(
+            suffix=FORMAT_FILES_SUFFIX,
+        ),
+        FORMAT_PATHS_SUFFIX: Template(
+            FORMAT_OVERRIDE_FIELD.safe_substitute(_mappings)
+        ).substitute(
+            suffix=FORMAT_PATHS_SUFFIX,
+        ),
+    }
+
+
+def _generate_expected_config_forms(
+    hint: str, has_overrides: bool
+) -> list[str]:
     """Attempt to heuristically generate a list of each config key form for the given hint.
 
     In general will return a form of each FIELD template based on:
@@ -270,12 +326,13 @@ def _generate_toggle_flag_forms(hint: str) -> list[str]:
     # validate first
     _hint = _require_nonempty_string(
         value=hint,
-        context="Can not enumerate value in flag forms;"
+        context="Can not enumerate value in flag forms;",
     )
     # else can try to normalize
-    _mappings: dict = {delimiter="-", dest=hint}
+    _mappings: dict = {DELIMITER: "-", DEST: hint}
     return [
-        template.substitute(_mappings) for template in [
+        template.substitute(_mappings)
+        for template in [
             FORMAT_TOGGLE_ON,
             FORMAT_TOGGLE_OFF,
         ]
@@ -290,20 +347,29 @@ def _generate_all_flag_forms(hint: str) -> list[str]:
     """
     # validate first
     _hint = _require_nonempty_string(
-        value=hint,
-        context="Can not enumerate value in flag forms;"
+        value=hint, context="Can not enumerate value in flag forms;"
     )
     # else can try to normalize
-    _mappings: dict = {delimiter="-", dest=hint}
+    _mappings: dict = {DELIMITER: "-", DEST: hint}
     return [
         *_generate_toggle_flag_forms(hint),
         *[
-            template.substitute(_mappings) for template in [
-                FORMAT_OVERRIDE_FILES_ON,
-                FORMAT_OVERRIDE_FILES_OFF,
-                FORMAT_OVERRIDE_PATHS_ON,
-                FORMAT_OVERRIDE_PATHS_OFF,
-            ],
+            Template(template.safe_substitute(_mappings)).substitute(
+                suffix=FORMAT_FILES_SUFFIX,
+            )
+            for template in [
+                FORMAT_OVERRIDE_FIELD_ON,
+                FORMAT_OVERRIDE_FIELD_OFF,
+            ]
+        ],
+        *[
+            Template(template.safe_substitute(_mappings)).substitute(
+                suffix=FORMAT_PATHS_SUFFIX,
+            )
+            for template in [
+                FORMAT_OVERRIDE_FIELD_ON,
+                FORMAT_OVERRIDE_FIELD_OFF,
+            ]
         ],
     ]
 
@@ -325,27 +391,21 @@ def _generate_expected_flag_forms(hint: str, has_overrides: bool) -> list[str]:
 
 
 __all__ = [
-    # Prefixes
-    """FORMAT_ENABLE_PREFIX""",
+    # Nomenclature
     """FORMAT_DISABLE_PREFIX""",
-    # Suffixes
+    """FORMAT_ENABLE_PREFIX""",
     """FORMAT_FILES_SUFFIX""",
+    """FORMAT_OVERRIDE_FIELD""",
+    """FORMAT_OVERRIDE_FIELD_OFF""",
+    """FORMAT_OVERRIDE_FIELD_ON""",
     """FORMAT_PATHS_SUFFIX""",
-    # Templates
-    # Tri-Toggles
     """FORMAT_TOGGLE_FIELD""",
-    """FORMAT_TOGGLE_ON""",
     """FORMAT_TOGGLE_OFF""",
-    # Files
-    """FORMAT_OVERRIDE_FILES_FIELD""",
-    """FORMAT_OVERRIDE_FILES_ON""",
-    """FORMAT_OVERRIDE_FILES_OFF""",
-    # Paths
-    """FORMAT_OVERRIDE_PATHS_FIELD""",
-    """FORMAT_OVERRIDE_PATHS_ON""",
-    """FORMAT_OVERRIDE_PATHS_OFF""",
+    """FORMAT_TOGGLE_ON""",
     # Helper Functions
-    """_normalize_to_config_form""",
     """_generate_all_flag_forms""",
+    """_normalize_to_config_form""",
+    # Util Functions
+    """generate_config_mapping""",
     """reduce_to_config_form""",
 ]

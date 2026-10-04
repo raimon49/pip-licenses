@@ -75,7 +75,7 @@ repository = "https://github.com/raimon49/pip-licenses.git"
 #content-type = "text/markdown; charset=UTF-8; variant=GFM"
 
 [tool.setuptools]
-py-modules = ["piplicenses"]  # PEP-508 normalized module name (e.g., without dash)
+packages = ["piplicenses"]  # PEP-508 normalized module name (e.g., without dash)
 
 [tool.setuptools.dynamic]
 version = {attr = "piplicenses.__version__"}

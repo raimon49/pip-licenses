@@ -53,9 +53,11 @@ from . import (
     LEGACY_TOKEN,
     __pkgname__,  # noqa: F401 -- Re-export as part of data API
     __version__,
-    argparse,
     sys,
 )
+
+# See https://docs.python.org/3/library/argparse.html
+from ._argparse_bridge import argparse
 from .pseudo_choices import (
     FormatArg,
     FromArg,
@@ -87,9 +89,86 @@ e.g., sys.executable
 """
 
 
+def _split_legacy_tokens(value: str) -> list[str]:
+    """
+    Split a serialized value on unescaped LEGACY_TOKEN occurrences.
+
+    A backslash escapes either LEGACY_TOKEN or another backslash:
+
+    >>> LEGACY_TOKEN = ";"
+    >>> _split_legacy_tokens(r"a\\;b;c")
+    ['a;b', 'c']
+    """
+    if not LEGACY_TOKEN:
+        raise ValueError("LEGACY_TOKEN must be non-empty")
+
+    if "\\" in LEGACY_TOKEN:
+        raise ValueError(
+            "LEGACY_TOKEN must not contain a backslash when using escaping"
+        )
+
+    parts: list[str] = []
+    current: list[str] = []
+    index = 0
+
+    while index < len(value):
+        if value[index] == "\\":
+            escaped_token_start = index + 1
+
+            if value.startswith(LEGACY_TOKEN, escaped_token_start):
+                current.append(LEGACY_TOKEN)
+                index += 1 + len(LEGACY_TOKEN)
+            elif value.startswith("\\", escaped_token_start):
+                current.append("\\")
+                index += 2
+            else:
+                # Preserve an unrecognized escape literally.
+                current.append("\\")
+                index += 1
+
+        elif value.startswith(LEGACY_TOKEN, index):
+            parts.append("".join(current))
+            current.clear()
+            index += len(LEGACY_TOKEN)
+
+        else:
+            current.append(value[index])
+            index += 1
+
+    parts.append("".join(current))
+    return parts
+
+
 def _normalize_as_set(
     value: Union[Iterable[str], str, bytes, None],
 ) -> set[str]:
+    """
+    Normalize a string, bytes value, or iterable into a set of strings.
+
+    String and bytes values are treated as serialized values. Unescaped
+    LEGACY_TOKEN occurrences separate values, while backslash-escaped
+    LEGACY_TOKEN occurrences are interpreted literally. Backslashes can
+    themselves be escaped with another backslash.
+
+    Empty fields are discarded when a serialized value contains
+    LEGACY_TOKEN, matching the original behavior.
+
+    >>> LEGACY_TOKEN = ";"
+    >>> _normalize_as_set("alpha;beta")
+    {'alpha', 'beta'}
+
+    >>> _normalize_as_set("alpha\\;beta;gamma") # TODO: may need raw string and doc escapes?
+    {'alpha;beta', 'gamma'}
+
+    >>> _normalize_as_set(r"c:\\path;d")
+    {'c:\\path', 'd'}
+
+    >>> _normalize_as_set(None)
+    set()
+
+    >>> _normalize_as_set(["alpha", None, 42])
+    {'alpha', '42'}
+    """
     if value is None:
         return set()
     if isinstance(value, (str, bytes)):
@@ -97,7 +176,7 @@ def _normalize_as_set(
         if LEGACY_TOKEN in _wrapped_value:
             return set(
                 filter(
-                    None, map(str.strip, _wrapped_value.split(LEGACY_TOKEN))
+                    None, map(str.strip, _split_legacy_tokens(_wrapped_value))
                 )
             )
         return {_wrapped_value}
@@ -105,6 +184,69 @@ def _normalize_as_set(
         return {str(x) for x in value if x is not None}
     except TypeError:
         return {str(value)}
+
+
+def _serialize_to_semi_str(value: Iterable[str]) -> str:
+    """
+    Serialize an iterable of strings for use with _normalize_as_set().
+
+    LEGACY_TOKEN and backslashes are escaped with a backslash. Members are
+    sorted to produce deterministic output. Since _normalize_as_set()
+    strips fields and discards empty fields in serialized values, members
+    must not have leading or trailing whitespace.
+
+    The empty set is represented by LEGACY_TOKEN itself; splitting it
+    produces only empty fields, which are discarded.
+
+    >>> LEGACY_TOKEN = ";"
+    >>> serialized = serialize_to_semi_str({"beta", "alpha"})
+    >>> serialized
+    'alpha;beta'
+    >>> _normalize_as_set(serialized)
+    {'alpha', 'beta'}
+
+    >>> serialized = serialize_to_semi_str({"alpha;beta", r"c:\tmp"})
+    >>> _normalize_as_set(serialized)
+    {'alpha;beta', 'c:\\tmp'}
+
+    >>> serialize_to_semi_str(set()) == LEGACY_TOKEN
+    True
+    >>> _normalize_as_set(serialize_to_semi_str(set()))
+    set()
+
+    >>> serialize_to_semi_str({" leading"})
+    Traceback (most recent call last):
+        ...
+    ValueError: Set members must not have leading or trailing whitespace
+    """
+    if not LEGACY_TOKEN:
+        raise ValueError("LEGACY_TOKEN must be non-empty")
+
+    if "\\" in LEGACY_TOKEN:
+        raise ValueError(
+            "LEGACY_TOKEN must not contain a backslash when using escaping"
+        )
+
+    # TODO: probably should use an internal helper function to "normalize" the whitespace
+    # but for now just use simple strip() (e.g., ignore the whitespace)
+    members = (
+        {value.strip(f"{LEGACY_TOKEN} ")}
+        if isinstance(value, str)
+        else {str(item).strip(f"{LEGACY_TOKEN} ") for item in value}
+    )
+
+    def _escape(member: str) -> str:
+        # Escape backslashes first so newly added escapes are not escaped
+        # again when LEGACY_TOKEN is escaped.
+        return member.replace("\\\\", "\\").replace(
+            LEGACY_TOKEN,
+            "\\" + LEGACY_TOKEN,
+        )
+
+    if not members:
+        return LEGACY_TOKEN
+
+    return LEGACY_TOKEN.join(_escape(member) for member in sorted(members))
 
 
 # Descriptor that normalizes assigned iterables into a set[str].
@@ -184,29 +326,25 @@ class Configuration(argparse.Namespace):
     with_authors: bool = False
     with_maintainers: bool = False  # added in v6.0
     if "6.0" in __version__:
-        with_notice_file: bool = False  # DEPRECIATED in v6.1+
-    with_notice_files: bool = False  # added in v6.0
-    with_other_files: bool = False  # added in v6.0
+        with_notice_file: bool = False  # DEPRECIATED in v6.1
+    with_notice_files: bool = False  # added in v6.0 (as boolean)
+    with_other_files: bool = False  # added in v6.0 (as boolean)
     without_notice_paths: bool = False  # added in v6.0
     without_other_paths: bool = False  # added in v6.0
     # placeholder -- for with/without authors stuff
     filter_strings: bool = False
     partial_match: bool = False
-    if "6.0" in __version__:
-        no_version: bool = False  # DEPRECIATED in v6.1+
-    without_version: bool = False
+    # removed no_version: bool = False  # DEPRECIATED in v6.1+
+    without_versions: bool = False
     # string / optional values
     output_file: Optional[str] = None
     filter_code_page: Optional[str] = None
-    fail_on: Optional[str] = (
-        None  # DEPRECIATED in v6.0+ (TODO: will need to handle lists)
-    )
-    allow_only: Optional[str] = (
-        None  # DEPRECIATED in v6.0+ (TODO: will need to handle lists)
-    )
+    # paths
     python: str = DEFAULT_PYTHON
 
     # sequence values
+    fail_on: Optional[set] = field(default_factory=set)
+    allow_only: Optional[set] = field(default_factory=set)
     ignore_packages: set[str] = field(default_factory=set)
     packages: set[str] = field(default_factory=set)
     warn_on: set[str] = field(default_factory=set)
@@ -223,16 +361,26 @@ class Configuration(argparse.Namespace):
             self.ignore_packages = self._normalize_to_set(self.ignore_packages)
         if not isinstance(self.packages, set):
             self.packages = self._normalize_to_set(self.packages)
+        if not isinstance(self.fail_on, set):
+            self.fail_on = self._normalize_to_set(self.fail_on)
+        if not isinstance(self.allow_only, set):
+            self.allow_only = self._normalize_to_set(self.allow_only)
         if not isinstance(self.allow_packages, set):
             self.allow_packages = self._normalize_to_set(self.allow_packages)
         if not isinstance(self.warn_on, set):
             self.warn_on = self._normalize_to_set(self.warn_on)
 
     @staticmethod
-    def _normalize_to_set(value: Union[Iterable[str], None]) -> set[str]:
+    def _normalize_to_set(value: Union[Iterable[str], str, None]) -> set[str]:
         if value is None:
             return set()
         return _normalize_as_set(value)
+
+    @staticmethod
+    def _serialize_to_semi_str(value: Union[Iterable[str], None]) -> str:
+        if value is None:
+            return ""
+        return _serialize_to_semi_str(value)
 
     @classmethod
     def from_namespace(cls, ns: argparse.Namespace) -> "Configuration":
@@ -297,11 +445,22 @@ class Configuration(argparse.Namespace):
         _without_version_map = [
             "no_version",
             "without_version",
+            "without_versions",
         ]
 
         _ignore_packages_map = [
             "ignore_package",
             "ignore_packages",
+        ]
+
+        _fail_on_map = [
+            "fail_on_str",
+            "fail_on",
+        ]
+
+        _allow_only_map = [
+            "allow_only_str",
+            "allow_only",
         ]
 
         _pre_processed_name: str = name.strip().lower()
@@ -314,9 +473,13 @@ class Configuration(argparse.Namespace):
             _without_file_paths_map,
             _without_version_map,
             _ignore_packages_map,
+            _fail_on_map,
+            _allow_only_map,
         ):
             if _pre_processed_name in _mapping:
-                if not "6.0" in __version__:
+                if (
+                    not "6.0" in __version__
+                ) and _pre_processed_name in _mapping[:-2]:
                     warnings.warn(
                         f"Configuration attributes have changed, e.g., {name} to {_mapping[-1]}",
                         stacklevel=2,
@@ -355,14 +518,15 @@ class Configuration(argparse.Namespace):
             "without_file_paths",
             "filter_strings",
             "partial_match",
-            "without_version",
+            "without_versions",
         }
         sets = {
             "ignore_packages",
             "packages",
             "allow_packages",
             "warn_on",
-            # TODO: "fail_on", "allow_on",
+            "fail_on",
+            "allow_only",
         }
 
         _normalized_name = self.__substitute_attr__(name)
@@ -399,26 +563,66 @@ class Configuration(argparse.Namespace):
     def allow_packages_set(self, value: Union[Iterable[str], None]) -> None:
         self.allow_packages = self._normalize_to_set(value)
 
+    @property
+    def allow_only_set(self) -> set[str]:
+        return set(self.allow_only or set())
+
+    @allow_only_set.setter
+    def allow_only_set(self, value: Union[Iterable[str], None]) -> None:
+        self.allow_only = self._normalize_to_set(value)
+
+    @property
+    def fail_on_set(self) -> set[str]:
+        return set(self.fail_on or set())
+
+    @fail_on_set.setter
+    def fail_on_set(self, value: Union[Iterable[str], None]) -> None:
+        self.fail_on = self._normalize_to_set(value)
+
+    @property
+    def with_license_paths(self) -> bool:
+        return self.without_license_paths is False
+
+    @with_license_paths.setter
+    def with_license_paths(self, value: Union[bool, None]) -> None:
+        self.without_license_paths = value is False
+
+    @property
+    def with_notice_paths(self) -> bool:
+        return self.without_notice_paths is False
+
+    @with_notice_paths.setter
+    def with_notice_paths(self, value: Union[bool, None]) -> None:
+        self.without_notice_paths = value is False
+
+    @property
+    def with_other_paths(self) -> bool:
+        return self.without_other_paths is False
+
+    @with_other_paths.setter
+    def with_other_paths(self, value: Union[bool, None]) -> None:
+        self.without_other_paths = value is False
+
     if "6.1" in __version__:
         # DEPRECIATED in v6.0; use without_* instead.
         @property  # type: ignore[no-redef]
         def no_version(self) -> bool:
-            """DEPRECIATED in v6.1; use without_version instead."""
+            """DEPRECIATED in v6.1; use without_versions instead."""
             warnings.warn(
-                "DEPRECIATED in v6.1; use without_version instead.",
+                "DEPRECIATED in v6.1; use without_versions instead.",
                 stacklevel=2,
             )
-            return self.without_version
+            return self.without_versions
 
         # DEPRECIATED in v6.0; use without_* instead.
         @no_version.setter
         def no_version(self, value: Union[bool, None]) -> None:
-            """DEPRECIATED in v6.1; use without_version instead."""
+            """DEPRECIATED in v6.1; use without_versions instead."""
             warnings.warn(
-                "DEPRECIATED in v6.1; use without_version instead.",
+                "DEPRECIATED in v6.1; use without_versions instead.",
                 stacklevel=2,
             )
-            self.without_version = value is True
+            self.without_versions = value is True
 
         # DEPRECIATED in v6.0; use without_* instead.
         @property  # type: ignore[no-redef]
@@ -521,6 +725,55 @@ class Configuration(argparse.Namespace):
             self.with_notice_files = value is True
 
     elif "6.0" in __version__:
+        # DEPRECIATED in v6.0; use allow_only instead.
+        @property
+        def allow_only_str(self) -> str:
+            return self._serialize_to_semi_str(self.allow_only or None)
+
+        # DEPRECIATED in v6.0; use allow_only instead.
+        @allow_only_str.setter
+        def allow_only_str(
+            self, value: Union[Iterable[str], str, None]
+        ) -> None:
+            self.allow_only = self._normalize_to_set(value)
+
+        # DEPRECIATED in v6.0; use fail_on instead.
+        @property
+        def fail_on_str(self) -> str:
+            return self._serialize_to_semi_str(self.fail_on or None)
+
+        # DEPRECIATED in v6.0; use fail_on instead.
+        @fail_on_str.setter
+        def fail_on_str(self, value: Union[Iterable[str], str, None]) -> None:
+            self.fail_on = self._normalize_to_set(value)
+
+        @property  # type: ignore[no-redef]
+        def no_version(self) -> bool:
+            """DEPRECIATED in v6.1; use without_versions instead."""
+            import warnings
+
+            warnings.warn(
+                "WILL BE DEPRECIATED in v6.1; use without_versions instead."
+                "This will be an error in the future."
+                "See https://github.com/raimon49/pip-licenses/issues/349",
+                stacklevel=2,
+            )
+            return self.without_versions
+
+        # DEPRECIATED in v6.0; use without_* instead.
+        @no_version.setter
+        def no_version(self, value: Union[bool, None]) -> None:
+            """DEPRECIATED in v6.1; use without_versions instead."""
+            import warnings
+
+            warnings.warn(
+                "WILL BE DEPRECIATED in v6.1; use without_versions instead."
+                "This will be an error in the future."
+                "See https://github.com/raimon49/pip-licenses/issues/349",
+                stacklevel=2,
+            )
+            self.without_versions = value is True
+
         # DEPRECIATED in v6.0; use include_from_system instead.
         @property  # type: ignore[no-redef]
         def with_system(self) -> bool:

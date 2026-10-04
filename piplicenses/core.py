@@ -68,7 +68,7 @@ from . import (
     TYPE_CHECKING,  # noqa: F401 -- Re-export as part of our internal typing API
     Path,  # from pathlib import Path
     __pkgname__,
-    __version__,  # noqa: F401 -- Re-export as part of data API
+    __version__,  # Re-export as part of data API
     deduplicate_and_normalize,
     normalize_pkg_name,
     normalize_pkg_name_and_version,
@@ -171,7 +171,7 @@ def extract_urls(metadata: Message) -> dict[str, Union[str, list[str], None]]:
         _norm_val = value.strip()
         if _norm_key in _urls:
             if not isinstance(_urls[_norm_key], list):
-                # MyPy is a bit lost by this point, (See Discussion in PR #346)
+                # mypy (v1.19.1 for Python v3.9) is a bit lost by this point, (See Discussion in PR #346)
                 # https://github.com/raimon49/pip-licenses/pull/346#discussion_r3661511932
                 _urls[_norm_key] = [
                     _urls[_norm_key],  # type: ignore[list-item]  # ty: ignore[unused-type-ignore-comment]
@@ -735,14 +735,30 @@ def get_packages(
     if args.fail_on:
         # filter None types out
         fail_on_licenses = set(
-            filter(None, map(str.strip, args.fail_on.split(";")))
+            filter(
+                None,
+                map(
+                    str.strip,
+                    args.fail_on_str.split(";")
+                    if "6.0" in __version__
+                    else args.fail_on,
+                ),
+            )
         )
 
     allow_only_licenses = set()
     if args.allow_only:
         # filter None types out
         allow_only_licenses = set(
-            filter(None, map(str.strip, args.allow_only.split(";")))
+            filter(
+                None,
+                map(
+                    str.strip,
+                    args.allow_only_str.split(";")
+                    if "6.0" in __version__
+                    else args.allow_only,
+                ),
+            )
         )
 
     for pkg in pkgs:

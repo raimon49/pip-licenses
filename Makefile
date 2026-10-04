@@ -121,6 +121,24 @@ ifeq "$(RMDIR)" ""
 	RMDIR=$(RM)rd
 endif
 
+ifeq "$(ZIPINFO)" ""
+	ZIPINFO_CMD=$(COMMAND) zipinfo
+	ifneq "$(ZIPINFO_CMD)" ""
+		ZIPINFO_ARGS=
+	else
+		ZIPINFO_CMD=$(COMMAND) unzip
+		ZIPINFO_ARGS=-Z
+	endif
+	ZIPINFO=$(ZIPINFO_CMD) $(ZIPINFO_ARGS)
+endif
+
+ifeq "$(PIPL_REQ_WHEEL_PATHS)" ""
+	PIPL_MAIN_PATHS := "piplicenses/__init__.py" "piplicenses/__main__.py"
+	PIPL_CORE_PATHS := "piplicenses/core.py"
+	PIPL_OUTPUT_PATHS := "piplicenses/output/__init__.py"
+	PIPL_REQ_WHEEL_PATHS := $(PIPL_MAIN_PATHS) $(PIPL_CORE_PATHS) $(PIPL_OUTPUT_PATHS)
+endif
+
 ifeq "$(VENV_NAME)" ""
 	ifeq "$(REPO_NAME)" ""
 		# based on remote (requires remote named origin)
@@ -198,7 +216,10 @@ update-demo:
 # developer workflow targets
 
 build: clean
-	$(VENV_NAME)/bin/python -m build
+	$(VENV_NAME)/bin/python -B -m build || $(PYTHON) -m build || exit 125; # fail if unsuccessful
+	test -f dist/pip_licenses-*-py3-*.whl || exit 41; # fail if not found
+	test -r dist/pip_licenses-*-py3-*.whl || exit 42; # fail if not readable
+	$(ZIPINFO) -1 dist/pip_licenses-*-py3-*.whl $(PIPL_REQ_WHEEL_PATHS) || exit 43;
 
 lint:
 	$(VENV_NAME)/bin/python -m ruff --config pyproject.toml check --output-format=github .

@@ -1250,7 +1250,7 @@ class TestUtilities(unittest.TestCase):
 
     def test_urls_duplicate_key_can_be_sorted(self) -> None:
         _url_key_in = "Homepage"
-        _url_key_out = _url_key_in.lower()
+        # _url_key_out = _url_key_in.lower()  # unused for this test
         _url_value_1 = "https://github.com/raimon49/pip-licenses"
         _url_value_2 = "https://pypi.org/pip-licenses"
         _url_key_comma_value_1 = f"{_url_key_in}, {_url_value_1}"
@@ -1274,7 +1274,7 @@ class TestUtilities(unittest.TestCase):
     def test_extract_homepage_can_handle_invalid_urls(self) -> None:
         _url_key_1 = "source"
         _url_key_2 = "documentation"
-        _url_value_1 = None
+        # _url_value_1 = None  # unused for this test
         _url_value_2 = "https://github.com/raimon49/pip-licenses/docs"
         _url_key_comma_value_1 = f"{_url_key_1},    "
         _url_key_comma_value_2 = f"{_url_key_2}, {_url_value_2}"
@@ -1296,7 +1296,7 @@ class TestUtilities(unittest.TestCase):
 
     def test_extract_homepage_can_handle_just_invalid_urls(self) -> None:
         _url_key_1 = "repository"
-        _url_value_1 = None
+        # _url_value_1 = None  # unused for this test
         _url_key_comma_value_1 = f"{_url_key_1},    "
 
         metadata = TestUtilities._mock_metadata(
@@ -1357,7 +1357,8 @@ class TestUtilities(unittest.TestCase):
 
 
 class LoadConfigFromFileTests(unittest.TestCase):
-    import piplicenses as config_module
+    # instead of import piplicenses as config_module
+    config_module = piplicenses
 
     def setUp(self) -> None:
         self.temp_dir = tempfile.TemporaryDirectory()
@@ -1616,7 +1617,7 @@ def test_output_file_success(monkeypatch: pytest.MonkeyPatch) -> None:
         print(
             f"Caught expected {_expected} (with code {_expected.code}). But Ignoring for test."
         )
-        err_msg = str(_expected)
+        # err_msg = str(_expected)  # unused for this test
         ext_code: int = next(i for i in _expected.args if isinstance(i, int))
         assert 0 == ext_code
 
@@ -2137,7 +2138,7 @@ def test_pyproject_toml_args_parsed_correctly() -> None:
     assert isinstance(args.ignore_packages, set)  # should be a set
     # but toml can't encode sets so re-cast to list and sort before compare
     assert sorted(args.ignore_packages) == tool_conf["ignore-packages"]
-    assert args.fail_on == tool_conf["fail-on"]
+    assert args.fail_on_str == tool_conf["fail-on"]
 
     # assert args are rewritable using cli
     args = parser.parse_args(["--from=meta"])
@@ -2150,7 +2151,7 @@ def test_pyproject_toml_args_parsed_correctly() -> None:
     assert isinstance(args.ignore_packages, set)  # should be a set
     # but toml can't encode sets so re-cast to list before compare
     assert sorted(args.ignore_packages) == tool_conf["ignore-packages"]
-    assert args.fail_on == tool_conf["fail-on"]
+    assert args.fail_on_str == tool_conf["fail-on"]
 
     os.unlink(temp_file.name)
 

@@ -34,12 +34,13 @@ See [GHI-360](https://github.com/raimon49/pip-licenses/issues/360).
 """
 
 import re
-from enum import (
-    Flag,
-)
+
 # See https://github.com/raimon49/pip-licenses/issues/360
 # should just bridge this import
 from collections.abc import Iterable
+from enum import (
+    Flag,
+)
 
 # See https://github.com/raimon49/pip-licenses/issues/360
 _PATTERN_TYPE = type(re.compile("", re.VERBOSE))
@@ -60,15 +61,21 @@ def _is_pattern(value: object) -> bool:
     return type(value) is _PATTERN_TYPE
 
 
-class RegexFlag(Flag):
-    """A Flag whose members each contain a regular expression."""
+class RegexFlags(Flag):
+    """A Flag whose members each contain a regular expression.
 
-    def __new__(cls, value: int, pattern: re.Pattern) -> "RegexFlag":
+    See also re.RegexFlag (not to be confused with)
+    """
+
+    def __new__(  # noqa: PYI034 -- typing.Self not appropriate for enums and Flags
+        # see also https://github.com/astral-sh/ruff/issues/20781
+        cls,
+        value: int,
+        pattern: re.Pattern,
+    ) -> "RegexFlags":
         if not _is_pattern(pattern):
-            raise TypeError(
-                "pattern must be an instance of type re.Pattern"
-            )
-        obj = object.__new__(cls)
+            raise TypeError("pattern must be an instance of type re.Pattern")
+        obj = object.__new__(cls)  # see PYI034
         obj._value_ = value
         return obj
 
@@ -77,24 +84,45 @@ class RegexFlag(Flag):
 
     @property
     def regex(self) -> re.Pattern:
-        members = tuple(self)
+        members: Iterable = tuple(self)  # type: ignore[arg-type]
 
         if not members:
             return _RESERVED_INVALID_PATTERN
 
-        return RegexFlag._any_regex_helper(*[member.pattern for member in members])
+        return RegexFlags._any_regex_helper(
+            *[member.pattern for member in members]
+        )
+
+    def __format__(self, format_spec: str) -> str:
+        return self.regex.pattern.__format__(format_spec)
+
+    def __str__(self) -> str:
+        return (
+            str(self.regex.pattern)
+            if self.regex != _RESERVED_INVALID_PATTERN
+            else ""
+        )
+
+    def __repr__(self) -> str:
+        _name = f".{self._name_}" if self._name_ else ""
+        _pattern = (
+            f"; regex={self.regex.pattern}"
+            if self.regex != _RESERVED_INVALID_PATTERN
+            else ""
+        )
+        return f"<piplicenses.RegexFlags{_name} object{_pattern}>"
 
     @staticmethod
-    def _any_regex_helper(*patterns: Iterable[re.Pattern]) -> re.Pattern:
+    def _any_regex_helper(*patterns: re.Pattern) -> re.Pattern:
         """Work around for defining combo values in subclasses.
 
         Because tuples do not allow `|` joining combo definitions need a workaround.
         Use like so:
 
-        >>> class subRegexFlag(RegexFlag):
+        >>> class subRegexFlags(RegexFlags):
         ...    WORDS = 1, re.compile(r"(\\w+)")
         ...    DIGETS = 2, re.compile(r"(\\d*\\.?\\d+)")
-        ...    BOTH = (1 | 2), RegexFlag._any_regex_helper(re.compile(r"(\\w+)"), re.compile(r"(\\d*\\.?\\d+)"))
+        ...    BOTH = (1 | 2), RegexFlags._any_regex_helper(re.compile(r"(\\w+)"), re.compile(r"(\\d*\\.?\\d+)"))
         ...
         >>>
 
@@ -108,20 +136,31 @@ class RegexFlag(Flag):
                 if not _is_pattern(_pattern):
                     raise TypeError(
                         "All patterns must be instances of type re.Pattern; "
-                        f"'{str(_pattern)}' with type {type(_pattern)} is NOT {_PATTERN_TYPE}!"
+                        f"'{str(_pattern)}' with type {type(_pattern)} is NOT {_PATTERN_TYPE}!"  # noqa: RUF010 -- handle classes with custom __format__ overloading with str() instead
                     )
 
-        flags = {pattern.flags for pattern in patterns}
+        # Note: once again...
+        # mypy (v1.19.1 for Python v3.9) is brain dead and thinks Patterns (the class) has no flags:
+        # e.g., mypy struggles with this concept:
+        #
+        # >>> import re
+        # >>> this_works = [example.flags for example in [re.compile(r"anything", re.VERBOSE)]][0]
+        # >>> this_works
+        # 96
+        # >>> does_this_work = re.compile("anything", this_works)
+        # >>> does_this_work
+        # re.compile('anything', re.VERBOSE)
+        #
+        # so we need to ignore attr-defined here:
+        flags = {pattern.flags for pattern in patterns}  # type: ignore[attr-defined]
         if len(flags) != 1:
             raise ValueError("all patterns must use the same regex flags")
-
-        expression = "|".join(
-            f"(?:{pattern.pattern})"
-            for pattern in patterns
-        )
-        return re.compile(expression, flags=patterns[0].flags)
+        # and again here...
+        expression = "|".join(f"(?:{pattern.pattern})" for pattern in patterns)  # type: ignore[attr-defined]
+        # and again here...
+        return re.compile(expression, flags=patterns[0].flags)  # type: ignore[attr-defined]
 
 
 __all__ = [
-    """RegexFlag""",
+    """RegexFlags""",
 ]
