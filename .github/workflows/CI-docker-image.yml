@@ -302,16 +302,10 @@ jobs:
         id: run_container
         shell: bash
         run: |
-          docker run -d --name test-container ghcr.io/raimon49/pip-licenses:${{ needs.merge.outputs.merge_version }} /bin/bash -c "while true; do sleep 30; done"
           printf "::group::%s\n" "Testing"
-          docker exec test-container --version
-          docker exec test-container || exit 1 # as shown in README
-          docker exec test-container --summary || exit 1 # as shown in README
-          # might want docker exec test-container /bin/bash -c "python --version"
+          docker run --rm ghcr.io/raimon49/pip-licenses:${{ needs.merge.outputs.merge_version }} --version
+          docker run --rm ghcr.io/raimon49/pip-licenses:${{ needs.merge.outputs.merge_version }} || exit 1 # as shown in README
+          docker run --rm ghcr.io/raimon49/pip-licenses:${{ needs.merge.outputs.merge_version }} --summary || exit 1 # as shown in README
           printf "::endgroup::\n"
-      - name: Clean up
-        run: |
-          docker stop test-container || true ;
-          docker rm -f test-container
       - name: Logout from Docker Hub
         run: docker logout
