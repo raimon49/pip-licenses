@@ -329,7 +329,7 @@ def _generate_toggle_flag_forms(hint: str) -> list[str]:
         context="Can not enumerate value in flag forms;",
     )
     # else can try to normalize
-    _mappings: dict = {DELIMITER: "-", DEST: hint}
+    _mappings: dict = {DELIMITER: "-", DEST: _hint}
     return [
         template.substitute(_mappings)
         for template in [
@@ -350,7 +350,7 @@ def _generate_all_flag_forms(hint: str) -> list[str]:
         value=hint, context="Can not enumerate value in flag forms;"
     )
     # else can try to normalize
-    _mappings: dict = {DELIMITER: "-", DEST: hint}
+    _mappings: dict = {DELIMITER: "-", DEST: _hint}
     return [
         *_generate_toggle_flag_forms(hint),
         *[
