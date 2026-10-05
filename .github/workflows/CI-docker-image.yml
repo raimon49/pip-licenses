@@ -12,10 +12,13 @@ run-name: Build ${{ github.ref_name }}
 
 on:  # yamllint disable-line rule:truthy
   push:
-    branches: ["master", "next", "dev-**"]
+    branches: ["master", "next"]
     tags: ["v-*"]
   pull_request:
-    branches: ["master", "next", "dev-**"]
+    branches: ["master", "next"]
+  release:
+    types:
+      - published
 
 # Declare default permissions as none.
 permissions: {}
@@ -98,7 +101,7 @@ jobs:
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
         with:
           context: git
-          images: ghcr.io/ramion49/pip-licenses
+          images: ghcr.io/raimon49/pip-licenses
           tags: |
             type=pep440,pattern={{version}}
             type=pep440,pattern={{raw}}
@@ -121,7 +124,7 @@ jobs:
           context: .
           file: Dockerfile
           labels: ${{ steps.meta.outputs.labels }}
-          tags: ghcr.io/ramion49/pip-licenses
+          tags: ghcr.io/raimon49/pip-licenses
           platforms: linux/${{ matrix.architecture }}
           build-args: |
             PIPL_VERSION=${{ steps.meta.outputs.version }}
@@ -205,7 +208,7 @@ jobs:
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
         with:
           context: git
-          images: ghcr.io/ramion49/pip-licenses
+          images: ghcr.io/raimon49/pip-licenses
           tags: |
             type=pep440,pattern={{version}}
             type=pep440,pattern={{raw}}
@@ -221,16 +224,16 @@ jobs:
           SOURCE_DATE_EPOCH: ${{ needs.seed.outputs.timestamp }}
         run: |
           docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
-            $(printf 'ghcr.io/ramion49/pip-licenses@sha256:%s ' *)
+            $(printf 'ghcr.io/raimon49/pip-licenses@sha256:%s ' *)
 
       - name: Inspect image
         run: |
-          docker buildx imagetools inspect ghcr.io/ramion49/pip-licenses:${{ steps.meta.outputs.version }}
+          docker buildx imagetools inspect ghcr.io/raimon49/pip-licenses:${{ steps.meta.outputs.version }}
 
       - name: Ensure image is pullable locally
         run: |
           # ensure the platform-specific image manifest is present locally for Syft/Grype
-          docker pull ghcr.io/ramion49/pip-licenses:${{ steps.meta.outputs.version }}
+          docker pull ghcr.io/raimon49/pip-licenses:${{ steps.meta.outputs.version }}
 
       - name: Pull Syft and Grype images
         run: |
@@ -240,7 +243,7 @@ jobs:
 
       - name: Generate SBOM (Syft) for this architecture
         env:
-          IMAGE: ghcr.io/ramion49/pip-licenses:${{ steps.meta.outputs.version }}
+          IMAGE: ghcr.io/raimon49/pip-licenses:${{ steps.meta.outputs.version }}
         run: |
           SYFT_IMG=anchore/syft:v1.51.1  # adjust version if desired
           docker run --rm \
@@ -249,7 +252,7 @@ jobs:
 
       - name: Scan image with Grype (vulnerability) and export results
         env:
-          IMAGE: ghcr.io/ramion49/pip-licenses:${{ steps.meta.outputs.version }}
+          IMAGE: ghcr.io/raimon49/pip-licenses:${{ steps.meta.outputs.version }}
         run: |
           GRYPE_IMG=anchore/grype:v0.118.0
           # run grype against the image and produce JSON output
@@ -297,21 +300,15 @@ jobs:
           logout: true
       - name: Pull local copy for test
         run: |
-          docker pull ghcr.io/ramion49/pip-licenses:${{ needs.merge.outputs.merge_version }}
+          docker pull ghcr.io/raimon49/pip-licenses:${{ needs.merge.outputs.merge_version }}
       - name: Run Docker test container
         id: run_container
         shell: bash
         run: |
-          docker run -d --name test-container ghcr.io/ramion49/pip-licenses:${{ needs.merge.outputs.merge_version }} /bin/bash -c "while true; do sleep 30; done"
           printf "::group::%s\n" "Testing"
-          docker exec test-container --version
-          docker exec test-container || exit 1 # as shown in README
-          docker exec test-container --summary || exit 1 # as shown in README
-          # might want docker exec test-container /bin/bash -c "python --version"
+          docker run --rm ghcr.io/raimon49/pip-licenses:${{ needs.merge.outputs.merge_version }} --version
+          docker run --rm ghcr.io/raimon49/pip-licenses:${{ needs.merge.outputs.merge_version }} || exit 1 # as shown in README
+          docker run --rm ghcr.io/raimon49/pip-licenses:${{ needs.merge.outputs.merge_version }} --summary || exit 1 # as shown in README
           printf "::endgroup::\n"
-      - name: Clean up
-        run: |
-          docker stop test-container || true ;
-          docker rm -f test-container
       - name: Logout from Docker Hub
         run: docker logout

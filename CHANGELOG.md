@@ -4,34 +4,31 @@
 
 (SUBJECT TO CHANGE IN NEXT RELEASE)
 
-#### 6.0.0b13 (Unreleased BETA)
+#### 6.0.0b13 (Pre-released BETA):
 
+* Works-around empty-wheel builds, resolving GHI-384
+  * Implements basic non-empty verification for build logic, closing GHI-265
+* Implemented some migration warnings to aid early adoption (WIP)
 * Improved Dockerfile
-* Prototyped building docker-image in CI/CD
-
-#### 6.0.0b12 (Unreleased BETA)
-
-* resolved import regressions, closing GHI #379
-* added `--without-authors` to complement `--with-authors`
-* added `--without-maintainers` to complement `--with-maintainers`
-* added `--without-urls` to complement `--with-urls`
-* added `--without-descriptions` to complement `--with-descriptions`
-* added `--with-version` to complement `--without-version`
-* added `--simple-match` to complement `--partial-match`
+  * Prototyped building docker-image in CI/CD, resolving GHI-387
+* Resolved import regressions, closing GHI #379
+* Added `--without-authors` to complement `--with-authors`
+* Added `--without-maintainers` to complement `--with-maintainers`
+* Added `--without-urls` to complement `--with-urls`
+* Added `--without-descriptions` to complement `--with-descriptions`
+* ~Added `--with-version` to complement `--without-version`~
+* Added `--with-versions` to complement `--without-versions` (note: _superseding `--with-version` from earlier betas_)
+* Added `--simple-match` to complement `--partial-match`
+* Improved support for more flexible argument/config parsing of allow/fail inputs
 * Started to improve examples in documentation through reproducible automation, closing GHI #354.
-  * added some new tooling to support new automations.
-  * reconfigured build to exclude much of the new developer automation (to keep distribution clean)
-
-#### 6.0.0b11 (Pre-released BETA):
-
+  * Added some new tooling to support new automations.
+  * Reconfigured build to exclude much of the new developer automation (to keep distribution clean)
 * Replaced `--with-system` with `--include-system` & `--ignore-system`
 * Improved new support of multiple file-paths for HTML resolving GHI #239
-
-#### 6.0.0b10 (Pre-released BETA):
-
 * Improved stability of internal API, to pave the way for an up-coming public API
 * Implemented support of file-paths for most formats
-* Align with [PEP-749](https://peps.python.org/pep-0749) and deprecated use of `typing.TYPE_CHECKING` conditions
+* Alignment with [PEP-749](https://peps.python.org/pep-0749) and deprecated use of `typing.TYPE_CHECKING` conditions
+* Some Alignment with [PEP-589](https://peps.python.org/pep-0589) (WIP)
 * Fixed multiple typographical errors
 * Refactored most of the codebase to be more modular, closing GHI #316
   * Resolved various new & related, test-coverage gaps closing GHI #365 & GHI #366
@@ -48,11 +45,6 @@
     * [CVE-2026-44432 Leak](https://github.com/advisories/GHSA-mf9v-mfxr-j63j)
     * [CVE-2026-44431](https://github.com/advisories/GHSA-qccp-gfcp-xxvc)
   * Updated testing in CI to resolve python3.9 coverage regressions
-
-#### 6.0.0a1 (Pre-released ALPHA) [YANKED]:
-
-  * Improved handling of multiple license files in a single package (WIP GHI #71)
-  * Implemented new flags (WIP GHI #242)
 
 ### 5.5.5
 

@@ -32,9 +32,11 @@
 To be documented.
 """
 
-import argparse
 import codecs
 import sys
+
+# See https://github.com/raimon49/pip-licenses/issues/360
+# should just bridge this import
 from collections.abc import Sequence
 from enum import Enum  # used by helper _expand_help
 from importlib import (
@@ -42,7 +44,6 @@ from importlib import (
 )
 from pathlib import Path
 
-# See https://docs.python.org/3.14/library/argparse.html#color
 from .. import (
     LEGACY_TOKEN,  # noqa: F401 -- (used by piplicenses.cli.config)
     Union,
@@ -51,6 +52,9 @@ from .. import (
     __version__,
     cast,
 )
+
+# See https://docs.python.org/3/library/argparse.html
+from ._argparse_bridge import argparse
 from .config import (
     DEFAULT_PYTHON,
     Configuration,
@@ -460,19 +464,23 @@ def _add_verification_arguments_to_parser(
             )
         verify_group.add_argument(
             "--fail-on",
-            action="store",
-            type=str,
+            action="extend",
+            dest="fail_on",
+            nargs="+",
+            metavar="FAIL_ON",
             default=fail_by_default,
             help="R|fail (exit with code 1) on the first occurrence\n"
-            "of the licenses of the semicolon-separated list",
+            "of the licenses of the list (may use semicolon-separated)",
         )
         verify_group.add_argument(
             "--allow-only",
-            action="store",
-            type=str,
+            action="extend",
+            dest="allow_only",
+            nargs="+",
+            metavar="REQ_LICENSE",
             default=require_by_default,
             help="R|fail (exit with code 1) on the first occurrence\n"
-            "of the licenses not in the semicolon-separated list",
+            "of the licenses not in the list (may use semicolon-separated)",
         )
         partial_toggle = verify_group.add_mutually_exclusive_group()
         partial_toggle.add_argument(
@@ -499,7 +507,7 @@ def _add_format_arguments_to_parser(
     with_maintainers_default: bool,
     with_urls_default: bool,
     with_descriptions_default: bool,
-    with_version_default: bool,
+    hide_version_default: bool,  # note: True = suppress ; False = include
     filter_string_default: bool,
     filter_code_default: str,
 ) -> CompatibleArgumentParser:
@@ -609,34 +617,34 @@ def _add_format_arguments_to_parser(
         )
         format_toggle_version = format_group.add_mutually_exclusive_group()
         format_toggle_version.add_argument(
-            "--without-version",
+            "--without-versions",
             action="store_true",
-            dest="without_version",
-            default=with_version_default,
-            help="dump without package version.",
+            dest="without_versions",
+            default=hide_version_default,
+            help="dump without package versions.",
         )
         format_toggle_version.add_argument(
-            "--with-version",
+            "--with-versions",
             action="store_false",
-            dest="without_version",
-            default=with_version_default,
-            help="dump without package version.",
+            dest="without_versions",
+            default=hide_version_default,
+            help="dump without package versions. Inverse of --without-versions.",
         )
         format_toggle_version.add_argument(
             "-nv",
             action="store_true",
-            dest="without_version",
-            default=with_version_default,
+            dest="without_versions",
+            default=hide_version_default,
             help="DEPRECATED (for backwards compatibility); "
-            "prefer --without-version instead.",
+            "prefer --without-versions instead.",
         )
         format_toggle_version.add_argument(
             "--no-version",
             action="store_true",
-            dest="without_version",
-            default=with_version_default,
+            dest="without_versions",
+            default=hide_version_default,
             help="dump without package version. "
-            "DEPRECATED; use --without-version.",
+            "DEPRECATED; use --without-versions.",
         )
         format_group.add_argument(
             "--filter-strings",
@@ -698,7 +706,11 @@ def create_parser(
         "Options to select between modes. The default mode"
         "(no mode option), is to just dump the licenses",
     )
-    license_file_options = parser.add_argument_group("License file options")
+    license_file_options = parser.add_argument_group(
+        "License files and paths options",
+        "Options to select handling of licence files/paths installed"
+        "with packages (e.g., with/without, index/search, etc.).",
+    )
     # placeholder for format stuff
     _add_format_arguments_to_parser(
         parser=parser,
@@ -714,7 +726,7 @@ def create_parser(
                 "with-description", False
             ),  # kept for backwards compatibility
         ),
-        with_version_default=config_from_file.get(
+        hide_version_default=config_from_file.get(
             "without-version",
             _migrate_no_version_helper(config_from_file),
         ),

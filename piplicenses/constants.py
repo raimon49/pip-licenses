@@ -134,7 +134,7 @@ KNOWN_URL_SUB_KEYS = (
 )
 
 
-PATTERN_DELIMITER: Pattern = compile(r"[-_.]+")
+PATTERN_DELIMITER: Pattern = compile(r"[-_.]+")  # used by normalize_pkg_name
 """See here: https://peps.python.org/pep-0503/#normalized-names"""
 
 
