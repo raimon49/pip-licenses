@@ -4,6 +4,10 @@
 
 (SUBJECT TO CHANGE IN NEXT RELEASE)
 
+#### 6.0.0b14 (unreleased BETA):
+
+* Fix for regressions around handling output file paths, closing GHI-389
+
 #### 6.0.0b13 (Pre-released BETA):
 
 * Works-around empty-wheel builds, resolving GHI-384

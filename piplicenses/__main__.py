@@ -167,7 +167,9 @@ def main(*args: Any, **kwargs: Any) -> int:
     try:
         output_string = create_output_string(_config)
 
-        output_file = _config.output_file
+        output_file = str(
+            _config.output_file
+        )  # normalize as string -- https://github.com/raimon49/pip-licenses/issues/389
         save_if_needs(output_file, output_string)
 
         # prior to v6.0.0b7 this exception was an actual sys.exit(int) call,
