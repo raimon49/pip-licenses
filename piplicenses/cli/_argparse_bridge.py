@@ -31,17 +31,34 @@ SOFTWARE.
 
 import argparse
 
+# See https://github.com/raimon49/pip-licenses/issues/360
+from typing import Union
+
 from ._flags import (
     FORMAT_TOGGLE_FLAGS_MAP,
     ToggleFlagMap,
 )
 
+# See https://github.com/raimon49/pip-licenses/issues/360
+_ARGUMENT_GROUP_TYPE = type(
+    argparse.ArgumentParser().add_argument_group("Group Type")
+)
+"""Not part of the public API."""
+
+
+# See https://github.com/raimon49/pip-licenses/issues/360
+# morally this is a special boolean of typing.TypeIs[re.Pattern] but that requires python3.13+
+# see typing.TypeIs
+def _is_argument_group(value: object) -> bool:
+    """Return whether value is exactly an argparser argument group."""
+    return type(value) is _ARGUMENT_GROUP_TYPE
+
 
 def _add_toggle_argument_group(
-    parser_in: argparse.ArgumentParser,
+    parser_in: Union[argparse.ArgumentParser, argparse._ArgumentGroup],
     arg_key: str,
     toggle_map: ToggleFlagMap,
-) -> argparse.ArgumentParser:
+) -> Union[argparse.ArgumentParser, argparse._ArgumentGroup]:
     """Not part of the public API."""
     some_toggle_group = parser_in.add_mutually_exclusive_group()
     some_toggle_group.add_argument(
@@ -62,9 +79,9 @@ def _add_toggle_argument_group(
 
 
 def add_toggle_argument_group(
-    some_parser: argparse.ArgumentParser,
+    some_parser: Union[argparse.ArgumentParser, argparse._ArgumentGroup],
     flag_key: str,
-) -> argparse.ArgumentParser:
+) -> Union[argparse.ArgumentParser, argparse._ArgumentGroup]:
     """Add a pair of toggle-flags to the given parser."""
     if flag_key in FORMAT_TOGGLE_FLAGS_MAP:
         _toggle_map: ToggleFlagMap = FORMAT_TOGGLE_FLAGS_MAP[flag_key]
@@ -79,8 +96,8 @@ def add_toggle_argument_group(
 
 
 def add_all_toggle_argument_groups(
-    some_parser: argparse.ArgumentParser,
-) -> argparse.ArgumentParser:
+    some_parser: Union[argparse.ArgumentParser, argparse._ArgumentGroup],
+) -> Union[argparse.ArgumentParser, argparse._ArgumentGroup]:
     """Add a pair of toggle-flags to the given parser."""
     for _flag_key in FORMAT_TOGGLE_FLAGS_MAP:
         some_parser = add_toggle_argument_group(

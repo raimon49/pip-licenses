@@ -44,6 +44,7 @@ from enum import (
     Flag,
     auto,
 )
+from typing import TypedDict
 
 from .. import LEGACY_LICENSE_BY_FILE_PATTERN
 from ._argparse_bridge import argparse  # the module
@@ -232,6 +233,97 @@ Not part of the public API.
 
 
 # See https://github.com/raimon49/pip-licenses/issues/360
+class FileFormatTriStateMap(TypedDict):
+    show_files: bool
+    show_paths: bool
+
+
+def create_new_FileFormatTriStateMap(
+    show_files: bool, show_paths: bool
+) -> FileFormatTriStateMap:
+    """Returns an new FileFormatCategoryMap.
+
+    Not part of the public API.
+    """
+    _new_tri_state: FileFormatTriStateMap = {
+        "show_files": show_files is True,
+        "show_paths": show_paths is True,
+    }
+    return _new_tri_state
+
+
+def create_disabled_FileFormatTriStateMap() -> FileFormatTriStateMap:
+    """Returns an 'disabled' FileFormatTriStateMap.
+
+    Not part of the public API.
+    """
+    _empty_tri_state: FileFormatTriStateMap = create_new_FileFormatTriStateMap(
+        False, False
+    )
+    return _empty_tri_state
+
+
+# See https://github.com/raimon49/pip-licenses/issues/360
+class FileFormatCategoryMap(TypedDict):
+    supports: FileFormatTriStateMap
+    attribution: FileFormatTriStateMap
+    authors: FileFormatTriStateMap
+    legacy: FileFormatTriStateMap
+    licence: FileFormatTriStateMap
+    notices: FileFormatTriStateMap
+    others: FileFormatTriStateMap
+
+
+def create_empty_FileFormatCategoryMap() -> FileFormatCategoryMap:
+    """Returns an 'empty' FileFormatCategoryMap.
+
+    Not part of the public API.
+    """
+    _empty_tri_state: FileFormatTriStateMap = (
+        create_disabled_FileFormatTriStateMap()
+    )
+    return {
+        "supports": _empty_tri_state,
+        "attribution": _empty_tri_state,
+        "authors": _empty_tri_state,
+        "legacy": _empty_tri_state,
+        "licence": _empty_tri_state,
+        "notices": _empty_tri_state,
+        "others": _empty_tri_state,
+    }
+
+
+# See https://github.com/raimon49/pip-licenses/issues/360
+# prefix_hint type could be literal[str] from:
+# FORMAT_CATEGORIES[*].name.lower().strip('s')
+#  + 'global'
+#  + 'supports'
+# note: fallback 'supports' is the only value that ends in an 's'
+def _resolve_file_triStateMap(
+    args: argparse.Namespace,
+    *,
+    prefix_hint: str = "supports",
+    default: FileFormatTriStateMap,  # TODO: PEP 484 alignment
+) -> FileFormatTriStateMap:
+    """Internal helper for resolve_file_formats().
+
+    Not part of the public API.
+    """
+    _default: FileFormatTriStateMap = (
+        default.copy() or create_disabled_FileFormatTriStateMap()
+    )
+    # see _format_nomenclature.FORMAT_OVERRIDE_FIELD
+    contents = getattr(args, f"{prefix_hint}_files")
+    paths = getattr(args, f"{prefix_hint}_paths")
+    fmtMap: FileFormatTriStateMap = _default
+    if (contents is not None) and contents:
+        fmtMap["show_files"] = True
+    if (paths is not None) and paths:
+        fmtMap["show_paths"] = True
+    return fmtMap
+
+
+# See https://github.com/raimon49/pip-licenses/issues/360
 # prefix_hint type could be literal[str] from:
 # FORMAT_CATEGORIES[*].name.lower().strip('s')
 #  + 'global'
@@ -288,15 +380,45 @@ def resolve_file_formats(
     return formats
 
 
+def resolve_file_format_triStateMaps(
+    args: argparse.Namespace,
+    *,
+    default: FileFormatTriStateMap,  # TODO: PEP 484 alignment
+) -> FileFormatCategoryMap:
+    """
+    Convert argparse's tri-state booleans into nested triStateMap values.
+
+    An unspecified setting inherits `default`.
+    """
+    _default: FileFormatTriStateMap = (
+        default.copy() or create_disabled_FileFormatTriStateMap()
+    )
+    formats: FileFormatCategoryMap = create_empty_FileFormatCategoryMap()
+    formats["supports"] = _resolve_file_triStateMap(
+        args=args,
+        prefix_hint="supports",
+        default=_default,
+    )
+    for category in _FORMAT_CATEGORIES:
+        if category.name:  # e.g., only handle named categories
+            _cat_name_lower: str = category.name.lower()
+            category_name: str = _cat_name_lower.strip("s")
+            fmtMap = _resolve_file_triStateMap(
+                args=args,
+                prefix_hint=reduce_to_config_form(category_name),
+                default=_default,
+            )
+            formats[_cat_name_lower] = fmtMap  # type: ignore[literal-required]
+        # else skip
+    return formats
+
+
 __all__ = [
     "ExtraFilesRegex",
     "FileCategory",
     "FileFormat",
+    "FileFormatCategoryMap",  # See https://github.com/raimon49/pip-licenses/issues/360
+    "FileFormatTriStateMap",  # See https://github.com/raimon49/pip-licenses/issues/360
+    "resolve_file_format_triStateMaps",
     "resolve_file_formats",
 ]
-
-
-# NOTE: this module intentionally keeps a small, explicit surface area.
-# Patterns and category resolution are handled here; the argparse integration
-# remains intentionally decoupled so that higher-level CLI validation can decide
-# whether a format supports file contents before rendering them.

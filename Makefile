@@ -226,7 +226,7 @@ lint:
 	$(VENV_NAME)/bin/python -m ruff --config pyproject.toml format --check .
 	$(VENV_NAME)/bin/python -m mypy --install-types --non-interactive .
 
-update-style: lint
+update-style:
 	$(VENV_NAME)/bin/python -m ruff --config pyproject.toml check --output-format=github --fix .
 	$(VENV_NAME)/bin/python -m ruff --config pyproject.toml format .
 
