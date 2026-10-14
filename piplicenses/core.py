@@ -274,6 +274,12 @@ def extract_homepage(metadata: Message) -> Union[str, None]:
     return None
 
 
+# UNUSED
+# def extract_license_from_metadata(metadata: Message) -> list[str]:
+#     license_direct: list[str] = sorted(metadata.get_all("License", []))
+#     return license_direct
+
+
 def extract_license_from_classifiers(metadata: Message) -> list[str]:
     classifiers: list[str] = metadata.get_all("Classifier", [])
     license_classifiers: list[str] = sorted(
@@ -826,10 +832,12 @@ def get_packages(
                 _not_allowed_message = (
                     "license {} not in allow-only licenses was found"
                     " for package {}:{}\n"
+                    "Allowed licenses must be one of:\n\t{}\n\n"
                 ).format(
                     "; ".join(sorted(uncommon_licenses)),
                     pkg_info["name"],
                     pkg_info["version"],
+                    "\n\t".join(sorted(allow_only_licenses)),
                 )
                 sys.stderr.write(_not_allowed_message)
                 raise SystemExit(_not_allowed_message, 1) from None

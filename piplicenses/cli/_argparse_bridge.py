@@ -61,20 +61,25 @@ def _add_toggle_argument_group(
 ) -> Union[argparse.ArgumentParser, argparse._ArgumentGroup]:
     """Not part of the public API."""
     some_toggle_group = parser_in.add_mutually_exclusive_group()
-    some_toggle_group.add_argument(
-        toggle_map["enable"],
-        action="store_true",
-        dest=toggle_map["config_dest"],
-        default=toggle_map["initial"],
-        help=f"output with package {arg_key}",
-    )
-    some_toggle_group.add_argument(
-        toggle_map["disable"],
-        action="store_false",
-        dest=toggle_map["config_dest"],
-        default=toggle_map["initial"],
-        help=f"omit package {arg_key}",
-    )
+    try:
+        some_toggle_group.add_argument(
+            toggle_map["enable"],
+            action="store_true",
+            default=toggle_map["initial"],
+            help=f"output with package {arg_key}",
+            dest=toggle_map["config_dest"],
+        )
+        some_toggle_group.add_argument(
+            toggle_map["disable"],
+            action="store_false",
+            default=toggle_map["initial"],
+            help=f"omit package {arg_key}",
+            dest=toggle_map["config_dest"],
+        )
+    except TypeError as _type_err:
+        raise ValueError(
+            f"Failed to add pair of arguments for {toggle_map}."
+        ) from _type_err
     return parser_in
 
 

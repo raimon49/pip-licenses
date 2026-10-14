@@ -264,17 +264,15 @@ class TestGetLicenses(CommandLineTestCase):
             row[index_license_expression] for row in table.rows
         ]
 
-        for license_name in ("BSD", "MIT", "Apache-2.0"):
+        for license_name in ("PSF-2.0", "MIT", "Apache-2.0"):
             self.assertIn(license_name, license_meta)
-        for license_name in (
-            "BSD License",
+        for license_class in (
+            "BSD License",  # for BSD-3-Clause
             "MIT License",
         ):
-            self.assertIn(license_name, license_classifier)
-        # TODO enable assert once a dependency uses 'License-Expression'
-        # TODO (maybe black)
-        # for license_name in ("MIT",):
-        #     self.assertIn(license_name, license_expression)
+            self.assertIn(license_class, license_classifier)
+        for license_express in ("BSD-3-Clause",):
+            self.assertIn(license_express, license_expression)
 
     def test_find_license_from_classifier(self) -> None:
         classifiers = ["License :: OSI Approved :: MIT License"]
@@ -437,7 +435,11 @@ class TestGetLicenses(CommandLineTestCase):
 
         output_fields = get_output_fields(args)
         self.assertNotEqual(output_fields, list(DEFAULT_OUTPUT_FIELDS))
-        self.assertIn("LicenseFile", output_fields)
+        self.assertIn(
+            "LicenseFile",
+            output_fields,
+            f"Invalid args: {args}",
+        )
         self.assertIn("LicenseText", output_fields)
         self.assertNotIn("NoticeFile", output_fields)
         self.assertNotIn("NoticeText", output_fields)
@@ -507,7 +509,11 @@ class TestGetLicenses(CommandLineTestCase):
 
         output_fields = get_output_fields(args)
         self.assertNotEqual(output_fields, list(DEFAULT_OUTPUT_FIELDS))
-        self.assertIn("LicenseFiles", output_fields)
+        self.assertIn(
+            "LicenseFiles",
+            output_fields,
+            f"Invalid args: {args}",
+        )
         self.assertIn("LicenseTexts", output_fields)
         self.assertNotIn("NoticeFile", output_fields)
         self.assertNotIn("NoticeText", output_fields)
@@ -811,6 +817,7 @@ class TestGetLicenses(CommandLineTestCase):
         format_plain_args = [
             "--format=plain-vertical",
             "--with-license-files",
+            "--with-paths",
         ]
         args = self.parser.parse_args(format_plain_args)
         output_string = create_output_string(args)
@@ -821,7 +828,8 @@ class TestGetLicenses(CommandLineTestCase):
             re.search(
                 r"packaging\n\d+\.\d(\.\d)?\nApache-2.0\sOR\sBSD-2-Clause\nLICENSE\n",
                 output_string,
-            )
+            ),
+            f"Invalid args: {args}",
         )
         self.assertIn("LICENSE.APACHE", output_string)
         self.assertIn("LICENSE.BSD", output_string)
@@ -1665,6 +1673,35 @@ def test_output_file_none(monkeypatch: pytest.MonkeyPatch) -> None:
     # stdout and stderr are expected not to be called
     assert "" == mocked_stdout.printed
     assert "" == mocked_stderr.printed
+
+
+def test_allow_only_flag_is_stable(monkeypatch: pytest.MonkeyPatch) -> None:
+    licenses = (
+        "Bsd License",
+        "BSD-3-Clause",  # v6 considers this unique
+        "BSD-2-Clause",  # v6 considers this unique
+        "Apache Software License",
+        "Apache-2.0 OR BSD-2-Clause",  # v6 considers this unique (e.g., packaging==26.2)
+        "Mozilla Public License 2.0 (MPL 2.0)",
+        "Python Software Foundation License",
+        "Public Domain",
+        "GNU General Public License (GPL)",
+        "GNU Library or Lesser General Public License (LGPL)",
+    )
+    allow_only_args = ["--allow-only={}".format(";".join(licenses))]
+    mocked_stdout = MockStdStream()
+    mocked_stderr = MockStdStream()
+    monkeypatch.setattr(sys.stdout, "write", mocked_stdout.write)
+    monkeypatch.setattr(sys.stderr, "write", mocked_stderr.write)
+    monkeypatch.setattr(sys, "exit", lambda n: None)
+    args = create_parser().parse_args(allow_only_args)
+    try:
+        create_licenses_table(args)
+    except SystemExit as _expected:
+        print(f"Caught expected {_expected}. But Ignoring for test.")
+
+    assert "" == mocked_stdout.printed.strip()
+    # just need to reach end for this test
 
 
 def test_allow_only(monkeypatch: pytest.MonkeyPatch) -> None:
