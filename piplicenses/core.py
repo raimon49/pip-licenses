@@ -274,12 +274,6 @@ def extract_homepage(metadata: Message) -> Union[str, None]:
     return None
 
 
-# UNUSED
-# def extract_license_from_metadata(metadata: Message) -> list[str]:
-#     license_direct: list[str] = sorted(metadata.get_all("License", []))
-#     return license_direct
-
-
 def extract_license_from_classifiers(metadata: Message) -> list[str]:
     classifiers: list[str] = metadata.get_all("Classifier", [])
     license_classifiers: list[str] = sorted(
