@@ -557,7 +557,9 @@ def _add_format_arguments_to_parser(
             "--format",
             dest="format_",
             action=SelectAction,
-            type=lambda x: str(x).lower(),  # changed in v6.0+ -- case-insensitive
+            type=lambda x: str(
+                x
+            ).lower(),  # added in v6.0+ -- input is case-insensitive
             default=get_value_from_enum(
                 FormatArg,
                 format_default,
