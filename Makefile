@@ -134,9 +134,10 @@ endif
 
 ifeq "$(PIPL_REQ_WHEEL_PATHS)" ""
 	PIPL_MAIN_PATHS := "piplicenses/__init__.py" "piplicenses/__main__.py"
-	PIPL_CORE_PATHS := "piplicenses/core.py"
-	PIPL_OUTPUT_PATHS := "piplicenses/output/__init__.py"
-	PIPL_REQ_WHEEL_PATHS := $(PIPL_MAIN_PATHS) $(PIPL_CORE_PATHS) $(PIPL_OUTPUT_PATHS)
+	PIPL_CORE_PATHS := "piplicenses/core.py" "piplicenses/tomli_bridge.py" "piplicenses/sorting.py"
+	PIPL_CLI_PATHS := "piplicenses/cli/__init__.py" "piplicenses/cli/_argparse_bridge.py" "piplicenses/cli/_flags.py" "piplicenses/cli/config.py"
+	PIPL_OUTPUT_PATHS := "piplicenses/output/__init__.py" "piplicenses/output/consoles.py" "piplicenses/output/tables.py"
+	PIPL_REQ_WHEEL_PATHS := $(PIPL_MAIN_PATHS) $(PIPL_CORE_PATHS) $(PIPL_OUTPUT_PATHS) $(PIPL_CLI_PATHS)
 endif
 
 ifeq "$(VENV_NAME)" ""
@@ -176,7 +177,7 @@ help:
 
 # utility for some developer environments
 venv:
-	test -d $@ || mkdir -m 755 ./$@
+	test -d $@ || mkdir -m 751 ./$@
 	$(QUIET)test -d $@ || exit 1 ;
 
 $(VENV_NAME): venv
@@ -226,7 +227,7 @@ lint:
 	$(VENV_NAME)/bin/python -m ruff --config pyproject.toml format --check .
 	$(VENV_NAME)/bin/python -m mypy --install-types --non-interactive .
 
-update-style: lint
+update-style:
 	$(VENV_NAME)/bin/python -m ruff --config pyproject.toml check --output-format=github --fix .
 	$(VENV_NAME)/bin/python -m ruff --config pyproject.toml format .
 

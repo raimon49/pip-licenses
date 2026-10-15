@@ -826,10 +826,12 @@ def get_packages(
                 _not_allowed_message = (
                     "license {} not in allow-only licenses was found"
                     " for package {}:{}\n"
+                    "Allowed licenses must be one of:\n\t{}\n\n"
                 ).format(
                     "; ".join(sorted(uncommon_licenses)),
                     pkg_info["name"],
                     pkg_info["version"],
+                    "\n\t".join(sorted(allow_only_licenses)),
                 )
                 sys.stderr.write(_not_allowed_message)
                 raise SystemExit(_not_allowed_message, 1) from None

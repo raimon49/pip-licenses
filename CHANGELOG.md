@@ -4,6 +4,18 @@
 
 (SUBJECT TO CHANGE IN NEXT RELEASE)
 
+#### 6.0.0b14 (unreleased BETA):
+
+* Fix for regressions around handling output file paths, closing GHI-389
+* Improved v6 flag migration and compatibility for file/path-related CLI options
+* Normalized toggle handling and output-field logic for license, notice, and other file paths
+* Improved config parsing for allow/fail and legacy serialized values
+* Updated development dependencies and packaging metadata
+* Fixed multiple false positives including:
+  * [CVE-2026-97687 SSL-Spoof](https://github.com/advisories/GHSA-8988-9cw3-xx77)
+  * [CVE-2026-102925 venv-reuse](https://github.com/advisories/GHSA-p58f-9548-mpm2)
+  * [CVE-2026-102938 CRLF-injection](https://github.com/advisories/GHSA-9h9j-4vrj-gf7g)
+
 #### 6.0.0b13 (Pre-released BETA):
 
 * Works-around empty-wheel builds, resolving GHI-384

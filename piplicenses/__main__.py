@@ -47,10 +47,10 @@ from . import (
 )
 from .cli import (
     Configuration,
-    argparse,  # just need argparse.Namespace
     create_parser,
     sys,  # just need sys.stderr
 )
+from .cli._argparse_bridge import argparse  # just need argparse.Namespace
 from .output import (
     create_output_string,
     create_warn_string,
@@ -167,7 +167,9 @@ def main(*args: Any, **kwargs: Any) -> int:
     try:
         output_string = create_output_string(_config)
 
-        output_file = _config.output_file
+        output_file = (
+            str(_config.output_file) if _config.output_file else None
+        )  # normalize as string -- https://github.com/raimon49/pip-licenses/issues/389
         save_if_needs(output_file, output_string)
 
         # prior to v6.0.0b7 this exception was an actual sys.exit(int) call,
