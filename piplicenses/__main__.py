@@ -47,10 +47,10 @@ from . import (
 )
 from .cli import (
     Configuration,
-    argparse,  # just need argparse.Namespace
     create_parser,
     sys,  # just need sys.stderr
 )
+from .cli._argparse_bridge import argparse  # just need argparse.Namespace
 from .output import (
     create_output_string,
     create_warn_string,

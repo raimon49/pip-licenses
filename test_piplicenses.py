@@ -1600,7 +1600,7 @@ class MockStdStream:
         self.printed = ""
 
     def write(self: MockStdStream, p: str) -> None:
-        self.printed = p
+        self.printed += p
 
 
 def test_output_file_success(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -1647,7 +1647,8 @@ def test_output_file_error(monkeypatch: pytest.MonkeyPatch) -> None:
         save_if_needs("/foo/bar.txt", "license list")
     except SystemExit as _expected:
         print(
-            f"Caught expected {_expected} (with code {_expected.code}). But Ignoring for test."
+            f"Caught expected {_expected} (with code {_expected.code}). But Ignoring for test.",
+            file=sys.stderr,
         )
         err_msg = str(_expected)
         assert "check path: " in err_msg
@@ -1668,11 +1669,15 @@ def test_output_file_none(monkeypatch: pytest.MonkeyPatch) -> None:
         save_if_needs(None, "license list")  # type: ignore[arg-type]
     except SystemExit as _expected:
         print(
-            f"Caught expected {_expected} (with code {_expected.code}). But Ignoring for test."
+            f"Caught expected {_expected} (with code {_expected.code}). But Ignoring for test.",
+            file=sys.stderr,
         )
     # stdout and stderr are expected not to be called
     assert "" == mocked_stdout.printed
-    assert "" == mocked_stderr.printed
+    assert ("" == mocked_stderr.printed) or (
+        mocked_stderr.printed.startswith("Caught expected ")
+        and mocked_stderr.printed.endswith(". But Ignoring for test.")
+    )
 
 
 def test_allow_only_flag_is_stable(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -1698,7 +1703,10 @@ def test_allow_only_flag_is_stable(monkeypatch: pytest.MonkeyPatch) -> None:
     try:
         create_licenses_table(args)
     except SystemExit as _expected:
-        print(f"Caught expected {_expected}. But Ignoring for test.")
+        print(
+            f"Caught expected {_expected}. But Ignoring for test.",
+            file=sys.stderr,
+        )
 
     assert "" == mocked_stdout.printed.strip()
     # just need to reach end for this test
@@ -1727,7 +1735,10 @@ def test_allow_only(monkeypatch: pytest.MonkeyPatch) -> None:
     try:
         create_licenses_table(args)
     except SystemExit as _expected:
-        print(f"Caught expected {_expected}. But Ignoring for test.")
+        print(
+            f"Caught expected {_expected}. But Non-fatal for test.",
+            file=sys.stderr,
+        )
 
     assert "" == mocked_stdout.printed.strip()
     assert (
@@ -1771,7 +1782,10 @@ def test_allow_only_partial(monkeypatch: pytest.MonkeyPatch) -> None:
     try:
         create_licenses_table(args)
     except SystemExit as _expected:
-        print(f"Caught expected {_expected}. But Ignoring for test.")
+        print(
+            f"Caught expected {_expected}. Non-fatal for test.",
+            file=sys.stderr,
+        )
 
     assert "" == mocked_stdout.printed.strip()
     assert (
@@ -1811,7 +1825,10 @@ def test_allow_only_with_empty_tokens(
     try:
         create_licenses_table(args)
     except SystemExit as _expected:
-        print(f"Caught expected {_expected}. But Ignoring for test.")
+        print(
+            f"Caught expected {_expected}. Non-fatal for test.",
+            file=sys.stderr,
+        )
 
     assert "" == mocked_stdout.printed.strip()
     assert (
@@ -1839,7 +1856,10 @@ def test_fail_on_with_empty_tokens(
     try:
         create_licenses_table(args)
     except SystemExit as _expected:
-        print(f"Caught expected {_expected}. But Ignoring for test.")
+        print(
+            f"Caught expected {_expected}. Non-fatal for test.",
+            file=sys.stderr,
+        )
 
     assert "" == mocked_stdout.printed.strip()
     assert (
@@ -1892,7 +1912,10 @@ def test_fail_on(monkeypatch: pytest.MonkeyPatch) -> None:
     try:
         create_licenses_table(args)
     except SystemExit as _expected:
-        print(f"Caught expected {_expected}. But Ignoring for test.")
+        print(
+            f"Caught expected {_expected}. Non-fatal for test.",
+            file=sys.stderr,
+        )
 
     assert "" == mocked_stdout.printed.strip()
     assert (
@@ -1916,7 +1939,10 @@ def test_fail_on_partial_match(monkeypatch: pytest.MonkeyPatch) -> None:
     try:
         create_licenses_table(args)
     except SystemExit as _expected:
-        print(f"Caught expected {_expected}. But Ignoring for test.")
+        print(
+            f"Caught expected {_expected}. Non-fatal for test.",
+            file=sys.stderr,
+        )
 
     assert "" == mocked_stdout.printed.strip()
     assert (

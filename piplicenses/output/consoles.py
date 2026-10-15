@@ -85,11 +85,10 @@ def save_if_needs(output_file: Union[str, None], output_string: str) -> None:
                 f.write("\n")
 
         sys.stdout.write(f"created path: {output_file}\n")
-        sys.exit(
-            0
-        )  # TODO: refactor as raise SystemExit("Success", 0) from None
     except OSError as _cause:
         raise SystemExit("check path: --output-file", 1) from _cause
+    # otherwise
+    raise SystemExit("Success -- created path: {output_file}", 0) from None
 
 
 __all__ = [
