@@ -115,7 +115,7 @@ def main(*args: Any, **kwargs: Any) -> int:
     Also supports (mix & match):
       * main(["--from", "meta", ...])      -> argv passed positionally
 
-    However, this implementation (v6.0.0a0-v6.0.0b8) was/is still a mess.
+    However, this implementation (v6.0.0a0-v6.0.0b13) was/is still a mess.
     """
     argv = kwargs.pop("argv", None)
     flags = kwargs.pop("flags", None)
@@ -178,9 +178,29 @@ def main(*args: Any, **kwargs: Any) -> int:
         # eventually
     except SystemExit as _abort:
         exit_code = _abort.code if isinstance(_abort.code, int) else 1
-        raise SystemExit(exit_code) from _abort  # mimic pre-v6.0 behavior
+        err_msg: str = (
+            next((s for s in _abort.args if isinstance(s, str)), "")
+            or f"{_abort.args}"  # e.g., if default or None then describe
+        )
+        ext_code: int = next((i for i in _abort.args if isinstance(i, int)), 0)
+        if isinstance(ext_code, int):
+            exit_code = ext_code
+        elif ext_code is None:
+            exit_code = 0
+        else:
+            exit_code = 1
+        if exit_code > 0:
+            _fallback: str = "Unspecified failure. (ref: Regression-ghi-389)"
+            raise SystemExit(
+                err_msg or _fallback,  # type: ignore[attr-defined]
+                exit_code,
+            ) from _abort
+            # GHI: 389 -- instead of just `raise` which loses some details
+        else:
+            raise SystemExit(exit_code) from None  # mimic pre-v6.0 behavior
 
-    print(output_string)
+    if exit_code < 1:
+        print(output_string)
     # TODO: use warnings
     # TODO: define exit_code value(s?) for warnings (2 is arbitrary)
     warn_string = create_warn_string(_config)

@@ -1595,6 +1595,134 @@ class TestEdges(unittest.TestCase):
         )
 
 
+class CommandLineSmokeTests(TestEdges):
+    @staticmethod
+    def _run_cli(*args: str) -> tuple[int, str, str]:
+        """
+        Invoke the CLI entrypoint in-process, mirroring the existing
+        SystemExit-based patterns used elsewhere in this suite.
+
+        This avoids a real subprocess while still testing the actual
+        main() command flow.
+        """
+        import io  # always import for guiding mypy, as per PEP-749
+
+        stdout_buffer = io.StringIO()
+        stderr_buffer = io.StringIO()
+
+        old_argv = sys.argv[:]
+        old_stdout = sys.stdout
+        old_stderr = sys.stderr
+
+        sys.argv = ["pip-licenses", *args]
+        sys.stdout = stdout_buffer
+        sys.stderr = stderr_buffer
+
+        exit_code = 0
+        # GHI #81 -- early prototype for an API
+        try:
+            try:
+                try:
+                    import piplicenses.__main__ as cli_module
+
+                    cli_main = cli_module.main
+                except (ImportError, ModuleNotFoundError) as _ierr:
+                    raise unittest.SkipTest(
+                        "Can't import pip-licenses main. See GHI-81"
+                    ) from _ierr
+
+                cli_main()
+            except SystemExit as _expected:
+                print(
+                    f"Caught expected {_expected!r} (with code {_expected.code}).",
+                    file=old_stderr,
+                )
+                err_msg: str = (
+                    next((s for s in _expected.args if isinstance(s, str)), "")
+                    or f"{_expected.args}"  # e.g., if default or None then describe
+                )
+                ext_code: int = next(
+                    (i for i in _expected.args if isinstance(i, int)), 0
+                )
+                if isinstance(ext_code, int):
+                    exit_code = ext_code
+                elif ext_code is None:
+                    exit_code = 0
+                else:
+                    exit_code = 1
+                if isinstance(err_msg, str):
+                    if exit_code >= 1:
+                        print(
+                            err_msg,
+                            file=stderr_buffer,
+                        )
+                    else:
+                        print(
+                            err_msg,
+                            file=stdout_buffer,
+                        )
+        finally:
+            sys.argv = old_argv
+            sys.stdout = old_stdout
+            sys.stderr = old_stderr
+
+        return exit_code, stdout_buffer.getvalue(), stderr_buffer.getvalue()
+
+    def test_cli_formats_smoke(self) -> None:
+        for fmt in (
+            "plain",
+            "markdown",
+            "rst",
+            "html",
+            "json",
+            "csv",
+            "plain-vertical",
+        ):
+            with self.subTest(format=fmt):
+                code, out, err = self._run_cli(
+                    f"--format={fmt}",
+                    "--packages=pytest",
+                )
+                self.assertEqual(
+                    code,
+                    0,
+                    msg=f"format={fmt} failed: stdout={out!r} stderr={err!r}",
+                )
+                combined = out + err
+                self.assertIn("pytest", combined.lower())
+
+    def test_cli_output_file_writes_content(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_path = Path(temp_dir) / "licenses.json"
+            if output_path.exists():
+                self.skipTest("Temp dir already exists; can not test.")
+            code, out, err = self._run_cli(
+                "--format=json",
+                "--packages=pytest",
+                f"--output-file={output_path}",
+            )
+            # GHI #389 -- verify output-file writes some content
+            self.assertEqual(code, 0, msg=f"stdout={out!r} stderr={err!r}")
+            self.assertTrue(output_path.exists())
+            self.assertIn("created path:", out)
+            self.assertIn('"Name"', output_path.read_text(encoding="utf-8"))
+
+    def test_cli_output_file_rejects_invalid_path(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            bad_path = Path(temp_dir) / "missing" / "nested" / "licenses.txt"
+            if bad_path.exists():
+                self.skipTest("Temp bad-path already exists; can not test.")
+            code, out, err = self._run_cli(
+                "--format=plain",
+                "--packages=pytest",
+                f"--output-file={bad_path}",
+            )
+            # GHI #389 -- verify output-file errors on bad path
+            self.assertEqual(code, 1, msg=f"stdout={out!r} stderr={err!r}")
+            self.assertIn("check path: --output-file", err)
+            self.assertFalse(bad_path.exists())
+
+
 class MockStdStream:
     def __init__(self) -> None:
         self.printed = ""
