@@ -195,25 +195,17 @@ class CompatibleArgumentParser(argparse.ArgumentParser):
             )
         if args.partial_match is True and (
             (args.fail_on is None or len(args.fail_on) <= 0)
-            and (args.allow_on is None or len(args.allow_on) <= 0)
-            and (
-                (
-                    "6.1" in __version__
-                    and (args.warn_on is None or len(args.allow_on) <= 0)
-                )
-                or True
-            )
+            and (args.allow_only is None or len(args.allow_only) <= 0)
+            and (args.warn_on is None or len(args.warn_on) <= 0)
         ):
             self.error(
                 "'--partial-match' and '--simple-match' "
                 "require at least one of "
-                "the '--fail-on'/'--allow-only' options to be set."
+                "the '--fail-on'/'--allow-only'/'--warn-on' options to be set."
                 # An empty string will also not count.
             )
             # TODO: GHI-274 refactor for allow-package (name WIP)
             # e.g., "as well as '--allow-package' require "
-            # TODO: GHI-274 refactor for warn-on
-            # e.g., ".../'--warn-on' options ..."
 
         if args.filter_strings is False and args.filter_code_page != "latin1":
             self.error(
@@ -468,21 +460,20 @@ def _add_verification_arguments_to_parser(
             "Options to verify licensing state of packages.",
             # after GHI-274 WILL CHANGE to "Options to stipulate licensing policy for packages.",
         )
-        # placeholder for warn-on
+        verify_group.add_argument(
+            "-W",
+            "--warn-on",
+            action="extend",
+            dest="warn_on",
+            nargs="+",
+            metavar="WARN_ON",
+            default=warn_by_default,
+            help="R|warn (emitted to stderr) on the each occurrence\n"
+            "of the specified licenses, but do not fail. Useful for\n"
+            "licenses that have complex conditions (e.g., attribution,\n"
+            "user notices, etc.). May be used multiple times.",
+        )
         if "6.1" in __version__:
-            verify_group.add_argument(
-                "-W",
-                "--warn-on",
-                action="extend",
-                dest="warn_on",
-                nargs="+",
-                metavar="WARN_ON",
-                default=warn_by_default,
-                help="R|warn (emitted to stderr) on the each occurrence\n"
-                "of the specified licenses, but do not fail. Useful for\n"
-                "licenses that have complex conditions (e.g., attribution,\n"
-                "user notices, etc.). May be used multiple times.",
-            )
             verify_group.add_argument(
                 "--allow-packages",
                 action="extend",
