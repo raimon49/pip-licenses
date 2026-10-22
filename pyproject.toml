@@ -53,7 +53,7 @@ dev = [
 	"pytest-runner",
 	"ruff",
 	"tomli-w",
-	"virtualenv>=21.1.0",
+	"virtualenv>=21.14.6",
 ]
 
 [tool.pip-tools.compile]
@@ -75,14 +75,14 @@ repository = "https://github.com/raimon49/pip-licenses.git"
 #content-type = "text/markdown; charset=UTF-8; variant=GFM"
 
 [tool.setuptools]
-packages = ["piplicenses"]  # PEP-508 normalized module name (e.g., without dash)
+packages = ["piplicenses", "piplicenses.cli", "piplicenses.output"]  # PEP-508 normalized module name (e.g., without dash)
 
 [tool.setuptools.dynamic]
 version = {attr = "piplicenses.__version__"}
 readme = {file = ["README.md", "CHANGELOG.md"], content-type = "text/markdown; charset=UTF-8; variant=GFM"}
 
 [tool.pytest.ini_options]
-addopts = "-v --cov --cov-report term-missing"
+addopts = "-v --doctest-modules --doctest-glob=piplicenses/*.py --cov --cov-report term-missing"
 
 [tool.ruff]
 line-length = 79

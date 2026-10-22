@@ -47,6 +47,7 @@ from typing import (
     # _oneOrMoreStrs = Union[str, list[str]]
     # _zeroOrMoreStrs = Union[str, list[NullableStr], None]
     Union,
+    cast,
 )
 
 from . import (
@@ -90,14 +91,38 @@ e.g., sys.executable
 
 
 def _split_legacy_tokens(value: str) -> list[str]:
-    """
+    r"""
     Split a serialized value on unescaped LEGACY_TOKEN occurrences.
 
     A backslash escapes either LEGACY_TOKEN or another backslash:
 
     >>> LEGACY_TOKEN = ";"
-    >>> _split_legacy_tokens(r"a\\;b;c")
+    >>> _split_legacy_tokens(r"a\;b;c")
     ['a;b', 'c']
+    >>>
+    >>> _split_legacy_tokens(r"a;b;c")
+    ['a', 'b', 'c']
+    >>>
+    >>> _split_legacy_tokens(r"a;b;c;")
+    ['a', 'b', 'c']
+    >>>
+
+    >>> LEGACY_TOKEN = ";"
+    >>> _split_legacy_tokens(r"a;b;c;") == _split_legacy_tokens(r"a;b;c")
+    True
+    >>>
+
+    >>> LEGACY_TOKEN = ";"
+    >>> _split_legacy_tokens(r"a;b;c;") != _split_legacy_tokens("a;b;c\\")
+    True
+    >>>
+
+    Note that backslashes may be normalized
+    >>> LEGACY_TOKEN = "\n"  # normal string behavior
+    >>> _split_legacy_tokens(r"a\\\nb\nc")  # raw string input
+    ['a\\\\nb\\nc']
+    >>>
+
     """
     if not LEGACY_TOKEN:
         raise ValueError("LEGACY_TOKEN must be non-empty")
@@ -110,15 +135,19 @@ def _split_legacy_tokens(value: str) -> list[str]:
     parts: list[str] = []
     current: list[str] = []
     index = 0
+    ended_with_token: bool = False
 
     while index < len(value):
         if value[index] == "\\":
+            ended_with_token = False  # reset
             escaped_token_start = index + 1
 
             if value.startswith(LEGACY_TOKEN, escaped_token_start):
+                # preserve escaped token
                 current.append(LEGACY_TOKEN)
                 index += 1 + len(LEGACY_TOKEN)
             elif value.startswith("\\", escaped_token_start):
+                # preserver escaped backslash
                 current.append("\\")
                 index += 2
             else:
@@ -130,60 +159,178 @@ def _split_legacy_tokens(value: str) -> list[str]:
             parts.append("".join(current))
             current.clear()
             index += len(LEGACY_TOKEN)
+            ended_with_token = True  # set
 
         else:
+            ended_with_token = False  # reset
             current.append(value[index])
             index += 1
 
-    parts.append("".join(current))
+    if not ended_with_token:
+        parts.append("".join(current))
+
     return parts
 
 
+def _serialize_input_str(value: Union[str, bytes, None]) -> Optional[str]:
+    """Handle bytes and str uniformly."""
+    if isinstance(value, (str, bytes)):
+        if isinstance(value, bytes):
+            # decode bytes as UTF-8
+            try:
+                value_str = value.decode()
+            except UnicodeDecodeError:  # pragma: no cover
+                value_str = cast(bytes, value).decode("utf-8")
+            except UnicodeEncodeError:  # pragma: no cover
+                value_str = str(
+                    cast(str, value).encode("unicode_escape")  # type: ignore[arg-type]
+                )
+            except Exception:  # noqa: BLE001 -- blind catch-all
+                # helper function should not raise an exception
+                # fallback to dumb str(value) if decode fails
+                value_str = str(value)
+        else:
+            value_str = value
+        return value_str
+    return None
+
+
+def _parse_serialized(value: str) -> set[str]:
+    """
+    Parse a single string (already a str, not bytes) as a serialized value.
+
+    - If LEGACY_TOKEN is present, split on unescaped LEGACY_TOKEN using
+      _split_legacy_tokens, strip each token, and discard empty tokens.
+      (This matches the original behavior where empty fields are discarded
+      when the overall value contains LEGACY_TOKEN.)
+
+    - If LEGACY_TOKEN is not present, return a single-element list with the
+      stripped string (even if empty).
+
+    Examples:
+    >>> LEGACY_TOKEN = ";"
+    >>> _parse_serialized("alpha;beta") == {'alpha', 'beta'}
+    True
+    >>> _parse_serialized("alpha;beta") == {'alpha;beta'}
+    False
+    >>> _parse_serialized("alpha;beta;") == {'alpha', 'beta'}
+    True
+    >>> _parse_serialized("  single  ") == {'single'}
+    True
+    >>> _parse_serialized("") == set()
+    True
+    >>>
+
+    """
+    if not value:
+        return set()  # empty when falsey
+    if LEGACY_TOKEN in value:
+        # hint: can assume also is not None
+        parts = _split_legacy_tokens(value)
+        # strip and discard empties
+        return {p.strip() for p in parts if p.strip() != ""}
+    # no token: return single stripped value (preserve other string semantics)
+    return {value.strip()} if value.strip() != "" else set()
+
+
 def _normalize_as_set(
-    value: Union[Iterable[str], str, bytes, None],
+    value: Union[Iterable[object], str, bytes, None],
 ) -> set[str]:
     """
-    Normalize a string, bytes value, or iterable into a set of strings.
+    Normalize a string, bytes, or iterable value into a flat set of strings.
 
-    String and bytes values are treated as serialized values. Unescaped
-    LEGACY_TOKEN occurrences separate values, while backslash-escaped
-    LEGACY_TOKEN occurrences are interpreted literally. Backslashes can
-    themselves be escaped with another backslash.
-
-    Empty fields are discarded when a serialized value contains
-    LEGACY_TOKEN, matching the original behavior.
+    - None -> { } (e.g., empty)
+    - str/bytes: treated as serialized values; unescaped LEGACY_TOKEN splits
+      fields (backslash escapes LEGACY_TOKEN and backslash), if present. Empty fields
+      are discarded.
+    - Iterable: each element is normalized:
+        - None elements are skipped
+        - str/bytes elements are parsed as serialized values (split when token present)
+        - other elements are converted with str(x).strip()
 
     >>> LEGACY_TOKEN = ";"
-    >>> _normalize_as_set("alpha;beta")
-    {'alpha', 'beta'}
+    >>> _normalize_as_set("alpha;beta") == {'alpha', 'beta'}
+    True
+    >>>
 
-    >>> _normalize_as_set("alpha\\;beta;gamma") # TODO: may need raw string and doc escapes?
-    {'alpha;beta', 'gamma'}
+    >>> _normalize_as_set("alpha;beta;gamma") == {'alpha', 'beta', 'gamma'}
+    True
+    >>>
 
-    >>> _normalize_as_set(r"c:\\path;d")
-    {'c:\\path', 'd'}
+    >>> _normalize_as_set("alpha;beta;gamma;") == {'alpha', 'beta', 'gamma'}
+    True
+    >>>
 
-    >>> _normalize_as_set(None)
-    set()
+    >>> _normalize_as_set("alpha\\;beta;gamma") == {'alpha;beta', 'gamma'}
+    True
+    >>>
 
-    >>> _normalize_as_set(["alpha", None, 42])
-    {'alpha', '42'}
+    >>> _normalize_as_set(r"c:\\path;d") == {'c:\\\\path', 'd'}
+    True
+    >>>
+
+    >>> _normalize_as_set(None) == set()
+    True
+    >>>
+
+    >>> _normalize_as_set(["alpha", None, 42]) == {'alpha', '42'}
+    True
+    >>>
+
+    TODO: handle this case:
+    >>> _normalize_as_set(["alpha", "beta;gamma", None, 42]) == {'alpha', 'beta', 'gamma', '42'}
+    True
+    >>>
+
+    TODO: handle this case:
+    >>> _normalize_as_set(["alpha", "beta\\;gamma", None, 42]) == {'alpha', 'beta;gamma', '42'}
+    True
+    >>>
+
     """
     if value is None:
         return set()
+
+    # Handle bytes and str uniformly
     if isinstance(value, (str, bytes)):
-        _wrapped_value = str(value)
-        if LEGACY_TOKEN in _wrapped_value:
-            return set(
-                filter(
-                    None, map(str.strip, _split_legacy_tokens(_wrapped_value))
-                )
-            )
-        return {_wrapped_value}
+        _value_str = _serialize_input_str(value)
+        return (
+            _parse_serialized(_value_str)
+            if isinstance(_value_str, str)
+            else set()
+        )
+
+    # Otherwise expect an iterable. We'll flatten it.
+    normalized: set[str] = set()
     try:
-        return {str(x) for x in value if x is not None}
+        for item in value:  # type: ignore[call-arg]
+            if item is None:
+                continue
+            elif isinstance(item, (str, bytes)):
+                item_str = _serialize_input_str(item)
+                if (
+                    item_str is None
+                    or len(item_str.strip()) < 1
+                    or item_str == LEGACY_TOKEN
+                ):
+                    continue
+                _parsed_item = _parse_serialized(item_str)
+                if _parsed_item:
+                    normalized.update(_parsed_item)
+                else:
+                    continue
+            elif isinstance(item, (list, set)):
+                normalized.update(
+                    _normalize_as_set([e for e in item if e is not None])
+                )
+            else:
+                # Other types: convert to str and strip
+                normalized.add(str(item).strip())
+        return normalized
     except TypeError:
-        return {str(value)}
+        # value was not iterable after all: best-effort to convert to str
+        _best_guess = _serialize_input_str(str(value).strip())
+        return {_best_guess} if _best_guess else set()
 
 
 def _serialize_to_semi_str(value: Iterable[str]) -> str:
@@ -199,25 +346,28 @@ def _serialize_to_semi_str(value: Iterable[str]) -> str:
     produces only empty fields, which are discarded.
 
     >>> LEGACY_TOKEN = ";"
-    >>> serialized = serialize_to_semi_str({"beta", "alpha"})
+    >>> serialized = _serialize_to_semi_str({"beta", "alpha"})
     >>> serialized
     'alpha;beta'
-    >>> _normalize_as_set(serialized)
-    {'alpha', 'beta'}
-
-    >>> serialized = serialize_to_semi_str({"alpha;beta", r"c:\tmp"})
-    >>> _normalize_as_set(serialized)
-    {'alpha;beta', 'c:\\tmp'}
-
-    >>> serialize_to_semi_str(set()) == LEGACY_TOKEN
+    >>> _normalize_as_set(serialized) == {'alpha', 'beta'}
     True
-    >>> _normalize_as_set(serialize_to_semi_str(set()))
-    set()
+    >>>
 
-    >>> serialize_to_semi_str({" leading"})
-    Traceback (most recent call last):
-        ...
-    ValueError: Set members must not have leading or trailing whitespace
+    >>> serialized_b = _serialize_to_semi_str({"alpha;beta", "gamma"})
+    >>> _normalize_as_set(serialized_b) == {'alpha;beta', 'gamma'}
+    True
+    >>>
+
+    >>> _serialize_to_semi_str(set()) == LEGACY_TOKEN
+    True
+    >>> _normalize_as_set(_serialize_to_semi_str(set())) == set()
+    True
+    >>>
+
+    >>> _serialize_to_semi_str({" leading"}) == 'leading'
+    True
+    >>>
+
     """
     if not LEGACY_TOKEN:
         raise ValueError("LEGACY_TOKEN must be non-empty")
@@ -313,34 +463,42 @@ class Configuration(argparse.Namespace):
     if "6.0" in __version__:
         with_license_file: bool = False  # DEPRECIATED in v6.1+
     with_license_files: bool = False  # added in v6.0
-    if "6.0" in __version__:
-        no_license_path: bool = False  # DEPRECIATED in v6.1+
-    else:
-        without_license_paths: bool = (
-            False  # (TODO: use --without-license-path|--without-paths)
-        )
-    if "6.0" in __version__:
-        no_file_paths: bool = False  # DEPRECIATED in v6.1+
-    else:
-        without_file_paths: bool = False  # (TODO: use --without-paths)
     with_authors: bool = False
     with_maintainers: bool = False  # added in v6.0
     if "6.0" in __version__:
         with_notice_file: bool = False  # DEPRECIATED in v6.1
     with_notice_files: bool = False  # added in v6.0 (as boolean)
     with_other_files: bool = False  # added in v6.0 (as boolean)
-    without_notice_paths: bool = False  # added in v6.0
-    without_other_paths: bool = False  # added in v6.0
-    # placeholder -- for with/without authors stuff
-    filter_strings: bool = False
-    partial_match: bool = False
+    # removed no_license_path: bool = False  # DEPRECIATED in v6.1+
+    with_license_paths: bool = False  # added in v6.0
+    if "6.0" in __version__:
+        no_file_paths: bool = False  # DEPRECIATED in v6.1+
+    with_notice_paths: bool = False  # added in v6.0
+    with_other_paths: bool = False  # added in v6.0
     # removed no_version: bool = False  # DEPRECIATED in v6.1+
     without_versions: bool = False
+    filter_strings: bool = False
+    partial_match: bool = False
     # string / optional values
     output_file: Optional[str] = None
     filter_code_page: Optional[str] = None
     # paths
     python: str = DEFAULT_PYTHON
+
+    # new but un-implemented stuff
+    # See https://github.com/raimon49/pip-licenses/issues/375
+    with_licenses: bool = True  # added in v6.0
+    with_others: bool = False  # added in v6.0
+    with_notices: bool = False  # added in v6.0
+    with_authors_files: bool = False  # added in v6.0
+    with_authors_paths: bool = False  # added in v6.0
+    with_attribution_files: bool = False  # added in v6.0
+    with_attribution_paths: bool = False  # added in v6.0
+    with_legacy_files: bool = "6.0" in __version__  # added in v6.0
+    with_legacy_paths: bool = False  # added in v6.0
+    # global-defaults
+    global_files: Optional[bool] = None  # added in v6.0
+    global_paths: Optional[bool] = None  # added in v6.0
 
     # sequence values
     fail_on: Optional[set] = field(default_factory=set)
@@ -361,13 +519,15 @@ class Configuration(argparse.Namespace):
             self.ignore_packages = self._normalize_to_set(self.ignore_packages)
         if not isinstance(self.packages, set):
             self.packages = self._normalize_to_set(self.packages)
-        if not isinstance(self.fail_on, set):
+        if (self.fail_on is not None) and not isinstance(self.fail_on, set):
             self.fail_on = self._normalize_to_set(self.fail_on)
-        if not isinstance(self.allow_only, set):
+        if (self.allow_only is not None) and not isinstance(
+            self.allow_only, set
+        ):
             self.allow_only = self._normalize_to_set(self.allow_only)
         if not isinstance(self.allow_packages, set):
             self.allow_packages = self._normalize_to_set(self.allow_packages)
-        if not isinstance(self.warn_on, set):
+        if (self.warn_on is not None) and not isinstance(self.warn_on, set):
             self.warn_on = self._normalize_to_set(self.warn_on)
 
     @staticmethod
@@ -410,8 +570,8 @@ class Configuration(argparse.Namespace):
         Namely those DEPRECIATED in v6.0+:
            * with_license_file --> with_license_files
            * with_notice_file --> with_notice_files
-           * no_license_path --> without_license_paths
-           * no_file_paths --> without_file_paths
+           * no_license_path / without_license_paths ( --> not with_license_paths )
+           * no_file_paths / without_file_paths ( --> not global_paths )
         """
         # only handle if given a string
         if not isinstance(name, str):
@@ -419,12 +579,16 @@ class Configuration(argparse.Namespace):
 
         _with_descriptions_map = [
             "with_description",
-            "with_descriptions",
+            "with_descriptions"
+            if "6.1" in __version__
+            else "with_description",
         ]
 
         _with_license_files_map = [
             "with_license_file",
-            "with_license_files",
+            "with_license_files"
+            if "6.1" in __version__
+            else "with_license_file",
         ]
 
         _with_notice_files_map = [
@@ -512,10 +676,11 @@ class Configuration(argparse.Namespace):
             "with_license_files",
             "with_notice_files",
             "with_other_files",
-            "without_license_paths",
-            "without_notice_paths",
-            "without_other_paths",
-            "without_file_paths",
+            "with_license_paths",
+            "with_legacy_paths",
+            "with_notice_paths",
+            "with_other_paths",
+            # "global_paths",  # optional bool
             "filter_strings",
             "partial_match",
             "without_versions",
@@ -580,28 +745,28 @@ class Configuration(argparse.Namespace):
         self.fail_on = self._normalize_to_set(value)
 
     @property
-    def with_license_paths(self) -> bool:
-        return self.without_license_paths is False
+    def without_license_paths(self) -> bool:
+        return self.with_license_paths is False
 
-    @with_license_paths.setter
-    def with_license_paths(self, value: Union[bool, None]) -> None:
-        self.without_license_paths = value is False
-
-    @property
-    def with_notice_paths(self) -> bool:
-        return self.without_notice_paths is False
-
-    @with_notice_paths.setter
-    def with_notice_paths(self, value: Union[bool, None]) -> None:
-        self.without_notice_paths = value is False
+    @without_license_paths.setter
+    def without_license_paths(self, value: Union[bool, None]) -> None:
+        self.with_license_paths = value is False
 
     @property
-    def with_other_paths(self) -> bool:
-        return self.without_other_paths is False
+    def without_notice_paths(self) -> bool:
+        return self.with_notice_paths is False
 
-    @with_other_paths.setter
-    def with_other_paths(self, value: Union[bool, None]) -> None:
-        self.without_other_paths = value is False
+    @without_notice_paths.setter
+    def without_notice_paths(self, value: Union[bool, None]) -> None:
+        self.with_notice_paths = value is False
+
+    @property
+    def without_other_paths(self) -> bool:
+        return self.with_other_paths is False
+
+    @without_other_paths.setter
+    def without_other_paths(self, value: Union[bool, None]) -> None:
+        self.with_other_paths = value is False
 
     if "6.1" in __version__:
         # DEPRECIATED in v6.0; use without_* instead.
@@ -624,25 +789,30 @@ class Configuration(argparse.Namespace):
             )
             self.without_versions = value is True
 
-        # DEPRECIATED in v6.0; use without_* instead.
+        # DEPRECIATED in v6.0; use inverted global_paths instead.
         @property  # type: ignore[no-redef]
         def no_file_paths(self) -> bool:
-            """DEPRECIATED in v6.1; use without_file_paths instead."""
+            """DEPRECIATED in v6.1; use inverted global_paths instead."""
             warnings.warn(
-                "DEPRECIATED in v6.1; use without_file_paths instead.",
+                "DEPRECIATED in v6.1; use !global_paths instead.",
                 stacklevel=2,
             )
-            return self.without_file_paths
+            return not self.global_paths
 
-        # DEPRECIATED in v6.0; use without_* instead.
+        # DEPRECIATED in v6.0; use inverted global_paths instead.
         @no_file_paths.setter
         def no_file_paths(self, value: Union[bool, None]) -> None:
-            """DEPRECIATED in v6.1; use without_file_paths instead."""
+            """DEPRECIATED in v6.1; use inverted global_paths instead."""
             warnings.warn(
-                "DEPRECIATED in v6.1; use no_file_paths instead.",
+                "DEPRECIATED in v6.1; use !global_paths instead.",
                 stacklevel=2,
             )
-            self.without_file_paths = value is True
+            if value is True:
+                self.global_paths = False
+            elif value is None:
+                self.global_paths = None
+            else:
+                self.global_paths = True
 
         # DEPRECIATED in v6.0; use without_* instead.
         @property  # type: ignore[no-redef]
@@ -712,7 +882,7 @@ class Configuration(argparse.Namespace):
                 "DEPRECIATED in v6.1; use with_license_files instead.",
                 stacklevel=2,
             )
-            return self.with_notice_files
+            return self.with_license_files
 
         # DEPRECIATED in v6.0; use with_*s instead.
         @with_license_file.setter
@@ -722,7 +892,7 @@ class Configuration(argparse.Namespace):
                 "DEPRECIATED in v6.1; use with_license_files instead.",
                 stacklevel=2,
             )
-            self.with_notice_files = value is True
+            self.with_license_files = value is True
 
     elif "6.0" in __version__:
         # DEPRECIATED in v6.0; use allow_only instead.
@@ -821,25 +991,26 @@ class Configuration(argparse.Namespace):
             """
             self.no_file_paths = value is True
 
-        # added in v6.0
+        # changed in v6.0
         @property  # type: ignore[no-redef]
-        def without_license_paths(self) -> bool:
-            """ADDED in v6.0; Same as no_license_path.
+        def no_license_path(self) -> bool:
+            """DEPRECIATED in v6.0; use without_license_paths instead
 
             Previous to v6.0 there was no standardization of what are now:
             with/without prefixes.
             """
-            return self.no_license_path
+            return self.with_license_paths is False
 
-        # added in v6.0
-        @without_license_paths.setter
-        def without_license_paths(self, value: Union[bool, None]) -> None:
-            """ADDED in v6.0; Same as no_license_path.
+        # changed in v6.0
+        @no_license_path.setter
+        def no_license_path(self, value: Union[bool, None]) -> None:
+            """DEPRECIATED in v6.0; use without_license_paths instead.
 
             Previous to v6.0 there was no standardization of what are now:
             with/without prefixes.
             """
-            self.no_license_path = value is True
+            if value:
+                self.with_license_paths = False
 
         # added in v6.0
         @property  # type: ignore[no-redef]

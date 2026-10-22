@@ -563,7 +563,12 @@ def _get_python_sys_path(executable: str) -> list[str]:
     output = subprocess.run(
         [executable, "-c", script],
         capture_output=True,
-        env={**os.environ, "PYTHONPATH": "", "VIRTUAL_ENV": ""},
+        env={
+            **os.environ,
+            "PYTHONPATH": "",
+            "VIRTUAL_ENV": "",
+            "VIRTUALENV_PROMPT": "",  # further mitigate against: CVE-2026-102937
+        },
         check=False,
     )
     # TODO: add encoding="utf-8"
@@ -770,7 +775,7 @@ def get_packages(
             pkg_name.lower() in ignore_pkgs_as_normalize
             or pkg_name_and_version.lower() in ignore_pkgs_as_normalize
         ):
-            continue
+            continue  # pragma: no cover
 
         if pkgs_as_normalize and pkg_name not in pkgs_as_normalize:
             continue
@@ -826,10 +831,12 @@ def get_packages(
                 _not_allowed_message = (
                     "license {} not in allow-only licenses was found"
                     " for package {}:{}\n"
+                    "Allowed licenses must be one of:\n\t{}\n\n"
                 ).format(
                     "; ".join(sorted(uncommon_licenses)),
                     pkg_info["name"],
                     pkg_info["version"],
+                    "\n\t".join(sorted(allow_only_licenses)),
                 )
                 sys.stderr.write(_not_allowed_message)
                 raise SystemExit(_not_allowed_message, 1) from None

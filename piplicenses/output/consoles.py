@@ -69,7 +69,12 @@ def save_if_needs(output_file: Union[str, None], output_string: str) -> None:
     Raises:
         SystemExit: on underling filesystem failures (OSError).
     """
-    if output_file is None or len(output_file) <= 0:
+    # see [GHI-389](https://github.com/raimon49/pip-licenses/issues/389)
+    if (
+        output_file is None
+        or (not isinstance(output_file, str))
+        or len(output_file) <= 0
+    ):
         return
 
     try:
@@ -80,11 +85,10 @@ def save_if_needs(output_file: Union[str, None], output_string: str) -> None:
                 f.write("\n")
 
         sys.stdout.write(f"created path: {output_file}\n")
-        sys.exit(
-            0
-        )  # TODO: refactor as raise SystemExit("Success", 0) from None
     except OSError as _cause:
         raise SystemExit("check path: --output-file", 1) from _cause
+    # otherwise
+    raise SystemExit("Success -- created path: {output_file}", 0) from None
 
 
 __all__ = [
