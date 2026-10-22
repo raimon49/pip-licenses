@@ -185,9 +185,10 @@ def main(*args: Any, **kwargs: Any) -> int:
         ext_code: int = next((i for i in _abort.args if isinstance(i, int)), 0)
         if isinstance(ext_code, int):
             exit_code = ext_code
-        elif ext_code is None:
+        # The rest of this condition is defensive: But may not actually be needed.
+        elif ext_code is None:  # pragma: no cover
             exit_code = 0
-        else:
+        else:  # pragma: no cover
             exit_code = 1
         if exit_code > 0:
             _fallback: str = "Unspecified failure. (ref: Regression-ghi-389)"

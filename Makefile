@@ -238,8 +238,10 @@ test:
 
 clean:
 	$(QUIET)$(RM) -r dist
+	$(QUIET)$(RMDIR) ./build 2>$(ERROR_LOG_PATH) || exit 66 ; # fail if unsuccessful
 
 full-clean:: local-uninstall clean
+	$(RMDIR) -v ./build 2>$(ERROR_LOG_PATH) || true ;
 	$(RM) -vr *.egg-info 2>$(ERROR_LOG_PATH) || true ;
 	$(RMDIR) -v ./__pycache__ 2>$(ERROR_LOG_PATH) || true ;
 	$(RMDIR) -v ./{piplicenses,tests}/__pycache__ 2>$(ERROR_LOG_PATH) || true ;

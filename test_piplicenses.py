@@ -2015,6 +2015,7 @@ def test_different_python() -> None:
             venv_builder.create(str(target_dir_path))
             python_exec = venv_builder.context.env_exe
         except venv_subprocess.CalledProcessError as skip_cause:
+            # GHI #389 -- e.g., skip if test is in a nested venv run
             raise unittest.SkipTest(_warning_skip) from skip_cause
         python_arg = f"--python={python_exec}" if python_exec else ""
         args = create_parser().parse_args([python_arg, "-s", "-f=json"])

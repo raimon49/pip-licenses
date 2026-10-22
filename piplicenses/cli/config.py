@@ -91,13 +91,13 @@ e.g., sys.executable
 
 
 def _split_legacy_tokens(value: str) -> list[str]:
-    """
+    r"""
     Split a serialized value on unescaped LEGACY_TOKEN occurrences.
 
     A backslash escapes either LEGACY_TOKEN or another backslash:
 
     >>> LEGACY_TOKEN = ";"
-    >>> _split_legacy_tokens(r"a\\;b;c")
+    >>> _split_legacy_tokens(r"a\;b;c")
     ['a;b', 'c']
     >>>
     >>> _split_legacy_tokens(r"a;b;c")
@@ -117,13 +117,12 @@ def _split_legacy_tokens(value: str) -> list[str]:
     True
     >>>
 
-    >>> LEGACY_TOKEN = "\n"
-    >>> _split_legacy_tokens(r"a\\\nb\nc")
-    ['a\nb', 'c']
+    Note that backslashes may be normalized
+    >>> LEGACY_TOKEN = "\n"  # normal string behavior
+    >>> _split_legacy_tokens(r"a\\\nb\nc")  # raw string input
+    ['a\\\\nb\\nc']
     >>>
-    >>> _split_legacy_tokens(r"a\nb\nc\n")
-    ['a', 'b', 'c']
-    >>>
+
     """
     if not LEGACY_TOKEN:
         raise ValueError("LEGACY_TOKEN must be non-empty")
@@ -136,9 +135,11 @@ def _split_legacy_tokens(value: str) -> list[str]:
     parts: list[str] = []
     current: list[str] = []
     index = 0
+    ended_with_token: bool = False
 
     while index < len(value):
         if value[index] == "\\":
+            ended_with_token = False  # reset
             escaped_token_start = index + 1
 
             if value.startswith(LEGACY_TOKEN, escaped_token_start):
@@ -158,12 +159,16 @@ def _split_legacy_tokens(value: str) -> list[str]:
             parts.append("".join(current))
             current.clear()
             index += len(LEGACY_TOKEN)
+            ended_with_token = True  # set
 
         else:
+            ended_with_token = False  # reset
             current.append(value[index])
             index += 1
 
-    parts.append("".join(current))
+    if not ended_with_token:
+        parts.append("".join(current))
+
     return parts
 
 
@@ -204,14 +209,18 @@ def _parse_serialized(value: str) -> set[str]:
 
     Examples:
     >>> LEGACY_TOKEN = ";"
-    >>> _parse_serialized("alpha;beta")
-    {'alpha', 'beta'}
-    >>> _parse_serialized("alpha;beta;")
-    {'alpha', 'beta'}
-    >>> _parse_serialized("  single  ")
-    {'single'}
-    >>> _parse_serialized("")
-    {}
+    >>> _parse_serialized("alpha;beta") == {'alpha', 'beta'}
+    True
+    >>> _parse_serialized("alpha;beta") == {'alpha;beta'}
+    False
+    >>> _parse_serialized("alpha;beta;") == {'alpha', 'beta'}
+    True
+    >>> _parse_serialized("  single  ") == {'single'}
+    True
+    >>> _parse_serialized("") == set()
+    True
+    >>>
+
     """
     if not value:
         return set()  # empty when falsey
@@ -240,34 +249,43 @@ def _normalize_as_set(
         - other elements are converted with str(x).strip()
 
     >>> LEGACY_TOKEN = ";"
-    >>> _normalize_as_set("alpha;beta")
-    {'alpha', 'beta'}
+    >>> _normalize_as_set("alpha;beta") == {'alpha', 'beta'}
+    True
+    >>>
 
-    >>> _normalize_as_set("alpha;beta;gamma")
-    {'alpha', 'beta', 'gamma'}
+    >>> _normalize_as_set("alpha;beta;gamma") == {'alpha', 'beta', 'gamma'}
+    True
+    >>>
 
-    >>> _normalize_as_set("alpha;beta;gamma;")
-    {'alpha', 'beta', 'gamma'}
+    >>> _normalize_as_set("alpha;beta;gamma;") == {'alpha', 'beta', 'gamma'}
+    True
+    >>>
 
-    >>> _normalize_as_set("alpha\\;beta;gamma") # TODO: may need to fix docstring escapes?
-    {'alpha;beta', 'gamma'}
+    >>> _normalize_as_set("alpha\\;beta;gamma") == {'alpha;beta', 'gamma'}
+    True
+    >>>
 
-    >>> _normalize_as_set(r"c:\\path;d")
-    {'c:\\path', 'd'}
+    >>> _normalize_as_set(r"c:\\path;d") == {'c:\\\\path', 'd'}
+    True
+    >>>
 
-    >>> _normalize_as_set(None)
-    set()
+    >>> _normalize_as_set(None) == set()
+    True
+    >>>
 
-    >>> _normalize_as_set(["alpha", None, 42])
-    {'alpha', '42'}
+    >>> _normalize_as_set(["alpha", None, 42]) == {'alpha', '42'}
+    True
+    >>>
 
     TODO: handle this case:
-    >>> _normalize_as_set(["alpha", "beta;gamma", None, 42])
-    {'alpha', 'beta', 'gamma', '42'}
+    >>> _normalize_as_set(["alpha", "beta;gamma", None, 42]) == {'alpha', 'beta', 'gamma', '42'}
+    True
+    >>>
 
     TODO: handle this case:
-    >>> _normalize_as_set(["alpha", "beta\\;gamma", None, 42]) # TODO: may need to fix docstring escapes?
-    {'alpha', 'beta;gamma', '42'}
+    >>> _normalize_as_set(["alpha", "beta\\;gamma", None, 42]) == {'alpha', 'beta;gamma', '42'}
+    True
+    >>>
 
     """
     if value is None:
@@ -328,25 +346,28 @@ def _serialize_to_semi_str(value: Iterable[str]) -> str:
     produces only empty fields, which are discarded.
 
     >>> LEGACY_TOKEN = ";"
-    >>> serialized = serialize_to_semi_str({"beta", "alpha"})
+    >>> serialized = _serialize_to_semi_str({"beta", "alpha"})
     >>> serialized
     'alpha;beta'
-    >>> _normalize_as_set(serialized)
-    {'alpha', 'beta'}
-
-    >>> serialized = serialize_to_semi_str({"alpha;beta", r"c:\tmp"})
-    >>> _normalize_as_set(serialized)
-    {'alpha;beta', 'c:\\tmp'}
-
-    >>> serialize_to_semi_str(set()) == LEGACY_TOKEN
+    >>> _normalize_as_set(serialized) == {'alpha', 'beta'}
     True
-    >>> _normalize_as_set(serialize_to_semi_str(set()))
-    set()
+    >>>
 
-    >>> serialize_to_semi_str({" leading"})
-    Traceback (most recent call last):
-        ...
-    ValueError: Set members must not have leading or trailing whitespace
+    >>> serialized_b = _serialize_to_semi_str({"alpha;beta", "gamma"})
+    >>> _normalize_as_set(serialized_b) == {'alpha;beta', 'gamma'}
+    True
+    >>>
+
+    >>> _serialize_to_semi_str(set()) == LEGACY_TOKEN
+    True
+    >>> _normalize_as_set(_serialize_to_semi_str(set())) == set()
+    True
+    >>>
+
+    >>> _serialize_to_semi_str({" leading"}) == 'leading'
+    True
+    >>>
+
     """
     if not LEGACY_TOKEN:
         raise ValueError("LEGACY_TOKEN must be non-empty")

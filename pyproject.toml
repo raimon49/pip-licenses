@@ -82,7 +82,7 @@ version = {attr = "piplicenses.__version__"}
 readme = {file = ["README.md", "CHANGELOG.md"], content-type = "text/markdown; charset=UTF-8; variant=GFM"}
 
 [tool.pytest.ini_options]
-addopts = "-v --cov --cov-report term-missing"
+addopts = "-v --doctest-modules --doctest-glob=piplicenses/*.py --cov --cov-report term-missing"
 
 [tool.ruff]
 line-length = 79
