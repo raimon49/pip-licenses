@@ -2116,7 +2116,7 @@ def test_warn_on_does_not_stop_at_the_first_occurrence(
             return None
 
         @property
-        def metadata(self):  # type: ignore[override]
+        def metadata(self) -> email.message.Message:  # type: ignore[override]
             return self._metadata
 
         @property
@@ -2166,7 +2166,10 @@ def test_warn_on_partial_match(monkeypatch: pytest.MonkeyPatch) -> None:
     create_licenses_table(args)
 
     assert "" == mocked_stdout.printed.strip()
-    assert "warn-on license" in mocked_stderr.printed and "MIT" in mocked_stderr.printed
+    assert (
+        "warn-on license" in mocked_stderr.printed
+        and "MIT" in mocked_stderr.printed
+    )
     assert exit_codes == []
 
 
