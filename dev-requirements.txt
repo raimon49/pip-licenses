@@ -8,7 +8,7 @@ backports-tarfile==1.2.0
     # via jaraco-context
 build==1.4.0
     # via pip-tools
-certifi==2026.2.25
+certifi==2026.10.19
     # via requests
 charset-normalizer==3.4.5
     # via requests
