@@ -2127,8 +2127,8 @@ def test_warn_on_does_not_stop_at_the_first_occurrence(
         piplicenses.core.importlib_metadata,
         "distributions",
         lambda *args, **kwargs: [
-            MockDist("alpha", "1.0", "MIT License"),
-            MockDist("beta", "2.0", "MIT License"),
+            MockDist("alpha", "1.0", "MIT License"),  # type: ignore[abstract]
+            MockDist("beta", "2.0", "MIT License"),  # type: ignore[abstract]
         ],
     )
     warn_on_args = ["--warn-on=MIT License"]
