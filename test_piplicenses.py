@@ -2207,7 +2207,9 @@ def test_warn_on_non_string_item(monkeypatch: pytest.MonkeyPatch) -> None:
     exit_codes = []
     monkeypatch.setattr(sys, "exit", lambda n: exit_codes.append(n))
     args = create_parser().parse_args(warn_on_args)
-    args.warn_on.append(FakeItem())  # type: ignore[attr-defined]
+    # The parser normalises --warn-on to a set, so a non-string element is added,
+    # not appended; get_packages() stringifies it like any other entry.
+    args.warn_on.add(FakeItem())  # type: ignore[arg-type]
     create_licenses_table(args)
 
     assert "" == mocked_stdout.printed.strip()
