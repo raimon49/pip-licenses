@@ -563,7 +563,12 @@ def _get_python_sys_path(executable: str) -> list[str]:
     output = subprocess.run(
         [executable, "-c", script],
         capture_output=True,
-        env={**os.environ, "PYTHONPATH": "", "VIRTUAL_ENV": ""},
+        env={
+            **os.environ,
+            "PYTHONPATH": "",
+            "VIRTUAL_ENV": "",
+            "VIRTUALENV_PROMPT": "",  # further mitigate against: CVE-2026-102937
+        },
         check=False,
     )
     # TODO: add encoding="utf-8"
@@ -660,7 +665,7 @@ def select_license_by_source(
     ):
         return license_classifier_set
     else:
-        return {license_meta}
+        return {license_meta} if license_meta else {LICENSE_UNKNOWN}
 
 
 # TODO: Prototype fix for GHI-309 (DO NOT RELEASE YET)
@@ -761,6 +766,18 @@ def get_packages(
             )
         )
 
+    warn_on_licenses = set()
+    if args.warn_on:
+        # filter None types out
+        for item in args.warn_on:
+            if isinstance(item, str):
+                for part in item.split(";"):
+                    cleaned = part.strip()
+                    if cleaned:
+                        warn_on_licenses.add(cleaned)
+            elif item:
+                warn_on_licenses.add(str(item).strip())
+
     for pkg in pkgs:
         pkg_name = normalize_pkg_name(pkg.metadata["name"])
         pkg_version = normalize_version(pkg.metadata["version"])
@@ -770,7 +787,7 @@ def get_packages(
             pkg_name.lower() in ignore_pkgs_as_normalize
             or pkg_name_and_version.lower() in ignore_pkgs_as_normalize
         ):
-            continue
+            continue  # pragma: no cover
 
         if pkgs_as_normalize and pkg_name not in pkgs_as_normalize:
             continue
@@ -787,6 +804,26 @@ def get_packages(
             cast(str, pkg_info["license_expression"]),
         )
         pkg_info["license"] = sorted(license_names)  # cached for API
+
+        if warn_on_licenses:
+            warned_licenses = set()
+            if not args.partial_match:
+                warned_licenses = case_insensitive_set_intersect(
+                    license_names, warn_on_licenses
+                )
+            else:
+                warned_licenses = case_insensitive_partial_match_set_intersect(
+                    license_names, warn_on_licenses
+                )
+            if warned_licenses:
+                _warn_message = (
+                    "warn-on license {} was found for package {}:{}\n".format(
+                        "; ".join(sorted(warned_licenses)),
+                        pkg_info["name"],
+                        pkg_info["version"],
+                    )
+                )
+                sys.stderr.write(_warn_message)
 
         if fail_on_licenses:
             failed_licenses = set()
@@ -826,10 +863,12 @@ def get_packages(
                 _not_allowed_message = (
                     "license {} not in allow-only licenses was found"
                     " for package {}:{}\n"
+                    "Allowed licenses must be one of:\n\t{}\n\n"
                 ).format(
                     "; ".join(sorted(uncommon_licenses)),
                     pkg_info["name"],
                     pkg_info["version"],
+                    "\n\t".join(sorted(allow_only_licenses)),
                 )
                 sys.stderr.write(_not_allowed_message)
                 raise SystemExit(_not_allowed_message, 1) from None

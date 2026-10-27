@@ -47,10 +47,10 @@ from . import (
 )
 from .cli import (
     Configuration,
-    argparse,  # just need argparse.Namespace
     create_parser,
     sys,  # just need sys.stderr
 )
+from .cli._argparse_bridge import argparse  # just need argparse.Namespace
 from .output import (
     create_output_string,
     create_warn_string,
@@ -115,7 +115,7 @@ def main(*args: Any, **kwargs: Any) -> int:
     Also supports (mix & match):
       * main(["--from", "meta", ...])      -> argv passed positionally
 
-    However, this implementation (v6.0.0a0-v6.0.0b8) was/is still a mess.
+    However, this implementation (v6.0.0a0-v6.0.0b13) was/is still a mess.
     """
     argv = kwargs.pop("argv", None)
     flags = kwargs.pop("flags", None)
@@ -167,7 +167,9 @@ def main(*args: Any, **kwargs: Any) -> int:
     try:
         output_string = create_output_string(_config)
 
-        output_file = _config.output_file
+        output_file = (
+            str(_config.output_file) if _config.output_file else None
+        )  # normalize as string -- https://github.com/raimon49/pip-licenses/issues/389
         save_if_needs(output_file, output_string)
 
         # prior to v6.0.0b7 this exception was an actual sys.exit(int) call,
@@ -176,9 +178,30 @@ def main(*args: Any, **kwargs: Any) -> int:
         # eventually
     except SystemExit as _abort:
         exit_code = _abort.code if isinstance(_abort.code, int) else 1
-        raise SystemExit(exit_code) from _abort  # mimic pre-v6.0 behavior
+        err_msg: str = (
+            next((s for s in _abort.args if isinstance(s, str)), "")
+            or f"{_abort.args}"  # e.g., if default or None then describe
+        )
+        ext_code: int = next((i for i in _abort.args if isinstance(i, int)), 0)
+        if isinstance(ext_code, int):
+            exit_code = ext_code
+        # The rest of this condition is defensive: But may not actually be needed.
+        elif ext_code is None:  # pragma: no cover
+            exit_code = 0
+        else:  # pragma: no cover
+            exit_code = 1
+        if exit_code > 0:
+            _fallback: str = "Unspecified failure. (ref: Regression-ghi-389)"
+            raise SystemExit(
+                err_msg or _fallback,  # type: ignore[attr-defined]
+                exit_code,
+            ) from _abort
+            # GHI: 389 -- instead of just `raise` which loses some details
+        else:
+            raise SystemExit(exit_code) from None  # mimic pre-v6.0 behavior
 
-    print(output_string)
+    if exit_code < 1:
+        print(output_string)
     # TODO: use warnings
     # TODO: define exit_code value(s?) for warnings (2 is arbitrary)
     warn_string = create_warn_string(_config)

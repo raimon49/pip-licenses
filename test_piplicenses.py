@@ -264,17 +264,15 @@ class TestGetLicenses(CommandLineTestCase):
             row[index_license_expression] for row in table.rows
         ]
 
-        for license_name in ("BSD", "MIT", "Apache-2.0"):
+        for license_name in ("PSF-2.0", "MIT", "Apache-2.0"):
             self.assertIn(license_name, license_meta)
-        for license_name in (
-            "BSD License",
+        for license_class in (
+            "BSD License",  # for BSD-3-Clause
             "MIT License",
         ):
-            self.assertIn(license_name, license_classifier)
-        # TODO enable assert once a dependency uses 'License-Expression'
-        # TODO (maybe black)
-        # for license_name in ("MIT",):
-        #     self.assertIn(license_name, license_expression)
+            self.assertIn(license_class, license_classifier)
+        for license_express in ("BSD-3-Clause",):
+            self.assertIn(license_express, license_expression)
 
     def test_find_license_from_classifier(self) -> None:
         classifiers = ["License :: OSI Approved :: MIT License"]
@@ -437,7 +435,11 @@ class TestGetLicenses(CommandLineTestCase):
 
         output_fields = get_output_fields(args)
         self.assertNotEqual(output_fields, list(DEFAULT_OUTPUT_FIELDS))
-        self.assertIn("LicenseFile", output_fields)
+        self.assertIn(
+            "LicenseFile",
+            output_fields,
+            f"Invalid args: {args}",
+        )
         self.assertIn("LicenseText", output_fields)
         self.assertNotIn("NoticeFile", output_fields)
         self.assertNotIn("NoticeText", output_fields)
@@ -507,7 +509,11 @@ class TestGetLicenses(CommandLineTestCase):
 
         output_fields = get_output_fields(args)
         self.assertNotEqual(output_fields, list(DEFAULT_OUTPUT_FIELDS))
-        self.assertIn("LicenseFiles", output_fields)
+        self.assertIn(
+            "LicenseFiles",
+            output_fields,
+            f"Invalid args: {args}",
+        )
         self.assertIn("LicenseTexts", output_fields)
         self.assertNotIn("NoticeFile", output_fields)
         self.assertNotIn("NoticeText", output_fields)
@@ -811,6 +817,7 @@ class TestGetLicenses(CommandLineTestCase):
         format_plain_args = [
             "--format=plain-vertical",
             "--with-license-files",
+            "--with-paths",
         ]
         args = self.parser.parse_args(format_plain_args)
         output_string = create_output_string(args)
@@ -821,7 +828,8 @@ class TestGetLicenses(CommandLineTestCase):
             re.search(
                 r"packaging\n\d+\.\d(\.\d)?\nApache-2.0\sOR\sBSD-2-Clause\nLICENSE\n",
                 output_string,
-            )
+            ),
+            f"Invalid args: {args}",
         )
         self.assertIn("LICENSE.APACHE", output_string)
         self.assertIn("LICENSE.BSD", output_string)
@@ -1587,12 +1595,140 @@ class TestEdges(unittest.TestCase):
         )
 
 
+class CommandLineSmokeTests(TestEdges):
+    @staticmethod
+    def _run_cli(*args: str) -> tuple[int, str, str]:
+        """
+        Invoke the CLI entrypoint in-process, mirroring the existing
+        SystemExit-based patterns used elsewhere in this suite.
+
+        This avoids a real subprocess while still testing the actual
+        main() command flow.
+        """
+        import io  # always import for guiding mypy, as per PEP-749
+
+        stdout_buffer = io.StringIO()
+        stderr_buffer = io.StringIO()
+
+        old_argv = sys.argv[:]
+        old_stdout = sys.stdout
+        old_stderr = sys.stderr
+
+        sys.argv = ["pip-licenses", *args]
+        sys.stdout = stdout_buffer
+        sys.stderr = stderr_buffer
+
+        exit_code = 0
+        # GHI #81 -- early prototype for an API
+        try:
+            try:
+                try:
+                    import piplicenses.__main__ as cli_module
+
+                    cli_main = cli_module.main
+                except (ImportError, ModuleNotFoundError) as _ierr:
+                    raise unittest.SkipTest(
+                        "Can't import pip-licenses main. See GHI-81"
+                    ) from _ierr
+
+                cli_main()
+            except SystemExit as _expected:
+                print(
+                    f"Caught expected {_expected!r} (with code {_expected.code}).",
+                    file=old_stderr,
+                )
+                err_msg: str = (
+                    next((s for s in _expected.args if isinstance(s, str)), "")
+                    or f"{_expected.args}"  # e.g., if default or None then describe
+                )
+                ext_code: int = next(
+                    (i for i in _expected.args if isinstance(i, int)), 0
+                )
+                if isinstance(ext_code, int):
+                    exit_code = ext_code
+                elif ext_code is None:
+                    exit_code = 0
+                else:
+                    exit_code = 1
+                if isinstance(err_msg, str):
+                    if exit_code >= 1:
+                        print(
+                            err_msg,
+                            file=stderr_buffer,
+                        )
+                    else:
+                        print(
+                            err_msg,
+                            file=stdout_buffer,
+                        )
+        finally:
+            sys.argv = old_argv
+            sys.stdout = old_stdout
+            sys.stderr = old_stderr
+
+        return exit_code, stdout_buffer.getvalue(), stderr_buffer.getvalue()
+
+    def test_cli_formats_smoke(self) -> None:
+        for fmt in (
+            "plain",
+            "markdown",
+            "rst",
+            "html",
+            "json",
+            "csv",
+            "plain-vertical",
+        ):
+            with self.subTest(format=fmt):
+                code, out, err = self._run_cli(
+                    f"--format={fmt}",
+                    "--packages=pytest",
+                )
+                self.assertEqual(
+                    code,
+                    0,
+                    msg=f"format={fmt} failed: stdout={out!r} stderr={err!r}",
+                )
+                combined = out + err
+                self.assertIn("pytest", combined.lower())
+
+    def test_cli_output_file_writes_content(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_path = Path(temp_dir) / "licenses.json"
+            if output_path.exists():
+                self.skipTest("Temp dir already exists; can not test.")
+            code, out, err = self._run_cli(
+                "--format=json",
+                "--packages=pytest",
+                f"--output-file={output_path}",
+            )
+            # GHI #389 -- verify output-file writes some content
+            self.assertEqual(code, 0, msg=f"stdout={out!r} stderr={err!r}")
+            self.assertTrue(output_path.exists())
+            self.assertIn("created path:", out)
+            self.assertIn('"Name"', output_path.read_text(encoding="utf-8"))
+
+    def test_cli_output_file_rejects_invalid_path(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            bad_path = Path(temp_dir) / "missing" / "nested" / "licenses.txt"
+            if bad_path.exists():
+                self.skipTest("Temp bad-path already exists; can not test.")
+            code, out, err = self._run_cli(
+                "--format=plain",
+                "--packages=pytest",
+                f"--output-file={bad_path}",
+            )
+            # GHI #389 -- verify output-file errors on bad path
+            self.assertEqual(code, 1, msg=f"stdout={out!r} stderr={err!r}")
+            self.assertIn("check path: --output-file", err)
+            self.assertFalse(bad_path.exists())
+
+
 class MockStdStream:
     def __init__(self) -> None:
         self.printed = ""
 
     def write(self: MockStdStream, p: str) -> None:
-        self.printed = p
+        self.printed += p
 
 
 def test_output_file_success(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -1639,7 +1775,8 @@ def test_output_file_error(monkeypatch: pytest.MonkeyPatch) -> None:
         save_if_needs("/foo/bar.txt", "license list")
     except SystemExit as _expected:
         print(
-            f"Caught expected {_expected} (with code {_expected.code}). But Ignoring for test."
+            f"Caught expected {_expected} (with code {_expected.code}). But Ignoring for test.",
+            file=sys.stderr,
         )
         err_msg = str(_expected)
         assert "check path: " in err_msg
@@ -1660,11 +1797,47 @@ def test_output_file_none(monkeypatch: pytest.MonkeyPatch) -> None:
         save_if_needs(None, "license list")  # type: ignore[arg-type]
     except SystemExit as _expected:
         print(
-            f"Caught expected {_expected} (with code {_expected.code}). But Ignoring for test."
+            f"Caught expected {_expected} (with code {_expected.code}). But Ignoring for test.",
+            file=sys.stderr,
         )
     # stdout and stderr are expected not to be called
     assert "" == mocked_stdout.printed
-    assert "" == mocked_stderr.printed
+    assert ("" == mocked_stderr.printed) or (
+        mocked_stderr.printed.startswith("Caught expected ")
+        and mocked_stderr.printed.endswith(". But Ignoring for test.")
+    )
+
+
+def test_allow_only_flag_is_stable(monkeypatch: pytest.MonkeyPatch) -> None:
+    licenses = (
+        "Bsd License",
+        "BSD-3-Clause",  # v6 considers this unique
+        "BSD-2-Clause",  # v6 considers this unique
+        "Apache Software License",
+        "Apache-2.0 OR BSD-2-Clause",  # v6 considers this unique (e.g., packaging==26.2)
+        "Mozilla Public License 2.0 (MPL 2.0)",
+        "Python Software Foundation License",
+        "Public Domain",
+        "GNU General Public License (GPL)",
+        "GNU Library or Lesser General Public License (LGPL)",
+    )
+    allow_only_args = ["--allow-only={}".format(";".join(licenses))]
+    mocked_stdout = MockStdStream()
+    mocked_stderr = MockStdStream()
+    monkeypatch.setattr(sys.stdout, "write", mocked_stdout.write)
+    monkeypatch.setattr(sys.stderr, "write", mocked_stderr.write)
+    monkeypatch.setattr(sys, "exit", lambda n: None)
+    args = create_parser().parse_args(allow_only_args)
+    try:
+        create_licenses_table(args)
+    except SystemExit as _expected:
+        print(
+            f"Caught expected {_expected}. But Ignoring for test.",
+            file=sys.stderr,
+        )
+
+    assert "" == mocked_stdout.printed.strip()
+    # just need to reach end for this test
 
 
 def test_allow_only(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -1690,7 +1863,10 @@ def test_allow_only(monkeypatch: pytest.MonkeyPatch) -> None:
     try:
         create_licenses_table(args)
     except SystemExit as _expected:
-        print(f"Caught expected {_expected}. But Ignoring for test.")
+        print(
+            f"Caught expected {_expected}. But Non-fatal for test.",
+            file=sys.stderr,
+        )
 
     assert "" == mocked_stdout.printed.strip()
     assert (
@@ -1734,7 +1910,10 @@ def test_allow_only_partial(monkeypatch: pytest.MonkeyPatch) -> None:
     try:
         create_licenses_table(args)
     except SystemExit as _expected:
-        print(f"Caught expected {_expected}. But Ignoring for test.")
+        print(
+            f"Caught expected {_expected}. Non-fatal for test.",
+            file=sys.stderr,
+        )
 
     assert "" == mocked_stdout.printed.strip()
     assert (
@@ -1774,7 +1953,10 @@ def test_allow_only_with_empty_tokens(
     try:
         create_licenses_table(args)
     except SystemExit as _expected:
-        print(f"Caught expected {_expected}. But Ignoring for test.")
+        print(
+            f"Caught expected {_expected}. Non-fatal for test.",
+            file=sys.stderr,
+        )
 
     assert "" == mocked_stdout.printed.strip()
     assert (
@@ -1802,7 +1984,10 @@ def test_fail_on_with_empty_tokens(
     try:
         create_licenses_table(args)
     except SystemExit as _expected:
-        print(f"Caught expected {_expected}. But Ignoring for test.")
+        print(
+            f"Caught expected {_expected}. Non-fatal for test.",
+            file=sys.stderr,
+        )
 
     assert "" == mocked_stdout.printed.strip()
     assert (
@@ -1830,6 +2015,7 @@ def test_different_python() -> None:
             venv_builder.create(str(target_dir_path))
             python_exec = venv_builder.context.env_exe
         except venv_subprocess.CalledProcessError as skip_cause:
+            # GHI #389 -- e.g., skip if test is in a nested venv run
             raise unittest.SkipTest(_warning_skip) from skip_cause
         python_arg = f"--python={python_exec}" if python_exec else ""
         args = create_parser().parse_args([python_arg, "-s", "-f=json"])
@@ -1855,7 +2041,10 @@ def test_fail_on(monkeypatch: pytest.MonkeyPatch) -> None:
     try:
         create_licenses_table(args)
     except SystemExit as _expected:
-        print(f"Caught expected {_expected}. But Ignoring for test.")
+        print(
+            f"Caught expected {_expected}. Non-fatal for test.",
+            file=sys.stderr,
+        )
 
     assert "" == mocked_stdout.printed.strip()
     assert (
@@ -1879,7 +2068,10 @@ def test_fail_on_partial_match(monkeypatch: pytest.MonkeyPatch) -> None:
     try:
         create_licenses_table(args)
     except SystemExit as _expected:
-        print(f"Caught expected {_expected}. But Ignoring for test.")
+        print(
+            f"Caught expected {_expected}. Non-fatal for test.",
+            file=sys.stderr,
+        )
 
     assert "" == mocked_stdout.printed.strip()
     assert (
@@ -1887,6 +2079,145 @@ def test_fail_on_partial_match(monkeypatch: pytest.MonkeyPatch) -> None:
     ) and (  # GHI 292 -- partial match may ommit 'License'
         " was found for package" in mocked_stderr.printed
     )
+
+
+def test_warn_on(monkeypatch: pytest.MonkeyPatch) -> None:
+    licenses = ("MIT license",)
+    warn_on_args = ["--warn-on={}".format(";".join(licenses))]
+    mocked_stdout = MockStdStream()
+    mocked_stderr = MockStdStream()
+    monkeypatch.setattr(sys.stdout, "write", mocked_stdout.write)
+    monkeypatch.setattr(sys.stderr, "write", mocked_stderr.write)
+    exit_codes = []
+    monkeypatch.setattr(sys, "exit", lambda n: exit_codes.append(n))
+    args = create_parser().parse_args(warn_on_args)
+    create_licenses_table(args)
+
+    assert "" == mocked_stdout.printed.strip()
+    assert (
+        "warn-on license MIT" in mocked_stderr.printed
+        and " was found for package" in mocked_stderr.printed
+    )
+    # a warning never fails the run
+    assert exit_codes == []
+
+
+def test_warn_on_does_not_stop_at_the_first_occurrence(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class MockDist(Distribution):
+        def __init__(self, name: str, version: str, license_name: str) -> None:
+            self._metadata = email.message.Message()
+            self._metadata["Name"] = name
+            self._metadata["Version"] = version
+            self._metadata["License"] = license_name
+
+        def read_text(self, filename: str) -> str | None:
+            return None
+
+        @property
+        def metadata(self) -> email.message.Message:  # type: ignore[override]
+            return self._metadata
+
+        @property
+        def version(self) -> str:
+            return self._metadata["Version"]
+
+    monkeypatch.setattr(
+        piplicenses.core.importlib_metadata,
+        "distributions",
+        lambda *args, **kwargs: [
+            MockDist("alpha", "1.0", "MIT License"),  # type: ignore[abstract]
+            MockDist("beta", "2.0", "MIT License"),  # type: ignore[abstract]
+        ],
+    )
+    warn_on_args = ["--warn-on=MIT License"]
+    mocked_stdout = MockStdStream()
+    mocked_stderr = MockStdStream()
+    monkeypatch.setattr(sys.stdout, "write", mocked_stdout.write)
+    monkeypatch.setattr(sys.stderr, "write", mocked_stderr.write)
+    exit_codes = []
+    monkeypatch.setattr(sys, "exit", lambda n: exit_codes.append(n))
+    args = create_parser().parse_args(warn_on_args)
+    create_licenses_table(args)
+
+    assert "" == mocked_stdout.printed.strip()
+    assert (
+        "warn-on license MIT License was found for package alpha:1.0\n"
+        "warn-on license MIT License was found for package beta:2.0\n"
+        == mocked_stderr.printed
+    )
+    assert exit_codes == []
+
+
+def test_warn_on_partial_match(monkeypatch: pytest.MonkeyPatch) -> None:
+    licenses = ("MIT",)
+    warn_on_args = [
+        "--partial-match",
+        "--warn-on={}".format(";".join(licenses)),
+    ]
+    mocked_stdout = MockStdStream()
+    mocked_stderr = MockStdStream()
+    monkeypatch.setattr(sys.stdout, "write", mocked_stdout.write)
+    monkeypatch.setattr(sys.stderr, "write", mocked_stderr.write)
+    exit_codes = []
+    monkeypatch.setattr(sys, "exit", lambda n: exit_codes.append(n))
+    args = create_parser().parse_args(warn_on_args)
+    create_licenses_table(args)
+
+    assert "" == mocked_stdout.printed.strip()
+    assert (
+        "warn-on license" in mocked_stderr.printed
+        and "MIT" in mocked_stderr.printed
+    )
+    assert exit_codes == []
+
+
+def test_warn_on_with_empty_tokens(monkeypatch: pytest.MonkeyPatch) -> None:
+    licenses = ("MIT license",)
+    warn_on_args = ["--warn-on=;;  {} ;".format(";".join(licenses))]
+    mocked_stdout = MockStdStream()
+    mocked_stderr = MockStdStream()
+    monkeypatch.setattr(sys.stdout, "write", mocked_stdout.write)
+    monkeypatch.setattr(sys.stderr, "write", mocked_stderr.write)
+    exit_codes = []
+    monkeypatch.setattr(sys, "exit", lambda n: exit_codes.append(n))
+    args = create_parser().parse_args(warn_on_args)
+    create_licenses_table(args)
+
+    assert "" == mocked_stdout.printed.strip()
+    assert (
+        "warn-on license MIT" in mocked_stderr.printed
+        and " was found for package" in mocked_stderr.printed
+    )
+    assert exit_codes == []
+
+
+def test_warn_on_non_string_item(monkeypatch: pytest.MonkeyPatch) -> None:
+    class FakeItem:
+        def __str__(self) -> str:
+            return "MIT License"
+
+    licenses = ("MIT license",)
+    warn_on_args = ["--warn-on={}".format(";".join(licenses))]
+    mocked_stdout = MockStdStream()
+    mocked_stderr = MockStdStream()
+    monkeypatch.setattr(sys.stdout, "write", mocked_stdout.write)
+    monkeypatch.setattr(sys.stderr, "write", mocked_stderr.write)
+    exit_codes = []
+    monkeypatch.setattr(sys, "exit", lambda n: exit_codes.append(n))
+    args = create_parser().parse_args(warn_on_args)
+    # The parser normalises --warn-on to a set, so a non-string element is added,
+    # not appended; get_packages() stringifies it like any other entry.
+    args.warn_on.add(FakeItem())  # type: ignore[arg-type]
+    create_licenses_table(args)
+
+    assert "" == mocked_stdout.printed.strip()
+    assert (
+        "warn-on license MIT" in mocked_stderr.printed
+        and " was found for package" in mocked_stderr.printed
+    )
+    assert exit_codes == []
 
 
 def test_enums() -> None:

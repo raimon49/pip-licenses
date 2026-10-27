@@ -54,7 +54,10 @@ from .. import (
 )
 
 # See https://docs.python.org/3/library/argparse.html
-from ._argparse_bridge import argparse
+from ._argparse_bridge import (
+    add_all_toggle_argument_groups,
+    argparse,
+)
 from .config import (
     DEFAULT_PYTHON,
     Configuration,
@@ -168,7 +171,13 @@ class CompatibleArgumentParser(argparse.ArgumentParser):
             args.with_license_file is False
             and args.with_license_files is False
         ) and (
-            args.no_license_path is True
+            (
+                (
+                    "6.0" in __version__
+                    and (args.no_license_path or args.without_license_paths)
+                )
+                or args.with_license_paths is False
+            )
             or (
                 (
                     args.with_notice_file is True
@@ -178,31 +187,25 @@ class CompatibleArgumentParser(argparse.ArgumentParser):
             )
         ):
             self.error(
-                "'--no-license-path' and '--with-notice-file[s]' "
-                "as well as '--with-other-files' require "
-                "the '--with-license-file[s]' option to be set"
+                f"'--no-license-path' ({args.without_license_paths}) "
+                f"and '--with-notice-file[s]' ({args.with_notice_file or args.with_notice_files}) "
+                f"as well as '--with-other-files' ({args.with_other_files}) require "
+                "one of the '--with-files' or '--with-license-file[s]' "
+                f"({args.global_files or args.with_license_file or args.with_license_files}) options to be set"
             )
         if args.partial_match is True and (
             (args.fail_on is None or len(args.fail_on) <= 0)
-            and (args.allow_on is None or len(args.allow_on) <= 0)
-            and (
-                (
-                    "6.1" in __version__
-                    and (args.warn_on is None or len(args.allow_on) <= 0)
-                )
-                or True
-            )
+            and (args.allow_only is None or len(args.allow_only) <= 0)
+            and (args.warn_on is None or len(args.warn_on) <= 0)
         ):
             self.error(
                 "'--partial-match' and '--simple-match' "
                 "require at least one of "
-                "the '--fail-on'/'--allow-only' options to be set."
+                "the '--fail-on'/'--allow-only'/'--warn-on' options to be set."
                 # An empty string will also not count.
             )
             # TODO: GHI-274 refactor for allow-package (name WIP)
             # e.g., "as well as '--allow-package' require "
-            # TODO: GHI-274 refactor for warn-on
-            # e.g., ".../'--warn-on' options ..."
 
         if args.filter_strings is False and args.filter_code_page != "latin1":
             self.error(
@@ -406,12 +409,33 @@ def _migrate_no_license_path_helper(config_from_file: dict) -> bool:
     )
     if _conf_stub is True:
         warnings.warn(
-            "DEPRECIATED in v6.0; use include-system instead."
+            "DEPRECIATED in v6.0; use with-license-paths=false instead."
             "This will be an error in the future."
             "See https://github.com/raimon49/pip-licenses/issues/349",
             stacklevel=2,
         )
     return _conf_stub
+
+
+def _migrate_without_license_paths_helper(config_from_file: dict) -> bool:
+    """Configure with with-license-paths=False instead.
+
+    Helper for migration in version v6.0.0
+    """
+    import warnings
+
+    _conf_stub: bool = config_from_file.get(
+        "without-license-paths",  # DEPRECATED in v6.0+
+        _migrate_no_license_path_helper(config_from_file),
+    )
+    if _conf_stub is True:
+        warnings.warn(
+            "INVERTED in v6.0; use with-license-paths=false instead."
+            "This may error in the future."
+            "See https://github.com/raimon49/pip-licenses/issues/349",
+            stacklevel=2,
+        )
+    return _conf_stub is False
 
 
 def _add_verification_arguments_to_parser(
@@ -436,21 +460,20 @@ def _add_verification_arguments_to_parser(
             "Options to verify licensing state of packages.",
             # after GHI-274 WILL CHANGE to "Options to stipulate licensing policy for packages.",
         )
-        # placeholder for warn-on
+        verify_group.add_argument(
+            "-W",
+            "--warn-on",
+            action="extend",
+            dest="warn_on",
+            nargs="+",
+            metavar="WARN_ON",
+            default=warn_by_default,
+            help="R|warn (emitted to stderr) on the each occurrence\n"
+            "of the specified licenses, but do not fail. Useful for\n"
+            "licenses that have complex conditions (e.g., attribution,\n"
+            "user notices, etc.). May be used multiple times.",
+        )
         if "6.1" in __version__:
-            verify_group.add_argument(
-                "-W",
-                "--warn-on",
-                action="extend",
-                dest="warn_on",
-                nargs="+",
-                metavar="WARN_ON",
-                default=warn_by_default,
-                help="R|warn (emitted to stderr) on the each occurrence\n"
-                "of the specified licenses, but do not fail. Useful for\n"
-                "licenses that have complex conditions (e.g., attribution,\n"
-                "user notices, etc.). May be used multiple times.",
-            )
             verify_group.add_argument(
                 "--allow-packages",
                 action="extend",
@@ -525,7 +548,9 @@ def _add_format_arguments_to_parser(
             "--format",
             dest="format_",
             action=SelectAction,
-            type=str,
+            type=lambda x: str(
+                x
+            ).lower(),  # added in v6.0+ -- input is case-insensitive
             default=get_value_from_enum(
                 FormatArg,
                 format_default,
@@ -779,74 +804,41 @@ def create_parser(
         "see README for workflow examples. "
         "DEPRECATED; use --with-license-files.",
     )
-    license_file_options.add_argument(
-        "--with-license-files",
-        action="store_true",
-        default=config_from_file.get("with-license-files", False),
-        help="dump with location of each license file and contents, most useful with JSON output",
+
+    license_file_options = add_all_toggle_argument_groups(  # type: ignore[assignment]
+        some_parser=license_file_options,
     )
-    license_file_options.add_argument(
-        "--without-license-paths",
-        "--no-license-path",
-        action="store_true",
-        dest="no_license_path"
-        if "6.0." in __version__
-        else "without_license_paths",
-        default=config_from_file.get(
-            "without-license-paths",
-            _migrate_no_license_path_helper(config_from_file),
-        ),
-        help="I|when specified together with option -l, "
-        "suppress location of license file(s) in output",
-    )
-    license_file_options.add_argument(
-        "--without-file-paths",
-        "--no-file-paths",
-        action="store_true",  # if "6.0." in __version__ else "store_false",
-        dest="no_file_paths",  # if "6.0." in __version__ else "show-file-paths",
-        default=config_from_file.get(
-            "no-file-paths",  # if "6.0." in __version__ else "show-file-paths",
-            False,  # if "6.0." in __version__ else True,
-        ),
-        help="I|Suppress location of file path(s) in output",
-    )
-    license_file_options.add_argument(
-        "--with-notice-file",
-        action="store_true",
-        default=config_from_file.get("with-notice-file", False),
-        help="I|when specified together with option -l, "
-        "dump with location of up to one notice file and contents",
-    )
-    license_file_options.add_argument(
-        "--with-notice-files",
-        action="store_true",
-        default=config_from_file.get("with-notice-files", False),
-        help="I|when specified together with option -l, "
-        "dump with location of all notice files and contents",
-    )
-    license_file_options.add_argument(
-        "--without-notice-paths",  # added in v6.0+
-        action="store_true",  # if "6.0." in __version__ else "store_const",
-        dest="without_notice_paths",
-        default=config_from_file.get("without-notice-paths", False),
-        help="I|when specified together with option --with-notice-files, "
-        "suppress location of notice file(s) in output",
-    )
-    license_file_options.add_argument(
-        "--with-other-files",
-        action="store_true",
-        default=config_from_file.get("with-other-files", False),
-        help="I|when specified together with option -l"
-        " or --with-license-files, dump with location"
-        " of other licensing-related files and contents",
-    )
-    license_file_options.add_argument(
-        "--without-other-paths",  # added in v6.0+
-        action="store_true",  # if "6.0." in __version__ else "store_const",
-        dest="without_other_paths",
-        default=config_from_file.get("without-other-paths", False),
-        help="I|when specified together with option --with-other-files or --with-notice-files, "
-        "suppress location of other file(s) in output",
-    )
+    if "6.0." in __version__:
+        license_file_options.add_argument(
+            "--no-license-path",
+            action="store_false",
+            dest="with_license_paths",
+            default=config_from_file.get(
+                "with-license-paths",
+                _migrate_without_license_paths_helper(config_from_file),
+            ),
+            help="I|when specified together with option -l, "
+            "suppress location of license file(s) in output"
+            "DEPRECATED; use --without-license-paths instead. May be removed in the future",
+        )
+        license_file_options.add_argument(
+            "--no-file-paths",
+            action="store_true",  # if "6.0." in __version__ else "store_false",
+            dest="no_file_paths",  # if "6.0." in __version__ else "global_paths",
+            default=config_from_file.get(
+                "no-file-paths",  # if "6.0." in __version__ else "global_paths",
+                False,  # if "6.0." in __version__ else True,
+            ),
+            help="I|Suppress location of file path(s) in output"
+            "DEPRECATED; use --without-paths instead. May be removed in the future",
+        )
+        license_file_options.add_argument(
+            "--with-notice-file",
+            action="store_true",
+            default=config_from_file.get("with-notice-file", False),
+            help="I|when specified together with option -l, "
+            "dump with location of up to one notice file and contents"
+            "DEPRECATED; use --with-notices instead. May be removed in the future",
+        )
 
     return parser
