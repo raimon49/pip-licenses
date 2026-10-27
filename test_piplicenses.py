@@ -2081,6 +2081,145 @@ def test_fail_on_partial_match(monkeypatch: pytest.MonkeyPatch) -> None:
     )
 
 
+def test_warn_on(monkeypatch: pytest.MonkeyPatch) -> None:
+    licenses = ("MIT license",)
+    warn_on_args = ["--warn-on={}".format(";".join(licenses))]
+    mocked_stdout = MockStdStream()
+    mocked_stderr = MockStdStream()
+    monkeypatch.setattr(sys.stdout, "write", mocked_stdout.write)
+    monkeypatch.setattr(sys.stderr, "write", mocked_stderr.write)
+    exit_codes = []
+    monkeypatch.setattr(sys, "exit", lambda n: exit_codes.append(n))
+    args = create_parser().parse_args(warn_on_args)
+    create_licenses_table(args)
+
+    assert "" == mocked_stdout.printed.strip()
+    assert (
+        "warn-on license MIT" in mocked_stderr.printed
+        and " was found for package" in mocked_stderr.printed
+    )
+    # a warning never fails the run
+    assert exit_codes == []
+
+
+def test_warn_on_does_not_stop_at_the_first_occurrence(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class MockDist(Distribution):
+        def __init__(self, name: str, version: str, license_name: str) -> None:
+            self._metadata = email.message.Message()
+            self._metadata["Name"] = name
+            self._metadata["Version"] = version
+            self._metadata["License"] = license_name
+
+        def read_text(self, filename: str) -> str | None:
+            return None
+
+        @property
+        def metadata(self) -> email.message.Message:  # type: ignore[override]
+            return self._metadata
+
+        @property
+        def version(self) -> str:
+            return self._metadata["Version"]
+
+    monkeypatch.setattr(
+        piplicenses.core.importlib_metadata,
+        "distributions",
+        lambda *args, **kwargs: [
+            MockDist("alpha", "1.0", "MIT License"),  # type: ignore[abstract]
+            MockDist("beta", "2.0", "MIT License"),  # type: ignore[abstract]
+        ],
+    )
+    warn_on_args = ["--warn-on=MIT License"]
+    mocked_stdout = MockStdStream()
+    mocked_stderr = MockStdStream()
+    monkeypatch.setattr(sys.stdout, "write", mocked_stdout.write)
+    monkeypatch.setattr(sys.stderr, "write", mocked_stderr.write)
+    exit_codes = []
+    monkeypatch.setattr(sys, "exit", lambda n: exit_codes.append(n))
+    args = create_parser().parse_args(warn_on_args)
+    create_licenses_table(args)
+
+    assert "" == mocked_stdout.printed.strip()
+    assert (
+        "warn-on license MIT License was found for package alpha:1.0\n"
+        "warn-on license MIT License was found for package beta:2.0\n"
+        == mocked_stderr.printed
+    )
+    assert exit_codes == []
+
+
+def test_warn_on_partial_match(monkeypatch: pytest.MonkeyPatch) -> None:
+    licenses = ("MIT",)
+    warn_on_args = [
+        "--partial-match",
+        "--warn-on={}".format(";".join(licenses)),
+    ]
+    mocked_stdout = MockStdStream()
+    mocked_stderr = MockStdStream()
+    monkeypatch.setattr(sys.stdout, "write", mocked_stdout.write)
+    monkeypatch.setattr(sys.stderr, "write", mocked_stderr.write)
+    exit_codes = []
+    monkeypatch.setattr(sys, "exit", lambda n: exit_codes.append(n))
+    args = create_parser().parse_args(warn_on_args)
+    create_licenses_table(args)
+
+    assert "" == mocked_stdout.printed.strip()
+    assert (
+        "warn-on license" in mocked_stderr.printed
+        and "MIT" in mocked_stderr.printed
+    )
+    assert exit_codes == []
+
+
+def test_warn_on_with_empty_tokens(monkeypatch: pytest.MonkeyPatch) -> None:
+    licenses = ("MIT license",)
+    warn_on_args = ["--warn-on=;;  {} ;".format(";".join(licenses))]
+    mocked_stdout = MockStdStream()
+    mocked_stderr = MockStdStream()
+    monkeypatch.setattr(sys.stdout, "write", mocked_stdout.write)
+    monkeypatch.setattr(sys.stderr, "write", mocked_stderr.write)
+    exit_codes = []
+    monkeypatch.setattr(sys, "exit", lambda n: exit_codes.append(n))
+    args = create_parser().parse_args(warn_on_args)
+    create_licenses_table(args)
+
+    assert "" == mocked_stdout.printed.strip()
+    assert (
+        "warn-on license MIT" in mocked_stderr.printed
+        and " was found for package" in mocked_stderr.printed
+    )
+    assert exit_codes == []
+
+
+def test_warn_on_non_string_item(monkeypatch: pytest.MonkeyPatch) -> None:
+    class FakeItem:
+        def __str__(self) -> str:
+            return "MIT License"
+
+    licenses = ("MIT license",)
+    warn_on_args = ["--warn-on={}".format(";".join(licenses))]
+    mocked_stdout = MockStdStream()
+    mocked_stderr = MockStdStream()
+    monkeypatch.setattr(sys.stdout, "write", mocked_stdout.write)
+    monkeypatch.setattr(sys.stderr, "write", mocked_stderr.write)
+    exit_codes = []
+    monkeypatch.setattr(sys, "exit", lambda n: exit_codes.append(n))
+    args = create_parser().parse_args(warn_on_args)
+    # The parser normalises --warn-on to a set, so a non-string element is added,
+    # not appended; get_packages() stringifies it like any other entry.
+    args.warn_on.add(FakeItem())  # type: ignore[arg-type]
+    create_licenses_table(args)
+
+    assert "" == mocked_stdout.printed.strip()
+    assert (
+        "warn-on license MIT" in mocked_stderr.printed
+        and " was found for package" in mocked_stderr.printed
+    )
+    assert exit_codes == []
+
+
 def test_enums() -> None:
     class TestEnum(Enum):
         PLAIN = P = auto()
