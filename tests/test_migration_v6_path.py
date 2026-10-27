@@ -44,8 +44,8 @@ else:
 def _parse_to_conf(argv: list[str]) -> Configuration:
     """Helper: parse argv (list[str]) via the project's CLI parser and return Configuration."""
     parser = create_parser()
-    ns = parser.parse_args(argv)
-    return Configuration.from_namespace(ns)
+    ns: Configuration = parser.parse_args(argv)
+    return ns
 
 
 @unittest.skipIf(
@@ -94,24 +94,34 @@ class TestParserAliasesAndOutputFields(unittest.TestCase):
 
     def test_combination_with_notice_and_other_paths(self) -> None:
         # Ensure notice and other file toggles parse and affect output fields (basic smoke)
-        conf = _parse_to_conf(
+        # Both singular and plural forms should set the canonical flag
+        conf1 = _parse_to_conf(
             ["-l", "--with-notice-files", "--with-notice-paths"]
         )
-        fields = get_output_fields(conf)
+        conf2 = _parse_to_conf(
+            ["-l", "--with-notice-file", "--with-notice-paths"]
+        )
+        self.assertTrue(
+            bool(getattr(conf1, "with_notice_files", False)),
+            f"Expected 'with_notice_files' to be set to True in: {conf1}",
+        )
+        if "6.0." not in cfg_module.__version__:
+            self.assertTrue(bool(getattr(conf2, "with_notice_files", False)))
+        fields = get_output_fields(conf1)
         self.assertTrue(
             any(
                 f.startswith(("NoticeFile", "NoticeFiles", "Notice"))
                 for f in fields
             )
         )
-        conf2 = _parse_to_conf(
+        conf3 = _parse_to_conf(
             ["-l", "--with-other-files", "--with-other-paths"]
         )
-        fields2 = get_output_fields(conf2)
+        fields3 = get_output_fields(conf3)
         self.assertTrue(
             any(
                 f.startswith(("OtherFile", "OtherFiles", "Other"))
-                for f in fields2
+                for f in fields3
             )
         )
 
