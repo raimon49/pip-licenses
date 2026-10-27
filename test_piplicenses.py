@@ -2193,6 +2193,31 @@ def test_warn_on_with_empty_tokens(monkeypatch: pytest.MonkeyPatch) -> None:
     assert exit_codes == []
 
 
+def test_warn_on_non_string_item(monkeypatch: pytest.MonkeyPatch) -> None:
+    class FakeItem:
+        def __str__(self) -> str:
+            return "MIT License"
+
+    licenses = ("MIT license",)
+    warn_on_args = ["--warn-on={}".format(";".join(licenses))]
+    mocked_stdout = MockStdStream()
+    mocked_stderr = MockStdStream()
+    monkeypatch.setattr(sys.stdout, "write", mocked_stdout.write)
+    monkeypatch.setattr(sys.stderr, "write", mocked_stderr.write)
+    exit_codes = []
+    monkeypatch.setattr(sys, "exit", lambda n: exit_codes.append(n))
+    args = create_parser().parse_args(warn_on_args)
+    args.warn_on.append(FakeItem())  # type: ignore[attr-defined]
+    create_licenses_table(args)
+
+    assert "" == mocked_stdout.printed.strip()
+    assert (
+        "warn-on license MIT" in mocked_stderr.printed
+        and " was found for package" in mocked_stderr.printed
+    )
+    assert exit_codes == []
+
+
 def test_enums() -> None:
     class TestEnum(Enum):
         PLAIN = P = auto()
