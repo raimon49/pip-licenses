@@ -665,7 +665,7 @@ def select_license_by_source(
     ):
         return license_classifier_set
     else:
-        return {license_meta}
+        return {license_meta} if license_meta else {LICENSE_UNKNOWN}
 
 
 # TODO: Prototype fix for GHI-309 (DO NOT RELEASE YET)
@@ -766,6 +766,18 @@ def get_packages(
             )
         )
 
+    warn_on_licenses = set()
+    if args.warn_on:
+        # filter None types out
+        for item in args.warn_on:
+            if isinstance(item, str):
+                for part in item.split(";"):
+                    cleaned = part.strip()
+                    if cleaned:
+                        warn_on_licenses.add(cleaned)
+            elif item:
+                warn_on_licenses.add(str(item).strip())
+
     for pkg in pkgs:
         pkg_name = normalize_pkg_name(pkg.metadata["name"])
         pkg_version = normalize_version(pkg.metadata["version"])
@@ -792,6 +804,26 @@ def get_packages(
             cast(str, pkg_info["license_expression"]),
         )
         pkg_info["license"] = sorted(license_names)  # cached for API
+
+        if warn_on_licenses:
+            warned_licenses = set()
+            if not args.partial_match:
+                warned_licenses = case_insensitive_set_intersect(
+                    license_names, warn_on_licenses
+                )
+            else:
+                warned_licenses = case_insensitive_partial_match_set_intersect(
+                    license_names, warn_on_licenses
+                )
+            if warned_licenses:
+                _warn_message = (
+                    "warn-on license {} was found for package {}:{}\n".format(
+                        "; ".join(sorted(warned_licenses)),
+                        pkg_info["name"],
+                        pkg_info["version"],
+                    )
+                )
+                sys.stderr.write(_warn_message)
 
         if fail_on_licenses:
             failed_licenses = set()
