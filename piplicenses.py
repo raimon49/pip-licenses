@@ -440,7 +440,10 @@ def get_packages(
     for pkg in pkgs:
         pkg_name = normalize_pkg_name(pkg.metadata["name"])
         pkg_version = pkg.metadata["version"]
-        pkg_name_and_version = f"{pkg_name}:{pkg_version}"
+        # The ignore list holds versions normalized by normalize_pkg_name_and_version,
+        # so the installed distribution's raw spelling has to go through the same
+        # normalization before the two are compared (the name half already does).
+        pkg_name_and_version = f"{pkg_name}:{normalize_version(pkg_version)}"
 
         if (
             pkg_name.lower() in ignore_pkgs_as_normalize
