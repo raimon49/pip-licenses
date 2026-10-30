@@ -9,9 +9,9 @@ import sys
 import tempfile
 import unittest
 import venv
-from pathlib import Path
 from enum import Enum, auto
 from importlib.metadata import Distribution
+from pathlib import Path
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any
 from unittest.mock import MagicMock
