@@ -11,6 +11,7 @@ import unittest
 import venv
 from enum import Enum, auto
 from importlib.metadata import Distribution
+from pathlib import Path
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any
 from unittest.mock import MagicMock
@@ -1196,6 +1197,30 @@ def test_normalize_version() -> None:
     assert (
         normalize_version("2.0.0-beta.3.post2.dev1") == "2.0.0beta3post2dev1"
     )
+
+
+def test_ignore_packages_version_spec_matches_metadata_spelling(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A version spec must ignore the dist spelling it normalizes from.
+
+    The ignore list holds name:version keys normalized by
+    normalize_pkg_name_and_version, so the distribution side has to be
+    normalized too: comparing the raw metadata spelling against the
+    normalized key never matched, even when the user typed the version
+    exactly as the installed metadata spells it.
+    """
+    tmp = Path(tempfile.mkdtemp())
+    dist_info = tmp / "foo_bar-1.0-rc1.dist-info"
+    dist_info.mkdir()
+    (dist_info / "METADATA").write_text(
+        "Metadata-Version: 2.4\nName: foo-bar\nVersion: 1.0-rc1\nLicense: MIT\n"
+    )
+    monkeypatch.syspath_prepend(str(tmp))
+    parser = create_parser()
+    args = parser.parse_args(["--ignore-package=foo-bar:1.0-rc1"])
+    listed = [pkg["name"] for pkg in get_packages(args)]
+    assert "foo-bar" not in listed
 
 
 def test_normalize_pkg_name_and_version() -> None:
