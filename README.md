@@ -630,6 +630,12 @@ Other, please make sure to execute the `--help` option.
 
 You can check the package license used by your app in the isolated Docker environment.
 
+The image builds `pip-licenses` from your local checkout and installs your app's
+packages from `docker/requirements.txt` in the same virtual environment. The
+official Python 3.11 slim Bookworm base is pinned by digest, with updates managed
+by Dependabot. App requirements and Python build dependencies are resolved at
+build time; pinning the base does not make the entire image reproducible.
+
 ```bash
 # Clone this repository to local
 $ git clone https://github.com/raimon49/pip-licenses.git
@@ -662,19 +668,10 @@ $ docker run --rm myapp-licenses --summary
 $ docker run --rm myapp-licenses --help
 ```
 
-**Note:** This Docker image can not check package licenses with C and C ++ Extensions. It only works with pure Python package dependencies.
-
-If you want to resolve build environment issues, try using not slim image and more.
-
-```diff
-diff --git a/Dockerfile b/Dockerfile
-index bfc4edc..175e968 100644
---- a/Dockerfile
-+++ b/Dockerfile
-@@ -1,4 +1,4 @@
--FROM python:3.11-slim-bullseye
-+FROM python:3.11-bullseye
-```
+App dependencies that need compilation may require additional build tools.
+For example, use the full `python:3.11-bookworm` image instead of the slim base,
+and pin it to that image's own digest. The slim image's digest cannot be reused
+for a different image.
 
 ## About UnicodeEncodeError
 

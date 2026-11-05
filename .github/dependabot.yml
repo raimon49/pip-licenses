@@ -45,3 +45,14 @@ updates:
     schedule:
       interval: "weekly"
       day: "friday"
+  - package-ecosystem: "docker"
+    directory: "/"
+    target-branch: "master"
+    assignees:
+      - "reactive-firewall"
+    commit-message:
+      prefix: "[UPDATE] "
+      include: "scope"
+    schedule:
+      interval: "weekly"
+      day: "friday"
