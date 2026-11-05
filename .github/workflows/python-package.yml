@@ -27,7 +27,7 @@ jobs:
           if [ -f dev-requirements.txt ]; then pip install -r dev-requirements.txt; fi
       - name: Lint and format with ruff
         run: |
-          ruff check --diff
+          ruff check --output-format=github .
           ruff format --diff
       - name: Validate static typing with mypy
         run: | # the target Python version should be the earliest supported version
