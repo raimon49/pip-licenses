@@ -55,8 +55,10 @@ from .. import (
 
 # See https://docs.python.org/3/library/argparse.html
 from ._argparse_bridge import (
-    add_all_toggle_argument_groups,
     argparse,
+)
+from ._mutually_exclusive_toggle import (
+    add_all_toggle_argument_groups,
 )
 from .config import (
     DEFAULT_PYTHON,
@@ -167,9 +169,14 @@ class CompatibleArgumentParser(argparse.ArgumentParser):
         return cfg
 
     def _verify_args(self, args: Configuration) -> None:
+        # TODO: this should actually be simplified to:
+        # if (files is not True) and ((paths or others) are not None)
         if (
-            args.with_license_file is False
-            and args.with_license_files is False
+            (args.with_license_file is None or args.with_license_file is False)
+            and (
+                args.with_license_files is None
+                or args.with_license_files is False
+            )
         ) and (
             (
                 (

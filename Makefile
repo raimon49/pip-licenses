@@ -135,7 +135,7 @@ endif
 ifeq "$(PIPL_REQ_WHEEL_PATHS)" ""
 	PIPL_MAIN_PATHS := "piplicenses/__init__.py" "piplicenses/__main__.py"
 	PIPL_CORE_PATHS := "piplicenses/core.py" "piplicenses/tomli_bridge.py" "piplicenses/sorting.py"
-	PIPL_CLI_PATHS := "piplicenses/cli/__init__.py" "piplicenses/cli/_argparse_bridge.py" "piplicenses/cli/_flags.py" "piplicenses/cli/config.py"
+	PIPL_CLI_PATHS := "piplicenses/cli/__init__.py" "piplicenses/cli/_argparse_bridge.py" "piplicenses/cli/_mutually_exclusive_toggle.py", "piplicenses/cli/_flags.py" "piplicenses/cli/config.py"
 	PIPL_OUTPUT_PATHS := "piplicenses/output/__init__.py" "piplicenses/output/consoles.py" "piplicenses/output/tables.py"
 	PIPL_REQ_WHEEL_PATHS := $(PIPL_MAIN_PATHS) $(PIPL_CORE_PATHS) $(PIPL_OUTPUT_PATHS) $(PIPL_CLI_PATHS)
 endif

@@ -36,6 +36,7 @@ See [GHI-360](https://github.com/raimon49/pip-licenses/issues/360).
 from typing import (
     Literal,  # after python 3.11 see LiteralString too
     TypedDict,
+    Union,
 )
 
 from .. import (
@@ -117,7 +118,7 @@ _FORMAT_FLAG_BASE_GROUP_D: set[str] = {
 class ToggleFlagMap(TypedDict):
     enable: str
     disable: str
-    initial: bool
+    initial: Union[bool, None]
     config_dest: str
 
 
@@ -170,7 +171,7 @@ FORMAT_DATA_FLAGS_MAP: dict[str, ToggleFlagMap] = {
     },
 }
 
-# import ._argparse_bridge._add_toggle_argument_group
+# import ._mutually_exclusive_toggle._add_toggle_argument_group
 
 _FORMAT_FLAG_BASE_GROUP_F: set[str] = {
     "attribution",
@@ -196,7 +197,7 @@ FORMAT_FILES_FLAGS_MAP: dict[str, ToggleFlagMap] = {
                 dest=_f_base,
                 suffix=FORMAT_FILES_SUFFIX,
             ),
-            "initial": False,
+            "initial": None,
             "config_dest": _normalize_to_config_form(
                 FORMAT_OVERRIDE_FIELD.substitute(
                     delimiter=_ARG_PREFIX,
@@ -210,7 +211,7 @@ FORMAT_FILES_FLAGS_MAP: dict[str, ToggleFlagMap] = {
     f"{FORMAT_FILES_SUFFIX}": {
         "enable": f"--{FORMAT_ENABLE_PREFIX}-{FORMAT_FILES_SUFFIX}",
         "disable": f"--{FORMAT_DISABLE_PREFIX}-{FORMAT_FILES_SUFFIX}",
-        "initial": False,
+        "initial": None,
         "config_dest": _normalize_to_config_form(
             f"global_{FORMAT_FILES_SUFFIX}"
         ),
@@ -231,7 +232,7 @@ FORMAT_PATHS_FLAGS_MAP: dict[str, ToggleFlagMap] = {
                 dest=_p_base,
                 suffix=FORMAT_PATHS_SUFFIX,
             ),
-            "initial": True,
+            "initial": None,
             "config_dest": _normalize_to_config_form(
                 FORMAT_OVERRIDE_FIELD.substitute(
                     delimiter=_ARG_PREFIX,
@@ -245,7 +246,7 @@ FORMAT_PATHS_FLAGS_MAP: dict[str, ToggleFlagMap] = {
     f"{FORMAT_PATHS_SUFFIX}": {
         "enable": f"--{FORMAT_ENABLE_PREFIX}-{FORMAT_PATHS_SUFFIX}",
         "disable": f"--{FORMAT_DISABLE_PREFIX}-{FORMAT_PATHS_SUFFIX}",
-        "initial": False,
+        "initial": None,
         "config_dest": _normalize_to_config_form(
             f"global_{FORMAT_PATHS_SUFFIX}"
         ),
@@ -276,5 +277,5 @@ __all__ = [
     """FORMAT_TOGGLE_FLAGS_MAP""",
     """_ARG_PREFIX""",
     """_LONG_ARG_PREFIX""",
-    """ToggleFlagMap""",  # Used by ._argparse_bridge
+    """ToggleFlagMap""",  # Used by ._mutually_exclusive_toggle
 ]

@@ -34,20 +34,11 @@ from piplicenses import (
     DEFAULT_OUTPUT_FIELDS,
     LICENSE_UNKNOWN,
     SYSTEM_PACKAGES,
-    CompatibleArgumentParser,
-    FromArg,
     __pkgname__,
-    case_insensitive_partial_match_set_diff,
-    case_insensitive_partial_match_set_intersect,
-    case_insensitive_set_diff,
-    case_insensitive_set_intersect,
+    __version__,
     create_licenses_table,
     create_output_string,
-    create_parser,
     create_warn_string,
-    enum_key_to_value,
-    extract_homepage,
-    extract_urls,
     factory_styled_table_with_args,
     find_license_from_classifier,
     get_output_fields,
@@ -60,8 +51,60 @@ from piplicenses import (
     output_colored,
     save_if_needs,
     select_license_by_source,
-    value_to_enum_key,
 )
+
+if "6.0.0" in __version__:
+    # DEPRECIATED in v6.0+ (but part of legacy API)
+    # the following are ONLY imported from part
+    # of the pip licenses module to ensure no regressions when
+    # migrating to version 6.0 (and SUBJECT TO REMOVAL in v6.0.1+)
+    from piplicenses import (
+        case_insensitive_partial_match_set_diff,  # DEPRECIATED in v6.0+ (will remove in 6.0.1)
+        case_insensitive_partial_match_set_intersect,  # DEPRECIATED in v6.0+ (will remove in 6.0.1)
+        case_insensitive_set_diff,  # DEPRECIATED in v6.0+ (will remove in 6.0.1)
+        case_insensitive_set_intersect,  # DEPRECIATED in v6.0+ (will remove in 6.0.1)
+    )
+else:
+    # GHI-81 -- EXPERIMENTAL exact import module subject to change
+    # Specifically "piplicenses.sorting" is WIP and may be the wrong module name
+    from piplicenses.sorting import (
+        case_insensitive_partial_match_set_diff,
+        case_insensitive_partial_match_set_intersect,
+        case_insensitive_set_diff,
+        case_insensitive_set_intersect,
+    )
+
+# GHI-316 -- EXPERIMENTAL exact import module subject to change
+if "6.0." in __version__:
+    # DEPRECIATED in v6.0+ (but part of legacy API)
+    # the following are ONLY imported from part
+    # of the pip licenses module to ensure no regressions when
+    # migrating to version 6.0 (and SUBJECT TO REMOVAL in v6.1+)
+    from piplicenses import (
+        CompatibleArgumentParser,
+        FromArg,
+        create_parser,  # DEPRECIATED in v6.0+ (import from piplicenses.cli instead)
+        enum_key_to_value,
+        extract_homepage,  # DEPRECIATED in v6.0.0 (import from piplicenses.core instead)
+        extract_urls,  # DEPRECIATED in v6.0.0 (import from piplicenses.core instead)
+        value_to_enum_key,
+    )
+else:  # WIP DO NOT RELEASE 6.1 with this
+    from piplicenses.cli import (
+        CompatibleArgumentParser,
+        create_parser,
+    )
+    from piplicenses.cli.pseudo_choices import (
+        FromArg,
+        enum_key_to_value,
+        value_to_enum_key,
+    )
+
+    # these are considered stable in v6.0.0b14+
+    from piplicenses.core import (
+        extract_homepage,
+        extract_urls,
+    )
 
 # GHI-81 -- EXPERIMENTAL exact import module subject to change
 from piplicenses.cli.config import Configuration
@@ -114,6 +157,8 @@ def importlib_metadata_distributions_mocked(
 
 importlib_metadata_distributions_orig = (
     piplicenses.importlib_metadata.distributions
+    if "6.0." in __version__
+    else piplicenses.core.importlib_metadata.distributions
 )
 
 
@@ -2309,6 +2354,8 @@ def test_normalize_version() -> None:
     assert (
         normalize_version("2.0.0-beta.3.post2.dev1") == "2.0.0beta3post2dev1"
     )
+    # Test 11: GHI-423 '1.0-rc1' is canonically a match of '1.0rc1'
+    assert normalize_version("1.0-rc1") == "1.0rc1"
 
 
 def test_normalize_pkg_name_and_version() -> None:
@@ -2364,6 +2411,9 @@ def test_normalize_pkg_name_and_version() -> None:
 
     # Test case 8: Empty input
     assert normalize_pkg_name_and_version("") == ""
+
+    # Test case 9: GHI-423 'foo:1.0-rc1' is canonically a match of 'foo'+'1.0rc1'
+    assert normalize_pkg_name_and_version("foo:1.0-rc1") == "foo:1.0rc1"
 
 
 def test_extract_homepage_home_page_set() -> None:

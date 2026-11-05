@@ -59,7 +59,12 @@ from . import (
 
 # See https://docs.python.org/3/library/argparse.html
 from ._argparse_bridge import argparse
-from ._flags import FORMAT_FLAG_OTHERS_GROUP
+
+# from ._flags import FORMAT_FLAG_OTHERS_GROUP
+# from ._format_config import (
+#     FileCategory,  # See https://github.com/raimon49/pip-licenses/issues/360
+#     FileFormat,  # See https://github.com/raimon49/pip-licenses/issues/360
+# )
 from .pseudo_choices import (
     FormatArg,
     FromArg,
@@ -237,7 +242,7 @@ def _parse_serialized(value: str) -> set[str]:
 def _normalize_as_set(
     value: Union[Iterable[object], str, bytes, None],
 ) -> set[str]:
-    """
+    r"""
     Normalize a string, bytes, or iterable value into a flat set of strings.
 
     - None -> { } (e.g., empty)
@@ -266,7 +271,7 @@ def _normalize_as_set(
     True
     >>>
 
-    >>> _normalize_as_set(r"c:\\path;d") == {'c:\\\\path', 'd'}
+    >>> _normalize_as_set(r"c:\path;d") == {'c:\\path', 'd'}
     True
     >>>
 
@@ -278,12 +283,10 @@ def _normalize_as_set(
     True
     >>>
 
-    TODO: handle this case:
     >>> _normalize_as_set(["alpha", "beta;gamma", None, 42]) == {'alpha', 'beta', 'gamma', '42'}
     True
     >>>
 
-    TODO: handle this case:
     >>> _normalize_as_set(["alpha", "beta\\;gamma", None, 42]) == {'alpha', 'beta;gamma', '42'}
     True
     >>>
@@ -446,28 +449,6 @@ class SetOfStr:
         instance.__dict__.pop(self._name, None)
 
 
-class FilePolicyError(ValueError):
-    """Raised when a configuration cannot be normalized to a valid file policy."""
-
-
-@dataclass(frozen=True)
-class CategoryFilePolicy:
-    enabled: bool = False
-    contents: bool = False
-    paths: bool = False
-
-    @property
-    def active(self) -> bool:
-        return self.enabled and (self.contents or self.paths)
-
-    def as_dict(self) -> dict[str, bool]:
-        return {
-            "enabled": self.enabled,
-            "contents": self.contents,
-            "paths": self.paths,
-        }
-
-
 @dataclass
 class Configuration(argparse.Namespace):
     # enum-like values (may be None? until argparse sets them)
@@ -490,14 +471,17 @@ class Configuration(argparse.Namespace):
     with_maintainers: bool = False  # added in v6.0
     if "6.0" in __version__:
         with_notice_file: bool = False  # DEPRECIATED in v6.1
-    with_notice_files: bool = False  # added in v6.0 (as boolean)
-    with_other_files: bool = False  # added in v6.0 (as boolean)
     # removed no_license_path: bool = False  # DEPRECIATED in v6.1+
-    with_license_paths: bool = False  # added in v6.0
+    with_license_paths: Optional[bool] = (
+        None  # added in v6.0  -- see also global_paths
+    )
     if "6.0" in __version__:
         no_file_paths: bool = False  # DEPRECIATED in v6.1+
-    with_notice_paths: bool = False  # added in v6.0
-    with_other_paths: bool = False  # added in v6.0
+    with_notice_paths: Optional[bool] = bool(
+        True
+        if "6.0" in __version__
+        else None  # added in v6.0  -- see also global_paths
+    )  # will normalize in v6.1
     # removed no_version: bool = False  # DEPRECIATED in v6.1+
     without_versions: bool = False
     filter_strings: bool = False
@@ -513,12 +497,23 @@ class Configuration(argparse.Namespace):
     with_licenses: bool = True  # added in v6.0
     with_others: bool = False  # added in v6.0
     with_notices: bool = False  # added in v6.0
+    with_notice_files: bool = False  # added in v6.0 (as boolean)
+    with_other_files: bool = False  # added in v6.0 (as boolean)
+    with_other_paths: Optional[bool] = (
+        None  # added in v6.0  -- see also global_paths
+    )
     with_authors_files: bool = False  # added in v6.0
-    with_authors_paths: bool = False  # added in v6.0
+    with_authors_paths: Optional[bool] = (
+        None  # added in v6.0  -- see also global_paths
+    )
     with_attribution_files: bool = False  # added in v6.0
-    with_attribution_paths: bool = False  # added in v6.0
+    with_attribution_paths: Optional[bool] = (
+        None  # added in v6.0  -- see also global_paths
+    )
     with_legacy_files: bool = "6.0" in __version__  # added in v6.0
-    with_legacy_paths: bool = False  # added in v6.0
+    with_legacy_paths: Optional[bool] = (
+        None  # added in v6.0  -- see also global_paths
+    )
     # global-defaults
     global_files: Optional[bool] = None  # added in v6.0
     global_paths: Optional[bool] = None  # added in v6.0
@@ -530,11 +525,6 @@ class Configuration(argparse.Namespace):
     packages: set[str] = field(default_factory=set)
     warn_on: set[str] = field(default_factory=set)
     allow_packages: set[str] = field(default_factory=set)
-
-    # computed values
-    _resolved_file_policy: Optional[dict[str, CategoryFilePolicy]] = (
-        None  # added in v6.0
-    )
 
     def __post_init__(self) -> None:
         # Ensure values passed via __init__ are normalized to sets. Dataclass __init__
@@ -557,8 +547,6 @@ class Configuration(argparse.Namespace):
             self.allow_packages = self._normalize_to_set(self.allow_packages)
         if (self.warn_on is not None) and not isinstance(self.warn_on, set):
             self.warn_on = self._normalize_to_set(self.warn_on)
-
-        self._resolved_file_policy: dict[str, CategoryFilePolicy] = {}
         self.validate()
 
     @staticmethod
@@ -719,11 +707,12 @@ class Configuration(argparse.Namespace):
             else "with_descriptions",
             "with_license_files",
             "with_notice_files",
+            "with_other",
             "with_other_files",
-            "with_license_paths",
+            "with_legacy_files",
             "with_legacy_paths",
-            "with_notice_paths",
-            "with_other_paths",
+            "with_notice_paths",  # will change in v6.1 to be normalized
+            # "with_other_paths",  # optional bool
             # "global_paths",  # optional bool
             "filter_strings",
             "partial_match",
@@ -735,7 +724,15 @@ class Configuration(argparse.Namespace):
             # "with_other",  # True by default (rather inverse is False by default)
             # "with_legacy",  # True by default (rather inverse is False by default)
             # "with_legacy_files",  # True by default (rather inverse is False by default)
+            # optionals
+            "with_license_paths",  # True by default (rather inverse is False by default)
+            # "with_author_paths",  # True by default (rather inverse is False by default)
+            # "with_attribution_paths",  # True by default (rather inverse is False by default)
         }
+        if "6.0" in __version__:
+            booleans.remove("with_notice_paths")
+            inversions.add("with_notice_paths")
+
         sets = {
             "ignore_packages",
             "packages",
@@ -763,70 +760,14 @@ class Configuration(argparse.Namespace):
             setattr(self, key, value)
         return self.validate()
 
+    # example implementation (should actually use _format_config types instead, etc.)
     def validate(self) -> "Configuration":
         """
-        Re-resolve file/path/text precedence until stable.
-
-        This is intentionally idempotent and safe to call:
-        - after each source is loaded
-        - after merging config files
-        - after CLI parsing
-        - as a final canonicalization step
+        Currently a no-op.
         """
-        previous: Union[dict[str, CategoryFilePolicy], None] = None
-        while True:
-            resolved = self._resolve_file_policy()
-            if previous is not None and resolved == previous:
-                self._resolved_file_policy = resolved
-                break
-            previous = resolved
-            self._apply_resolved_file_policy(resolved)
-            self._resolved_file_policy = resolved
-
         return self
 
-    @property
-    def file_policy(self) -> dict[str, CategoryFilePolicy]:
-        if not self._resolved_file_policy:
-            self.validate()
-            # See validate
-            # self._resolved_file_policy will at-least be a dict[str, CategoryFilePolicy]
-            # even if empty
-        # Note: once again...
-        # mypy (v1.19.1 for Python v3.9) is brain dead and forgets that optional != incompatible:
-        # namely that {} (the empty dict) a still a subset of Union[dict, None]
-        # (and while not all falsey is None; all None is falsey)...
-        # e.g., mypy struggles with this concept:
-        #
-        # from typing import Union
-        # >>> this_might_work: Union[dict, None] = None
-        # >>> this_might_work
-        # >>>
-        # >>> this_wont
-        # Traceback (most recent call last):
-        #  File "<stdin>", line 1, in <module>
-        # NameError: name 'this_wont' is not defined
-        #
-        # >>> this_will_work: dict = {}
-        # >>> does_this_work: dict = this_might_work or {}
-        # >>> does_this_work is not None
-        # True
-        # >>> does_this_work
-        # {}
-        #
-        # so we need to ignore return-value here:
-        return self._resolved_file_policy  # type: ignore[return-value]
-
-    # GHI-375 -- handle edge-case of Configuration init
-    @file_policy.setter
-    def file_policy(
-        self, value: Union[dict[str, CategoryFilePolicy], None]
-    ) -> None:
-        if not value or not isinstance(value, dict):
-            return  # nothing to do
-        # else
-        self._apply_resolved_file_policy(value)
-
+    # example helper (might not be actually needed after _format_config)
     @staticmethod
     def _read_tristate(obj: Any, *names: str) -> Union[bool, None]:  # noqa: ANN401 -- Dynamically typed at runtime
         for name in names:
@@ -838,237 +779,13 @@ class Configuration(argparse.Namespace):
             return bool(value)
         return None
 
+    # example helper (might not be actually needed after _format_config)
     @staticmethod
     def _coalesce_bool(*values: Union[bool, None]) -> Union[bool, None]:
         for value in values:
             if value is not None:
                 return value
         return None
-
-    def _resolve_file_policy(self) -> dict[str, CategoryFilePolicy]:
-        """
-        Resolve per-category precedence:
-
-        1. category-specific override wins over global defaults
-        2. global defaults only apply when category-specific is unset
-        3. explicit False wins over a broader True
-        4. format-provided content support is enforced later; here we resolve the
-           policy object, not the final format rendering gate
-        """
-        global_files = self._coalesce_bool(
-            self._read_tristate(self, "global_files", "with_files"),
-        )
-        global_paths = self._coalesce_bool(
-            self._read_tristate(self, "global_paths", "with_paths"),
-        )
-
-        category_map = {
-            "license": (
-                "with_license",
-                "with_licenses",
-                "with_license_files",
-                "with_license_paths",
-            ),
-            "notice": (
-                "with_notices",
-                "with_notice_files",
-                "with_notice_paths",
-            ),
-            "other": (
-                "with_others",
-                "with_other_files",
-                "with_other_paths",
-            ),
-            "author": (
-                "with_authors_files",
-                "with_authors_paths",
-            ),
-            "attribution": (
-                "with_attribution_files",
-                "with_attribution_paths",
-            ),
-            "legacy": (
-                "with_legacy_files",
-                "with_legacy_paths",
-            ),
-        }
-
-        resolved: dict[str, CategoryFilePolicy] = {}
-
-        for category, names in category_map.items():
-            category_enabled = self._coalesce_bool(
-                self._read_tristate(self, names[0], names[1])
-                if len(names) > 2
-                else self._read_tristate(self, names[0]),
-            )
-            category_contents = self._coalesce_bool(
-                self._read_tristate(self, names[-2]),
-            )
-            category_paths = self._coalesce_bool(
-                self._read_tristate(self, names[-1]),
-            )
-
-            # legacy compatibility shims
-            if category in ["license", "legacy"]:
-                if self._read_tristate(self, "with_license_file") is not None:
-                    legacy_file = self._read_tristate(
-                        self, "with_license_file"
-                    )
-                    category_contents = self._coalesce_bool(
-                        category_contents,
-                        legacy_file,
-                    )
-                if self._read_tristate(self, "no_license_path") is not None:
-                    legacy_path = self._read_tristate(self, "no_license_path")
-                    category_paths = self._coalesce_bool(
-                        category_paths,
-                        not legacy_path if legacy_path is not None else None,
-                    )
-                if self._read_tristate(self, "no_file_paths") is not None:
-                    legacy_global_path = self._read_tristate(
-                        self, "no_file_paths"
-                    )
-                    category_paths = self._coalesce_bool(
-                        category_paths,
-                        (
-                            not legacy_global_path
-                            if legacy_global_path is not None
-                            else None
-                        ),
-                    )
-
-            if category == "notice":
-                if self._read_tristate(self, "with_notice_file") is not None:
-                    category_contents = self._coalesce_bool(
-                        self._read_tristate(self, "with_notice_file") or None,
-                        category_contents,
-                    )
-                if self._read_tristate(self, "with_notice_paths") is not None:
-                    category_paths = self._coalesce_bool(
-                        self._read_tristate(self, "with_notice_paths") or None,
-                        category_paths,
-                    )
-                category_enabled = self._coalesce_bool(
-                    category_enabled or None,  # allow force enable
-                    category_contents or None,
-                    category_paths,
-                )
-
-            # handle others
-            if category in ["other", "author", "attribution", "legacy"]:
-                category_enabled = self._coalesce_bool(
-                    category_contents or None,
-                    self._read_tristate(
-                        self,
-                        "with_others",
-                        "with_other_files",
-                    )
-                    or None,
-                    category_enabled or False,
-                )
-
-            enabled: bool = False
-            contents: bool = False
-            paths: bool = False
-
-            # category enable is the master switch
-            if category_enabled is not None:
-                enabled = bool(category_enabled)
-            elif global_files is True or global_paths is True:
-                enabled = True
-
-            if category_contents is not None:
-                contents = bool(category_contents)
-            elif global_files is True:
-                contents = True
-
-            if category_paths is not None:
-                paths = bool(category_paths)
-            elif global_paths is True:
-                paths = True
-
-            # Compatibility rule: content can imply paths when the category is
-            # a legacy coupled file mode, unless the path setting was explicit.
-            if (contents and category_paths is None) and (
-                category in FORMAT_FLAG_OTHERS_GROUP
-            ):
-                paths = True
-
-            # A disabled category cannot emit file content or file paths.
-            if not enabled:
-                enabled = False
-                contents = False
-                paths = False
-
-            if enabled and not (contents or paths):
-                # valid: category can be enabled without paths/text if the caller
-                # intentionally wants a category-level toggle without output
-                pass
-
-            resolved[category] = CategoryFilePolicy(
-                enabled=enabled,
-                contents=contents,
-                paths=paths,
-            )
-
-        return resolved
-
-    def _apply_resolved_file_policy(
-        self,
-        resolved: dict[str, CategoryFilePolicy],
-    ) -> None:
-        """
-        Synchronize the resolved canonical policy back into legacy fields for
-        compatibility with older call sites and output code.
-        """
-        for category, policy in resolved.items():
-            if category == "license":
-                self.with_licenses = policy.enabled
-                self.with_license_files = policy.contents
-                self.with_license_paths = policy.paths
-            elif category == "notice":
-                self.with_notices = policy.enabled
-                # WILL CHANGE BEHAVIOR IN v6.1
-                if "v6.0." in __version__ or self.with_notice_file:
-                    self.with_notice_file = policy.contents
-                else:
-                    self.with_notice_files = policy.contents
-                self.with_notice_paths = policy.paths
-            else:
-                _current_state = self.with_others
-                if category == "other":
-                    self.with_others = (
-                        policy.enabled
-                    )  # allow with_others to be set to false
-                    self.with_other_files = policy.contents
-                    self.with_other_paths = policy.paths
-                elif category == "author":
-                    # self.with_authors = policy.enabled  # Does not come from file-policy
-                    self.with_others = _current_state or policy.enabled
-                    self.with_authors_files = policy.contents
-                    self.with_authors_paths = policy.paths
-                elif category == "attribution":
-                    # self.with_maintainers = policy.enabled  # Does not come from file-policy
-                    self.with_others = _current_state or policy.enabled
-                    self.with_attribution_files = policy.contents
-                    self.with_attribution_paths = policy.paths
-                elif category == "legacy":
-                    self.with_others = _current_state or policy.enabled
-                    self.with_legacy_files = policy.contents
-                    self.with_legacy_paths = policy.paths
-
-        # Keep global defaults as a stable usable input layer, but category
-        # policy remains authoritative.
-        if getattr(self, "global_files", None) is None:
-            self.global_files = self._coalesce_bool(
-                self._read_tristate(self, "with_files"),
-                self._read_tristate(self, "with_license_files"),
-            )
-        if getattr(self, "global_paths", None) is None:
-            self.global_paths = self._coalesce_bool(
-                self._read_tristate(self, "with_paths"),
-                self._read_tristate(self, "with_license_paths"),
-            )
 
     # convenience accessor/mutator for ignore_packages
     @property
