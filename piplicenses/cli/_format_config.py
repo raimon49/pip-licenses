@@ -465,10 +465,30 @@ def _summary_active(args: argparse.Namespace) -> bool:
 
 
 # uses
+# _resolve_category_format, FileCategory, FileFormat
+def resolve_file_format(
+    args: argparse.Namespace,
+    *,
+    category: FileCategory = FileCategory.LEGACY,
+) -> FileFormat:
+    """Resolve a single effective FileFormat for a category given a namespace.
+
+    This matches the actual v6 parser model: the parser stores a canonical
+    boolean on the same dest for a pair of flags like:
+      --with-license-files / --without-license-files
+    """
+    return _resolve_category_format(
+        args,
+        category=category,
+        default=FileFormat.SHOW_NONE,
+    )
+
+
+# uses
 # _category_state, _category_files_state, _category_paths_state,
 # _summary_active,
 # _global_files_state, _global_paths_state, FileCategory, FileFormat
-def resolve_file_format(
+def resolve_file_format_legacy(
     args: argparse.Namespace,
     *,
     category: FileCategory = FileCategory.LEGACY,
@@ -758,63 +778,426 @@ def _resolve_category_format(
     category: FileCategory,
     default: FileFormat = FileFormat.SHOW_NONE,
 ) -> FileFormat:
-    """Resolve a category's effective FileFormat using the actual v6 model.
+    """Apply the GHI #375 effects for one category in documented rule order.
 
-    The v6 parser stores each logical toggle on a single canonical destination:
-      --with-license        -> args.with_license = True
-      --without-license     -> args.with_license = False
-      --with-license-files  -> args.with_license_files = True
-      --without-license-files -> args.with_license_files = False
+    This resolves effects only. Cross-flag validity checks belong in the
+    validation layer, where parser errors and Configuration errors can be
+    reported appropriately.
     """
+    if not category.name:
+        raise ValueError(
+            "Only named categories can be resolved: "
+            f"{category!r} is not supported."
+        )
+
+    def _state(dest: str) -> Union[bool, None]:
+        return _effective_bool(args, dest, default=None)
+
+    def _update_bits(
+        current: FileFormat,
+        dest: str,
+        *,
+        on: FileFormat,
+        off: FileFormat,
+    ) -> FileFormat:
+        """Apply a tri-state bit operation: None=no-op, True=OR, False=AND."""
+        value = _state(dest)
+        if value is True:
+            return current | on
+        if value is False:
+            return current & off
+        return current
+
+    def _update_category_toggle(
+        current: FileFormat,
+        dest: str,
+        *,
+        on: FileFormat = FileFormat.SHOW_BOTH,
+    ) -> FileFormat:
+        """A category toggle enables its format, or disables the whole category."""
+        value = _state(dest)
+        if value is True:
+            return current | on
+        if value is False:
+            return FileFormat.SHOW_NONE
+        return current
+
     current = default
-    # category-level toggle (same dest: True/False)
-    current = _apply_single_flag(
-        current,
-        value=_effective_bool(
-            args,
-            f"with_{_category_enable_prefix(category)}",
-            default=None,
-        ),
-        show_files=True,
-        show_paths=True,
-    )
-    # category-specific override toggles (same dest: True/False)
-    current = _apply_single_flag(
-        current,
-        value=_effective_bool(
-            args,
-            f"with_{_category_files_prefix(category)}_files",
-            default=None,
-        ),
-        show_files=True,
-        show_paths=False,
-    )
-    current = _apply_single_flag(
-        current,
-        value=_effective_bool(
-            args,
-            f"with_{_category_paths_prefix(category)}_paths",
-            default=None,
-        ),
-        show_files=False,
-        show_paths=True,
-    )
-    # global toggles (same dest: True/False)
-    current = _apply_single_flag(
-        current,
-        value=_effective_bool(args, "with_files", default=None),
-        show_files=True,
-        show_paths=False,
-    )
-    current = _apply_single_flag(
-        current,
-        value=_effective_bool(args, "with_paths", default=None),
-        show_files=False,
-        show_paths=True,
-    )
-    # summary explicit reset
-    if _summary_active(args=args) is True:
-        return FileFormat.SHOW_NONE
+    # Every category starts with the summary reset. Do not return here:
+    # later rules still apply, and validation checks whether the final state
+    # conflicts with --summary.
+    if _state("summary") is True:
+        current = FileFormat.SHOW_NONE
+
+    # Rule effects, in the order documented in GHI #375.
+    if category == FileCategory.LICENSES:
+        # --without-files / --without-paths
+        current = _update_bits(
+            current,
+            "global_files",
+            on=FileFormat.SHOW_NONE,
+            off=~FileFormat.SHOW_CONTENTS,
+        )
+        current = _update_bits(
+            current,
+            "global_paths",
+            on=FileFormat.SHOW_NONE,
+            off=~FileFormat.SHOW_PATHS,
+        )
+
+        # --with-licenses
+        current = _update_category_toggle(current, "with_licenses")
+
+        # Legacy singular flag: --with-license-file sets both bits.
+        if _state("with_license_file") is True:
+            current = FileFormat.SHOW_BOTH
+
+        # --with-license-files / --with-license-paths
+        current = _update_bits(
+            current,
+            "with_license_files",
+            on=FileFormat.SHOW_CONTENTS,
+            off=~FileFormat.SHOW_CONTENTS,
+        )
+        current = _update_bits(
+            current,
+            "with_license_paths",
+            on=FileFormat.SHOW_PATHS,
+            off=~FileFormat.SHOW_PATHS,
+        )
+
+        # --with-files / --with-paths
+        current = _update_bits(
+            current,
+            "global_files",
+            on=FileFormat.SHOW_CONTENTS,
+            off=~FileFormat.SHOW_CONTENTS,
+        )
+        current = _update_bits(
+            current,
+            "global_paths",
+            on=FileFormat.SHOW_PATHS,
+            off=~FileFormat.SHOW_PATHS,
+        )
+
+        # --without-license-files / --without-license-paths
+        # These are the same tri-state destinations as their --with forms.
+        # Their False effect has already been applied above; the ordered
+        # negative rules are represented here by the same idempotent AND.
+        if _state("with_license_files") is False:
+            current &= ~FileFormat.SHOW_CONTENTS
+        if _state("with_license_paths") is False:
+            current &= ~FileFormat.SHOW_PATHS
+
+        # --without-licenses
+        if _state("with_licenses") is False:
+            current = FileFormat.SHOW_NONE
+
+    elif category == FileCategory.OTHERS:
+        # --without-files / --without-paths
+        current = _update_bits(
+            current,
+            "global_files",
+            on=FileFormat.SHOW_NONE,
+            off=~FileFormat.SHOW_CONTENTS,
+        )
+        current = _update_bits(
+            current,
+            "global_paths",
+            on=FileFormat.SHOW_NONE,
+            off=~FileFormat.SHOW_PATHS,
+        )
+
+        # --with-others; --with-other-files / --with-other-paths
+        current = _update_category_toggle(current, "with_others")
+        current = _update_bits(
+            current,
+            "with_other_files",
+            on=FileFormat.SHOW_CONTENTS,
+            off=~FileFormat.SHOW_CONTENTS,
+        )
+        current = _update_bits(
+            current,
+            "with_other_paths",
+            on=FileFormat.SHOW_PATHS,
+            off=~FileFormat.SHOW_PATHS,
+        )
+
+        # --with-files / --with-paths
+        current = _update_bits(
+            current,
+            "global_files",
+            on=FileFormat.SHOW_CONTENTS,
+            off=~FileFormat.SHOW_CONTENTS,
+        )
+        current = _update_bits(
+            current,
+            "global_paths",
+            on=FileFormat.SHOW_PATHS,
+            off=~FileFormat.SHOW_PATHS,
+        )
+
+        # --without-other-files / --without-other-paths
+        if _state("with_other_files") is False:
+            current &= ~FileFormat.SHOW_CONTENTS
+        if _state("with_other_paths") is False:
+            current &= ~FileFormat.SHOW_PATHS
+
+        # --without-others
+        if _state("with_others") is False:
+            current = FileFormat.SHOW_NONE
+
+    elif category == FileCategory.ATTRIBUTION:
+        # --without-files / --without-paths
+        current = _update_bits(
+            current,
+            "global_files",
+            on=FileFormat.SHOW_NONE,
+            off=~FileFormat.SHOW_CONTENTS,
+        )
+        current = _update_bits(
+            current,
+            "global_paths",
+            on=FileFormat.SHOW_NONE,
+            off=~FileFormat.SHOW_PATHS,
+        )
+
+        # --without-others / --with-others
+        if _state("with_others") is False:
+            current = FileFormat.SHOW_NONE
+        elif _state("with_others") is True:
+            current |= FileFormat.SHOW_BOTH
+
+        # --with-attribution
+        current = _update_category_toggle(current, "with_attribution")
+
+        # --without-other-files / --without-other-paths
+        if _state("global_files") is False:
+            current &= ~FileFormat.SHOW_CONTENTS
+        if _state("global_paths") is False:
+            current &= ~FileFormat.SHOW_PATHS
+
+        # --with-attribution-files / --with-attribution-paths
+        current = _update_bits(
+            current,
+            "with_attribution_files",
+            on=FileFormat.SHOW_CONTENTS,
+            off=~FileFormat.SHOW_CONTENTS,
+        )
+        current = _update_bits(
+            current,
+            "with_attribution_paths",
+            on=FileFormat.SHOW_PATHS,
+            off=~FileFormat.SHOW_PATHS,
+        )
+
+        # --with-files / --with-paths
+        current = _update_bits(
+            current,
+            "global_files",
+            on=FileFormat.SHOW_CONTENTS,
+            off=~FileFormat.SHOW_CONTENTS,
+        )
+        current = _update_bits(
+            current,
+            "global_paths",
+            on=FileFormat.SHOW_PATHS,
+            off=~FileFormat.SHOW_PATHS,
+        )
+
+        # --without-attribution
+        if _state("with_attribution") is False:
+            current = FileFormat.SHOW_NONE
+
+    elif category == FileCategory.AUTHORS:
+        # --without-files / --without-paths
+        current = _update_bits(
+            current,
+            "global_files",
+            on=FileFormat.SHOW_NONE,
+            off=~FileFormat.SHOW_CONTENTS,
+        )
+        current = _update_bits(
+            current,
+            "global_paths",
+            on=FileFormat.SHOW_NONE,
+            off=~FileFormat.SHOW_PATHS,
+        )
+
+        # --without-others / --with-others
+        if _state("with_others") is False:
+            current = FileFormat.SHOW_NONE
+        elif _state("with_others") is True:
+            current |= FileFormat.SHOW_BOTH
+
+        # --without-other-files / --without-other-paths
+        if _state("global_files") is False:
+            current &= ~FileFormat.SHOW_CONTENTS
+        if _state("global_paths") is False:
+            current &= ~FileFormat.SHOW_PATHS
+
+        # The current flag map uses "authors" in these destinations.
+        current = _update_bits(
+            current,
+            "with_authors_files",
+            on=FileFormat.SHOW_CONTENTS,
+            off=~FileFormat.SHOW_CONTENTS,
+        )
+        current = _update_bits(
+            current,
+            "with_authors_paths",
+            on=FileFormat.SHOW_PATHS,
+            off=~FileFormat.SHOW_PATHS,
+        )
+
+        # --with-files / --with-paths
+        current = _update_bits(
+            current,
+            "global_files",
+            on=FileFormat.SHOW_CONTENTS,
+            off=~FileFormat.SHOW_CONTENTS,
+        )
+        current = _update_bits(
+            current,
+            "global_paths",
+            on=FileFormat.SHOW_PATHS,
+            off=~FileFormat.SHOW_PATHS,
+        )
+
+    elif category == FileCategory.NOTICES:
+        # --without-files / --without-paths
+        current = _update_bits(
+            current,
+            "global_files",
+            on=FileFormat.SHOW_NONE,
+            off=~FileFormat.SHOW_CONTENTS,
+        )
+        current = _update_bits(
+            current,
+            "global_paths",
+            on=FileFormat.SHOW_NONE,
+            off=~FileFormat.SHOW_PATHS,
+        )
+
+        # --without-others / --with-others
+        if _state("with_others") is False:
+            current = FileFormat.SHOW_NONE
+        elif _state("with_others") is True:
+            current |= FileFormat.SHOW_BOTH
+
+        # --with-notices
+        current = _update_category_toggle(current, "with_notices")
+
+        # --without-other-files / --without-other-paths
+        if _state("global_files") is False:
+            current &= ~FileFormat.SHOW_CONTENTS
+        if _state("global_paths") is False:
+            current &= ~FileFormat.SHOW_PATHS
+
+        # --with-notice-files / --with-notice-paths
+        current = _update_bits(
+            current,
+            "with_notice_files",
+            on=FileFormat.SHOW_CONTENTS,
+            off=~FileFormat.SHOW_CONTENTS,
+        )
+        current = _update_bits(
+            current,
+            "with_notice_paths",
+            on=FileFormat.SHOW_PATHS,
+            off=~FileFormat.SHOW_PATHS,
+        )
+
+        # --with-files / --with-paths
+        current = _update_bits(
+            current,
+            "global_files",
+            on=FileFormat.SHOW_CONTENTS,
+            off=~FileFormat.SHOW_CONTENTS,
+        )
+        current = _update_bits(
+            current,
+            "global_paths",
+            on=FileFormat.SHOW_PATHS,
+            off=~FileFormat.SHOW_PATHS,
+        )
+
+        # --without-notices
+        if _state("with_notices") is False:
+            current = FileFormat.SHOW_NONE
+
+    elif category == FileCategory.LEGACY:
+        # --without-files / --without-paths
+        current = _update_bits(
+            current,
+            "global_files",
+            on=FileFormat.SHOW_NONE,
+            off=~FileFormat.SHOW_CONTENTS,
+        )
+        current = _update_bits(
+            current,
+            "global_paths",
+            on=FileFormat.SHOW_NONE,
+            off=~FileFormat.SHOW_PATHS,
+        )
+
+        # --without-others / --without-license-files
+        if _state("with_others") is False:
+            current = FileFormat.SHOW_NONE
+        if _state("with_license_files") is False:
+            current = FileFormat.SHOW_NONE
+
+        # --with-others / --with-license-files
+        if _state("with_others") is True:
+            current |= FileFormat.SHOW_BOTH
+        if _state("with_license_files") is True:
+            current |= FileFormat.SHOW_BOTH
+
+        # --with-attribution
+        if _state("with_attribution") is True:
+            current |= FileFormat.SHOW_BOTH
+
+        # --without-other-files / --without-other-paths
+        if _state("global_files") is False:
+            current &= ~FileFormat.SHOW_CONTENTS
+        if _state("global_paths") is False:
+            current &= ~FileFormat.SHOW_PATHS
+
+        # --with-legacy-files / --with-legacy-paths
+        current = _update_bits(
+            current,
+            "with_legacy_files",
+            on=FileFormat.SHOW_CONTENTS,
+            off=~FileFormat.SHOW_CONTENTS,
+        )
+        current = _update_bits(
+            current,
+            "with_legacy_paths",
+            on=FileFormat.SHOW_PATHS,
+            off=~FileFormat.SHOW_PATHS,
+        )
+
+        # --with-files / --with-paths
+        current = _update_bits(
+            current,
+            "global_files",
+            on=FileFormat.SHOW_CONTENTS,
+            off=~FileFormat.SHOW_CONTENTS,
+        )
+        current = _update_bits(
+            current,
+            "global_paths",
+            on=FileFormat.SHOW_PATHS,
+            off=~FileFormat.SHOW_PATHS,
+        )
+
+        # --without-legacy
+        if _state("with_legacy") is False:
+            current = FileFormat.SHOW_NONE
+
+    else:
+        raise ValueError(f"Unsupported file category: {category!r}")
+
     return current
 
 
