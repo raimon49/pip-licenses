@@ -879,6 +879,6 @@ def get_packages(
 
     if not found_any:
         sys.stderr.write(
-            f"no packages found in the environment of {args.python}; "
+            f"no packages found in the environment of {args.python!r}; "
             "to check another environment, pass --python\n"
         )

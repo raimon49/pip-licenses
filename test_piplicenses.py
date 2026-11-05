@@ -10,8 +10,10 @@ import tempfile
 import unittest
 import venv
 import warnings
+from contextlib import redirect_stderr
 from enum import Enum, auto
 from importlib.metadata import Distribution
+from io import StringIO
 from pathlib import Path
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any
@@ -2126,29 +2128,29 @@ def test_fail_on_partial_match(monkeypatch: pytest.MonkeyPatch) -> None:
     )
 
 
-def test_get_packages_warns_when_it_finds_no_packages(
-    capsys: CaptureFixture,
-) -> None:
-    args = create_parser().parse_args(["--packages=no-such-package"])
+class GetPackagesWarningTests(unittest.TestCase):
+    def test_warns_when_it_finds_no_packages(self) -> None:
+        args = create_parser().parse_args(["--packages=no-such-package"])
+        stderr = StringIO()
 
-    packages = list(get_packages(args))
+        with redirect_stderr(stderr):
+            packages = list(get_packages(args))
 
-    assert packages == []
-    assert (
-        f"no packages found in the environment of {sys.executable}"
-        in capsys.readouterr().err
-    )
+        self.assertEqual(packages, [])
+        self.assertIn(
+            f"no packages found in the environment of {sys.executable!r}",
+            stderr.getvalue(),
+        )
 
+    def test_does_not_warn_when_it_finds_packages(self) -> None:
+        args = create_parser().parse_args(["--packages=pytest"])
+        stderr = StringIO()
 
-def test_get_packages_does_not_warn_when_it_finds_packages(
-    capsys: CaptureFixture,
-) -> None:
-    args = create_parser().parse_args(["--packages=pytest"])
+        with redirect_stderr(stderr):
+            packages = list(get_packages(args))
 
-    packages = list(get_packages(args))
-
-    assert [package["name"] for package in packages] == ["pytest"]
-    assert "no packages found" not in capsys.readouterr().err
+        self.assertEqual([package["name"] for package in packages], ["pytest"])
+        self.assertNotIn("no packages found", stderr.getvalue())
 
 
 def test_warn_on(monkeypatch: pytest.MonkeyPatch) -> None:
