@@ -2126,6 +2126,31 @@ def test_fail_on_partial_match(monkeypatch: pytest.MonkeyPatch) -> None:
     )
 
 
+def test_get_packages_warns_when_it_finds_no_packages(
+    capsys: CaptureFixture,
+) -> None:
+    args = create_parser().parse_args(["--packages=no-such-package"])
+
+    packages = list(get_packages(args))
+
+    assert packages == []
+    assert (
+        f"no packages found in the environment of {sys.executable}"
+        in capsys.readouterr().err
+    )
+
+
+def test_get_packages_does_not_warn_when_it_finds_packages(
+    capsys: CaptureFixture,
+) -> None:
+    args = create_parser().parse_args(["--packages=pytest"])
+
+    packages = list(get_packages(args))
+
+    assert [package["name"] for package in packages] == ["pytest"]
+    assert "no packages found" not in capsys.readouterr().err
+
+
 def test_warn_on(monkeypatch: pytest.MonkeyPatch) -> None:
     licenses = ("MIT license",)
     warn_on_args = ["--warn-on={}".format(";".join(licenses))]

@@ -7,6 +7,7 @@
 #### 6.0.0b14 (unreleased BETA):
 
 * Fix for regressions around handling output file paths, closing GHI #389
+* Warn on stderr when no packages are found, closing GHI #426
 * Improved v6 flag migration and compatibility for file/path-related CLI options
 * Normalized toggle handling and output-field logic for license, notice, and other file paths
 * Improved config parsing for allow/fail and legacy serialized values
