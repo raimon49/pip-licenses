@@ -60,19 +60,24 @@ jobs:
       - name: Setup build tools
         id: build_deps
         shell: bash
-        run: pip install --no-input --user "pip>=26.0" "setuptools>=82.0" "wheel>=0.45" "build>=1.2.1"
+        run: |
+          "${PYTHON}" -m venv "${RUNNER_TEMP}/release-venv"
+          "${RUNNER_TEMP}/release-venv/bin/python" -m pip install --no-input --require-hashes --only-binary=:all: -r release-requirements.txt
+          printf 'PYTHON=%s\n' "${RUNNER_TEMP}/release-venv/bin/python" >> "${GITHUB_ENV}"
       - name: Pre-Clean
         id: clean
         shell: bash
         run: make -j1 -f Makefile clean 2>/dev/null || true
-      - name: Setup dependencies
+      - name: Check release dependencies
         id: install_deps
         shell: bash
-        run: pip install --no-input -r requirements.txt
+        run: |
+          "${PYTHON}" -m pip check
       - name: Build
         id: build
         shell: bash
-        run: ${PYTHON} -m build
+        run: |
+          "${PYTHON}" -m build --no-isolation
       - name: Calculate artifact checksums
         run: |
           shasum -a 512 dist/* > build.checksums.txt

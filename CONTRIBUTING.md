@@ -27,6 +27,28 @@ The design policy of `pip-licenses` is as follows.
     * You can format the code by running `make lint` .
 * Send pull request to master branch. Maintainer(s) may adjust PRs to the appropriate development branch as realevant.
 
+## Release dependencies
+
+The release workflow installs `release-requirements.txt` with hash verification
+and builds without isolation, so the checked-in lock supplies all build and
+runtime dependencies. This release environment requires Python 3.11 or later;
+the published package's supported Python versions and dependency ranges are
+unchanged.
+
+Update the reviewed versions in `release-requirements.in` (and `requirements.txt`
+for runtime dependencies), then regenerate the lock using the release workflow's
+Python version and the development environment's `pip-tools`:
+
+```sh
+python -m piptools compile --no-config --generate-hashes --allow-unsafe --strip-extras \
+    --pip-args="--only-binary=:all:" \
+    --output-file=release-requirements.txt release-requirements.in
+```
+
+Review the versions and hashes, install the lock in a fresh environment with
+`python -m pip install --require-hashes --only-binary=:all: -r release-requirements.txt`,
+then run `python -m build --no-isolation` before submitting the update.
+
 ## Security policy
 
 If you find a significant vulnerability, or evidence of one, please report it privately.

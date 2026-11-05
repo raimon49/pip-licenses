@@ -1,0 +1,11 @@
+# Release build environment for Python 3.11 and later.
+# Retain the reviewed runtime versions used by the release workflow.
+-r requirements.txt
+
+build==1.4.0
+colorama==0.4.6 ; os_name == "nt"
+packaging==26.0
+pyproject-hooks==1.2.0
+setuptools==84.1.0
+setuptools-scm==9.2.2
+wheel==0.46.3
