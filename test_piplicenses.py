@@ -10,8 +10,10 @@ import tempfile
 import unittest
 import venv
 import warnings
+from contextlib import redirect_stderr
 from enum import Enum, auto
 from importlib.metadata import Distribution
+from io import StringIO
 from pathlib import Path
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any
@@ -2124,6 +2126,31 @@ def test_fail_on_partial_match(monkeypatch: pytest.MonkeyPatch) -> None:
     ) and (  # GHI 292 -- partial match may ommit 'License'
         " was found for package" in mocked_stderr.printed
     )
+
+
+class GetPackagesWarningTests(unittest.TestCase):
+    def test_warns_when_it_finds_no_packages(self) -> None:
+        args = create_parser().parse_args(["--packages=no-such-package"])
+        stderr = StringIO()
+
+        with redirect_stderr(stderr):
+            packages = list(get_packages(args))
+
+        self.assertEqual(packages, [])
+        self.assertIn(
+            f"no packages found in the environment of {sys.executable!r}",
+            stderr.getvalue(),
+        )
+
+    def test_does_not_warn_when_it_finds_packages(self) -> None:
+        args = create_parser().parse_args(["--packages=pytest"])
+        stderr = StringIO()
+
+        with redirect_stderr(stderr):
+            packages = list(get_packages(args))
+
+        self.assertEqual([package["name"] for package in packages], ["pytest"])
+        self.assertNotIn("no packages found", stderr.getvalue())
 
 
 def test_warn_on(monkeypatch: pytest.MonkeyPatch) -> None:

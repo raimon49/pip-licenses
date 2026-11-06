@@ -778,6 +778,7 @@ def get_packages(
             elif item:
                 warn_on_licenses.add(str(item).strip())
 
+    found_any = False
     for pkg in pkgs:
         pkg_name = normalize_pkg_name(pkg.metadata["name"])
         pkg_version = normalize_version(pkg.metadata["version"])
@@ -873,4 +874,11 @@ def get_packages(
                 sys.stderr.write(_not_allowed_message)
                 raise SystemExit(_not_allowed_message, 1) from None
 
+        found_any = True
         yield pkg_info
+
+    if not found_any:
+        sys.stderr.write(
+            f"no packages found in the environment of {args.python!r}; "
+            "to check another environment, pass --python\n"
+        )
