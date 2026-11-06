@@ -108,12 +108,31 @@ ENV/
 docker/*
 !docker/.gitkeep
 
+# ignore github_assets
+docs/.github_assets
+
 # Windows
 [Dd]esktop.ini
 
 # macOS
 .DS_Store
+*.icns
+Icon*
+
+# ignore graffle diagrams
+*.graffle
 
 # IDE
+*~
 .idea
 *.iml
+
+# Xcode
+*.workflow/xcuserdata
+*.xcodeproj/xcuserdata
+*.xcworkspace/xcuserdata
+*.workflow/xcuserdata/*
+*.xcodeproj/project.workflow/xcuserdata/*
+*.xcodeproj/project.xcworkspace/*
+swiftpm
+IDEWorkspaceChecks.plist

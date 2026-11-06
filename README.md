@@ -1,10 +1,12 @@
 # pip-licenses
 
-[![Build Status](https://github.com/raimon49/pip-licenses/workflows/Python%20package/badge.svg)](https://github.com/raimon49/pip-licenses/actions?query=workflow%3A%22Python+package%22) [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/pip-licenses.svg)](https://pypi.org/project/pip-licenses/) [![PyPI version](https://badge.fury.io/py/pip-licenses.svg)](https://badge.fury.io/py/pip-licenses) [![GitHub Release](https://img.shields.io/github/release/raimon49/pip-licenses.svg)](https://github.com/raimon49/pip-licenses/releases) [![Codecov](https://codecov.io/gh/raimon49/pip-licenses/branch/master/graph/badge.svg)](https://codecov.io/gh/raimon49/pip-licenses) [![GitHub contributors](https://img.shields.io/github/contributors/raimon49/pip-licenses)](https://github.com/raimon49/pip-licenses/graphs/contributors) [![BSD License](http://img.shields.io/badge/license-MIT-green.svg)](https://github.com/raimon49/pip-licenses/blob/master/LICENSE) [![PyPI - Downloads](https://img.shields.io/pypi/dm/pip-licenses)](https://pypistats.org/packages/pip-licenses)
+[![Build Status](https://github.com/raimon49/pip-licenses/workflows/Python%20package/badge.svg)](https://github.com/raimon49/pip-licenses/actions?query=workflow%3A%22Python+package%22) [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/pip-licenses.svg)](https://pypi.org/project/pip-licenses/) [![PyPI version](https://badge.fury.io/py/pip-licenses.svg)](https://badge.fury.io/py/pip-licenses) [![GitHub Release](https://img.shields.io/github/release/raimon49/pip-licenses.svg)](https://github.com/raimon49/pip-licenses/releases) [![Codecov](https://codecov.io/gh/raimon49/pip-licenses/branch/master/graph/badge.svg)](https://codecov.io/gh/raimon49/pip-licenses) [![GitHub contributors](https://img.shields.io/github/contributors/raimon49/pip-licenses)](https://github.com/raimon49/pip-licenses/graphs/contributors) [![MIT License](http://img.shields.io/badge/license-MIT-green.svg)](https://github.com/raimon49/pip-licenses/blob/master/LICENSE) [![PyPI - Downloads](https://img.shields.io/pypi/dm/pip-licenses)](https://pypistats.org/packages/pip-licenses)
 
 Dump the software license list of Python packages installed with pip.
 
-## Table of Contents
+<img width="785" height="265" alt="demo_preview" src="https://github.com/user-attachments/assets/910cae21-dd6e-4ee3-9861-171b7c454dc6" />
+
+<details><summary>Table of Contents</summary>
 
 * [Description](#description)
 * [Installation](#installation)
@@ -39,6 +41,7 @@ Dump the software license list of Python packages installed with pip.
         * [Option: filter\-code\-page](#option-filter-code-page)
     * [Verify options](#verify-options)
         * [Option: fail\-on](#option-fail-on)
+        * [Option: warn\-on](#option-warn-on)
         * [Option: allow\-only](#option-allow-only)
         * [Option: partial\-match](#option-partial-match)
     * [pyproject.toml support](#pyprojecttoml-support)
@@ -49,6 +52,8 @@ Dump the software license list of Python packages installed with pip.
     * [Dependencies](#dependencies)
 * [Uninstallation](#uninstallation)
 * [Contributing](#contributing)
+
+</details>
 
 ## Description
 
@@ -65,6 +70,16 @@ Install it via PyPI using `pip` command.
 ```bash
 # Install or Upgrade to newest available version
 $ pip install -U pip-licenses
+```
+
+<details>
+<summary>Legacy Python Hints</summary>
+
+**Note for Python 3.8 users:** pip-licenses 5.x discontinued support for Python 3.8. If you want to use it with Python 3.8 anyway, install pip-licenses 4.5.x.
+
+```bash
+# Using old version for the Python 3.8 environment
+$ pip install 'pip-licenses<5.0'
 
 # If upgrading from pip-licenses 3.x, remove PTable
 $ pip uninstall -y PTable
@@ -83,38 +98,61 @@ $ pip install 'pip-licenses<4.0'
 $ pip install 'pip-licenses<2.0'
 ```
 
+</details>
+
 ## Usage
 
-Execute the command with your venv (or virtualenv) environment.
+Simply invoke the command to scan the current environment:
 
-```bash
-# Install packages in your venv environment
-(venv) $ pip install Django pip-licenses
+`pip-licenses`
 
-# Check the licenses with your venv environment
-(venv) $ pip-licenses
- Name    Version  License
- Django  2.0.2    BSD
- pytz    2017.3   MIT
+[Example 01](./docs/examples/01-basic/01-basic-usage.md)
+
+```console
+demo$ pip-licenses
+ Name       Version  License                    
+ cffi       2.1.1    MIT-0                      
+ packaging  26.3     Apache-2.0 OR BSD-2-Clause 
+ pycparser  3.0      BSD-3-Clause               
+
+
 ```
+
+> [!TIP]
+> Alternatively execute the command within `virtualenv` (or the legacy `venv`) environment.
 
 ## Command-Line Options
 
 ### Common options
 
+| Option | Argument(s) | Default | Description |
+| --- | --- | --- | --- |
+| `--python` | path | current interpreter | Python executable whose `sys.path` is searched for packages. |
+| `--from` | `meta`, `classifier`, `mixed`, `all` | `mixed` | Source used to look up license information. |
+| `--order` | `name`, `license`, `author`, `url`, `count` | `name` | Column used to sort the output. |
+| `--format` | `plain`, `plain-vertical`, `markdown`, `rst`, `confluence`, `html`, `json`, `json-license-finder`, `csv` | `plain` | Output format of the report. |
+| `--summary` | None (_flag takes no values_) | off | Output a count summary per license instead of a package list. |
+| `--output-file` | path | stdout | Write the result to the given file path. |
+| `--ignore-packages` | package names | none | Exclude the listed packages from the output. |
+| `--packages` | package names | all | Limit the output to the listed packages only. |
+
 #### Option: python
 
 By default, this tools finds the packages from the environment pip-licenses is launched from, by searching in current python's `sys.path` folders. In the case you want to search for packages in an other environment (e.g. if you want to run pip-licenses from its own isolated environment), you can specify a path to a python executable. The packages will be searched for in the given python's `sys.path`, free of pip-licenses dependencies.
 
-```bash
-(venv) $ pip-licenses --with-system | grep pip
- pip                       22.3.1       MIT License
- pip-licenses              4.1.0        MIT License
+[Example 56](./docs/examples/50-option-packages/56-option-packages-system.md)
+
+```console
+demo$ pip-licenses --with-system | grep pip 
+ pip           26.2.1    MIT                        
+ pip-licenses  6.0.0b11  MIT                        
+
+
 ```
 
 ```bash
 (venv) $ pip-licenses --python=</path/to/other/env>/bin/python --with-system | grep pip
- pip                       23.0.1       MIT License 
+ pip           26.2     MIT
 ```
 
 #### Option: from
@@ -123,25 +161,34 @@ By default, this tool finds the license from [Trove Classifiers](https://pypi.or
 
 (See also): [Set license to MIT in setup.py by alisianoi ・ Pull Request #1058 ・ pypa/setuptools](https://github.com/pypa/setuptools/pull/1058), [PEP 314\#License](https://www.python.org/dev/peps/pep-0314/#license)
 
-For example, even if you check with the `pip show` command, the license is displayed as `UNKNOWN`.
+For example, even if you check with the `pip show` command, the license is displayed as `UNKNOWN` or simply empty.
 
-```bash
-(venv) $ pip show setuptools
-Name: setuptools
-Version: 38.5.0
-Summary: Easily download, build, install, upgrade, and uninstall Python packages
-Home-page: https://github.com/pypa/setuptools
-Author: Python Packaging Authority
-Author-email: distutils-sig@python.org
-License: UNKNOWN
+[Example 32](./docs/examples/30-option/32-option-from-mixed.md)
+
+```console
+demo$ # this is what pip shows: 
+
+demo$ pip show aniso8601
+Name: aniso8601
+Version: 10.0.1
+Summary: A library for parsing ISO 8601 strings.
+Home-page: https://codeberg.org/nielsenb-jf/aniso8601
+Author: Brandon Nielsen
+Author-email: nielsenb@jetfuse.net
+License: 
+Requires: 
+Required-by: 
+
+demo$ # this is what pip-licenses shows: 
+
+demo$ pip-licenses -p aniso8601 --from=mixed --with-system 
+ Name       Version  License     
+ aniso8601  10.0.1   BSD License 
+
+
 ```
 
 The mixed mode (`--from=mixed`) of this tool works well and looks for licenses.
-
-```bash
-(venv) $ pip-licenses --from=mixed --with-system | grep setuptools
- setuptools    38.5.0   MIT License
-```
 
 In mixed mode, it first tries to look for licenses in the Trove Classifiers. When not found in the Trove Classifiers, the license declared in Metadata is displayed.
 
@@ -176,32 +223,30 @@ When executed with the `--format=markdown` option, you can output list in markdo
 
 ```bash
 (venv) $ pip-licenses --format=markdown
-| Name   | Version | License |
-|--------|---------|---------|
-| Django | 2.0.2   | BSD     |
-| pytz   | 2017.3  | MIT     |
+| Name   | Version | License      |
+|--------|---------|--------------|
+| Django | 6.0.6   | BSD-3-Clause |
+| pytz   | 2026.2  | MIT License  |
 ```
 
 When inserted in a markdown document, it is rendered as follows:
 
-| Name   | Version | License |
-|--------|---------|---------|
-| Django | 2.0.2   | BSD     |
-| pytz   | 2017.3  | MIT     |
-
-##### reST
+| Name   | Version | License      |
+|--------|---------|--------------|
+| Django | 6.0.6   | BSD-3-Clause |
+| pytz   | 2026.2  | MIT License  |
 
 When executed with the `--format=rst` option, you can output list in "[Grid tables](http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html#grid-tables)" of reStructuredText format. The `r` `rest` keyword is prepared as alias of `rst`.
 
 ```bash
 (venv) $ pip-licenses --format=rst
-+--------+---------+---------+
-| Name   | Version | License |
-+--------+---------+---------+
-| Django | 2.0.2   | BSD     |
-+--------+---------+---------+
-| pytz   | 2017.3  | MIT     |
-+--------+---------+---------+
++--------+---------+--------------+
+| Name   | Version | License      |
++--------+---------+--------------+
+| Django | 6.0.6   | BSD-3-Clause |
++--------+---------+--------------+
+| pytz   | 2026.2  | MIT License  |
++--------+---------+--------------+
 ```
 
 ##### Confluence
@@ -210,9 +255,9 @@ When executed with the `--format=confluence` option, you can output list in [Con
 
 ```bash
 (venv) $ pip-licenses --format=confluence
-| Name   | Version | License |
-| Django | 2.0.2   | BSD     |
-| pytz   | 2017.3  | MIT     |
+| Name   | Version | License      |
+| Django | 6.0.6   | BSD-3-Clause |
+| pytz   | 2026.2  | MIT License  |
 ```
 
 ##### HTML
@@ -222,21 +267,25 @@ When executed with the `--format=html` option, you can output list in HTML table
 ```bash
 (venv) $ pip-licenses --format=html
 <table>
-    <tr>
-        <th>Name</th>
-        <th>Version</th>
-        <th>License</th>
-    </tr>
-    <tr>
-        <td>Django</td>
-        <td>2.0.2</td>
-        <td>BSD</td>
-    </tr>
-    <tr>
-        <td>pytz</td>
-        <td>2017.3</td>
-        <td>MIT</td>
-    </tr>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Version</th>
+            <th>License</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Django</td>
+            <td>6.0.6</td>
+            <td>BSD-3-Clause</td>
+        </tr>
+        <tr>
+            <td>pytz</td>
+            <td>2026.2</td>
+            <td>MIT License</td>
+        </tr>
+    </tbody>
 </table>
 ```
 
@@ -247,18 +296,18 @@ When executed with the `--format=json` option, you can output list in JSON forma
 ```json
 [
   {
-    "Author": "Django Software Foundation",
-    "License": "BSD",
+    "Author": "Django Software Foundation <foundation@djangoproject.com>",
+    "License": "BSD-3-Clause",
     "Name": "Django",
     "URL": "https://www.djangoproject.com/",
-    "Version": "2.0.2"
+    "Version": "6.0.6"
   },
   {
     "Author": "Stuart Bishop",
-    "License": "MIT",
+    "License": "MIT License",
     "Name": "pytz",
     "URL": "http://pythonhosted.org/pytz",
-    "Version": "2017.3"
+    "Version": "2026.2"
   }
 ]
 ```
@@ -271,14 +320,14 @@ This makes pip-licenses a drop-in replacement for LicenseFinder.
 ```json
 [
   {
-    "licenses": ["BSD"],
+    "licenses": ["BSD-3-Clause"],
     "name": "Django",
-    "version": "2.0.2"
+    "version": "6.0.6"
   },
   {
-    "licenses": ["MIT"],
+    "licenses": ["MIT License"],
     "name": "pytz",
-    "version": "2017.3"
+    "version": "2026.2"
   }
 ]
 
@@ -291,8 +340,8 @@ When executed with the `--format=csv` option, you can output list in quoted CSV 
 ```bash
 (venv) $ pip-licenses --format=csv
 "Name","Version","License"
-"Django","2.0.2","BSD"
-"pytz","2017.3","MIT"
+"Django","6.0.6","BSD-3-Clause"
+"pytz","2026.2","MIT License"
 ```
 
 ##### Plain Vertical
@@ -303,11 +352,11 @@ When executed with the `--format=plain-vertical` option, you can output a simple
 ```bash
 (venv) $ pip-licenses --format=plain-vertical --with-license-file --no-license-path
 pytest
-5.3.4
-MIT license
+9.1.1
+MIT
 The MIT License (MIT)
 
-Copyright (c) 2004-2020 Holger Krekel and others
+Copyright (c) 2004 Holger Krekel and others
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
@@ -335,8 +384,9 @@ When executed with the `--summary` option, you can output a summary of each lice
 ```bash
 (venv) $ pip-licenses --summary --from=classifier --with-system
  Count  License
- 2      BSD License
- 4      MIT License
+ 2      BSD-3-Clause
+ 4      MIT
+ 1      MIT License
 ```
 
 **Note:** When using this option, only `--order=count` or `--order=license` has an effect for the `--order` option. And using `--with-authors` and `--with-urls` will be ignored.
@@ -357,7 +407,7 @@ When executed with the `--ignore-packages` option, ignore the package specified 
 ```bash
 (venv) $ pip-licenses --ignore-packages django
  Name  Version  License
- pytz  2017.3   MIT
+ pytz  2026.2   MIT License
 ```
 
 Package names of arguments can be separated by spaces.
@@ -365,20 +415,20 @@ Package names of arguments can be separated by spaces.
 ```bash
 (venv) $ pip-licenses --with-system --ignore-packages django pip pip-licenses
  Name        Version  License
- prettytable 3.16.0   BSD License
- pytz        2017.3   MIT
- setuptools  38.5.0   UNKNOWN
- wcwidth     0.2.5    MIT License
+ prettytable 3.18.0   BSD-3-Clause
+ pytz        2026.2   MIT License
+ setuptools  83.0.0   MIT
+ wcwidth     0.8.2    MIT
 ```
 
 Packages can also be specified with a version, only ignoring that specific version.
 
 ```bash
-(venv) $ pip-licenses --with-system --ignore-packages django pytz:2017.3
+(venv) $ pip-licenses --with-system --ignore-packages django pytz:2026.2
  Name        Version  License
- prettytable 3.16.0   BSD License
- setuptools  38.5.0   UNKNOWN
- wcwidth     0.2.5    MIT License
+ prettytable 3.18.0   BSD-3-Clause
+ setuptools  83.0.0   MIT
+ wcwidth     0.8.2    MIT
 ```
 
 #### Option: packages
@@ -387,17 +437,17 @@ When executed with the `packages` option, look at the package specified by argum
 
 ```bash
 (venv) $ pip-licenses --packages django
- Name   Version  License
- Django 2.0.2    BSD
+ Name    Version  License
+ Django  6.0.6    BSD-3-Clause
 ```
 
 Package names of arguments can be separated by spaces.
 
 ```bash
 (venv) $ pip-licenses --with-system --packages prettytable pytz
- Name        Version  License
- prettytable 3.16.0   BSD License
- pytz        2017.3   MIT
+ Name         Version  License
+ prettytable  3.18.0   BSD-3-Clause
+ pytz         2026.2   MIT License
 ```
 
 ### Format options
@@ -413,13 +463,13 @@ If you want to output all including system package, use the `--with-system` opti
 ```bash
 (venv) $ pip-licenses --with-system
  Name          Version  License
- Django        2.0.2    BSD
- pip           9.0.1    MIT
- pip-licenses  1.0.0    MIT License
- prettytable   3.16.0   BSD License
- pytz          2017.3   MIT
- setuptools    38.5.0   UNKNOWN
- wcwidth       0.2.5    MIT License
+ Django        6.0.6    BSD-3-Clause
+ pip           26.1.2   MIT
+ pip-licenses  5.5.5    MIT
+ prettytable   3.18.0   BSD-3-Clause
+ pytz          2026.2   MIT License
+ setuptools    83.0.0   MIT
+ wcwidth       0.8.2    MIT
 ```
 
 #### Option: with-authors
@@ -428,9 +478,9 @@ When executed with the `--with-authors` option, output with author of the packag
 
 ```bash
 (venv) $ pip-licenses --with-authors
- Name    Version  License  Author
- Django  2.0.2    BSD      Django Software Foundation
- pytz    2017.3   MIT      Stuart Bishop
+ Name    Version  License       Author
+ Django  6.0.6    BSD-3-Clause  Django Software Foundation <foundation@djangoproject.com>
+ pytz    2026.2   MIT License   Stuart Bishop
 ```
 
 #### Option: with-maintainers
@@ -445,9 +495,9 @@ For packages without Metadata, the license is output as `UNKNOWN`. To get more p
 
 ```bash
 (venv) $ pip-licenses --with-urls
- Name    Version  License  URL
- Django  2.0.2    BSD      https://www.djangoproject.com/
- pytz    2017.3   MIT      http://pythonhosted.org/pytz
+ Name    Version  License       URL
+ Django  6.0.6    BSD-3-Clause  https://www.djangoproject.com/
+ pytz    2026.2   MIT License   http://pythonhosted.org/pytz
 ```
 
 #### Option: with-description
@@ -456,9 +506,9 @@ When executed with the `--with-description` option, output with short descriptio
 
 ```bash
 (venv) $ pip-licenses --with-description
- Name    Version  License  Description
- Django  2.0.2    BSD      A high-level Python Web framework that encourages rapid development and clean, pragmatic design.
- pytz    2017.3   MIT      World timezone definitions, modern and historical
+ Name    Version  License       Description
+ Django  6.0.6    BSD-3-Clause  A high-level Python web framework that encourages rapid development and clean, pragmatic design.
+ pytz    2026.2   MIT License   World timezone definitions, modern and historical
 ```
 
 #### Option: no-version
@@ -468,8 +518,8 @@ When executed with the `--no-version` option, output without the version number.
 ```bash
 (venv) $ pip-licenses --no-version
  Name    License
- Django  BSD
- pytz    MIT
+ Django  BSD-3-Clause
+ pytz    MIT License
 ```
 
 #### Option: with-license-file
@@ -518,7 +568,7 @@ If `--from=all`, the option will apply to the metadata license field.
 # keyring library has 2 licenses
 $ pip-licenses --package keyring
  Name     Version  License
- keyring  23.0.1   MIT License; Python Software Foundation License
+ keyring  25.7.0   MIT License; Python Software Foundation License
 
 # If just "Python Software Foundation License" is specified, it will fail.
 $ pip-licenses --package keyring --fail-on="Python Software Foundation License;"
@@ -528,6 +578,19 @@ $ echo $?
 # Matching is case-insensitive. Following check will fail:
 $ pip-licenses --fail-on="mit license"
 ```
+
+#### Option: warn\-on
+
+Warn (write to stderr, without failing) on every occurrence of the licenses of the
+semicolon-separated list. The license name matching is case-insensitive. This keeps `--allow-only`
+runs green while making obligations that need follow-up visible, for example licences that require
+attribution in the documentation.
+
+```bash
+(venv) $ pip-licenses --allow-only="MIT License;Python Software Foundation License" --warn-on="Python Software Foundation License"
+```
+**Note:** Unlike `--fail-on` and `--allow-only`, the run does not stop at the first occurrence:
+one warning line is printed per package, and the exit code stays 0.
 
 #### Option: allow\-only
 
@@ -544,7 +607,7 @@ If `--from=all`, the option will apply to the metadata license field.
 # keyring library has 2 licenses
 $ pip-licenses --package keyring
  Name     Version  License
- keyring  23.0.1   MIT License; Python Software Foundation License
+ keyring  25.7.0   MIT License; Python Software Foundation License
 
 # One or both licenses must be specified (order and case does not matter). Following checks will pass:
 $ pip-licenses --package keyring --allow-only="MIT License"
@@ -561,7 +624,7 @@ $ echo $?
 
 #### Option: partial\-match
 
-If set, enables partial (substring) matching for `--fail-on` or `--allow-only`. Default is unset (False).
+If set, enables partial (substring) matching for `--fail-on`, `--warn-on` or `--allow-only`. Default is unset (False).
 
 Usage:
 
@@ -576,7 +639,7 @@ Usage:
 # keyring library has 2 licenses
 $ pip-licenses --package keyring
  Name     Version  License
- keyring  23.0.1   MIT License; Python Software Foundation License
+ keyring  25.7.0   MIT License; Python Software Foundation License
 
 # One or both licenses must be specified (order and case does not matter). Following checks will pass:
 $ pip-licenses --package keyring --allow-only="MIT License"
@@ -604,7 +667,7 @@ $ echo $?
 
 ### pyproject.toml support
 
-All command-line options for `pip-licenses` can be configured using the `pyproject.toml` file under the `[tool.pip-licenses]` section. 
+All command-line options for `pip-licenses` can be configured using the `pyproject.toml` file under the `[tool.pip-licenses]` section.
 The `pyproject.toml` file is searched in the directory where the `pip-licenses` script is executed.
 Command-line options specified during execution will override the corresponding options in `pyproject.toml`.
 
@@ -619,7 +682,7 @@ ignore-packages = [
 fail-on = "MIT;"
 ```
 
-If you run `pip-licenses` without any command-line options, all options will be taken from the `pyproject.toml` file. 
+If you run `pip-licenses` without any command-line options, all options will be taken from the `pyproject.toml` file.
 For instance, if you run `pip-licenses --from=mixed`, the `from` option will be overridden to `mixed`, while all other options will be sourced from `pyproject.toml`.
 
 ### More Information
@@ -662,18 +725,18 @@ $ docker run --rm myapp-licenses --summary
 $ docker run --rm myapp-licenses --help
 ```
 
-**Note:** This Docker image can not check package licenses with C and C ++ Extensions. It only works with pure Python package dependencies.
+**Note:** This Docker image can not check package licenses with C and C++ Extensions. It only works with pure Python package dependencies.
 
 If you want to resolve build environment issues, try using not slim image and more.
 
 ```diff
 diff --git a/Dockerfile b/Dockerfile
-index bfc4edc..175e968 100644
+index bfc4edc..81f9264 100644
 --- a/Dockerfile
 +++ b/Dockerfile
 @@ -1,4 +1,4 @@
--FROM python:3.11-slim-bullseye
-+FROM python:3.11-bullseye
+-FROM python:3.14-slim-trixie
++FROM python:3.14-trixie
 ```
 
 ## About UnicodeEncodeError
