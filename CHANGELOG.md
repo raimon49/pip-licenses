@@ -15,6 +15,7 @@
 * Fixed a possible security vulnerability:
   * [CVE-2026-102937 env-side-channel](https://github.com/advisories/GHSA-x78j-v8h9-3j2q) via improved environment sanitation.
 * Fixed multiple false positives including:
+  * [CVE-2026-59890 normalization-collision](https://github.com/advisories/GHSA-h35f-9h28-mq5c)
   * [CVE-2026-97687 SSL-Spoof](https://github.com/advisories/GHSA-8988-9cw3-xx77)
   * [CVE-2026-102930 venv-mitm](https://github.com/advisories/GHSA-94p9-xgh2-xp45)
   * [CVE-2026-102925 venv-reuse](https://github.com/advisories/GHSA-p58f-9548-mpm2)

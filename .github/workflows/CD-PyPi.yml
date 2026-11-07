@@ -60,7 +60,7 @@ jobs:
       - name: Setup build tools
         id: build_deps
         shell: bash
-        run: pip install --no-input --user "pip>=26.2.2" "setuptools>=83.0" "wheel>=0.47" "build>=1.2.1"
+        run: pip install --no-input --user "pip>=26.2.2" "setuptools>=84.2.1" "wheel>=0.48" "build>=1.4.1"
       - name: Pre-Clean
         id: clean
         shell: bash
