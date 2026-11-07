@@ -88,7 +88,7 @@ def save_if_needs(output_file: Union[str, None], output_string: str) -> None:
     except OSError as _cause:
         raise SystemExit("check path: --output-file", 1) from _cause
     # otherwise
-    raise SystemExit("Success -- created path: {output_file}", 0) from None
+    raise SystemExit(f"Success -- created path: {output_file}", 0) from None
 
 
 __all__ = [

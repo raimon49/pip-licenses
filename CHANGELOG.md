@@ -8,6 +8,7 @@
 
 * Fix for regressions around handling output file paths, closing GHI #389
 * Warn on stderr when no packages are found, closing GHI #426
+* Added `--warn-on` to report matching package licenses to stderr without failing (supports `--partial-match`), closing GHI #411
 * Improved v6 flag migration and compatibility for file/path-related CLI options
 * Normalized toggle handling and output-field logic for license, notice, and other file paths
 * Improved config parsing for allow/fail and legacy serialized values
@@ -20,7 +21,7 @@
   * [CVE-2026-102930 venv-mitm](https://github.com/advisories/GHSA-94p9-xgh2-xp45)
   * [CVE-2026-102925 venv-reuse](https://github.com/advisories/GHSA-p58f-9548-mpm2)
   * [CVE-2026-102938 CRLF-injection](https://github.com/advisories/GHSA-9h9j-4vrj-gf7g)
-* Various small improvements to test-code
+* Various small improvements to test-code (GHI #423 test coverage, etc.)
 
 #### 6.0.0b13 (Pre-released BETA):
 
