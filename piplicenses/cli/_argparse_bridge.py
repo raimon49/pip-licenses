@@ -31,67 +31,6 @@ SOFTWARE.
 
 import argparse
 
-from ._flags import (
-    FORMAT_TOGGLE_FLAGS_MAP,
-    ToggleFlagMap,
-)
-
-
-def _add_toggle_argument_group(
-    parser_in: argparse.ArgumentParser,
-    arg_key: str,
-    toggle_map: ToggleFlagMap,
-) -> argparse.ArgumentParser:
-    """Not part of the public API."""
-    some_toggle_group = parser_in.add_mutually_exclusive_group()
-    some_toggle_group.add_argument(
-        toggle_map["enable"],
-        action="store_true",
-        dest=toggle_map["config_dest"],
-        default=toggle_map["initial"],
-        help=f"output with package {arg_key}",
-    )
-    some_toggle_group.add_argument(
-        toggle_map["disable"],
-        action="store_false",
-        dest=toggle_map["config_dest"],
-        default=toggle_map["initial"],
-        help=f"omit package {arg_key}",
-    )
-    return parser_in
-
-
-def add_toggle_argument_group(
-    some_parser: argparse.ArgumentParser,
-    flag_key: str,
-) -> argparse.ArgumentParser:
-    """Add a pair of toggle-flags to the given parser."""
-    if flag_key in FORMAT_TOGGLE_FLAGS_MAP:
-        _toggle_map: ToggleFlagMap = FORMAT_TOGGLE_FLAGS_MAP[flag_key]
-        some_parser = _add_toggle_argument_group(
-            parser_in=some_parser,
-            arg_key=flag_key,
-            toggle_map=_toggle_map,
-        )
-    else:
-        raise ValueError(f"Invalid flag ID: {flag_key}") from None
-    return some_parser
-
-
-def add_all_toggle_argument_groups(
-    some_parser: argparse.ArgumentParser,
-) -> argparse.ArgumentParser:
-    """Add a pair of toggle-flags to the given parser."""
-    for _flag_key in FORMAT_TOGGLE_FLAGS_MAP:
-        some_parser = add_toggle_argument_group(
-            some_parser=some_parser,
-            flag_key=_flag_key,
-        )
-    return some_parser
-
-
 __all__ = [
-    """add_all_toggle_argument_groups""",
-    """add_toggle_argument_group""",
     """argparse""",  # the module
 ]
