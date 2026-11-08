@@ -8,19 +8,22 @@
 
 * Fix for regressions around handling output file paths, closing GHI #389
 * Warn on stderr when no packages are found, closing GHI #426
+* Added `--warn-on` to report matching package licenses to stderr without failing (supports `--partial-match`), closing GHI #411
 * Improved v6 flag migration and compatibility for file/path-related CLI options
 * Normalized toggle handling and output-field logic for license, notice, and other file paths
 * Improved config parsing for allow/fail and legacy serialized values
 * Updated development dependencies and packaging metadata
-* Fixed a possible security vulnerability:
+* Fixed multiple possible security vulnerability:
   * [CVE-2026-102937 env-side-channel](https://github.com/advisories/GHSA-x78j-v8h9-3j2q) via improved environment sanitation.
-* Fixed multiple false positives including:
+  * [CWE-295 (from pypi-publish)](https://github.com/advisories/GHSA-5xjx-3w67-w9x9) via PR #430
+* Resolved/Reviewed multiple false positives including:
   * [CVE-2026-59890 normalization-collision](https://github.com/advisories/GHSA-h35f-9h28-mq5c)
+  * [CWE-295 emSign-compromise](https://github.com/advisories/GHSA-6q48-6c7w-9gw2)
   * [CVE-2026-97687 SSL-Spoof](https://github.com/advisories/GHSA-8988-9cw3-xx77)
   * [CVE-2026-102930 venv-mitm](https://github.com/advisories/GHSA-94p9-xgh2-xp45)
   * [CVE-2026-102925 venv-reuse](https://github.com/advisories/GHSA-p58f-9548-mpm2)
   * [CVE-2026-102938 CRLF-injection](https://github.com/advisories/GHSA-9h9j-4vrj-gf7g)
-* Various small improvements to test-code
+* Various small improvements to test-code (GHI #423 test coverage, etc.)
 
 #### 6.0.0b13 (Pre-released BETA):
 
@@ -58,7 +61,7 @@
     * Fixed the `--from=all` flag
   * Fixed multiple regressions in tests due to recent version bumps, closing GHI #337 & GHI #338
   * Updated various portions of the README document (WIP), closing GHI #328
-  * Fixed multiple false positives including:
+  * Resolved/Reviewed multiple false positives including:
     * [CVE-2026-4539 reDoS](https://github.com/advisories/GHSA-5239-wwwm-4pmq)
     * [CVE-2026-44432 Leak](https://github.com/advisories/GHSA-mf9v-mfxr-j63j)
     * [CVE-2026-44431](https://github.com/advisories/GHSA-qccp-gfcp-xxvc)
