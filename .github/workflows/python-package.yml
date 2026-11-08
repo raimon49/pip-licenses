@@ -2,23 +2,30 @@ name: Python package
 
 on:
   push:
-    branches: [master]
+    branches: [master, next]
   pull_request:
     branches:
       - master
+      - next
       - "dev*"
       - "release*"
+
+permissions: {}
 
 jobs:
   lint:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      statuses: write
+      pull-requests: read
     steps:
       - name: Checkout repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - name: Set up Python
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: '3.14'
       - name: Install dependencies
@@ -34,18 +41,30 @@ jobs:
           mypy --install-types --non-interactive --python-version 3.9 .
 
   build:
-    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      statuses: write
+      pull-requests: read
+    if: ${{ success() }}
+    runs-on: ${{ matrix.os }}
     needs: lint
+    timeout-minutes: 10
     strategy:
+      max-parallel: 4
       matrix:
-        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13', '3.14']
+        os: [ubuntu-latest]
+        python-version: ['3.10', '3.11', '3.12', '3.13', '3.14']
+        include:
+          - os: macos-26-intel
+            python-version: '3.9'
     steps:
       - name: Checkout repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
@@ -56,7 +75,7 @@ jobs:
         run: |
           pytest -v --cov --cov-report=xml
       - name: Update coverage artifact
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: coverage-${{ matrix.python-version }}
           path: coverage.xml
@@ -65,12 +84,17 @@ jobs:
           overwrite: true
 
   coverage:
+    permissions:
+      actions: read
+      contents: read
+      statuses: write
+      pull-requests: read
     runs-on: ubuntu-latest
     needs: build
     if: ${{ github.actor != 'dependabot[bot]' && github.event.sender.login != 'dependabot[bot]' }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - name: Download all coverage artifacts
@@ -78,7 +102,7 @@ jobs:
         with:
           pattern: coverage-*
       - name: Upload code coverage to Codecov
-        uses: codecov/codecov-action@57e3a136b779b570ffcdbf80b3bdc90e7fab3de2 # v6.0.0
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           name: codecov-umbrella

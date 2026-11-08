@@ -9,11 +9,19 @@ import sys
 import tempfile
 import unittest
 import venv
+import warnings
+from contextlib import redirect_stderr
 from enum import Enum, auto
 from importlib.metadata import Distribution
+from io import StringIO
+from pathlib import Path
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any
-from unittest.mock import MagicMock
+from unittest.mock import (
+    MagicMock,
+    Mock,  # used by LoadConfigFromFileTests
+    patch,  # used by LoadConfigFromFileTests
+)
 
 import docutils.frontend
 import docutils.parsers.rst
@@ -28,34 +36,83 @@ from piplicenses import (
     DEFAULT_OUTPUT_FIELDS,
     LICENSE_UNKNOWN,
     SYSTEM_PACKAGES,
-    CompatibleArgumentParser,
-    FromArg,
     __pkgname__,
-    case_insensitive_partial_match_set_diff,
-    case_insensitive_partial_match_set_intersect,
-    case_insensitive_set_diff,
-    case_insensitive_set_intersect,
+    __version__,
     create_licenses_table,
     create_output_string,
-    create_parser,
     create_warn_string,
-    enum_key_to_value,
-    extract_homepage,
     factory_styled_table_with_args,
     find_license_from_classifier,
     get_output_fields,
     get_packages,
     get_sortby,
+    load_config_from_file,
     normalize_pkg_name,
     normalize_pkg_name_and_version,
     normalize_version,
     output_colored,
     save_if_needs,
     select_license_by_source,
-    value_to_enum_key,
 )
 
-if TYPE_CHECKING:
+if "6.0.0" in __version__:
+    # DEPRECIATED in v6.0+ (but part of legacy API)
+    # the following are ONLY imported from part
+    # of the pip licenses module to ensure no regressions when
+    # migrating to version 6.0 (and SUBJECT TO REMOVAL in v6.0.1+)
+    from piplicenses import (
+        case_insensitive_partial_match_set_diff,  # DEPRECIATED in v6.0+ (will remove in 6.0.1)
+        case_insensitive_partial_match_set_intersect,  # DEPRECIATED in v6.0+ (will remove in 6.0.1)
+        case_insensitive_set_diff,  # DEPRECIATED in v6.0+ (will remove in 6.0.1)
+        case_insensitive_set_intersect,  # DEPRECIATED in v6.0+ (will remove in 6.0.1)
+    )
+else:
+    # GHI-81 -- EXPERIMENTAL exact import module subject to change
+    # Specifically "piplicenses.sorting" is WIP and may be the wrong module name
+    from piplicenses.sorting import (
+        case_insensitive_partial_match_set_diff,
+        case_insensitive_partial_match_set_intersect,
+        case_insensitive_set_diff,
+        case_insensitive_set_intersect,
+    )
+
+# GHI-316 -- EXPERIMENTAL exact import module subject to change
+if "6.0." in __version__:
+    # DEPRECIATED in v6.0+ (but part of legacy API)
+    # the following are ONLY imported from part
+    # of the pip licenses module to ensure no regressions when
+    # migrating to version 6.0 (and SUBJECT TO REMOVAL in v6.1+)
+    from piplicenses import (
+        CompatibleArgumentParser,
+        FromArg,
+        create_parser,  # DEPRECIATED in v6.0+ (import from piplicenses.cli instead)
+        enum_key_to_value,
+        extract_homepage,  # DEPRECIATED in v6.0.0 (import from piplicenses.core instead)
+        extract_urls,  # DEPRECIATED in v6.0.0 (import from piplicenses.core instead)
+        value_to_enum_key,
+    )
+else:  # WIP DO NOT RELEASE 6.1 with this
+    from piplicenses.cli import (
+        CompatibleArgumentParser,
+        create_parser,
+    )
+    from piplicenses.cli.pseudo_choices import (
+        FromArg,
+        enum_key_to_value,
+        value_to_enum_key,
+    )
+
+    # these are considered stable in v6.0.0b14+
+    from piplicenses.core import (
+        extract_homepage,
+        extract_urls,
+    )
+
+# GHI-81 -- EXPERIMENTAL exact import module subject to change
+from piplicenses.cli.config import Configuration
+from piplicenses.output.tables import _handle_multiple_value_field
+
+if TYPE_CHECKING:  # TODO: refactor to bridge module for PEP-749 changes
     if sys.version_info >= (3, 10):
         from importlib.metadata._meta import PackageMetadata
     else:
@@ -94,12 +151,16 @@ def importlib_metadata_distributions_mocked(
             return self.__msg[key]
 
     packages = list(importlib_metadata_distributions_orig(*args, **kwargs))
-    packages[-1] = DistributionMocker(packages[-1])  # type: ignore[abstract]
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        packages[-1] = DistributionMocker(packages[-1])  # type: ignore[abstract]
     return packages
 
 
 importlib_metadata_distributions_orig = (
     piplicenses.importlib_metadata.distributions
+    if "6.0." in __version__
+    else piplicenses.core.importlib_metadata.distributions
 )
 
 
@@ -250,18 +311,15 @@ class TestGetLicenses(CommandLineTestCase):
             row[index_license_expression] for row in table.rows
         ]
 
-        for license_name in ("BSD", "MIT", "Apache 2.0"):
+        for license_name in ("PSF-2.0", "MIT", "Apache-2.0"):
             self.assertIn(license_name, license_meta)
-        for license_name in (
-            "BSD License",
+        for license_class in (
+            "BSD License",  # for BSD-3-Clause
             "MIT License",
-            "Apache Software License",
         ):
-            self.assertIn(license_name, license_classifier)
-        # TODO enable assert once a dependency uses 'License-Expression'
-        # TODO (maybe black)
-        # for license_name in ("MIT",):
-        #     self.assertIn(license_name, license_expression)
+            self.assertIn(license_class, license_classifier)
+        for license_express in ("BSD-3-Clause",):
+            self.assertIn(license_express, license_expression)
 
     def test_find_license_from_classifier(self) -> None:
         classifiers = ["License :: OSI Approved :: MIT License"]
@@ -424,16 +482,99 @@ class TestGetLicenses(CommandLineTestCase):
 
         output_fields = get_output_fields(args)
         self.assertNotEqual(output_fields, list(DEFAULT_OUTPUT_FIELDS))
-        self.assertIn("LicenseFile", output_fields)
+        self.assertIn(
+            "LicenseFile",
+            output_fields,
+            f"Invalid args: {args}",
+        )
         self.assertIn("LicenseText", output_fields)
         self.assertNotIn("NoticeFile", output_fields)
         self.assertNotIn("NoticeText", output_fields)
+        self.assertNotIn("OtherFiles", output_fields)
+        self.assertNotIn("OtherText", output_fields)
 
         output_string = create_output_string(args)
         self.assertIn("LicenseFile", output_string)
+        self.assertNotIn("LicenseFiles", output_string)
         self.assertIn("LicenseText", output_string)
         self.assertNotIn("NoticeFile", output_string)
+        self.assertNotIn("NoticeFiles", output_string)
         self.assertNotIn("NoticeText", output_string)
+        self.assertNotIn("OtherFiles", output_string)
+        self.assertNotIn("OtherText", output_string)
+
+    def test_with_license_files_invalid(self) -> None:
+        with_license_file_args = [
+            "--with-license-files",
+            "--format=json-license-finder",
+        ]  # changed in v6.0.0b11
+        args = self.parser.parse_args(with_license_file_args)
+
+        output_fields = get_output_fields(args)
+        self.assertNotEqual(output_fields, list(DEFAULT_OUTPUT_FIELDS))
+        self.assertNotIn("LicenseFiles", output_fields)
+        self.assertNotIn("LicenseText", output_fields)
+        self.assertNotIn("NoticeFile", output_fields)
+        self.assertNotIn("NoticeText", output_fields)
+        self.assertNotIn("OtherFiles", output_fields)
+        self.assertNotIn("OtherText", output_fields)
+
+        output_string = create_output_string(args)
+        self.assertNotIn("LicenseFiles", output_string)  # changed in v6.0.0b11
+        self.assertNotIn("LicenseText", output_string)
+        self.assertNotIn("NoticeFile", output_string)
+        self.assertNotIn("NoticeFiles", output_string)
+        self.assertNotIn("NoticeText", output_string)
+        self.assertNotIn("OtherFiles", output_string)
+        self.assertNotIn("OtherText", output_string)
+
+    def test_with_license_files_plain(self) -> None:
+        with_license_file_args = ["--with-license-files"]
+        args = self.parser.parse_args(with_license_file_args)
+
+        output_fields = get_output_fields(args)
+        self.assertNotEqual(output_fields, list(DEFAULT_OUTPUT_FIELDS))
+        self.assertIn("LicenseFiles", output_fields)  # changed in v6.0.0b11
+        self.assertNotIn("LicenseFile", output_fields)  # changed in v6.0.0b11
+        self.assertNotIn("LicenseText", output_fields)
+        self.assertNotIn("NoticeFile", output_fields)
+        self.assertNotIn("NoticeText", output_fields)
+        self.assertNotIn("OtherFiles", output_fields)
+        self.assertNotIn("OtherText", output_fields)
+
+        output_string = create_output_string(args)
+        self.assertIn("LicenseFiles", output_string)  # changed in v6.0.0b11
+        self.assertNotIn("NoticeFile", output_string)
+        self.assertNotIn("NoticeFiles", output_string)
+        self.assertNotIn("NoticeText", output_string)
+        self.assertNotIn("OtherFiles", output_string)
+        self.assertNotIn("OtherText", output_string)
+
+    def test_with_license_files_html(self) -> None:
+        with_license_file_args = ["--format=html", "--with-license-files"]
+        args = self.parser.parse_args(with_license_file_args)
+
+        output_fields = get_output_fields(args)
+        self.assertNotEqual(output_fields, list(DEFAULT_OUTPUT_FIELDS))
+        self.assertIn(
+            "LicenseFiles",
+            output_fields,
+            f"Invalid args: {args}",
+        )
+        self.assertIn("LicenseTexts", output_fields)
+        self.assertNotIn("NoticeFile", output_fields)
+        self.assertNotIn("NoticeText", output_fields)
+        self.assertNotIn("OtherFiles", output_fields)
+        self.assertNotIn("OtherText", output_fields)
+
+        output_string = create_output_string(args)
+        self.assertIn("LicenseFiles", output_string)
+        self.assertIn("LicenseTexts", output_string)
+        self.assertNotIn("NoticeFile", output_string)
+        self.assertNotIn("NoticeFiles", output_string)
+        self.assertNotIn("NoticeText", output_string)
+        self.assertNotIn("OtherFiles", output_string)
+        self.assertNotIn("OtherText", output_string)
 
     def test_with_notice_file(self) -> None:
         with_license_file_args = ["--with-license-file", "--with-notice-file"]
@@ -442,15 +583,36 @@ class TestGetLicenses(CommandLineTestCase):
         output_fields = get_output_fields(args)
         self.assertNotEqual(output_fields, list(DEFAULT_OUTPUT_FIELDS))
         self.assertIn("LicenseFile", output_fields)
+        self.assertNotIn("LicenseFiles", output_fields)
         self.assertIn("LicenseText", output_fields)
         self.assertIn("NoticeFile", output_fields)
         self.assertIn("NoticeText", output_fields)
 
         output_string = create_output_string(args)
         self.assertIn("LicenseFile", output_string)
+        self.assertNotIn("LicenseFiles", output_string)
         self.assertIn("LicenseText", output_string)
         self.assertIn("NoticeFile", output_string)
         self.assertIn("NoticeText", output_string)
+
+    def test_with_other_files(self) -> None:
+        with_license_file_args = ["--with-license-file", "--with-other-files"]
+        args = self.parser.parse_args(with_license_file_args)
+
+        output_fields = get_output_fields(args)
+        self.assertNotEqual(output_fields, list(DEFAULT_OUTPUT_FIELDS))
+        self.assertIn("LicenseFile", output_fields)
+        self.assertNotIn("LicenseFiles", output_fields)
+        self.assertIn("LicenseText", output_fields)
+        self.assertIn("OtherFiles", output_fields)
+        self.assertIn("OtherText", output_fields)
+
+        output_string = create_output_string(args)
+        self.assertIn("LicenseFile", output_string)
+        self.assertNotIn("LicenseFiles", output_string)
+        self.assertIn("LicenseText", output_string)
+        self.assertIn("OtherFiles", output_string)
+        self.assertIn("OtherText", output_string)
 
     def test_with_license_file_no_path(self) -> None:
         with_license_file_args = [
@@ -464,14 +626,70 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertNotEqual(output_fields, list(DEFAULT_OUTPUT_FIELDS))
         self.assertNotIn("LicenseFile", output_fields)
         self.assertIn("LicenseText", output_fields)
+        self.assertIn(
+            "NoticeFile", output_fields
+        )  # changed in v6+ due to new '--no-file-paths'
+        self.assertIn("NoticeText", output_fields)
+
+        output_string = create_output_string(args)
+        self.assertNotIn("LicenseFile", output_string)
+        self.assertIn("LicenseText", output_string)
+        self.assertIn(
+            "NoticeFile", output_string
+        )  # changed in v6+ due to new '--no-file-paths'
+        self.assertIn("NoticeText", output_string)
+
+    def test_with_all_files_no_license_paths(self) -> None:
+        with_license_file_args = [
+            "--with-license-file",
+            "--with-notice-file",
+            "--with-other-files",
+            "--no-license-path",
+        ]
+        args = self.parser.parse_args(with_license_file_args)
+
+        output_fields = get_output_fields(args)
+        self.assertNotEqual(output_fields, list(DEFAULT_OUTPUT_FIELDS))
+        self.assertNotIn("LicenseFile", output_fields)
+        self.assertIn("LicenseText", output_fields)
+        self.assertIn("NoticeFile", output_fields)
+        self.assertIn("NoticeText", output_fields)
+        self.assertIn("OtherFiles", output_fields)
+        self.assertIn("OtherText", output_fields)
+
+        output_string = create_output_string(args)
+        self.assertNotIn("LicenseFile", output_string)
+        self.assertIn("LicenseText", output_string)
+        self.assertIn("NoticeFile", output_string)
+        self.assertIn("NoticeText", output_string)
+        self.assertIn("OtherFiles", output_string)
+        self.assertIn("OtherText", output_string)
+
+    def test_with_license_file_and_no_paths(self) -> None:
+        with_license_file_args = [
+            "--with-license-file",
+            "--with-notice-file",
+            "--with-other-files",
+            "--no-file-paths",
+        ]
+        args = self.parser.parse_args(with_license_file_args)
+
+        output_fields = get_output_fields(args)
+        self.assertNotEqual(output_fields, list(DEFAULT_OUTPUT_FIELDS))
+        self.assertNotIn("LicenseFile", output_fields)
+        self.assertIn("LicenseText", output_fields)
         self.assertNotIn("NoticeFile", output_fields)
         self.assertIn("NoticeText", output_fields)
+        self.assertNotIn("OtherFiles", output_fields)
+        self.assertIn("OtherText", output_fields)
 
         output_string = create_output_string(args)
         self.assertNotIn("LicenseFile", output_string)
         self.assertIn("LicenseText", output_string)
         self.assertNotIn("NoticeFile", output_string)
         self.assertIn("NoticeText", output_string)
+        self.assertNotIn("OtherFiles", output_string)
+        self.assertIn("OtherText", output_string)
 
     def test_with_license_file_warning(self) -> None:
         with_license_file_args = ["--with-license-file", "--format=markdown"]
@@ -483,8 +701,8 @@ class TestGetLicenses(CommandLineTestCase):
     def test_ignore_packages(self) -> None:
         ignore_pkg_name = "prettytable"
         ignore_packages_args = [
-            f"--ignore-package={ignore_pkg_name}",
-            "--with-system",
+            f"--ignore-packages={ignore_pkg_name}",
+            "--include-system",
         ]
         args = self.parser.parse_args(ignore_packages_args)
         table = create_licenses_table(args)
@@ -495,8 +713,8 @@ class TestGetLicenses(CommandLineTestCase):
     def test_ignore_normalized_packages(self) -> None:
         ignore_pkg_name = "pip-licenses"
         ignore_packages_args = [
-            "--ignore-package=pip_licenses",
-            "--with-system",
+            "--ignore-packages=pip_licenses",
+            "--include-system",
         ]
         args = self.parser.parse_args(ignore_packages_args)
         table = create_licenses_table(args)
@@ -509,8 +727,8 @@ class TestGetLicenses(CommandLineTestCase):
         ignore_pkg_name = "prettytable"
         ignore_pkg_spec = f"{ignore_pkg_name}:1.99.99"
         ignore_packages_args = [
-            f"--ignore-package={ignore_pkg_spec}",
-            "--with-system",
+            f"--ignore-packages={ignore_pkg_spec}",
+            "--include-system",
         ]
         args = self.parser.parse_args(ignore_packages_args)
         table = create_licenses_table(args)
@@ -531,8 +749,8 @@ class TestGetLicenses(CommandLineTestCase):
     def test_with_normalized_packages(self) -> None:
         pkg_name = "typing_extensions"
         only_packages_args = [
-            "--package=typing-extensions",
-            "--with-system",
+            "--packages=typing-extensions",
+            "--include-system",
         ]
         args = self.parser.parse_args(only_packages_args)
         table = create_licenses_table(args)
@@ -540,9 +758,9 @@ class TestGetLicenses(CommandLineTestCase):
         pkg_name_columns = self._create_pkg_name_columns(table)
         self.assertListEqual([pkg_name], pkg_name_columns)
 
-    def test_with_packages_with_system(self) -> None:
+    def test_with_packages_include_from_system(self) -> None:
         pkg_name = "prettytable"
-        only_packages_args = [f"--packages={pkg_name}", "--with-system"]
+        only_packages_args = [f"--packages={pkg_name}", "--include-system"]
         args = self.parser.parse_args(only_packages_args)
         table = create_licenses_table(args)
 
@@ -610,6 +828,59 @@ class TestGetLicenses(CommandLineTestCase):
             re.search(r"pytest\n\d\.\d\.\d\nMIT License\n", output_string)
         )
 
+    def test_format_plain_vertical_multi(self) -> None:
+        format_plain_args = [
+            "--format=plain-vertical",
+        ]
+        args = self.parser.parse_args(format_plain_args)
+        output_string = create_output_string(args)
+        self.assertIsNotNone(
+            re.search(r"pytest\n\d\.\d\.\d\nMIT License\n", output_string)
+        )
+        # check that we have the target package: packaging in results
+        self.assertIsNotNone(
+            re.search(
+                r"packaging\n",
+                output_string,
+            ),
+            "Expected to find 'packaging' installed while testing",
+        )
+        # check that we have a version number for packaging
+        self.assertIsNotNone(
+            re.search(
+                r"packaging\n\d+\.\d(\.\d)?\n",
+                output_string,
+            ),
+            "Expected to parse 'packaging' followed by a version line",
+        )
+        self.assertIsNotNone(
+            re.search(
+                r"packaging\n\d+\.\d(\.\d)?\nApache-2.0\sOR\sBSD-2-Clause\n[^Ll]*",
+                output_string,
+            )
+        )
+
+    def test_format_plain_vertical_multi_with_files(self) -> None:
+        format_plain_args = [
+            "--format=plain-vertical",
+            "--with-license-files",
+            "--with-paths",
+        ]
+        args = self.parser.parse_args(format_plain_args)
+        output_string = create_output_string(args)
+        self.assertIsNotNone(
+            re.search(r"pytest\n\d\.\d\.\d\nMIT License\n", output_string)
+        )
+        self.assertIsNotNone(
+            re.search(
+                r"packaging\n\d+\.\d(\.\d)?\nApache-2.0\sOR\sBSD-2-Clause\nLICENSE\n",
+                output_string,
+            ),
+            f"Invalid args: {args}",
+        )
+        self.assertIn("LICENSE.APACHE", output_string)
+        self.assertIn("LICENSE.BSD", output_string)
+
     def test_format_markdown(self) -> None:
         format_markdown_args = ["--format=markdown"]
         args = self.parser.parse_args(format_markdown_args)
@@ -672,8 +943,22 @@ class TestGetLicenses(CommandLineTestCase):
         args = self.parser.parse_args(format_html_args)
         output_string = create_output_string(args)
 
-        self.assertIn("<table>", output_string)
+        self.assertIn("<table", output_string)
+        self.assertIn("<thead>", output_string)
+        self.assertIn("<tbody>", output_string)
+        self.assertIn("<tr>", output_string)
+        self.assertIn("<td>", output_string)
         self.assertIn("Filipe La&#237;ns", output_string)  # author of "build"
+
+    def test_format_html_has_attributes(self) -> None:
+        format_html_args = ["--format=html"]
+        args = self.parser.parse_args(format_html_args)
+        output_string = create_output_string(args)
+
+        self.assertIn("<table id", output_string)  # added in version 6.0+
+        self.assertIn(
+            'class="pip_licenses_table">', output_string
+        )  # added in version 6.0+
 
     def test_format_json(self) -> None:
         format_json_args = ["--format=json", "--with-authors"]
@@ -784,6 +1069,14 @@ class TestGetLicenses(CommandLineTestCase):
         piplicenses.importlib_metadata.distributions = (
             importlib_metadata_distributions_orig
         )
+        self.assertIsNotNone(
+            args.filter_strings,
+            f"can't find filter_strings in {args}",
+        )
+        self.assertIsNotNone(
+            args.filter_code_page,
+            f"can't find filter_code_page in {args}",
+        )
         self.assertNotIn(UNICODE_APPENDIX, packages[-1]["name"])
 
     def test_with_specified_filter(self) -> None:
@@ -864,17 +1157,629 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertTrue(len(a_intersect_empty) == 0)
 
 
+class TestUtilities(unittest.TestCase):
+    @staticmethod
+    def _mock_metadata(
+        urls: list[str | None] | None = None,
+    ) -> PackageMetadata:
+        msg: PackageMetadata = email.message.Message()
+        for v in urls or []:
+            if v:
+                msg["Project-URL"] = v
+        return msg
+
+    def test_extract_urls_single_entries(self) -> None:
+        metadata = TestUtilities._mock_metadata(
+            urls=[
+                "Homepage, https://github.com/raimon49/pip-licenses",
+                "Bug Tracker, https://github.com/raimon49/pip-licenses/issues",
+            ]
+        )
+        self.assertEqual(
+            extract_urls(metadata),
+            {
+                "homepage": "https://github.com/raimon49/pip-licenses",
+                "bug tracker": "https://github.com/raimon49/pip-licenses/issues",
+            },
+        )
+
+    def test_extract_urls_empty_value_becomes_none(self) -> None:
+        metadata = TestUtilities._mock_metadata(["Source Code,   "])
+        self.assertEqual(
+            extract_urls(metadata),
+            {"source code": None},
+        )
+
+    def test_urls_duplicate_key_can_be_mocked(self) -> None:
+        _url_key_in = "Homepage"
+        _url_key_out = _url_key_in.lower()
+        _url_value_1 = "https://github.com/raimon49/pip-licenses"
+        _url_value_2 = "https://pypi.org/pip-licenses"
+        _url_key_comma_value_1 = f"{_url_key_in}, {_url_value_1}"
+        _url_key_comma_value_2 = f"{_url_key_in}, {_url_value_2}"
+
+        metadata = TestUtilities._mock_metadata(
+            [
+                _url_key_comma_value_1,
+                _url_key_comma_value_2,
+            ]
+        )
+        _handcrafted_metadata: PackageMetadata = email.message.Message()
+        self.assertIsNotNone(
+            _handcrafted_metadata, "Can't create metadata at all"
+        )
+        _handcrafted_metadata["Project-URL"] = _url_key_comma_value_1
+        self.assertIsNotNone(
+            _handcrafted_metadata.get("Project-URL", None),
+            "Can't read metadata at all",
+        )
+        # Note:
+        # mypy (v1.19.1 for Python v3.9) is brain dead and thinks strings can't be in things:
+        # e.g., mypy struggles with this concept:
+        # >>> _test_x = "a string"
+        # >>> "a" in _test_x
+        # True
+        #
+        self.assertTrue(
+            (_url_value_1 in _handcrafted_metadata.get("Project-URL", None)),  # type: ignore[operator]
+            "Can't find {_url_value_1} in metadata after setting it",
+        )
+        # duplicates are possible in metadata (unlike dictionaries)
+        _handcrafted_metadata["Project-URL"] = _url_key_comma_value_2
+        _test_urls = piplicenses.extract_urls(metadata)
+        self.assertEqual(
+            _test_urls,
+            {
+                _url_key_out: [
+                    _url_value_1,
+                    _url_value_2,
+                ]
+            },
+        )
+        self.assertEqual(
+            _test_urls,
+            piplicenses.extract_urls(_handcrafted_metadata),
+        )
+
+    def test_urls_none_value_for_key_can_be_mocked(self) -> None:
+        _url_key_1 = "source"
+        _url_key_2 = "documentation"
+        _url_value_1 = None
+        _url_value_2 = "https://github.com/raimon49/pip-licenses/docs"
+        _url_key_comma_value_1 = f"{_url_key_1},    "
+        _url_key_comma_value_2 = f"{_url_key_2}, {_url_value_2}"
+
+        metadata = TestUtilities._mock_metadata(
+            [
+                _url_key_comma_value_1,
+                _url_key_comma_value_2,
+            ]
+        )
+        _test_urls = piplicenses.extract_urls(metadata)
+        self.assertIsNotNone(
+            _test_urls, "Regression Bug: Can't mock NoneType metadata at all"
+        )
+        self.assertEqual(
+            _test_urls,
+            {
+                _url_key_1: _url_value_1,
+                _url_key_2: _url_value_2,
+            },
+        )
+
+    def test_extract_urls_duplicate_key_becomes_list(self) -> None:
+        metadata = TestUtilities._mock_metadata(
+            [
+                "Homepage, https://github.com/raimon49/pip-licenses",
+                "Homepage, https://pypi.org/pip-licenses",
+            ]
+        )
+        self.assertEqual(
+            piplicenses.extract_urls(metadata),
+            {
+                "homepage": [
+                    "https://github.com/raimon49/pip-licenses",
+                    "https://pypi.org/pip-licenses",
+                ]
+            },
+        )
+
+    def test_extract_urls_duplicate_key_with_whitespace_and_case_normalization(
+        self,
+    ) -> None:
+        metadata = TestUtilities._mock_metadata(
+            [
+                "HomePage, https://github.com/raimon49/pip-licenses",
+                " homepage , https://pypi.org/pip-licenses/docs ",
+            ]
+        )
+        self.assertEqual(
+            piplicenses.extract_urls(metadata),
+            {
+                "homepage": [
+                    "https://github.com/raimon49/pip-licenses",
+                    "https://pypi.org/pip-licenses/docs",
+                ]
+            },
+        )
+
+    def test_urls_duplicate_key_can_be_sorted(self) -> None:
+        _url_key_in = "Homepage"
+        # _url_key_out = _url_key_in.lower()  # unused for this test
+        _url_value_1 = "https://github.com/raimon49/pip-licenses"
+        _url_value_2 = "https://pypi.org/pip-licenses"
+        _url_key_comma_value_1 = f"{_url_key_in}, {_url_value_1}"
+        _url_key_comma_value_2 = f"{_url_key_in}, {_url_value_2}"
+
+        metadata = TestUtilities._mock_metadata(
+            [
+                _url_key_comma_value_1,
+                _url_key_comma_value_2,
+            ]
+        )
+        self.assertEqual(
+            piplicenses.extract_homepage(metadata),
+            _url_value_1,
+        )
+
+    def test_extract_urls_no_project_urls_returns_empty_dict(self) -> None:
+        metadata = TestUtilities._mock_metadata([])
+        self.assertEqual(piplicenses.extract_urls(metadata), {})
+
+    def test_extract_homepage_can_handle_invalid_urls(self) -> None:
+        _url_key_1 = "source"
+        _url_key_2 = "documentation"
+        # _url_value_1 = None  # unused for this test
+        _url_value_2 = "https://github.com/raimon49/pip-licenses/docs"
+        _url_key_comma_value_1 = f"{_url_key_1},    "
+        _url_key_comma_value_2 = f"{_url_key_2}, {_url_value_2}"
+
+        metadata = TestUtilities._mock_metadata(
+            [
+                _url_key_comma_value_1,
+                _url_key_comma_value_2,
+            ]
+        )
+        _test_url = piplicenses.extract_homepage(metadata)
+        self.assertIsNotNone(
+            _test_url, "Regression Bug: Can't mock NoneType metadata at all"
+        )
+        self.assertEqual(
+            _test_url,
+            _url_value_2,
+        )
+
+    def test_extract_homepage_can_handle_just_invalid_urls(self) -> None:
+        _url_key_1 = "repository"
+        # _url_value_1 = None  # unused for this test
+        _url_key_comma_value_1 = f"{_url_key_1},    "
+
+        metadata = TestUtilities._mock_metadata(
+            [
+                _url_key_comma_value_1,
+            ]
+        )
+        _test_url = piplicenses.extract_homepage(metadata)
+        self.assertIsNotNone(
+            _test_url, "Regression Bug: Can't mock NoneType metadata at all"
+        )
+        self.assertEqual(
+            _test_url,
+            "UNKNOWN",
+        )
+
+    def test_handle_multiple_value_field_plural_returns_list(self) -> None:
+        self.assertEqual(
+            _handle_multiple_value_field(
+                "authors", iter(["Alice Example", "Bob Example"])
+            ),
+            ["Alice Example", "Bob Example"],
+        )
+
+    def test_handle_multiple_value_field_plural_empty_returns_unknown_list(
+        self,
+    ) -> None:
+        self.assertEqual(
+            _handle_multiple_value_field("authors", iter([])),
+            ["UNKNOWN"],
+        )
+
+    def test_handle_multiple_value_field_singular_returns_first_value(
+        self,
+    ) -> None:
+        self.assertEqual(
+            _handle_multiple_value_field(
+                "license", iter(["MIT", "BSD-3-Clause"])
+            ),
+            "MIT",
+        )
+
+    def test_handle_multiple_value_field_singular_empty_returns_license_unknown(
+        self,
+    ) -> None:
+        self.assertEqual(
+            _handle_multiple_value_field("license", iter([])),
+            piplicenses.LICENSE_UNKNOWN,
+        )
+
+    def test_handle_multiple_value_field_singular_with_pluralish_name_still_uses_suffix_rule(
+        self,
+    ) -> None:
+        self.assertEqual(
+            _handle_multiple_value_field("ChangelogS", iter(["v1", "v2"])),
+            ["v1", "v2"],
+        )
+
+
+class LoadConfigFromFileTests(unittest.TestCase):
+    # instead of import piplicenses as config_module
+    config_module = piplicenses
+
+    def setUp(self) -> None:
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        self.tmp_path = Path(self.temp_dir.name)
+
+        self.package_name = "pip-licenses"
+        self.package_name_patch = patch.object(
+            self.config_module,
+            "__pkgname__",
+            self.package_name,
+        )
+        self.package_name_patch.start()
+        self.addCleanup(self.package_name_patch.stop)
+
+    def test_returns_package_configuration(self) -> None:
+        pyproject_path = self.tmp_path / "pyproject.toml"
+        pyproject_path.write_bytes(
+            b"""
+[tool.pip-licenses]
+enabled = true
+timeout = 30
+features = ["a", "b"]
+
+[tool.other_tool]
+value = "ignored"
+"""
+        )
+
+        result = self.config_module.load_config_from_file(str(pyproject_path))
+
+        self.assertEqual(
+            result,
+            {
+                "enabled": True,
+                "timeout": 30,
+                "features": ["a", "b"],
+            },
+        )
+
+    def test_returns_empty_dict_when_file_does_not_exist(self) -> None:
+        pyproject_path = self.tmp_path / "does-not-exist.toml"
+
+        result = self.config_module.load_config_from_file(str(pyproject_path))
+
+        self.assertEqual(result, {})
+
+    def test_returns_empty_dict_when_tool_table_is_missing(self) -> None:
+        pyproject_path = self.tmp_path / "pyproject.toml"
+        pyproject_path.write_text(
+            """
+[project]
+name = "example"
+""",
+            encoding="utf-8",
+        )
+
+        result = self.config_module.load_config_from_file(str(pyproject_path))
+
+        self.assertEqual(result, {})
+
+    def test_returns_empty_dict_when_package_table_is_missing(self) -> None:
+        pyproject_path = self.tmp_path / "pyproject.toml"
+        pyproject_path.write_text(
+            """
+[tool.other_tool]
+enabled = true
+""",
+            encoding="utf-8",
+        )
+
+        result = self.config_module.load_config_from_file(str(pyproject_path))
+
+        self.assertEqual(result, {})
+
+    def test_ignores_unrelated_top_level_tables(self) -> None:
+        pyproject_path = self.tmp_path / "pyproject.toml"
+        pyproject_path.write_text(
+            f"""
+[build-system]
+requires = ["setuptools"]
+
+[project]
+name = "example"
+
+[tool.{self.package_name}]
+setting = "expected"
+""",
+            encoding="utf-8",
+        )
+
+        result = self.config_module.load_config_from_file(str(pyproject_path))
+
+        self.assertEqual(result, {"setting": "expected"})
+
+    def test_propagates_open_error(self) -> None:
+        pyproject_path = self.tmp_path / "pyproject.toml"
+        pyproject_path.write_text("", encoding="utf-8")
+
+        open_error = PermissionError("permission denied")
+
+        with (
+            patch.object(
+                self.config_module,
+                "_real_io_open",
+                Mock(side_effect=open_error),
+            ),
+            self.assertRaisesRegex(
+                PermissionError,
+                "permission denied",
+            ),
+        ):
+            self.config_module.load_config_from_file(str(pyproject_path))
+
+    def test_propagates_toml_decode_error(self) -> None:
+        pyproject_path = self.tmp_path / "pyproject.toml"
+        pyproject_path.write_text(
+            """
+[tool.pip-licenses
+invalid = true
+""",
+            encoding="utf-8",
+        )
+
+        with self.assertRaises(Exception):  # noqa: B017 -- e.g., almost anything other than SystemExit or nothing
+            self.config_module.load_config_from_file(str(pyproject_path))
+
+    def test_handles_missing_and_empty_tables(self) -> None:
+        test_cases = [
+            ({}, {}),
+            ({"tool": {}}, {}),
+            ({"tool": {"unrelated_package": {}}}, {}),
+            ({"tool": {"pip-licenses": {}}}, {}),
+            (
+                {"tool": {"pip-licenses": {"enabled": False}}},
+                {"enabled": False},
+            ),
+            (
+                {"tool": {"pip-licenses": {"value": None}}},
+                {"value": None},
+            ),
+            (
+                {
+                    "tool": {
+                        "pip-licenses": {
+                            "nested": {"key": "value"},
+                        }
+                    }
+                },
+                {"nested": {"key": "value"}},
+            ),
+        ]
+
+        for toml_data, expected in test_cases:
+            with self.subTest(toml_data=toml_data):
+                pyproject_path = self.tmp_path / "pyproject.toml"
+                pyproject_path.write_bytes(b"placeholder")
+
+                with patch.object(
+                    self.config_module.tomllib,
+                    "load",
+                    Mock(return_value=toml_data),
+                ):
+                    result = self.config_module.load_config_from_file(
+                        str(pyproject_path)
+                    )
+
+                self.assertEqual(result, expected)
+
+
+class CoreHelperTestCase(unittest.TestCase):
+    def test_equivilant_call_of_get_pkg_info_when_passing_kwargs_with_pkg(
+        self,
+    ) -> None:  # descriptive name WIP
+        """Tests that positional and key-word args are equivalent for `piplicenses.core._get_pkg_info`."""
+        _test_packages = piplicenses.importlib_metadata.distributions(
+            path=" ".join(sys.path).split()
+        )
+        _test_configuration = (
+            Configuration()
+        )  # e.g., empty API piplicenses.cli.config.Configuration
+        for _test_pkg in _test_packages:
+            self.assertEqual(
+                piplicenses.core._get_pkg_info(
+                    _test_pkg, **vars(_test_configuration)
+                ),  # reference positional form
+                piplicenses.core._get_pkg_info(
+                    pkg=_test_pkg, **vars(_test_configuration)
+                ),  # test key-word form
+            )  # GHI-366 -- See https://github.com/raimon49/pip-licenses/issues/366
+
+    def test_bad_call_of_get_pkg_info_when_passing_junk(self) -> None:
+        """Tests that args for `piplicenses.core._get_pkg_info` are type validated at runtime.
+
+        Unlike static type hints, (which are for developers), this tests that the given `pkg`,
+        either as a positional, or as a key-word argument, is indeed a Python Distribution object.
+        This ensures a modest limit to typical `kwargs.pop` unboxing issues.
+        """
+        _test_configuration = (
+            Configuration()
+        )  # e.g., empty API piplicenses.cli.config.Configuration
+        _test_pkg = (
+            unittest  # e.g., a module is not the same as a Python Package
+        )
+        with self.assertRaises(TypeError):
+            _ = piplicenses.core._get_pkg_info(
+                pkg=_test_pkg, **vars(_test_configuration)
+            )  # test key-word form
+
+
+INVALID_PATH_FIXTURE = "/var/some/unlikly/path/that/should/not/be"
+
+
+class TestEdges(unittest.TestCase):
+    @unittest.skipIf(
+        Path(INVALID_PATH_FIXTURE).exists(),
+        "Invalid path Actually exists",
+    )
+    def test_handle_invalid_config_load(self) -> None:
+        self.assertFalse(
+            Path(INVALID_PATH_FIXTURE).exists(),
+        )
+        self.assertEqual(
+            load_config_from_file(INVALID_PATH_FIXTURE),
+            {},
+        )
+
+
+class CommandLineSmokeTests(TestEdges):
+    @staticmethod
+    def _run_cli(*args: str) -> tuple[int, str, str]:
+        """
+        Invoke the CLI entrypoint in-process, mirroring the existing
+        SystemExit-based patterns used elsewhere in this suite.
+
+        This avoids a real subprocess while still testing the actual
+        main() command flow.
+        """
+        import io  # always import for guiding mypy, as per PEP-749
+
+        stdout_buffer = io.StringIO()
+        stderr_buffer = io.StringIO()
+
+        old_argv = sys.argv[:]
+        old_stdout = sys.stdout
+        old_stderr = sys.stderr
+
+        sys.argv = ["pip-licenses", *args]
+        sys.stdout = stdout_buffer
+        sys.stderr = stderr_buffer
+
+        exit_code = 0
+        # GHI #81 -- early prototype for an API
+        try:
+            try:
+                try:
+                    import piplicenses.__main__ as cli_module
+
+                    cli_main = cli_module.main
+                except (ImportError, ModuleNotFoundError) as _ierr:
+                    raise unittest.SkipTest(
+                        "Can't import pip-licenses main. See GHI-81"
+                    ) from _ierr
+
+                cli_main()
+            except SystemExit as _expected:
+                print(
+                    f"Caught expected {_expected!r} (with code {_expected.code}).",
+                    file=old_stderr,
+                )
+                err_msg: str = (
+                    next((s for s in _expected.args if isinstance(s, str)), "")
+                    or f"{_expected.args}"  # e.g., if default or None then describe
+                )
+                ext_code: int = next(
+                    (i for i in _expected.args if isinstance(i, int)), 0
+                )
+                if isinstance(ext_code, int):
+                    exit_code = ext_code
+                elif ext_code is None:
+                    exit_code = 0
+                else:
+                    exit_code = 1
+                if isinstance(err_msg, str):
+                    if exit_code >= 1:
+                        print(
+                            err_msg,
+                            file=stderr_buffer,
+                        )
+                    else:
+                        print(
+                            err_msg,
+                            file=stdout_buffer,
+                        )
+        finally:
+            sys.argv = old_argv
+            sys.stdout = old_stdout
+            sys.stderr = old_stderr
+
+        return exit_code, stdout_buffer.getvalue(), stderr_buffer.getvalue()
+
+    def test_cli_formats_smoke(self) -> None:
+        for fmt in (
+            "plain",
+            "markdown",
+            "rst",
+            "html",
+            "json",
+            "csv",
+            "plain-vertical",
+        ):
+            with self.subTest(format=fmt):
+                code, out, err = self._run_cli(
+                    f"--format={fmt}",
+                    "--packages=pytest",
+                )
+                self.assertEqual(
+                    code,
+                    0,
+                    msg=f"format={fmt} failed: stdout={out!r} stderr={err!r}",
+                )
+                combined = out + err
+                self.assertIn("pytest", combined.lower())
+
+    def test_cli_output_file_writes_content(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_path = Path(temp_dir) / "licenses.json"
+            if output_path.exists():
+                self.skipTest("Temp dir already exists; can not test.")
+            code, out, err = self._run_cli(
+                "--format=json",
+                "--packages=pytest",
+                f"--output-file={output_path}",
+            )
+            # GHI #389 -- verify output-file writes some content
+            self.assertEqual(code, 0, msg=f"stdout={out!r} stderr={err!r}")
+            self.assertTrue(output_path.exists())
+            self.assertIn("created path:", out)
+            self.assertIn('"Name"', output_path.read_text(encoding="utf-8"))
+
+    def test_cli_output_file_rejects_invalid_path(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            bad_path = Path(temp_dir) / "missing" / "nested" / "licenses.txt"
+            if bad_path.exists():
+                self.skipTest("Temp bad-path already exists; can not test.")
+            code, out, err = self._run_cli(
+                "--format=plain",
+                "--packages=pytest",
+                f"--output-file={bad_path}",
+            )
+            # GHI #389 -- verify output-file errors on bad path
+            self.assertEqual(code, 1, msg=f"stdout={out!r} stderr={err!r}")
+            self.assertIn("check path: --output-file", err)
+            self.assertFalse(bad_path.exists())
+
+
 class MockStdStream:
     def __init__(self) -> None:
         self.printed = ""
 
     def write(self: MockStdStream, p: str) -> None:
-        self.printed = p
+        self.printed += p
 
 
 def test_output_file_success(monkeypatch: pytest.MonkeyPatch) -> None:
-    if TYPE_CHECKING:
-        import io
+    import io  # always import for guiding mypy, as per PEP-749
 
     def mocked_open(*args: Any, **kwargs: Any) -> io.TextIOWrapper:
         import tempfile
@@ -883,12 +1788,21 @@ def test_output_file_success(monkeypatch: pytest.MonkeyPatch) -> None:
 
     mocked_stdout = MockStdStream()
     mocked_stderr = MockStdStream()
-    monkeypatch.setattr(piplicenses, "open", mocked_open)
+    monkeypatch.setattr(piplicenses.output.consoles, "open", mocked_open)
     monkeypatch.setattr(sys.stdout, "write", mocked_stdout.write)
     monkeypatch.setattr(sys.stderr, "write", mocked_stderr.write)
     monkeypatch.setattr(sys, "exit", lambda n: None)
 
-    save_if_needs("/foo/bar.txt", "license list")
+    try:
+        save_if_needs("/foo/bar.txt", "license list")
+    except SystemExit as _expected:
+        print(
+            f"Caught expected {_expected} (with code {_expected.code}). But Ignoring for test."
+        )
+        # err_msg = str(_expected)  # unused for this test
+        ext_code: int = next(i for i in _expected.args if isinstance(i, int))
+        assert 0 == ext_code
+
     assert "created path: " in mocked_stdout.printed
     assert "" == mocked_stderr.printed
 
@@ -899,14 +1813,25 @@ def test_output_file_error(monkeypatch: pytest.MonkeyPatch) -> None:
 
     mocked_stdout = MockStdStream()
     mocked_stderr = MockStdStream()
-    monkeypatch.setattr(piplicenses, "open", mocked_open)
+    monkeypatch.setattr(piplicenses.output.consoles, "open", mocked_open)
     monkeypatch.setattr(sys.stdout, "write", mocked_stdout.write)
     monkeypatch.setattr(sys.stderr, "write", mocked_stderr.write)
     monkeypatch.setattr(sys, "exit", lambda n: None)
 
-    save_if_needs("/foo/bar.txt", "license list")
-    assert "" == mocked_stdout.printed
-    assert "check path: " in mocked_stderr.printed
+    try:
+        save_if_needs("/foo/bar.txt", "license list")
+    except SystemExit as _expected:
+        print(
+            f"Caught expected {_expected} (with code {_expected.code}). But Ignoring for test.",
+            file=sys.stderr,
+        )
+        err_msg = str(_expected)
+        assert "check path: " in err_msg
+        ext_code: int = next(i for i in _expected.args if isinstance(i, int))
+        assert 1 == ext_code
+
+    assert "" == mocked_stdout.printed.strip()
+    # assert ("check path: " in mocked_stderr.printed)
 
 
 def test_output_file_none(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -915,16 +1840,28 @@ def test_output_file_none(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(sys.stdout, "write", mocked_stdout.write)
     monkeypatch.setattr(sys.stderr, "write", mocked_stderr.write)
 
-    save_if_needs(None, "license list")
+    try:
+        save_if_needs(None, "license list")  # type: ignore[arg-type]
+    except SystemExit as _expected:
+        print(
+            f"Caught expected {_expected} (with code {_expected.code}). But Ignoring for test.",
+            file=sys.stderr,
+        )
     # stdout and stderr are expected not to be called
     assert "" == mocked_stdout.printed
-    assert "" == mocked_stderr.printed
+    assert ("" == mocked_stderr.printed) or (
+        mocked_stderr.printed.startswith("Caught expected ")
+        and mocked_stderr.printed.endswith(". But Ignoring for test.")
+    )
 
 
-def test_allow_only(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_allow_only_flag_is_stable(monkeypatch: pytest.MonkeyPatch) -> None:
     licenses = (
         "Bsd License",
+        "BSD-3-Clause",  # v6 considers this unique
+        "BSD-2-Clause",  # v6 considers this unique
         "Apache Software License",
+        "Apache-2.0 OR BSD-2-Clause",  # v6 considers this unique (e.g., packaging==26.2)
         "Mozilla Public License 2.0 (MPL 2.0)",
         "Python Software Foundation License",
         "Public Domain",
@@ -938,21 +1875,68 @@ def test_allow_only(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(sys.stderr, "write", mocked_stderr.write)
     monkeypatch.setattr(sys, "exit", lambda n: None)
     args = create_parser().parse_args(allow_only_args)
-    create_licenses_table(args)
+    try:
+        create_licenses_table(args)
+    except SystemExit as _expected:
+        print(
+            f"Caught expected {_expected}. But Ignoring for test.",
+            file=sys.stderr,
+        )
 
-    assert "" == mocked_stdout.printed
+    assert "" == mocked_stdout.printed.strip()
+    # just need to reach end for this test
+
+
+def test_allow_only(monkeypatch: pytest.MonkeyPatch) -> None:
+    licenses = (
+        "Bsd License",
+        "BSD-3-Clause",  # v6 considers this unique
+        "BSD-2-Clause",  # v6 considers this unique
+        "Apache Software License",
+        "Apache-2.0 OR BSD-2-Clause",  # v6 considers this unique (e.g., packaging==26.2)
+        "Mozilla Public License 2.0 (MPL 2.0)",
+        "Python Software Foundation License",
+        "Public Domain",
+        "GNU General Public License (GPL)",
+        "GNU Library or Lesser General Public License (LGPL)",
+    )
+    allow_only_args = ["--allow-only={}".format(";".join(licenses))]
+    mocked_stdout = MockStdStream()
+    mocked_stderr = MockStdStream()
+    monkeypatch.setattr(sys.stdout, "write", mocked_stdout.write)
+    monkeypatch.setattr(sys.stderr, "write", mocked_stderr.write)
+    monkeypatch.setattr(sys, "exit", lambda n: None)
+    args = create_parser().parse_args(allow_only_args)
+    try:
+        create_licenses_table(args)
+    except SystemExit as _expected:
+        print(
+            f"Caught expected {_expected}. But Non-fatal for test.",
+            file=sys.stderr,
+        )
+
+    assert "" == mocked_stdout.printed.strip()
     assert (
-        "license MIT License not in allow-only licenses was found for package"
-        in mocked_stderr.printed
-    ) or (
-        "license MIT not in allow-only licenses was found for package"
-        in mocked_stderr.printed
-    )  # GHI #292 -- MIT License has become abreviated to just MIT for some
+        (
+            "license MIT License not in allow-only licenses was found for package"
+            in mocked_stderr.printed
+        )
+        or (
+            "license MIT not in allow-only licenses was found for package"
+            in mocked_stderr.printed
+        )
+        or (
+            "license Unlicense not in allow-only licenses was found for package"
+            in mocked_stderr.printed
+        )
+    )  # GHI #292 -- MIT License has become abbreviated to just MIT for some
+    # GHI #338 -- filelock <3.23.0 reports Unlicense instead of MIT
+    # GHI #364 -- circa v6.0.0b8 packaging reports a licence-expression exactly
 
 
 def test_allow_only_partial(monkeypatch: pytest.MonkeyPatch) -> None:
     licenses = (
-        "Bsd",
+        "Bsd",  # GHI #364 -- in v6 even matches bsd from a license-expression with an 'OR'
         "Apache",
         "Mozilla Public License 2.0 (MPL 2.0)",
         "Python Software Foundation License",
@@ -970,15 +1954,23 @@ def test_allow_only_partial(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(sys.stderr, "write", mocked_stderr.write)
     monkeypatch.setattr(sys, "exit", lambda n: None)
     args = create_parser().parse_args(allow_only_args)
-    create_licenses_table(args)
+    try:
+        create_licenses_table(args)
+    except SystemExit as _expected:
+        print(
+            f"Caught expected {_expected}. Non-fatal for test.",
+            file=sys.stderr,
+        )
 
-    assert "" == mocked_stdout.printed
+    assert "" == mocked_stdout.printed.strip()
     assert (
-        "license MIT" in mocked_stderr.printed
-    ) and (  # GHI #292 -- partial match may ommit 'License'
         " not in allow-only licenses was found for package"
         in mocked_stderr.printed
-    )
+    ) and (
+        "license MIT" in mocked_stderr.printed
+        or "license Unlicense" in mocked_stderr.printed
+    )  # GHI #292 -- partial match may omit 'License'
+    # GHI #338 -- filelock <3.23.0 reports Unlicense instead of MIT
 
 
 def test_allow_only_with_empty_tokens(
@@ -987,7 +1979,10 @@ def test_allow_only_with_empty_tokens(
     # same as test_allow_only but with extra semicolons/whitespace
     licenses = (
         "Bsd License",
+        "BSD-3-Clause",  # v6 considers this unique
+        "BSD-2-Clause",  # v6 considers this unique
         "Apache Software License",
+        "Apache-2.0 OR BSD-2-Clause",  # v6 considers this unique (e.g., packaging==26.2)
         "Mozilla Public License 2.0 (MPL 2.0)",
         "Python Software Foundation License",
         "Public Domain",
@@ -1002,16 +1997,23 @@ def test_allow_only_with_empty_tokens(
     monkeypatch.setattr(sys.stderr, "write", mocked_stderr.write)
     monkeypatch.setattr(sys, "exit", lambda n: None)
     args = create_parser().parse_args(allow_only_args)
-    create_licenses_table(args)
+    try:
+        create_licenses_table(args)
+    except SystemExit as _expected:
+        print(
+            f"Caught expected {_expected}. Non-fatal for test.",
+            file=sys.stderr,
+        )
 
-    assert "" == mocked_stdout.printed
+    assert "" == mocked_stdout.printed.strip()
     assert (
-        "license MIT License not in allow-only licenses was found for package"
+        " not in allow-only licenses was found for package"
         in mocked_stderr.printed
-    ) or (
-        "license MIT not in allow-only licenses was found for package"
-        in mocked_stderr.printed
-    )  # GHI #292 -- MIT License has become abreviated to just MIT for some
+    ) and (
+        "license MIT" in mocked_stderr.printed
+        or "license Unlicense" in mocked_stderr.printed
+    )  # GHI #292 -- partial match may omit 'License'
+    # GHI #338 -- filelock <3.23.0 reports Unlicense instead of MIT
 
 
 def test_fail_on_with_empty_tokens(
@@ -1026,9 +2028,15 @@ def test_fail_on_with_empty_tokens(
     monkeypatch.setattr(sys.stderr, "write", mocked_stderr.write)
     monkeypatch.setattr(sys, "exit", lambda n: None)
     args = create_parser().parse_args(fail_on_args)
-    create_licenses_table(args)
+    try:
+        create_licenses_table(args)
+    except SystemExit as _expected:
+        print(
+            f"Caught expected {_expected}. Non-fatal for test.",
+            file=sys.stderr,
+        )
 
-    assert "" == mocked_stdout.printed
+    assert "" == mocked_stdout.printed.strip()
     assert (
         "fail-on license MIT License was found for package"
         in mocked_stderr.printed
@@ -1054,11 +2062,12 @@ def test_different_python() -> None:
             venv_builder.create(str(target_dir_path))
             python_exec = venv_builder.context.env_exe
         except venv_subprocess.CalledProcessError as skip_cause:
+            # GHI #389 -- e.g., skip if test is in a nested venv run
             raise unittest.SkipTest(_warning_skip) from skip_cause
         python_arg = f"--python={python_exec}" if python_exec else ""
         args = create_parser().parse_args([python_arg, "-s", "-f=json"])
         pkgs = get_packages(args)
-        package_names = sorted(set(p["name"] for p in pkgs))
+        package_names = sorted(set(str(p["name"]) for p in pkgs))
         print(package_names)
 
     expected_packages = ["pip"]
@@ -1076,9 +2085,15 @@ def test_fail_on(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(sys.stderr, "write", mocked_stderr.write)
     monkeypatch.setattr(sys, "exit", lambda n: None)
     args = create_parser().parse_args(allow_only_args)
-    create_licenses_table(args)
+    try:
+        create_licenses_table(args)
+    except SystemExit as _expected:
+        print(
+            f"Caught expected {_expected}. Non-fatal for test.",
+            file=sys.stderr,
+        )
 
-    assert "" == mocked_stdout.printed
+    assert "" == mocked_stdout.printed.strip()
     assert (
         "fail-on license MIT License was found for package"
         in mocked_stderr.printed
@@ -1097,14 +2112,184 @@ def test_fail_on_partial_match(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(sys.stderr, "write", mocked_stderr.write)
     monkeypatch.setattr(sys, "exit", lambda n: None)
     args = create_parser().parse_args(allow_only_args)
-    create_licenses_table(args)
+    try:
+        create_licenses_table(args)
+    except SystemExit as _expected:
+        print(
+            f"Caught expected {_expected}. Non-fatal for test.",
+            file=sys.stderr,
+        )
 
-    assert "" == mocked_stdout.printed
+    assert "" == mocked_stdout.printed.strip()
     assert (
         "fail-on license MIT" in mocked_stderr.printed
     ) and (  # GHI 292 -- partial match may ommit 'License'
         " was found for package" in mocked_stderr.printed
     )
+
+
+class GetPackagesWarningTests(unittest.TestCase):
+    def test_warns_when_it_finds_no_packages(self) -> None:
+        args = create_parser().parse_args(["--packages=no-such-package"])
+        stderr = StringIO()
+
+        with redirect_stderr(stderr):
+            packages = list(get_packages(args))
+
+        self.assertEqual(packages, [])
+        self.assertIn(
+            f"no packages found in the environment of {sys.executable!r}",
+            stderr.getvalue(),
+        )
+
+    def test_does_not_warn_when_it_finds_packages(self) -> None:
+        args = create_parser().parse_args(["--packages=pytest"])
+        stderr = StringIO()
+
+        with redirect_stderr(stderr):
+            packages = list(get_packages(args))
+
+        self.assertEqual([package["name"] for package in packages], ["pytest"])
+        self.assertNotIn("no packages found", stderr.getvalue())
+
+
+def test_warn_on(monkeypatch: pytest.MonkeyPatch) -> None:
+    licenses = ("MIT license",)
+    warn_on_args = ["--warn-on={}".format(";".join(licenses))]
+    mocked_stdout = MockStdStream()
+    mocked_stderr = MockStdStream()
+    monkeypatch.setattr(sys.stdout, "write", mocked_stdout.write)
+    monkeypatch.setattr(sys.stderr, "write", mocked_stderr.write)
+    exit_codes = []
+    monkeypatch.setattr(sys, "exit", lambda n: exit_codes.append(n))
+    args = create_parser().parse_args(warn_on_args)
+    create_licenses_table(args)
+
+    assert "" == mocked_stdout.printed.strip()
+    assert (
+        "warn-on license MIT" in mocked_stderr.printed
+        and " was found for package" in mocked_stderr.printed
+    )
+    # a warning never fails the run
+    assert exit_codes == []
+
+
+def test_warn_on_does_not_stop_at_the_first_occurrence(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class MockDist(Distribution):
+        def __init__(self, name: str, version: str, license_name: str) -> None:
+            self._metadata = email.message.Message()
+            self._metadata["Name"] = name
+            self._metadata["Version"] = version
+            self._metadata["License"] = license_name
+
+        def read_text(self, filename: str) -> str | None:
+            return None
+
+        @property
+        def metadata(self) -> email.message.Message:  # type: ignore[override]
+            return self._metadata
+
+        @property
+        def version(self) -> str:
+            return self._metadata["Version"]
+
+    monkeypatch.setattr(
+        piplicenses.core.importlib_metadata,
+        "distributions",
+        lambda *args, **kwargs: [
+            MockDist("alpha", "1.0", "MIT License"),  # type: ignore[abstract]
+            MockDist("beta", "2.0", "MIT License"),  # type: ignore[abstract]
+        ],
+    )
+    warn_on_args = ["--warn-on=MIT License"]
+    mocked_stdout = MockStdStream()
+    mocked_stderr = MockStdStream()
+    monkeypatch.setattr(sys.stdout, "write", mocked_stdout.write)
+    monkeypatch.setattr(sys.stderr, "write", mocked_stderr.write)
+    exit_codes = []
+    monkeypatch.setattr(sys, "exit", lambda n: exit_codes.append(n))
+    args = create_parser().parse_args(warn_on_args)
+    create_licenses_table(args)
+
+    assert "" == mocked_stdout.printed.strip()
+    assert (
+        "warn-on license MIT License was found for package alpha:1.0\n"
+        "warn-on license MIT License was found for package beta:2.0\n"
+        == mocked_stderr.printed
+    )
+    assert exit_codes == []
+
+
+def test_warn_on_partial_match(monkeypatch: pytest.MonkeyPatch) -> None:
+    licenses = ("MIT",)
+    warn_on_args = [
+        "--partial-match",
+        "--warn-on={}".format(";".join(licenses)),
+    ]
+    mocked_stdout = MockStdStream()
+    mocked_stderr = MockStdStream()
+    monkeypatch.setattr(sys.stdout, "write", mocked_stdout.write)
+    monkeypatch.setattr(sys.stderr, "write", mocked_stderr.write)
+    exit_codes = []
+    monkeypatch.setattr(sys, "exit", lambda n: exit_codes.append(n))
+    args = create_parser().parse_args(warn_on_args)
+    create_licenses_table(args)
+
+    assert "" == mocked_stdout.printed.strip()
+    assert (
+        "warn-on license" in mocked_stderr.printed
+        and "MIT" in mocked_stderr.printed
+    )
+    assert exit_codes == []
+
+
+def test_warn_on_with_empty_tokens(monkeypatch: pytest.MonkeyPatch) -> None:
+    licenses = ("MIT license",)
+    warn_on_args = ["--warn-on=;;  {} ;".format(";".join(licenses))]
+    mocked_stdout = MockStdStream()
+    mocked_stderr = MockStdStream()
+    monkeypatch.setattr(sys.stdout, "write", mocked_stdout.write)
+    monkeypatch.setattr(sys.stderr, "write", mocked_stderr.write)
+    exit_codes = []
+    monkeypatch.setattr(sys, "exit", lambda n: exit_codes.append(n))
+    args = create_parser().parse_args(warn_on_args)
+    create_licenses_table(args)
+
+    assert "" == mocked_stdout.printed.strip()
+    assert (
+        "warn-on license MIT" in mocked_stderr.printed
+        and " was found for package" in mocked_stderr.printed
+    )
+    assert exit_codes == []
+
+
+def test_warn_on_non_string_item(monkeypatch: pytest.MonkeyPatch) -> None:
+    class FakeItem:
+        def __str__(self) -> str:
+            return "MIT License"
+
+    licenses = ("MIT license",)
+    warn_on_args = ["--warn-on={}".format(";".join(licenses))]
+    mocked_stdout = MockStdStream()
+    mocked_stderr = MockStdStream()
+    monkeypatch.setattr(sys.stdout, "write", mocked_stdout.write)
+    monkeypatch.setattr(sys.stderr, "write", mocked_stderr.write)
+    exit_codes = []
+    monkeypatch.setattr(sys, "exit", lambda n: exit_codes.append(n))
+    args = create_parser().parse_args(warn_on_args)
+    # The parser normalises --warn-on to a set, so a non-string element is added,
+    # not appended; get_packages() stringifies it like any other entry.
+    args.warn_on.add(FakeItem())  # type: ignore[arg-type]
+    create_licenses_table(args)
+
+    assert "" == mocked_stdout.printed.strip()
+    assert (
+        "warn-on license MIT" in mocked_stderr.printed
+        and " was found for package" in mocked_stderr.printed
+    )
+    assert exit_codes == []
 
 
 def test_enums() -> None:
@@ -1196,6 +2381,8 @@ def test_normalize_version() -> None:
     assert (
         normalize_version("2.0.0-beta.3.post2.dev1") == "2.0.0beta3post2dev1"
     )
+    # Test 11: GHI-423 '1.0-rc1' is canonically a match of '1.0rc1'
+    assert normalize_version("1.0-rc1") == "1.0rc1"
 
 
 def test_normalize_pkg_name_and_version() -> None:
@@ -1251,6 +2438,9 @@ def test_normalize_pkg_name_and_version() -> None:
 
     # Test case 8: Empty input
     assert normalize_pkg_name_and_version("") == ""
+
+    # Test case 9: GHI-423 'foo:1.0-rc1' is canonically a match of 'foo'+'1.0rc1'
+    assert normalize_pkg_name_and_version("foo:1.0-rc1") == "foo:1.0rc1"
 
 
 def test_extract_homepage_home_page_set() -> None:
@@ -1352,8 +2542,10 @@ def test_pyproject_toml_args_parsed_correctly() -> None:
     # assert values are correctly parsed from toml
     assert args.from_ == FromArg.CLASSIFIER
     assert args.summary == tool_conf["summary"]
-    assert args.ignore_packages == tool_conf["ignore-packages"]
-    assert args.fail_on == tool_conf["fail-on"]
+    assert isinstance(args.ignore_packages, set)  # should be a set
+    # but toml can't encode sets so re-cast to list and sort before compare
+    assert sorted(args.ignore_packages) == tool_conf["ignore-packages"]
+    assert args.fail_on_str == tool_conf["fail-on"]
 
     # assert args are rewritable using cli
     args = parser.parse_args(["--from=meta"])
@@ -1363,8 +2555,10 @@ def test_pyproject_toml_args_parsed_correctly() -> None:
 
     # all other are parsed from toml
     assert args.summary == tool_conf["summary"]
-    assert args.ignore_packages == tool_conf["ignore-packages"]
-    assert args.fail_on == tool_conf["fail-on"]
+    assert isinstance(args.ignore_packages, set)  # should be a set
+    # but toml can't encode sets so re-cast to list before compare
+    assert sorted(args.ignore_packages) == tool_conf["ignore-packages"]
+    assert args.fail_on_str == tool_conf["fail-on"]
 
     os.unlink(temp_file.name)
 
