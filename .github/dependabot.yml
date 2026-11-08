@@ -27,8 +27,6 @@ updates:
         dependency-type: "indirect"
       - dependency-name: "pip"
         dependency-type: "indirect"
-    ignore:
-      - dependency-name: "*"
     exclude-paths:
       - "requirements.txt"
       - "*-requirements.txt"

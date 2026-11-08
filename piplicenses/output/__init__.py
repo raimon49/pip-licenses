@@ -47,7 +47,7 @@ from .. import (
     SUMMARY_FIELD_NAMES,  # noqa: F401 -- (used by piplicenses.output.tables)
     SUMMARY_OUTPUT_FIELDS,
     __pkgname__,  # noqa: F401 -- Re-export as part of data API
-    __version__,  # noqa: F401 -- Re-export as part of data API
+    __version__,
 )
 
 #    because we are limited in python3.9 still by https://docs.python.org/3.9/library/stdtypes.html#dict
@@ -113,20 +113,19 @@ def get_output_fields(args: Configuration) -> list[str]:
         # TODO: handle combos for JSON, and plain vertical
         output_fields.append("License")
 
-    if args.with_authors:
-        output_fields.append("Author")
-
-    if args.with_maintainers:
-        output_fields.append("Maintainer")
-
-    if args.with_urls:
-        output_fields.append("URL")
-
-    if args.with_description:
-        output_fields.append("Description")
-
+    optional_fields = (
+        (args.with_authors, "Author"),
+        (args.with_maintainers, "Maintainer"),
+        (args.with_urls, "URL"),
+        (args.with_description, "Description"),
+    )
+    output_fields.extend(
+        field for enabled, field in optional_fields if enabled
+    )
     if args.without_versions:
         output_fields.remove("Version")
+        # TODO: if args.without_names: return list(SUMMARY_OUTPUT_FIELDS)
+
     # see PEP-387
     # see https://docs.python.org/3/library/exceptions.html#PendingDeprecationWarning
     # e.g., if not ("6.1" in __version__ and "6" in __version__ and "6.0" not in __version__):
@@ -147,8 +146,36 @@ def get_output_fields(args: Configuration) -> list[str]:
         args.with_notice_files = False
         args.with_other_files = False
 
-    if args.no_file_paths:
-        args.no_license_path = True
+    if (
+        "6.0" in __version__ and args.no_license_path
+    ):  # migration step 600-B-14-1
+        args.with_license_paths = False
+    # WILL CHANGE BEHAVIOR IN v6.1
+    if (
+        "6.0" in __version__ and args.no_file_paths
+        # TODO: or args.global_paths is False  # not just None
+    ):  # migration step 600-B-14-1
+        args.with_license_paths = False
+        args.with_notice_paths = False
+        args.with_other_paths = False
+        # args.with_*_paths = False  # no impact
+
+    # migration step 600-B-14-2
+    # if args.global_paths is False:  # and not just None
+    #     args.with_license_paths = False
+    #     args.with_notice_paths = False
+    #     args.with_other_paths = False
+    #     args.with_authors_paths = False
+    #     args.with_attribution_paths = False
+    #     args.with_legacy_paths = False
+
+    # if args.global_files is False:  # and not just None
+    #     args.with_license_files = False
+    #     args.with_notice_files = False
+    #     args.with_other_files = False
+    #     args.with_authors_files = False
+    #     args.with_attribution_files = False
+    #     args.with_legacy_files = False
 
     _format_supports_file_text_data = False
     if args.format_ in (
@@ -160,7 +187,11 @@ def get_output_fields(args: Configuration) -> list[str]:
         _format_supports_file_text_data = True
 
     if args.with_license_file or args.with_license_files:
-        if not args.no_license_path:
+        if args.with_license_paths or (
+            # WILL CHANGE BEHAVIOR IN v6.1
+            "6.0" in __version__
+            and (not args.no_license_path and not args.no_file_paths)
+        ):
             output_fields.append(
                 "LicenseFiles" if args.with_license_files else "LicenseFile"
             )
@@ -170,7 +201,10 @@ def get_output_fields(args: Configuration) -> list[str]:
             )
 
         if args.with_notice_file or args.with_notice_files:
-            if not args.no_file_paths:
+            if args.with_notice_paths or (
+                # WILL CHANGE BEHAVIOR IN v6.1
+                "6.0" in __version__ and not args.no_file_paths
+            ):
                 output_fields.append(
                     "NoticeFiles" if args.with_notice_files else "NoticeFile"
                 )
@@ -178,7 +212,10 @@ def get_output_fields(args: Configuration) -> list[str]:
                 output_fields.append("NoticeText")
 
         if args.with_other_files:
-            if not args.no_file_paths:
+            if args.with_other_paths or (
+                # WILL CHANGE BEHAVIOR IN v6.1
+                "6.0" in __version__ and not args.no_file_paths
+            ):
                 output_fields.append("OtherFiles")
             if _format_supports_file_text_data:
                 output_fields.append("OtherText")
