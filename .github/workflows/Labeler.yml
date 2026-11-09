@@ -1,9 +1,9 @@
 ---
 name: "Pull Request Labeler"
 on:  # yamllint disable-line rule:truthy
-  pull_request_target:
+  pull_request:
     types: [opened, reopened]
-    branches: ["master", "next"]
+    branches: ["master", "next", "dev-*"]
 
 # Declare default permissions as none.
 permissions: {}
