@@ -1198,6 +1198,20 @@ def test_normalize_version() -> None:
     )
 
 
+def test_normalize_version_post_release_forms() -> None:
+    """
+    Test normalize_version keeps the post segment for every PEP 440 form.
+    """
+    # Dash-number form must keep the post label, not merge into release
+    assert normalize_version("1.0-1") == "1.0post1"
+    # Separator spellings follow the tool's dotless convention
+    assert normalize_version("1.0.post1") == "1.0post1"
+    assert normalize_version("1.0-post2") == "1.0post2"
+    # A missing post number implies 0 (PEP 440), not a dropped segment
+    assert normalize_version("1.0.post") == "1.0post0"
+    assert normalize_version("1.0post") == "1.0post0"
+
+
 def test_normalize_pkg_name_and_version() -> None:
     assert (
         normalize_pkg_name_and_version("pip_licenses:5.5.0")
