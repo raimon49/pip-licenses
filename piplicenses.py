@@ -218,7 +218,11 @@ def normalize_version(version_string: None | str) -> str:
     post = (
         f"{match.group('post_l')}{match.group('post_n2')}"
         if match.group("post_n2")
-        else match.group("post_n1")
+        else f"post{match.group('post_n1')}"
+        if match.group("post_n1")
+        else f"{match.group('post_l')}0"
+        if match.group("post_l")
+        else None
     )
     dev = (
         f"{match.group('dev_l')}{match.group('dev_n')}"
