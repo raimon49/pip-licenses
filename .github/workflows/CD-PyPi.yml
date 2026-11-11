@@ -13,22 +13,22 @@ permissions: {}
 env:
   # Define Python versions at the top level -- Expected format: X.Y (e.g., 3.14)
   PYTHON_DEFAULT: "${{ vars.PYTHON_DEFAULT || '3.14' }}"
+  # rationale: (circa 2026) 3.14 is latest *verified* to work (e.g., stable hard-code fall-back)
   # Filter pattern for what will be accepted as build artifacts (keep this as narrow as practical)
   BUILD_MATCH_PATTERN: ${{ vars.BUILD_MATCH_PATTERN || 'dist/pip_licenses-*.tar.{bz2,gz} dist/pip_licenses-*-py3-*.whl' }}
 
 jobs:
   pypi-build:
     name: upload release to PyPI
+    # tautologies are considered defense in depth
     if: ${{ github.event_name == 'release' && (github.repository == 'raimon49/pip-licenses') && startsWith(github.ref, 'refs/tags/') }}
     runs-on: ubuntu-latest
     # Specifying a GitHub environment is optional, but strongly encouraged
     # environment: pypi
     permissions:
-      # IMPORTANT: this permission is mandatory for Build Attestation
-      attestations: write
-      # IMPORTANT: this permission is NOT needed befor Trusted Publishing
-      id-token: none
+      # READ ONLY: is needed for code checkout (and can't really be disabled practically anyway)
       contents: read
+      # READ ONLY: This is used to read some action variables
       actions: read
     defaults:
       run:
@@ -36,16 +36,20 @@ jobs:
     env:
       LANG: "en_US.UTF-8"
     outputs:
+      # some of these are for metrics
       build_status: ${{ steps.build.outcome }}
       build-files: ${{ steps.buildfiles.outputs.files }}
       artifact-id: ${{ steps.upload.outputs.artifact-id }}
-      artifact-attest-id: ${{ steps.piplicenses-build-chksum-attest.outputs.attestation-id }}
+      artifact-name: pip_licenses-official-build-${{ github.sha }}
+      artifact-digest: ${{ steps.upload.outputs.artifact-digest }}
     steps:
       - name: Checkout repository
+        id: checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - id: build-python
+        name: "Install Python"
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "${{ env.PYTHON_DEFAULT || 3.14 }}"
@@ -54,9 +58,9 @@ jobs:
         shell: bash
         run: |
           printf "%s\n" "::group::bootstrap-python-env"
-          printf "python-path=%s\n" "${{ steps.build-python.outputs.python-path }}" >> "$GITHUB_OUTPUT"
+          # intentionally skip setting python-path github output (not used)
           printf "PYTHON=%s\n" "${{ steps.build-python.outputs.python-path }}" >> "$GITHUB_ENV"
-          printf "python-version=%s\n" "${{ steps.build-python.outputs.python-version }}" >> "$GITHUB_OUTPUT"
+          # intentionally skip setting python-version github output (not used)
           printf "PYTHON_VERSION=%s\n" "${{ steps.build-python.outputs.python-version }}" >> "$GITHUB_ENV"
           printf "%s\n" "::endgroup::"
       - name: Setup build tools
@@ -81,55 +85,49 @@ jobs:
         run: ${PYTHON} -m build
       - name: check build files
         id: buildfiles
+        # tautologies are considered defense in depth
         if: ${{ !cancelled() && (github.repository == 'raimon49/pip-licenses') && startsWith(github.ref, 'refs/tags/') }}
         shell: bash
         run: |
-          FILES=$(git ls-files -o --exclude-standard -i -- ${{ env.BUILD_MATCH_PATTERN }} )
+          FILES=$(git ls-files -o --exclude-standard -i -- $BUILD_MATCH_PATTERN )
           if [ -z "$FILES" ]; then
             printf "%s\n" "::warning file=.github/workflows/CD-PYPi.yml:: No Built files found."
             printf "%s\n" "files=" >> "$GITHUB_OUTPUT"
+            # probably an oversight, but abort to avoid empty releases (e.g., GHI-384 Stuff)
+            exit 1
           else
             printf "%s\n" "Built files found:"
             printf "%s\n" "$FILES"
-            # Replace line breaks with commas for GitHub Action Output
+            # Replace line breaks for GitHub Action Output
             FILES="${FILES//$'\n'/ }"
             printf "%s\n" "files=$FILES" >> "$GITHUB_OUTPUT"
           fi
-      - name: Calculate artifact checksums
-        run: |
-          shasum -a 512 dist/* > build.checksums.txt
-      - name: "Attest Build with Checksums"
-        id: piplicenses-build-chksum-attest
-        if: ${{ !cancelled() && (steps.buildfiles.outputs.files != '') && (github.repository == 'raimon49/pip-licenses') && startsWith(github.ref, 'refs/tags/') }}
-        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
-        with:
-          subject-checksums: build.checksums.txt
-          github-token: ${{ github.token }}
       - name: Calculate pip hashes
+        id: pip-hash-check
+        # tautologies are considered defense in depth
         if: ${{ !cancelled() && (steps.buildfiles.outputs.files != '') && (github.repository == 'raimon49/pip-licenses') }}
-        env:
-          FILES: ${{ steps.buildfiles.outputs.files }}
-        run: |
-          for FILE in $FILES; do
-              pip hash --no-input -a sha512 "$FILE" ;
-              pip hash --no-input -a sha256 "$FILE" ;
-          done ;
-      - name: test pip hashes actually work
         shell: bash
         env:
           FILES: ${{ steps.buildfiles.outputs.files }}
         run: |
-          shopts -s nullglob
+          shopt -s nullglob
           # Produce a temporary, hashed lockfile for runtime installs.
-          first_path=$(printf "%s\n" $FILES | head -n1 );
+          test -d dist
+          # Check Version from wheel.
+          first_path=$(printf "%s\n" $(printf "%s\n" "$FILES | grep -F ".whl") | head -n1 );
           filename=${first_path##*/};
           version=${filename#pip_licenses-};
           version=${version%%-*};
-
-          hashes=$(${PYTHON} -B -m pip hash -a sha512 "$FILE" | grep -F --color=never -- "--hash=sha");
+          # defensive cleanup
+          unset filename 2>/dev/null || : ;
+          # pip can check multiple at onece, but that is only useful to the consumer
+          hashes=$(${PYTHON} -B -m pip hash -a sha512 "$FILES" | grep -F --color=never -- "--hash=sha");
           test -n "$hashes";
-          
+
           printf "Consumer requirement:\n%s==%s" pip-licenses "$version"; printf " \\\\\n\t%s" $hashes; printf "\n" ;
+
+          TEMP_STUB=$(printf "%04x%04x-%04x-%04x-%04x-%04x%04x%04x\n" $RANDOM $RANDOM $RANDOM $(($RANDOM & 0x0fff | 0x4000)) $(($RANDOM & 0x3fff | 0x8000)) $RANDOM $RANDOM $RANDOM ;)
+          printf "" > build.checksums.${TEMP_STUB:-}.txt ; ## write empty file
 
           # Test each artifact in a separate fresh venv. This prevents one artifact's
           # install from affecting another test.
@@ -149,37 +147,109 @@ jobs:
               "$FILE"
 
             printf "%s\n" "PASS: $FILE" ;
-            rm -frd "$test_env" 2>/dev/null || true ;
-            unset test_env 2>/dev/null || true ;
-            unset hash 2>/dev/null || true ;
+            # save this file's hash
+            shasum -a 512 ${FILE} >> build.checksums.${TEMP_STUB:-}.txt ;
+            # re-report hashes for convenience
+            ${PYTHON} -B -m pip hash --no-input -a sha512 "$FILE" ;
+            ${PYTHON} -B -m pip hash --no-input -a sha256 "$FILE" ;
+            # defensive cleanup
+            rm -frd "$test_venv" 2>/dev/null || : ;
+            unset test_venv 2>/dev/null || : ;
+            unset hash 2>/dev/null || : ;
           done ;
+          # ok move it into place
+          mv -f build.checksums.${TEMP_STUB:-}.txt build.checksums.txt || exit 1 ;
       - name: Upload release bundle
         id: upload
+        # tautologies are considered defense in depth
         if: ${{ !cancelled() && (steps.buildfiles.outputs.files != '') && (github.repository == 'raimon49/pip-licenses') }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: pip_licenses-official-build-${{ github.sha }}
-          path: ${{ steps.buildfiles.outputs.files }}
+          path: |
+            ${{ steps.buildfiles.outputs.files }}
+            build.checksums.txt
           if-no-files-found: error
-          retention-days: 3
-          overwrite: true
+          retention-days: 3  # treat as ephemeral
+          overwrite: false  # error if already uploaded (must manually purge to overrule)
+
+  pypi-attest:
+    name: Attest release distributions
+    needs: pypi-build
+    if: ${{ needs.pypi-build.result == 'success' && needs.pypi-build.outputs.build_status == 'success' && github.event_name == 'release' && github.repository == 'raimon49/pip-licenses' && startsWith(github.ref, 'refs/tags/') }}
+    runs-on: ubuntu-latest
+    permissions:
+      # IMPORTANT: this permission is mandatory for Build Attestation
+      attestations: write
+      # IMPORTANT: this permission is used when we attest the build-job's uploaded artifact
+      artifact-metadata: write
+      # IMPORTANT: this permission is also mandatory for Build Attestation
+      id-token: write
+      # READ ONLY: already a public repo (and can't really be disabled practically anyway)
+      contents: read
+    outputs:
+      artifact-attest-id: ${{ steps.attest.outputs.attestation-id }}
+    steps:
+      - name: Download exact build artifact
+        id: download-piplicense-product
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          artifact-ids: ${{ needs.pypi-build.outputs.artifact-id }}
+          # tautologies are considered defense in depth
+          pattern: pip_licenses-official-build-*
+          path: release-bundle
+          repository: raimon49/pip-licenses
+          merge-multiple: true
+          github-token: ${{ github.token }}
+          digest-mismatch: error
+      - name: "Check build checksums still match"
+        id: attest-hash-check
+        run: |
+          set -euo pipefail
+          cd release-bundle
+          # for log transparency
+          shasum -a 512 dist/* | diff --unified build.checksums.txt -
+          # and again for consistency
+          shasum -a 512 -c build.checksums.txt || exit 1
+          # these should match those found in subsequent publish jobs
+      - name: "Attest Build files with checksums"
+        id: piplicenses-build-chksum-attest
+        if: ${{ !cancelled() && (needs.pypi-build.outputs.build-files != '') }}
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-checksums: release-bundle/build.checksums.txt
+          github-token: ${{ github.token }}
+      - name: "Attest Build Artifact"
+        id: pypi-build-attest
+        # tautologies are considered defense in depth
+        if: ${{ !cancelled() && (needs.pypi-build.outputs.build-files != '') && (needs.pypi-build.outputs.artifact-digest != null) }}
+        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
+        with:
+          subject-name: pip_licenses-official-build-${{ github.sha }}
+          subject-digest: sha256:${{ needs.pypi-build.outputs.artifact-digest }}  # from the build's upload (that we downloaded)
+          github-token: ${{ github.token }}
+          show-summary: false  # don't encourage reliance on this
+
+  # at this point the build is reasonably attested and verifiable (nothing is perfect)
+  # tautologies are considered defense in depth
 
   pypi-publish:
     name: Verify and publish to PyPI
-    needs: pypi-build
-    if: ${{ github.event_name == 'release' && (github.repository == 'raimon49/pip-licenses') && startsWith(github.ref, 'refs/tags/') }}
+    needs: [pypi-build, pypi-attest]
+    if: ${{ needs.pypi-build.result == 'success' && needs.pypi-attest.result == 'success' && needs.pypi-build.outputs.build_status == 'success' && github.event_name == 'release' && (github.repository == 'raimon49/pip-licenses') && startsWith(github.ref, 'refs/tags/') && (needs.pypi-build.outputs.build_status == 'success') }}
     runs-on: ubuntu-latest
     # Specifying a GitHub environment is optional, but strongly encouraged
     # environment: pypi
     permissions:
-      # IMPORTANT: this permission is mandatory for Build Attestation
+      # IMPORTANT: this permission is mandatory for Trusted Publishing (e.g., Re-Attestation)
       attestations: write
-      # IMPORTANT: this permission is mandatory for Uploading Attestation
-      artifact-metadata: write
       # IMPORTANT: this permission is mandatory for Trusted Publishing
       id-token: write
-      statuses: write
+      # could allow reading more statuses to guard on (unused atm)
+      # statuses: read
+      # READ ONLY: already a public repo (and can't really be disabled practically anyway)
       contents: read
+      # READ ONLY: This is needed to read action variables
       actions: read
     defaults:
       run:
@@ -200,12 +270,13 @@ jobs:
           digest-mismatch: error
 
       - name: Verify checksums and GitHub provenance
+        if: ${{ success() && (github.repository == 'raimon49/pip-licenses') }}
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
           # Change this to the exact path and capitalization of this workflow file.
-          SIGNER_WORKFLOW: raimon49/pip-licenses/.github/workflows/CD-PYPi.yml
+          SIGNER_WORKFLOW: ${{ github.repository }}/.github/workflows/CD-PyPi.yml
         run: |
           set -euo pipefail
           cd release-bundle
@@ -229,7 +300,7 @@ jobs:
           done
 
       - name: Publish package distributions to PyPI
-        if: ${{ success() }}
+        if: ${{ success() && (github.repository == 'raimon49/pip-licenses') }}
         uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086  # v1.14.3
         with:
           skip-existing: true
