@@ -1,10 +1,10 @@
 ## CHANGELOG
 
-### 6.0.0 (BETA WIP)
+### 6.0.0 (WIP)
 
-(SUBJECT TO CHANGE IN NEXT RELEASE)
+* improved release providence log transparency
 
-#### 6.0.0b14 (unreleased BETA):
+#### 6.0.0b14 (Pre-released BETA):
 
 * Fix for regressions around handling output file paths, closing GHI #389
 * Warn on stderr when no packages are found, closing GHI #426
@@ -24,9 +24,6 @@
   * [CVE-2026-102925 venv-reuse](https://github.com/advisories/GHSA-p58f-9548-mpm2)
   * [CVE-2026-102938 CRLF-injection](https://github.com/advisories/GHSA-9h9j-4vrj-gf7g)
 * Various small improvements to test-code (GHI #423 test coverage, etc.)
-
-#### 6.0.0b13 (Pre-released BETA):
-
 * Works-around empty-wheel builds, resolving GHI #384
   * Implements basic non-empty verification for build logic, closing GHI #265
 * Implemented some migration warnings to aid early adoption (WIP)

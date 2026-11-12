@@ -1861,6 +1861,7 @@ def test_allow_only_flag_is_stable(monkeypatch: pytest.MonkeyPatch) -> None:
         "BSD-3-Clause",  # v6 considers this unique
         "BSD-2-Clause",  # v6 considers this unique
         "Apache Software License",
+        "Apache-2.0",  # edge-case on some systems (e.g., importlib_metadata==8.7.1)
         "Apache-2.0 OR BSD-2-Clause",  # v6 considers this unique (e.g., packaging==26.2)
         "Mozilla Public License 2.0 (MPL 2.0)",
         "Python Software Foundation License",
@@ -1893,6 +1894,7 @@ def test_allow_only(monkeypatch: pytest.MonkeyPatch) -> None:
         "BSD-3-Clause",  # v6 considers this unique
         "BSD-2-Clause",  # v6 considers this unique
         "Apache Software License",
+        "Apache-2.0",  # edge-case on some systems (e.g., importlib_metadata==8.7.1)
         "Apache-2.0 OR BSD-2-Clause",  # v6 considers this unique (e.g., packaging==26.2)
         "Mozilla Public License 2.0 (MPL 2.0)",
         "Python Software Foundation License",
@@ -1982,6 +1984,7 @@ def test_allow_only_with_empty_tokens(
         "BSD-3-Clause",  # v6 considers this unique
         "BSD-2-Clause",  # v6 considers this unique
         "Apache Software License",
+        "Apache-2.0",  # edge-case on some systems (e.g., importlib_metadata==8.7.1)
         "Apache-2.0 OR BSD-2-Clause",  # v6 considers this unique (e.g., packaging==26.2)
         "Mozilla Public License 2.0 (MPL 2.0)",
         "Python Software Foundation License",

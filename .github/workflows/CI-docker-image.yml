@@ -12,10 +12,9 @@ run-name: Build ${{ github.ref_name }}
 
 on:  # yamllint disable-line rule:truthy
   push:
-    branches: ["master", "next"]
     tags: ["v-*"]
   pull_request:
-    branches: ["master", "next"]
+    branches: ["master", "next"]  # check builds, but don't push image
   release:
     types:
       - published
@@ -34,6 +33,7 @@ jobs:
     outputs:
       timestamp: ${{ steps.output_time.outputs.bootstrap-timestamp }}
       git-timestamp: ${{ steps.output_time.outputs.git-timestamp }}
+    timeout-minutes: 2
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -60,6 +60,7 @@ jobs:
       pull-requests: read
       security-events: none
     needs: seed
+    timeout-minutes: 10
     strategy:
       matrix:
         include:
@@ -137,13 +138,13 @@ jobs:
             type=provenance
           sbom: true
           provenance: mode=max
-          push: true
+          push: ${{ (github.event_name == 'push' && github.ref_type == 'tag') || github.event_name == 'release' }}
           annotations: |
             index.org.opencontainers.image.title=pip-licenses
             index.org.opencontainers.image.authors=reactive-firewall@users.noreply.github.com
             index.org.opencontainers.image.description=Multi-arch pip-licenses image
             index.org.opencontainers.image.licenses="MIT AND ((GPL-2.0-or-later OR GPL-3.0) OR (BSD-1-Clause OR BSD-2-Clause OR BSD-3-Clause OR BSD-4-Clause) OR Artistic-2.0)"
-          outputs: type=image,push-by-digest=true,name-canonical=true,push=true,annotation-index.org.opencontainers.image.description=Multi-arch pip-licenses image ${{ matrix.architecture }}
+          outputs: type=image,push-by-digest=true,name-canonical=true,push=${{ (github.event_name == 'push' && github.ref_type == 'tag') || github.event_name == 'release' }},annotation-index.org.opencontainers.image.description=Multi-arch pip-licenses image ${{ matrix.architecture }}
         env:
           SOURCE_DATE_EPOCH: ${{ needs.seed.outputs.timestamp }}
           PIPL_DATE_EPOCH: ${{ needs.seed.outputs.git-timestamp }}
@@ -156,10 +157,12 @@ jobs:
           touch "${{ runner.temp }}/digests/${digest#sha256:}"
 
       - name: Logout from Docker Hub
+        if: ${{ always() }}
         run: docker logout
 
       - name: Upload digest
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: ${{ (github.event_name == 'push' && github.ref_type == 'tag') || github.event_name == 'release' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: digests-${{ env.PLATFORM_PAIR }}
           path: ${{ runner.temp }}/digests/*
@@ -175,6 +178,7 @@ jobs:
       security-events: none
     runs-on: ubuntu-latest
     needs: build
+    if: ${{ (github.event_name == 'push' && github.ref_type == 'tag') || github.event_name == 'release' }}
     outputs:
       merge_version: ${{ steps.meta.outputs.version }}
     steps:
@@ -262,13 +266,14 @@ jobs:
           # (grype exits non-zero on findings; keep the job green by allowing non-zero)
 
       - name: Upload per-arch SBOM and Grype report
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: sbom-and-scan
           path: |
             sbom.json
 
       - name: Logout from Docker Hub
+        if: ${{ always() }}
         run: docker logout
 
   test:
@@ -280,6 +285,7 @@ jobs:
       pull-requests: read
       security-events: none
     needs: merge
+    if: ${{ (github.event_name == 'push' && github.ref_type == 'tag') || github.event_name == 'release' }}
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -311,4 +317,5 @@ jobs:
           docker run --rm ghcr.io/raimon49/pip-licenses:${{ needs.merge.outputs.merge_version }} --summary || exit 1 # as shown in README
           printf "::endgroup::\n"
       - name: Logout from Docker Hub
+        if: ${{ always() }}
         run: docker logout
