@@ -110,6 +110,7 @@ else:  # WIP DO NOT RELEASE 6.1 with this
 
 # GHI-81 -- EXPERIMENTAL exact import module subject to change
 from piplicenses.cli.config import Configuration
+from piplicenses.core import _filter_string
 from piplicenses.output.tables import _handle_multiple_value_field
 
 if TYPE_CHECKING:  # TODO: refactor to bridge module for PEP-749 changes
@@ -162,6 +163,30 @@ importlib_metadata_distributions_orig = (
     if "6.0." in __version__
     else piplicenses.core.importlib_metadata.distributions
 )
+
+
+@pytest.mark.parametrize(
+    ("item", "encoding", "expected"),
+    [
+        ("", "ascii", ""),
+        ("caf\u00e9 \U0001f600", "ascii", "caf "),
+        ("caf\u00e9 \U0001f600", "latin-1", "caf\u00e9 "),
+        ("\U0001f600", "ascii", ""),
+        ("caf\u00e9 \U0001f600", "utf-8", "caf\u00e9 \U0001f600"),
+        ("caf\u00e9 \U0001f600", "utf-16", "caf\u00e9 \U0001f600"),
+        ("\u00a5\u203e", "shift_jis", "\u00a5\u203e"),
+        ("\u00a5\U0001f600\u203e", "shift_jis", "\u00a5\u203e"),
+        ("\u301c\u2212", "cp932", "\u301c\u2212"),
+        ("\u301c\U0001f600\u2212", "cp932", "\u301c\u2212"),
+        ("\u65e5\U0001f600\u672c", "iso2022_jp", "\u65e5\u672c"),
+        ("\u00ca\u0304\U0001f600", "big5hkscs", "\u00ca\u0304"),
+        ("\U0001f600\u304b\u309a\U0001f600", "shift_jis_2004", "\u304b\u309a"),
+    ],
+)
+def test_filter_string_preserves_encodable_characters(
+    item: str, encoding: str, expected: str
+) -> None:
+    assert _filter_string(item, encoding) == expected
 
 
 class CommandLineTestCase(unittest.TestCase):

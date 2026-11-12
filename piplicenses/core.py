@@ -386,11 +386,18 @@ def _get_pkg_included_file(
 
 
 def _filter_string(item: str, encoding: str) -> str:
+    filtered = []
     try:
-        # TODO: this needs improved
-        return item.encode(encoding=encoding, errors="ignore").decode(
-            encoding=encoding
-        )
+        while True:
+            try:
+                item.encode(encoding=encoding)
+            except UnicodeEncodeError as error:  # noqa: PERF203
+                # Preserve original characters and valid multi-character units.
+                filtered.append(item[: error.start])
+                item = item[error.end :]
+            else:
+                filtered.append(item)
+                return "".join(filtered)
     except AttributeError as _cause:  # pragma: no cover
         _context_details = f"{item} can not be safely filtered with {encoding}"
         if not isinstance(item, str):
