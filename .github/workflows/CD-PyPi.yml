@@ -15,7 +15,7 @@ env:
   PYTHON_DEFAULT: "${{ vars.PYTHON_DEFAULT || '3.14' }}"
   # rationale: (circa 2026) 3.14 is latest *verified* to work (e.g., stable hard-code fall-back)
   # Filter pattern for what will be accepted as build artifacts (keep this as narrow as practical)
-  BUILD_MATCH_PATTERN: ${{ vars.BUILD_MATCH_PATTERN || 'dist/pip_licenses-*.tar.{bz2,gz} dist/pip_licenses-*-py3-*.whl' }}
+  BUILD_MATCH_PATTERN: ${{ vars.BUILD_MATCH_PATTERN || 'dist/pip_licenses-*.tar.gz dist/pip_licenses-*.tar.bz2 dist/pip_licenses-*-py3-*.whl' }}
 
 jobs:
   pypi-build:
@@ -41,7 +41,7 @@ jobs:
       build-files: ${{ steps.buildfiles.outputs.files }}
       artifact-id: ${{ steps.upload.outputs.artifact-id }}
       artifact-name: pip_licenses-official-build-${{ github.sha }}
-      artifact-digest: ${{ steps.upload.outputs.artifact-digest }}
+      artifact-digest: ${{ steps.upload.outputs.artifact-digest || null }}
     steps:
       - name: Checkout repository
         id: checkout
@@ -114,7 +114,7 @@ jobs:
           # Produce a temporary, hashed lockfile for runtime installs.
           test -d dist
           # Check Version from wheel.
-          first_path=$(printf "%s\n" $(printf "%s\n" "$FILES | grep -F ".whl") | head -n1 );
+          first_path=$(printf "%s\n" $(printf "%s\n" "$FILES" | grep -F --color=never -- ".whl") | head -n1 );
           filename=${first_path##*/};
           version=${filename#pip_licenses-};
           version=${version%%-*};
