@@ -2386,6 +2386,9 @@ def test_normalize_version() -> None:
     )
     # Test 11: GHI-423 '1.0-rc1' is canonically a match of '1.0rc1'
     assert normalize_version("1.0-rc1") == "1.0rc1"
+    # Test 12: GHI-439 implicit post-release number and implicit post release
+    assert normalize_version("1.0post") == "1.0post0"
+    assert normalize_version("1.0-1") == "1.0post1"
 
 
 def test_normalize_pkg_name_and_version() -> None:

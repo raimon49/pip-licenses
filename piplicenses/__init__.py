@@ -136,9 +136,10 @@ def normalize_version(version_string: Union[str, None]) -> str:
         else match.group("pre_l")
     )
     post = (
-        f"{match.group('post_l')}{match.group('post_n2')}"
-        if match.group("post_n2")
-        else match.group("post_n1")
+        f"{match.group('post_l') or 'post'}"
+        f"{match.group('post_n1') or match.group('post_n2') or '0'}"
+        if match.group("post")
+        else None
     )
     dev = (
         f"{match.group('dev_l')}{match.group('dev_n')}"
