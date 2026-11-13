@@ -2367,7 +2367,7 @@ def test_normalize_version() -> None:
     # Test 2: Version with 'v' prefix
     assert normalize_version("v2.0.0") == "2.0.0"
     # Test 3: Pre-release version
-    assert normalize_version("1.0.0-alpha") == "1.0.0alpha"
+    assert normalize_version("1.0.0-alpha") == "1.0.0alpha0"
     # Test 4: Beta pre-release version
     assert normalize_version("1.0.0-beta.1") == "1.0.0beta1"
     # Test 5: Release candidate version
@@ -2389,6 +2389,15 @@ def test_normalize_version() -> None:
     # Test 12: GHI-439 implicit post-release number and implicit post release
     assert normalize_version("1.0post") == "1.0post0"
     assert normalize_version("1.0-1") == "1.0post1"
+    # Test 13: GHI-439 a bare '-' is not an implicit post release
+    assert normalize_version("1.0-") == ""
+    # Test 14: GHI-439 implicit pre-release and dev release numbers
+    assert normalize_version("1.0pre") == "1.0pre0"
+    assert normalize_version("1.0dev") == "1.0dev0"
+    assert normalize_version("1.0-1dev") == "1.0post1dev0"
+    assert normalize_version("1.0-post1.dev") == "1.0post1dev0"
+    # Test 15: GHI-439 leading zeros in pre, post and dev numbers
+    assert normalize_version("1.0a01.post001.dev02") == "1.0a1post1dev2"
 
 
 def test_normalize_pkg_name_and_version() -> None:

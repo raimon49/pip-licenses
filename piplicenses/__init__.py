@@ -131,20 +131,20 @@ def normalize_version(version_string: Union[str, None]) -> str:
     epoch = match.group("epoch") or "0"
     release = match.group("release") or "0.0"
     pre = (
-        f"{match.group('pre_l')}{match.group('pre_n')}"
-        if match.group("pre_n")
-        else match.group("pre_l")
+        f"{match.group('pre_l')}{int(match.group('pre_n') or 0)}"
+        if match.group("pre")
+        else None
     )
     post = (
         f"{match.group('post_l') or 'post'}"
-        f"{match.group('post_n1') or match.group('post_n2') or '0'}"
+        f"{int(match.group('post_n1') or match.group('post_n2') or 0)}"
         if match.group("post")
         else None
     )
     dev = (
-        f"{match.group('dev_l')}{match.group('dev_n')}"
-        if match.group("dev_n")
-        else match.group("dev_l")
+        f"{match.group('dev_l')}{int(match.group('dev_n') or 0)}"
+        if match.group("dev")
+        else None
     )
     # Building the normalized version string
     normalized_version = f"{epoch}!{release}" if epoch != "0" else release
