@@ -124,7 +124,8 @@ updates:
     target-branch: "next"
     # rebase-strategy: "disabled"  # enabled by default
     allow:
-      - update-types: "version-update:semver-major"
+      - update-types:
+        - "version-update:semver-major"
     assignees:
       - "reactive-firewall"
     commit-message:
