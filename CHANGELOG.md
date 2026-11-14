@@ -3,6 +3,7 @@
 ### 6.0.0 (WIP)
 
 * improved release providence log transparency
+* Fixed `normalize_version` dropping implicit post-release numbers, closing GHI #439
 
 #### 6.0.0b14 (Pre-released BETA):
 
