@@ -15,7 +15,7 @@ updates:
         dependency-type: "direct"
       - dependency-name: "tomli"
         dependency-type: "production"
-      - dependency-name: "wcwidth"
+      - dependency-name: "wcwidth"  # historical (via prettytable)
         dependency-type: "production"
       # allow build/packaging transitive packages
       # (will only ever approve if already in pyproject.toml)
@@ -27,9 +27,43 @@ updates:
         dependency-type: "indirect"
       - dependency-name: "pip"
         dependency-type: "indirect"
+    # GHI-435 lead to the removal of an overriding ignore all (so no ignore by default now)
+    # from the allow list the only prefix letters allowed are: b p s t w
+    # from the allow list we can further limit direct to: p t w
+    # from the allow list we can also further limit indirect to: b s
+    # thus we can ignore many things to still limit the possible noise:
+    ignore:
+      - dependency-name: "a*"
+      # but allow build
+      - dependency-name: "c*"
+      - dependency-name: "d*"
+      - dependency-name: "e*"
+      - dependency-name: "f*"
+      - dependency-name: "g*"
+      - dependency-name: "h*"
+      - dependency-name: "i*"
+      - dependency-name: "j*"
+      - dependency-name: "k*"
+      - dependency-name: "l*"
+      - dependency-name: "m*"
+      - dependency-name: "n*"
+      - dependency-name: "o*"
+      # but allow pr*
+      # but allow pi*
+      - dependency-name: "q*"
+      - dependency-name: "r*"
+      # but allow setuptool*
+      # but allow t*
+      - dependency-name: "u*"
+      - dependency-name: "v*"
+      # but allow w*
+      - dependency-name: "x*"
+      - dependency-name: "y*"
+      - dependency-name: "z*"
     exclude-paths:
       - "requirements.txt"
       - "*-requirements.txt"
+      - ".github/*"
       - "docker/*"
     assignees:
       - "reactive-firewall"
@@ -56,6 +90,23 @@ updates:
     schedule:
       interval: "weekly"
       day: "friday"
+  - package-ecosystem: "pip"  # See documentation for possible values
+    directory: ".github/"  # different to allow dependabot to work
+    target-branch: "next"
+    versioning-strategy: increase
+    allow:
+      - dependency-type: "direct"
+    exclude-paths:
+      - "pyproject.toml"
+      - "docker/*"
+    assignees:
+      - "reactive-firewall"
+    commit-message:
+      prefix: "[CI] "
+      include: "scope"
+    schedule:
+      interval: "weekly"
+      day: "friday"
   - package-ecosystem: "github-actions"  # See documentation for possible values
     directory: ".github/workflows/"  # Location of package manifests
     target-branch: "master"
@@ -64,6 +115,20 @@ updates:
       - "reactive-firewall"
     commit-message:
       prefix: "[UPDATE] "
+      include: "scope"
+    schedule:
+      interval: "weekly"
+      day: "friday"
+  - package-ecosystem: "docker"  # See documentation for possible values
+    directory: "/"  # Location of dockerfile
+    target-branch: "next"
+    # rebase-strategy: "disabled"  # enabled by default
+    allow:
+      - update-types: "version-update:semver-major"
+    assignees:
+      - "reactive-firewall"
+    commit-message:
+      prefix: "[REBASE] "
       include: "scope"
     schedule:
       interval: "weekly"

@@ -1,0 +1,7 @@
+#
+# This file is not part of the pip-licenses package
+#
+pip>=26.2.2
+setuptools>=84.2.1
+wheel>=0.48
+build>=1.6.0
