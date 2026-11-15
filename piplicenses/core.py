@@ -386,9 +386,26 @@ def _get_pkg_included_file(
 
 
 def _filter_string(item: str, encoding: str) -> str:
+    """Remove characters that cannot be encoded with the specified encoding.
+
+    Repeatedly attempts to encode the input and removes each segment identified
+    by a `UnicodeEncodeError`. Characters outside those segments are preserved.
+
+    Arguments:
+        item (str): The string to filter.
+        encoding (str): The encoding to test against.
+
+    Returns:
+        str: The input string with un-encodable segments filtered out.
+
+    Raises:
+        ValueError: If the input cannot be treated as a string (to filter).
+        LookupError: If the specified encoding is unknown.
+    """
     filtered = []
+    result_ready: bool = False
     try:
-        while True:
+        while not result_ready:
             try:
                 item.encode(encoding=encoding)
             except UnicodeEncodeError as error:  # noqa: PERF203
@@ -397,7 +414,8 @@ def _filter_string(item: str, encoding: str) -> str:
                 item = item[error.end :]
             else:
                 filtered.append(item)
-                return "".join(filtered)
+                result_ready = True
+        return "".join(filtered)
     except AttributeError as _cause:  # pragma: no cover
         _context_details = f"{item} can not be safely filtered with {encoding}"
         if not isinstance(item, str):

@@ -165,28 +165,30 @@ importlib_metadata_distributions_orig = (
 )
 
 
-@pytest.mark.parametrize(
-    ("item", "encoding", "expected"),
-    [
-        ("", "ascii", ""),
-        ("caf\u00e9 \U0001f600", "ascii", "caf "),
-        ("caf\u00e9 \U0001f600", "latin-1", "caf\u00e9 "),
-        ("\U0001f600", "ascii", ""),
-        ("caf\u00e9 \U0001f600", "utf-8", "caf\u00e9 \U0001f600"),
-        ("caf\u00e9 \U0001f600", "utf-16", "caf\u00e9 \U0001f600"),
-        ("\u00a5\u203e", "shift_jis", "\u00a5\u203e"),
-        ("\u00a5\U0001f600\u203e", "shift_jis", "\u00a5\u203e"),
-        ("\u301c\u2212", "cp932", "\u301c\u2212"),
-        ("\u301c\U0001f600\u2212", "cp932", "\u301c\u2212"),
-        ("\u65e5\U0001f600\u672c", "iso2022_jp", "\u65e5\u672c"),
-        ("\u00ca\u0304\U0001f600", "big5hkscs", "\u00ca\u0304"),
-        ("\U0001f600\u304b\u309a\U0001f600", "shift_jis_2004", "\u304b\u309a"),
-    ],
-)
-def test_filter_string_preserves_encodable_characters(
-    item: str, encoding: str, expected: str
-) -> None:
-    assert _filter_string(item, encoding) == expected
+class FilterStringTests(unittest.TestCase):
+    def test_preserves_encodable_characters(self) -> None:
+        cases = [
+            ("", "ascii", ""),
+            ("caf\u00e9 \U0001f600", "ascii", "caf "),
+            ("caf\u00e9 \U0001f600", "latin-1", "caf\u00e9 "),
+            ("\U0001f600", "ascii", ""),
+            ("caf\u00e9 \U0001f600", "utf-8", "caf\u00e9 \U0001f600"),
+            ("caf\u00e9 \U0001f600", "utf-16", "caf\u00e9 \U0001f600"),
+            ("\u00a5\u203e", "shift_jis", "\u00a5\u203e"),
+            ("\u00a5\U0001f600\u203e", "shift_jis", "\u00a5\u203e"),
+            ("\u301c\u2212", "cp932", "\u301c\u2212"),
+            ("\u301c\U0001f600\u2212", "cp932", "\u301c\u2212"),
+            ("\u65e5\U0001f600\u672c", "iso2022_jp", "\u65e5\u672c"),
+            ("\u00ca\u0304\U0001f600", "big5hkscs", "\u00ca\u0304"),
+            (
+                "\U0001f600\u304b\u309a\U0001f600",
+                "shift_jis_2004",
+                "\u304b\u309a",
+            ),
+        ]
+        for item, encoding, expected in cases:
+            with self.subTest(item=item, encoding=encoding):
+                self.assertEqual(expected, _filter_string(item, encoding))
 
 
 class CommandLineTestCase(unittest.TestCase):
