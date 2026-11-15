@@ -4,6 +4,16 @@
 
 Dump the software license list of Python packages installed with pip.
 
+> [!IMPORTANT]
+> ## Version 6 series is coming soon
+>
+> The [next](https://github.com/raimon49/pip-licenses/tree/next) version will bring breaking changes!
+> You may notice documentation has begun to describe the version `6`-series already. A living
+> document to assist with migrating to the v`6`-series is now available, while some of the
+> more custodial work wraps up for the release of the v`6.0.0` release in December 2026.
+>
+> [v6 Migration Document](https://github.com/raimon49/pip-licenses/wiki/Migration-Guide-(v5.4–v5.5-→-v6.x)-(DRAFT)#support-and-release-notes)
+
 <img width="785" height="265" alt="demo_preview" src="https://github.com/user-attachments/assets/910cae21-dd6e-4ee3-9861-171b7c454dc6" />
 
 <details><summary>Table of Contents</summary>
