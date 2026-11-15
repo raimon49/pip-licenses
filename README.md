@@ -4,6 +4,16 @@
 
 Dump the software license list of Python packages installed with pip.
 
+> [!IMPORTANT]
+> ## Version 6 series is coming soon
+>
+> The [next](https://github.com/raimon49/pip-licenses/tree/next) version will bring breaking changes!
+> You may notice documentation has begun to describe the version `6`-series already. A living
+> document to assist with migrating to the v`6`-series is now available, while some of the
+> more custodial work wraps up for the release of the v`6.0.0` release in December 2026.
+>
+> [v6 Migration Document](https://github.com/raimon49/pip-licenses/wiki/Migration-Guide-(v5.4–v5.5-→-v6.x)-(DRAFT)#support-and-release-notes)
+
 <img width="785" height="265" alt="demo_preview" src="https://github.com/user-attachments/assets/910cae21-dd6e-4ee3-9861-171b7c454dc6" />
 
 <details><summary>Table of Contents</summary>
@@ -41,6 +51,7 @@ Dump the software license list of Python packages installed with pip.
         * [Option: filter\-code\-page](#option-filter-code-page)
     * [Verify options](#verify-options)
         * [Option: fail\-on](#option-fail-on)
+        * [Option: warn\-on](#option-warn-on)
         * [Option: allow\-only](#option-allow-only)
         * [Option: partial\-match](#option-partial-match)
     * [pyproject.toml support](#pyprojecttoml-support)
@@ -578,6 +589,19 @@ $ echo $?
 $ pip-licenses --fail-on="mit license"
 ```
 
+#### Option: warn\-on
+
+Warn (write to stderr, without failing) on every occurrence of the licenses of the
+semicolon-separated list. The license name matching is case-insensitive. This keeps `--allow-only`
+runs green while making obligations that need follow-up visible, for example licences that require
+attribution in the documentation.
+
+```bash
+(venv) $ pip-licenses --allow-only="MIT License;Python Software Foundation License" --warn-on="Python Software Foundation License"
+```
+**Note:** Unlike `--fail-on` and `--allow-only`, the run does not stop at the first occurrence:
+one warning line is printed per package, and the exit code stays 0.
+
 #### Option: allow\-only
 
 Fail (exit with code 1) if none of the package licenses are in the semicolon-separated list. The license name
@@ -610,7 +634,7 @@ $ echo $?
 
 #### Option: partial\-match
 
-If set, enables partial (substring) matching for `--fail-on` or `--allow-only`. Default is unset (False).
+If set, enables partial (substring) matching for `--fail-on`, `--warn-on` or `--allow-only`. Default is unset (False).
 
 Usage:
 

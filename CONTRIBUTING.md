@@ -59,7 +59,9 @@ block-beta
 * `pip-licenses` always measures code coverage for code quality. If you implement a new feature, please also write unit test in [test\_piplicenses.py](https://github.com/raimon49/pip-licenses/blob/master/test_piplicenses.py).
     * Tests can be run with `make test` .
 * Code conventions follow the [PEP 8](https://www.python.org/dev/peps/pep-0008/).
-    * You can format the code by running `make lint` .
+    * You can lint the code by running `make lint` .
+    * You can try automated formatting the code by running `make update-style` .
+      (This automation may not always be successful, and my still fail to pass linting.)
 * Send pull request to "next" branch. Maintainer(s) may adjust PRs to the appropriate development branch as relevant.
 
 ## Security policy

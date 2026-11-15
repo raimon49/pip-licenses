@@ -26,7 +26,7 @@
 # SOFTWARE.
 
 
-"""File search configuration model for granular control of file content/path output.
+"""File search configuration model for granular control of file search heuristics.
 
 See [GHI-375](https://github.com/raimon49/pip-licenses/issues/375) for full design rationale.
 
@@ -37,17 +37,7 @@ see [GHI-375](https://github.com/raimon49/pip-licenses/issues/81) for integratio
 
 import re
 
-# See https://github.com/raimon49/pip-licenses/issues/360
-# should just bridge this import
-# from collections.abc import Iterable
-from enum import (
-    Flag,
-    auto,
-)
-
 from .. import LEGACY_LICENSE_BY_FILE_PATTERN
-from ._argparse_bridge import argparse  # the module
-from ._format_nomenclature import reduce_to_config_form  # the function
 from ._regex_flag import RegexFlags  # the class
 
 _RESERVED_BY_FILE_PATTERN: re.Pattern = re.compile(
@@ -184,119 +174,6 @@ class ExtraFilesRegex(RegexFlags):
     )
 
 
-class FileFormat(Flag):
-    """Enumeration of files format modes."""
-
-    # Individually
-    SHOW_CONTENTS = auto()  # Include file contents
-    SHOW_PATHS = auto()  # Include file paths
-    # Combos
-    SHOW_BOTH = SHOW_CONTENTS | SHOW_PATHS
-    # Negation
-    SHOW_NONE = 0  # semantically: ~SHOW_BOTH
-
-
-class FileCategory(Flag):
-    """Enumeration of all file discovery categories."""
-
-    # Include recognized paths from core metadata Project-File
-    METADATA = auto()  # 1 E.g., any files
-    # Derive paths from core metadata License-File
-    LICENSE = auto()  # 2 From core metadata License-File
-    # Heuristic searches for other paths
-    OTHERS = auto()  # 4 Catch-all for other extra files
-    AUTHORS = auto()  # 8 Heuristic search for AUTHORS-like files
-    ATTRIBUTION = auto()  # 16 Heuristic search for ATTRIBUTION-like files
-    NOTICES = auto()  # 32 Heuristic search for NOTICE-like files
-    LEGACY = (
-        auto()
-    )  # 64 Heuristic search for LICENSE/COPYING (not in metadata)
-    # Combos
-    ANY = (
-        AUTHORS | ATTRIBUTION | NOTICES | LEGACY | OTHERS
-    )  # 124 (127 - 1+2) E.g., any other paths
-
-
-_FORMAT_CATEGORIES: list[FileCategory] = [
-    FileCategory.ATTRIBUTION,
-    FileCategory.AUTHORS,
-    FileCategory.LEGACY,
-    FileCategory.LICENSE,
-    FileCategory.NOTICES,
-    FileCategory.OTHERS,
-]
-"""Internal list of file-format-able categories.
-
-Not part of the public API.
-"""
-
-
-# See https://github.com/raimon49/pip-licenses/issues/360
-# prefix_hint type could be literal[str] from:
-# FORMAT_CATEGORIES[*].name.lower().strip('s')
-#  + 'global'
-#  + 'supports'
-# note: fallback 'supports' is the only value that ends in an 's'
-def _resolve_file_format(
-    args: argparse.Namespace,
-    *,
-    prefix_hint: str = "supports",
-    default: FileFormat = FileFormat.SHOW_NONE,
-) -> FileFormat:
-    """Internal helper for resolve_file_formats().
-
-    Not part of the public API.
-    """
-    # see _format_nomenclature.FORMAT_OVERRIDE_FIELD
-    contents = getattr(args, f"{prefix_hint}_files")
-    paths = getattr(args, f"{prefix_hint}_paths")
-    fmt = default
-    if (contents is not None) and contents:
-        fmt |= FileFormat.SHOW_CONTENTS
-    if (paths is not None) and paths:
-        fmt |= FileFormat.SHOW_PATHS
-    return fmt
-
-
-def resolve_file_formats(
-    args: argparse.Namespace,
-    *,
-    default: FileFormat = FileFormat.SHOW_NONE,
-) -> dict[FileCategory, FileFormat]:
-    """
-    Convert argparse's tri-state booleans into FileFormat values.
-
-    An unspecified setting inherits `default`.
-    """
-    formats: dict[FileCategory, FileFormat] = {
-        FileCategory.METADATA: _resolve_file_format(
-            args=args,
-            prefix_hint="supports",
-            default=default,
-        ),
-    }
-    for category in _FORMAT_CATEGORIES:
-        if category.name:  # e.g., only handle named categories
-            category_name: str = category.name.lower().strip("s")
-            fmt = _resolve_file_format(
-                args=args,
-                prefix_hint=reduce_to_config_form(category_name),
-                default=default,
-            )
-            formats[category] = fmt
-        # else skip
-    return formats
-
-
 __all__ = [
     "ExtraFilesRegex",
-    "FileCategory",
-    "FileFormat",
-    "resolve_file_formats",
 ]
-
-
-# NOTE: this module intentionally keeps a small, explicit surface area.
-# Patterns and category resolution are handled here; the argparse integration
-# remains intentionally decoupled so that higher-level CLI validation can decide
-# whether a format supports file contents before rendering them.

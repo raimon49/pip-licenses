@@ -126,6 +126,30 @@ FORMAT_TOGGLE_OFF: Template = Template(
 Not part of the public API. Subject to sudden changes, or removal.
 """
 
+FORMAT_SUPPRESS_FIELD: Template = Template(
+    f"{FORMAT_DISABLE_PREFIX}$delimiter$dest"
+)
+"""This template is for generating suppression flag and config names from a base dest.
+
+Not part of the public API. Subject to sudden changes, or removal.
+"""
+
+FORMAT_SUPPRESS_ON: Template = Template(
+    f"$delimiter${{delimiter}}{FORMAT_DISABLE_PREFIX}$delimiter$dest"
+)
+"""This template is for generating suppression flag names from a base dest.
+
+Not part of the public API. Subject to sudden changes, or removal.
+"""
+
+FORMAT_SUPPRESS_OFF: Template = Template(
+    f"$delimiter${{delimiter}}{FORMAT_ENABLE_PREFIX}$delimiter$dest"
+)
+"""This template is for generating enable flag names from a base dest.
+
+Not part of the public API. Subject to sudden changes, or removal.
+"""
+
 FORMAT_OVERRIDE_FIELD: Template = Template(
     f"{FORMAT_ENABLE_PREFIX}$delimiter$dest$delimiter$suffix"
 )
@@ -399,6 +423,9 @@ __all__ = [
     """FORMAT_OVERRIDE_FIELD_OFF""",
     """FORMAT_OVERRIDE_FIELD_ON""",
     """FORMAT_PATHS_SUFFIX""",
+    """FORMAT_SUPPRESS_FIELD""",
+    """FORMAT_SUPPRESS_OFF""",
+    """FORMAT_SUPPRESS_ON""",
     """FORMAT_TOGGLE_FIELD""",
     """FORMAT_TOGGLE_OFF""",
     """FORMAT_TOGGLE_ON""",
