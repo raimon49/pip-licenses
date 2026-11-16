@@ -80,6 +80,7 @@ from .cli import (
     FromArg,
 )
 from .sorting import (
+    SetLike,
     case_insensitive_partial_match_set_diff,
     case_insensitive_partial_match_set_intersect,
     case_insensitive_set_diff,
@@ -99,6 +100,14 @@ SYSTEM_PACKAGES: list[str] = [
 ]
 if sys.version_info < (3, 11):
     SYSTEM_PACKAGES.append("tomli")
+
+# compatibility shim GHI-364
+try:
+    from ._license_expressions import (  # type: ignore[import-not-found]
+        parse_spdx_expression,  # type: ignore[import-not-found]
+    )
+except (ImportError, ModuleNotFoundError, AttributeError) as exc:
+    parse_spdx_expression = None
 
 
 def extract_urls(metadata: Message) -> dict[str, Union[str, list[str], None]]:
@@ -334,6 +343,44 @@ def extract_maintainers(metadata: Message) -> list[str]:
 # E.g., Value: TypeAlias = Union[strs, dict[str, Union[strs, None]], None]
 # E.g., Value: TypeAlias = Optional[Union[strs, dict[str, Optional[strs]]]]
 # See https://github.com/raimon49/pip-licenses/issues/360
+
+
+# DRAFT:
+def case_and_type_insensitive_set_diff_helper(
+    set_a: Union[set, list, tuple, frozenset],
+    set_b: SetLike,
+) -> set:
+    """Return unmatched values; expand valid SPDX expressions to operands.
+
+    For a valid SPDX expression, the returned unmatched item represents the
+    missing license identifiers (joined with ``; ``) as one source value. This
+    preserves the caller's existing at-least-one-match behavior for multiple
+    separate license values while requiring every operand of an expression to
+    be allowed. Unrecognized strings retain whole-string exact matching.
+    """
+    uncommon_items = set()
+    set_b_lower = {item.lower() for item in set_b}
+    for elem in set_a:
+        identifiers = (
+            parse_spdx_expression(elem)
+            if type(parse_spdx_expression) is not None
+            else None
+        )
+        if identifiers is not None:
+            missing = sorted(
+                {
+                    identifier
+                    for identifier in identifiers
+                    if identifier.lower() not in set_b_lower
+                },
+                key=str.lower,
+            )
+            if missing:
+                # add special result for expression
+                uncommon_items.add("; ".join(missing))
+        elif elem.lower() not in set_b_lower:
+            uncommon_items.add(elem)
+    return uncommon_items
 
 
 METADATA_KEYS: dict[
@@ -875,6 +922,7 @@ def get_packages(
         if allow_only_licenses:
             uncommon_licenses = set()
             if not args.partial_match:
+                # placeholder for case_and_type_insensitive_set_diff_helper(
                 uncommon_licenses = case_insensitive_set_diff(
                     license_names, allow_only_licenses
                 )

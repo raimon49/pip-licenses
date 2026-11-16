@@ -16,7 +16,7 @@ from importlib.metadata import Distribution
 from io import StringIO
 from pathlib import Path
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Union
 from unittest.mock import (
     MagicMock,
     Mock,  # used by LoadConfigFromFileTests
@@ -118,6 +118,10 @@ if TYPE_CHECKING:  # TODO: refactor to bridge module for PEP-749 changes
         from importlib.metadata._meta import PackageMetadata
     else:
         from email.message import Message as PackageMetadata
+    if sys.version_info >= (3, 15):
+        from importlib.metadata import SimplePath
+    else:
+        from importlib.metadata import _SimplePath as SimplePath
     from prettytable import PrettyTable
 
 UNICODE_APPENDIX = ""
@@ -136,6 +140,21 @@ def importlib_metadata_distributions_mocked(
         @property
         def metadata(self) -> PackageMetadata:
             return EmailMessageMocker(self.__dist.metadata)
+
+        if sys.version_info >= (3, 15):
+
+            def locate_file(
+                self,
+                path: Union[str, os.PathLike[str]],
+            ) -> SimplePath:
+                if self.__dist:
+                    return self.__dist.locate_file(path)
+                raise NotImplementedError("Mocker is not able to do that.")
+
+            def read_text(self, filename: str) -> Union[str, None]:
+                if self.__dist:
+                    return self.__dist.read_text(filename)
+                return None
 
     class EmailMessageMocker(email.message.Message):
         def __init__(self, orig_msg: PackageMetadata) -> None:
@@ -2214,7 +2233,15 @@ def test_warn_on_does_not_stop_at_the_first_occurrence(
             self._metadata["Version"] = version
             self._metadata["License"] = license_name
 
-        def read_text(self, filename: str) -> str | None:
+        if sys.version_info >= (3, 15):
+
+            def locate_file(
+                self,
+                path: Union[str, os.PathLike[str]],
+            ) -> SimplePath:
+                raise NotImplementedError("MockDist is not able to do that.")
+
+        def read_text(self, filename: str) -> Union[str, None]:
             return None
 
         @property
