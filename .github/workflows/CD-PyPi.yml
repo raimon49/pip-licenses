@@ -136,15 +136,18 @@ jobs:
             hash=$(${PYTHON} -B -m pip hash -a sha512 "$FILE" | grep -F --color=never -- "--hash=sha");
             test_venv="venv/test-$((++file_index))"
 
-            "$PYTHON" -m venv "$test_venv"
+            ${PYTHON} -m venv "$test_venv"
             "$test_venv/bin/python" -m pip install -r ./requirements.txt
 
-            printf '\n%s\n' "Testing $FILE" ;
+            # One requirement: this artifact, with the hash pip must verify.
+            test_requirements="$test_venv/artifact-requirements.txt"
+            printf '%s %s\n' "$GITHUB_WORKSPACE/$FILE" "$hash" > "$test_requirements" ;
+
+            printf '\n%s\n' "Testing $FILE"
             "$test_venv/bin/python" -m pip install \
               --no-deps \
               --require-hashes \
-              --hash="$hash" \
-              "$FILE"
+              -r "$test_requirements"
 
             printf "%s\n" "PASS: $FILE" ;
             # save this file's hash
