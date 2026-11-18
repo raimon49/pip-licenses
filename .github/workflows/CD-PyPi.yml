@@ -219,7 +219,7 @@ jobs:
         if: ${{ !cancelled() && (needs.pypi-build.outputs.build-files != '') }}
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
-          subject-checksums: release-bundle/build.checksums.txt
+          subject-checksums: build.checksums.txt
           github-token: ${{ github.token }}
       - name: "Attest Build Artifact"
         id: pypi-build-attest
