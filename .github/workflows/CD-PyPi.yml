@@ -114,14 +114,14 @@ jobs:
           # Produce a temporary, hashed lockfile for runtime installs.
           test -d dist
           # Check Version from wheel.
-          first_path=$(printf "%s\n" $(printf "%s\n" "$FILES" | grep -F --color=never -- ".whl") | head -n1 );
+          first_path=$(printf "%s\n" $(printf "%s\n" $FILES 2>/dev/null | grep -F --color=never -- ".whl") | head -n1 );
           filename=${first_path##*/};
           version=${filename#pip_licenses-};
           version=${version%%-*};
           # defensive cleanup
           unset filename 2>/dev/null || : ;
           # pip can check multiple at onece, but that is only useful to the consumer
-          hashes=$(${PYTHON} -B -m pip hash -a sha512 "$FILES" | grep -F --color=never -- "--hash=sha");
+          hashes=$({ for FILE_PKG in $FILES ; do ${PYTHON} -B -m pip hash -a sha512 "$FILE_PKG" ; done ;} | grep -F --color=never -- "--hash=sha");
           test -n "$hashes";
 
           printf "Consumer requirement:\n%s==%s" pip-licenses "$version"; printf " \\\\\n\t%s" $hashes; printf "\n" ;
