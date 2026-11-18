@@ -1,6 +1,6 @@
 ## CHANGELOG
 
-### 6.0.0rc20 (WIP)
+### 6.0.0rc21 (WIP)
 
 * Fix for regression bug around zealously strict matching of `--allow-only`, resolving GHI #364
 * Improved release providence log transparency

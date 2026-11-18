@@ -198,7 +198,7 @@ jobs:
           artifact-ids: ${{ needs.pypi-build.outputs.artifact-id }}
           # tautologies are considered defense in depth
           pattern: pip_licenses-official-build-*
-          path: release-bundle
+          path: dist
           repository: raimon49/pip-licenses
           merge-multiple: true
           github-token: ${{ github.token }}
@@ -207,7 +207,6 @@ jobs:
         id: attest-hash-check
         run: |
           set -euo pipefail
-          cd release-bundle
           # unpack
           mv -f dist/build.checksums.txt ./build.checksums.txt || exit 1 ;
           # for log transparency
@@ -266,7 +265,7 @@ jobs:
         with:
           artifact-ids: ${{ needs.pypi-build.outputs.artifact-id }}
           pattern: pip_licenses-official-build-*
-          path: release-bundle
+          path: dist
           repository: raimon49/pip-licenses
           merge-multiple: true
           github-token: ${{ github.token }}
@@ -282,7 +281,6 @@ jobs:
           SIGNER_WORKFLOW: ${{ github.repository }}/.github/workflows/CD-PyPi.yml
         run: |
           set -euo pipefail
-          cd release-bundle
           # unpack
           mv -f dist/build.checksums.txt ./build.checksums.txt || exit 1 ;
           # for log transparency
