@@ -223,7 +223,7 @@ jobs:
         id: pypi-build-attest
         # tautologies are considered defense in depth
         if: ${{ !cancelled() && (needs.pypi-build.outputs.build-files != '') && (needs.pypi-build.outputs.artifact-digest != null) }}
-        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
           subject-name: pip_licenses-official-build-${{ github.sha }}
           subject-digest: sha256:${{ needs.pypi-build.outputs.artifact-digest }}  # from the build's upload (that we downloaded)
