@@ -161,7 +161,7 @@ jobs:
             unset hash 2>/dev/null || : ;
           done ;
           # ok move it into place
-          mv -f build.checksums.${TEMP_STUB:-}.txt build.checksums.txt || exit 1 ;
+          mv -f build.checksums.${TEMP_STUB:-}.txt dist/build.checksums.txt || exit 1 ;
       - name: Upload release bundle
         id: upload
         # tautologies are considered defense in depth
@@ -169,9 +169,7 @@ jobs:
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: pip_licenses-official-build-${{ github.sha }}
-          path: |
-            ${{ steps.buildfiles.outputs.files }}
-            build.checksums.txt
+          path: 'dist/*'
           if-no-files-found: error
           retention-days: 3  # treat as ephemeral
           overwrite: false  # error if already uploaded (must manually purge to overrule)
@@ -210,6 +208,8 @@ jobs:
         run: |
           set -euo pipefail
           cd release-bundle
+          # unpack
+          mv -f dist/build.checksums.txt ./build.checksums.txt || exit 1 ;
           # for log transparency
           shasum -a 512 dist/* | diff --unified build.checksums.txt -
           # and again for consistency
@@ -283,6 +283,8 @@ jobs:
         run: |
           set -euo pipefail
           cd release-bundle
+          # unpack
+          mv -f dist/build.checksums.txt ./build.checksums.txt || exit 1 ;
           # for log transparency
           shasum -a 512 dist/* | diff --unified build.checksums.txt -
           # and again for consistency
