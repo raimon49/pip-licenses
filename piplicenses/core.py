@@ -75,11 +75,13 @@ from . import (
     normalize_version,
     re,  # import re
 )
+from ._license_expressions import parse_spdx_expression
 from .cli import (
     Configuration,
     FromArg,
 )
 from .sorting import (
+    SetLike,
     case_insensitive_partial_match_set_diff,
     case_insensitive_partial_match_set_intersect,
     case_insensitive_set_diff,
@@ -336,6 +338,39 @@ def extract_maintainers(metadata: Message) -> list[str]:
 # See https://github.com/raimon49/pip-licenses/issues/360
 
 
+def case_and_type_insensitive_set_diff_helper(
+    set_a: Union[set, list, tuple, frozenset],
+    set_b: SetLike,
+) -> set:
+    """Return unmatched values; expand valid SPDX expressions to operands.
+
+    For a valid SPDX expression, the returned unmatched item represents the
+    missing license identifiers (joined with ``; ``) as one source value. This
+    preserves the caller's existing at-least-one-match behavior for multiple
+    separate license values while requiring every operand of an expression to
+    be allowed. Unrecognized strings retain whole-string exact matching.
+    """
+    uncommon_items = set()
+    set_b_lower = {item.lower() for item in set_b}
+    for elem in set_a:
+        identifiers = parse_spdx_expression(elem)
+        if identifiers is not None:
+            missing = sorted(
+                {
+                    identifier
+                    for identifier in identifiers
+                    if identifier.lower() not in set_b_lower
+                },
+                key=str.lower,
+            )
+            if missing:
+                # add special result for expression
+                uncommon_items.add("; ".join(missing))  # might need .trim()
+        elif elem.lower() not in set_b_lower:
+            uncommon_items.add(elem)
+    return uncommon_items
+
+
 METADATA_KEYS: dict[
     str,
     list[
@@ -386,11 +421,36 @@ def _get_pkg_included_file(
 
 
 def _filter_string(item: str, encoding: str) -> str:
+    """Remove characters that cannot be encoded with the specified encoding.
+
+    Repeatedly attempts to encode the input and removes each segment identified
+    by a `UnicodeEncodeError`. Characters outside those segments are preserved.
+
+    Arguments:
+        item (str): The string to filter.
+        encoding (str): The encoding to test against.
+
+    Returns:
+        str: The input string with un-encodable segments filtered out.
+
+    Raises:
+        ValueError: If the input cannot be treated as a string (to filter).
+        LookupError: If the specified encoding is unknown.
+    """
+    filtered = []
+    result_ready: bool = False
     try:
-        # TODO: this needs improved
-        return item.encode(encoding=encoding, errors="ignore").decode(
-            encoding=encoding
-        )
+        while not result_ready:
+            try:
+                item.encode(encoding=encoding)
+            except UnicodeEncodeError as error:  # noqa: PERF203
+                # Preserve original characters and valid multi-character units.
+                filtered.append(item[: error.start])
+                item = item[error.end :]
+            else:
+                filtered.append(item)
+                result_ready = True
+        return "".join(filtered)
     except AttributeError as _cause:  # pragma: no cover
         _context_details = f"{item} can not be safely filtered with {encoding}"
         if not isinstance(item, str):
@@ -850,6 +910,7 @@ def get_packages(
         if allow_only_licenses:
             uncommon_licenses = set()
             if not args.partial_match:
+                # placeholder for case_and_type_insensitive_set_diff_helper(
                 uncommon_licenses = case_insensitive_set_diff(
                     license_names, allow_only_licenses
                 )

@@ -22,17 +22,18 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from __future__ import annotations
-
 import argparse
 import io
-import unittest
 from contextlib import redirect_stderr, redirect_stdout
 from types import SimpleNamespace
-from typing import Any
+from typing import Any, Union
+
+# import of patch must follow import of unittest
 from unittest.mock import patch
 
 import piplicenses.__main__ as mainmod
+
+from . import unittest
 
 
 class DummyConfig:
@@ -62,10 +63,10 @@ def make_fake_parser(seen: dict[str, Any], values: dict[str, Any]) -> Any:  # no
 
 def install_main_stubs(
     *,
-    parser_values: dict[str, Any] | None = None,
+    parser_values: Union[dict[str, Any], None] = None,
     output_string: str = "output",
     warn_string: str = "",
-    saved: dict[str, Any] | None = None,
+    saved: Union[dict[str, Any], None] = None,
 ) -> tuple[dict[str, Any], dict[str, Any], Any]:
     """Create consistent stubs for the main entry point and configuration.
 

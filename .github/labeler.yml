@@ -51,6 +51,7 @@ github_actions:
       - 'tests/*.py'
       - test_pip-licenses.py
       - dev-requirements.txt
+      - '.github/gha-requirements.txt'
       - tests/requirements.txt
       - 'tests/fixtures/*'
       - '.github/workflows/*.yml'

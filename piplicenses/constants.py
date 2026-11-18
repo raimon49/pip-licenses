@@ -200,3 +200,23 @@ LEGACY_AUTHORS_BY_FILE_PATTERN = r"""[Aa][Uu][Tt][Hh][Oo][Rr][Ss].*"""
 LICENSE_BY_OTHER_FILE_PATTERN = r"[Aa][Uu][Tt][Hh][Oo][Rr][Ss].*|[Cc][Oo][Pp][Yy][Ii][Nn][Gg].*|[Ll][Ee][Gg][Aa][Ll].*"
 
 # placeholder for classifier keys
+
+
+# SPDX Expression constants
+
+LICENSE_EXPRESSION_TOKEN_PATTERN: Pattern = compile(r"\s*(\(|\)|[^\s()]+)")
+
+
+LICENSE_EXPRESSION_IDENTIFIER_PATTERN: Pattern = compile(
+    r"[A-Za-z0-9][A-Za-z0-9.-]*\+?"
+)
+
+
+INDIRECT_LICENSE_EXPRESSION_REF_PATTERN: Pattern = compile(
+    r"LicenseRef-[A-Za-z0-9.-]+"
+)
+
+
+DOCUMENT_LICENSE_EXPRESSION_REF_PATTERN: Pattern = compile(
+    r"DocumentRef-[A-Za-z0-9.-]+:LicenseRef-[A-Za-z0-9.-]+"
+)
