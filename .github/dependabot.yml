@@ -4,6 +4,36 @@
 # https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
 ---
 version: 2
+
+multi-ecosystem-groups:
+  # Infrastructure updates - weekly, tracked in milestone
+  infrastructure:
+    schedule:
+      interval: "weekly"
+      day: "friday"
+    assignees:
+      - "reactive-firewall"
+    labels: ["chore", "github_actions"]
+    milestone: 9
+
+  # actual dependency updates
+  direct-dependencies:
+    schedule:
+      interval: "daily"
+    assignees:
+      - "reactive-firewall"
+    labels: ["dependencies"]
+
+  # other transitive dependency updates
+  indirect-dependencies:
+    schedule:
+      interval: "weekly"
+      day: "friday"
+    assignees:
+      - "reactive-firewall"
+
+
+
 updates:
   - package-ecosystem: "pip"  # See documentation for possible values
     directory: "/"  # Default location of package manifests (e.g., pyproject.toml)
@@ -60,68 +90,66 @@ updates:
       - dependency-name: "x*"
       - dependency-name: "y*"
       - dependency-name: "z*"
+    groups:
+      python-dependencies:
+        patterns:
+          - "prettytable"
+          - "tomli"
+        dependency-type: "production"
     exclude-paths:
-      - "requirements.txt"
-      - "*-requirements.txt"
+      - "requirements.txt"  # LOCKFILE from pip-compile
+      - "dev-requirements.txt"  # MUST NOT BE CONFUSED for direct dependencies
+      - "gha-requirements.txt"
+      - "test-requirements.txt"
+      - "ci-requirements.txt"
+      - "*-requirements.txt"  # might not match as well, but best-effort
       - ".github/*"
+      - "docs/*"
       - "docker/*"
-    assignees:
-      - "reactive-firewall"
     commit-message:
       prefix: "[UPDATE] "
       include: "scope"
-    schedule:
-      interval: "weekly"
-      day: "friday"
-  - package-ecosystem: "pip"  # See documentation for possible values
+    multi-ecosystem-group: "direct-dependencies"
+  - package-ecosystem: "pip"  # pip-compile stuff (for development and CI, rather than for release)
     directory: "/"  # Location of package manifests
     target-branch: "next" # different to allow dependabot to work
     versioning-strategy: lockfile-only
+    multi-ecosystem-group: "indirect-dependencies"
     allow:
-      - dependency-type: "direct"
+      - dependency-type: "direct"  # or rather listed in lockfile
     exclude-paths:
       - "pyproject.toml"
+      - ".github/*"
       - "docker/*"
-    assignees:
-      - "reactive-firewall"
     commit-message:
-      prefix: "[SYNC] "
+      prefix: "[SYNC] Lockfile - "
       include: "scope"
-    schedule:
-      interval: "weekly"
-      day: "friday"
-  - package-ecosystem: "pip"  # See documentation for possible values
+  - package-ecosystem: "pip"  # for CI/CD (rather than for pip-licenses)
     directory: ".github/"  # different to allow dependabot to work
+    multi-ecosystem-group: "infrastructure"
     target-branch: "next"
     versioning-strategy: increase
     allow:
       - dependency-type: "direct"
     exclude-paths:
       - "pyproject.toml"
+      - "docs/*"
       - "docker/*"
-    assignees:
-      - "reactive-firewall"
     commit-message:
       prefix: "[CI] "
       include: "scope"
-    schedule:
-      interval: "weekly"
-      day: "friday"
-  - package-ecosystem: "github-actions"  # See documentation for possible values
+  - package-ecosystem: "github-actions"  # also for CI
     directory: ".github/workflows/"  # Location of package manifests
-    target-branch: "master"
+    target-branch: "next"
+    multi-ecosystem-group: "infrastructure"
     # rebase-strategy: "disabled"  # enabled by default
-    assignees:
-      - "reactive-firewall"
     commit-message:
       prefix: "[UPDATE] "
       include: "scope"
-    schedule:
-      interval: "weekly"
-      day: "friday"
-  - package-ecosystem: "docker"  # See documentation for possible values
+  - package-ecosystem: "docker"  # for docker stuff
     directory: "/"  # Location of dockerfile
     target-branch: "next"
+    multi-ecosystem-group: "infrastructure"
     # rebase-strategy: "disabled"  # enabled by default
     allow:
       - update-types:
@@ -129,8 +157,5 @@ updates:
     assignees:
       - "reactive-firewall"
     commit-message:
-      prefix: "[REBASE] "
+      prefix: "[DOCKER] "
       include: "scope"
-    schedule:
-      interval: "weekly"
-      day: "friday"

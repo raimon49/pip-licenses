@@ -2172,7 +2172,7 @@ def test_fail_on_partial_match(monkeypatch: pytest.MonkeyPatch) -> None:
     assert "" == mocked_stdout.printed.strip()
     assert (
         "fail-on license MIT" in mocked_stderr.printed
-    ) and (  # GHI 292 -- partial match may ommit 'License'
+    ) and (  # GHI 292 -- partial match may omit 'License'
         " was found for package" in mocked_stderr.printed
     )
 

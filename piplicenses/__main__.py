@@ -48,7 +48,7 @@ from . import (
 from .cli import (
     Configuration,
     create_parser,
-    sys,  # just need sys.stderr
+    sys,  # just need sys.stderr and sys.argv
 )
 from .cli._argparse_bridge import argparse  # just need argparse.Namespace
 from .output import (
@@ -98,24 +98,89 @@ def add_overrides(
 
 
 def main(*args: Any, **kwargs: Any) -> int:
-    """The main function of `pip-licenses`.
+    """Run pip-licenses and return its exit status.
 
-    Typically just invoked with no arguments. Documentation for release WIP;
+    The main function of `pip-licenses`. Typically just invoked with no
+    arguments.
+
+    By default, command-line arguments are read from `sys.argv[1:]`.
 
     Experimentally,
-    this `main` now allows extracting inputs from *args / **kwargs too;
+    The function also supports passing an argument list directly, adding extra
+    command-line flags, and supplying configuration overrides.
     See [GHI 81](https://github.com/raimon49/pip-licenses/issues/81).
 
     Supported call styles:
       * `main()`                           -> CLI argv (default; stable)
       * `main(argv=[...])`                 -> CLI argv override (split command-line arguments)
-      * `main(flags=[...])`                -> extra argv tokens (dashed falgs)
+      * `main(flags=[...])`                -> extra argv tokens (dashed flags)
       * `main(overrides={...})`            -> merge overrides (over CLI/flags)
       * `main(**values)`                   -> treated as overrides too (configuration dict-like)
     Also supports (mix & match):
       * main(["--from", "meta", ...])      -> argv passed positionally
 
-    However, this implementation (v6.0.0a0-v6.0.0b13) was/is still a mess.
+    The ``argv``, ``flags``, and ``overrides`` keyword arguments are reserved
+    for these specific purposes and are removed before remaining keyword
+    arguments are interpreted as configuration overrides. Positional
+    arguments are accepted only as a single list or tuple when ``argv`` is
+    not also provided.
+
+    However, this implementation remains experimental when passing arguments
+    at this time.
+
+    Configuration precedence
+    ------------------------
+    Values are combined in this order, from lowest to highest precedence:
+
+    1. Parsed command-line arguments, including any appended `flags`.
+    2. Values from `overrides`.
+    3. Remaining keyword arguments.
+
+    The merged values are passed to `Configuration`. This function does not
+    currently perform a separate validation pass on the overrides before
+    constructing that configuration. Said another way: The internal behavior
+    of overrides is inherently undefined at this time.
+
+    Output and exit status
+    ----------------------
+    The output is generated using the merged configuration and saved when an
+    output file is configured. If generation completes successfully, the
+    output is printed to standard output. Any warnings are printed to
+    standard error.
+
+    Returns:
+        `0` when no warning string is produced. If warnings are produced,
+        returns `0` when `__version__` contains `"6.0."` and `2`
+        otherwise. (e.g., Warning behavior is expected to change in v6.1+)
+
+    Raises:
+        TypeError: If positional arguments do not match the supported
+            positional form.
+        SystemExit: If argument parsing or output generation terminates the
+            process. Positive exit codes raised during output generation are
+            re-raised with an error message and exit code; non-positive codes
+            are re-raised as the corresponding exit code.
+
+    Examples (Documentation WIP):
+        Run with the current process arguments:
+
+            main()
+
+        Parse an explicit argument list:
+
+            main(argv=["--from", "meta"])
+
+        Append flags to the current process arguments:
+
+            main(flags=["--format", "markdown"])
+
+        Override parsed configuration values:
+
+            main(argv=["--format", "plain"], overrides={"format": "json"})
+
+        Pass an argument list positionally:
+
+            main(["--from", "meta"])
     """
     argv = kwargs.pop("argv", None)
     flags = kwargs.pop("flags", None)
@@ -138,7 +203,8 @@ def main(*args: Any, **kwargs: Any) -> int:
             ) from None
 
     if argv is None:
-        argv = sys.argv[1:]  # mimic pre-v6.0 behavior
+        argv = sys.argv[1:]  # mimic original pre-v6.0 behavior
+        # (heuristic assumption that __name__ is sys.argv[0])
 
     if flags:
         argv = list(argv) + list(flags)

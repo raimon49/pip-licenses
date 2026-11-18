@@ -1,7 +1,8 @@
 ## CHANGELOG
 
-### 6.0.0rc16 (WIP)
+### 6.0.0rc17 (WIP)
 
+* Fix for regression bug around zealously strict matching of `--allow-only`, resolving GHI #364
 * Improved release providence log transparency
 * Fixed `normalize_version` dropping implicit post-release numbers, closing GHI #439
 * Back-ported some improved `--filter-string` behavior from kiriseu's fork

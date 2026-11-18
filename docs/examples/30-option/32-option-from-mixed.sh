@@ -88,7 +88,7 @@ fi
 init_demo
 
 run_command "# this is what pip shows:"
-# handle pip carfully here
+# handle pip carefully here
 type_command "pip show aniso8601"
 get_python_pip show aniso8601 | grep -vE -e "^Location: "
 pause 0.9

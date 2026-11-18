@@ -75,6 +75,7 @@ from . import (
     normalize_version,
     re,  # import re
 )
+from ._license_expressions import parse_spdx_expression
 from .cli import (
     Configuration,
     FromArg,
@@ -100,14 +101,6 @@ SYSTEM_PACKAGES: list[str] = [
 ]
 if sys.version_info < (3, 11):
     SYSTEM_PACKAGES.append("tomli")
-
-# compatibility shim GHI-364
-try:
-    from ._license_expressions import (  # type: ignore[import-not-found]
-        parse_spdx_expression,  # type: ignore[import-not-found]
-    )
-except (ImportError, ModuleNotFoundError, AttributeError) as exc:
-    parse_spdx_expression = None
 
 
 def extract_urls(metadata: Message) -> dict[str, Union[str, list[str], None]]:
@@ -345,7 +338,6 @@ def extract_maintainers(metadata: Message) -> list[str]:
 # See https://github.com/raimon49/pip-licenses/issues/360
 
 
-# DRAFT:
 def case_and_type_insensitive_set_diff_helper(
     set_a: Union[set, list, tuple, frozenset],
     set_b: SetLike,
@@ -361,11 +353,7 @@ def case_and_type_insensitive_set_diff_helper(
     uncommon_items = set()
     set_b_lower = {item.lower() for item in set_b}
     for elem in set_a:
-        identifiers = (
-            parse_spdx_expression(elem)
-            if type(parse_spdx_expression) is not None
-            else None
-        )
+        identifiers = parse_spdx_expression(elem)
         if identifiers is not None:
             missing = sorted(
                 {
@@ -377,7 +365,7 @@ def case_and_type_insensitive_set_diff_helper(
             )
             if missing:
                 # add special result for expression
-                uncommon_items.add("; ".join(missing))
+                uncommon_items.add("; ".join(missing))  # might need .trim()
         elif elem.lower() not in set_b_lower:
             uncommon_items.add(elem)
     return uncommon_items
