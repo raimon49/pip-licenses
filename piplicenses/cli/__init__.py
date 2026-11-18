@@ -96,7 +96,7 @@ def get_sortby(args: Configuration) -> str:
 
 # See https://docs.python.org/3.15/library/argparse.html#color
 DEFAULT_USE_COLOR: Union[bool, None] = (
-    True if sys.version_info >= (3, 14) else None
+    True if sys.version_info == (3, 14) else None
 )
 
 

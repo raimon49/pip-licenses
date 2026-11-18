@@ -55,23 +55,27 @@ from .tomli_bridge import tomllib
 
 # Must declare this ASAP as most other component will re-import it
 __pkgname__ = "pip-licenses"  # expose package name with a dash (but canonicalized will ignore dash)
-__version__ = "6.0.0rc15"  # (PEP-440 version)
+__version__ = "6.0.0rc17"  # (PEP-440 version)
 # Rationale: Try to declare these early too,
 #   as most other component will also re-import this from the package scope
 #   this keeps the .constants package internal and somewhat hidden for now
 from .constants import (
     DEFAULT_OUTPUT_FIELDS,  # noqa: F401 -- (used by piplicenses.output)
+    DOCUMENT_LICENSE_EXPRESSION_REF_PATTERN,  # noqa: F401 -- (used by piplicenses._license_expressions)
     DYNAMIC_FIELD_NAMES,  # noqa: F401 -- (used by piplicenses.output.tables)
     FALLBACK_URL_KEY,  # noqa: F401 -- (used by piplicenses.core)
     FIELD_NAMES,  # noqa: F401 -- Re-export as part of API
     FIELDS_TO_METADATA_KEYS,  # noqa: F401 -- (used by piplicenses.output)
     FILE_MISSING,  # noqa: F401 -- Re-export as part of API
+    INDIRECT_LICENSE_EXPRESSION_REF_PATTERN,  # noqa: F401 -- (used by piplicenses._license_expressions)
     KNOWN_URL_SUB_KEYS,  # noqa: F401 -- (used by piplicenses.core)
     LEGACY_AUTHORS_BY_FILE_PATTERN,  # noqa: F401 -- (used by piplicenses.core)
     LEGACY_LICENSE_BY_FILE_PATTERN,  # noqa: F401 -- (used by piplicenses.core)
     LEGACY_NOTICE_BY_FILE_PATTERN,  # noqa: F401 -- (used by piplicenses.core)
     LEGACY_TOKEN,  # noqa: F401 -- (used by piplicenses.cli.config)
     LICENSE_BY_OTHER_FILE_PATTERN,  # noqa: F401 -- (used by piplicenses.core)
+    LICENSE_EXPRESSION_IDENTIFIER_PATTERN,  # noqa: F401 -- (used by piplicenses._license_expressions)
+    LICENSE_EXPRESSION_TOKEN_PATTERN,  # noqa: F401 -- (used by piplicenses._license_expressions)
     LICENSE_UNKNOWN,  # noqa: F401 -- Re-export as part of API
     PATTERN_DELIMITER,
     PEP735_URL_KEY,  # noqa: F401 -- Re-export as part of API

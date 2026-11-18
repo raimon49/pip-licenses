@@ -16,7 +16,7 @@ from importlib.metadata import Distribution
 from io import StringIO
 from pathlib import Path
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Union
 from unittest.mock import (
     MagicMock,
     Mock,  # used by LoadConfigFromFileTests
@@ -110,6 +110,7 @@ else:  # WIP DO NOT RELEASE 6.1 with this
 
 # GHI-81 -- EXPERIMENTAL exact import module subject to change
 from piplicenses.cli.config import Configuration
+from piplicenses.core import _filter_string
 from piplicenses.output.tables import _handle_multiple_value_field
 
 if TYPE_CHECKING:  # TODO: refactor to bridge module for PEP-749 changes
@@ -117,6 +118,10 @@ if TYPE_CHECKING:  # TODO: refactor to bridge module for PEP-749 changes
         from importlib.metadata._meta import PackageMetadata
     else:
         from email.message import Message as PackageMetadata
+    if sys.version_info >= (3, 15):
+        from importlib.metadata import SimplePath
+    else:
+        from importlib.metadata import _SimplePath as SimplePath
     from prettytable import PrettyTable
 
 UNICODE_APPENDIX = ""
@@ -135,6 +140,21 @@ def importlib_metadata_distributions_mocked(
         @property
         def metadata(self) -> PackageMetadata:
             return EmailMessageMocker(self.__dist.metadata)
+
+        if sys.version_info >= (3, 15):
+
+            def locate_file(
+                self,
+                path: Union[str, os.PathLike[str]],
+            ) -> SimplePath:
+                if self.__dist:
+                    return self.__dist.locate_file(path)
+                raise NotImplementedError("Mocker is not able to do that.")
+
+            def read_text(self, filename: str) -> Union[str, None]:
+                if self.__dist:
+                    return self.__dist.read_text(filename)
+                return None
 
     class EmailMessageMocker(email.message.Message):
         def __init__(self, orig_msg: PackageMetadata) -> None:
@@ -162,6 +182,32 @@ importlib_metadata_distributions_orig = (
     if "6.0." in __version__
     else piplicenses.core.importlib_metadata.distributions
 )
+
+
+class FilterStringTests(unittest.TestCase):
+    def test_preserves_encodable_characters(self) -> None:
+        cases = [
+            ("", "ascii", ""),
+            ("caf\u00e9 \U0001f600", "ascii", "caf "),
+            ("caf\u00e9 \U0001f600", "latin-1", "caf\u00e9 "),
+            ("\U0001f600", "ascii", ""),
+            ("caf\u00e9 \U0001f600", "utf-8", "caf\u00e9 \U0001f600"),
+            ("caf\u00e9 \U0001f600", "utf-16", "caf\u00e9 \U0001f600"),
+            ("\u00a5\u203e", "shift_jis", "\u00a5\u203e"),
+            ("\u00a5\U0001f600\u203e", "shift_jis", "\u00a5\u203e"),
+            ("\u301c\u2212", "cp932", "\u301c\u2212"),
+            ("\u301c\U0001f600\u2212", "cp932", "\u301c\u2212"),
+            ("\u65e5\U0001f600\u672c", "iso2022_jp", "\u65e5\u672c"),
+            ("\u00ca\u0304\U0001f600", "big5hkscs", "\u00ca\u0304"),
+            (
+                "\U0001f600\u304b\u309a\U0001f600",
+                "shift_jis_2004",
+                "\u304b\u309a",
+            ),
+        ]
+        for item, encoding, expected in cases:
+            with self.subTest(item=item, encoding=encoding):
+                self.assertEqual(expected, _filter_string(item, encoding))
 
 
 class CommandLineTestCase(unittest.TestCase):
@@ -2126,7 +2172,7 @@ def test_fail_on_partial_match(monkeypatch: pytest.MonkeyPatch) -> None:
     assert "" == mocked_stdout.printed.strip()
     assert (
         "fail-on license MIT" in mocked_stderr.printed
-    ) and (  # GHI 292 -- partial match may ommit 'License'
+    ) and (  # GHI 292 -- partial match may omit 'License'
         " was found for package" in mocked_stderr.printed
     )
 
@@ -2187,7 +2233,15 @@ def test_warn_on_does_not_stop_at_the_first_occurrence(
             self._metadata["Version"] = version
             self._metadata["License"] = license_name
 
-        def read_text(self, filename: str) -> str | None:
+        if sys.version_info >= (3, 15):
+
+            def locate_file(
+                self,
+                path: Union[str, os.PathLike[str]],
+            ) -> SimplePath:
+                raise NotImplementedError("MockDist is not able to do that.")
+
+        def read_text(self, filename: str) -> Union[str, None]:
             return None
 
         @property
