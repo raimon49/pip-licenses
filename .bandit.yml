@@ -1,0 +1,19 @@
+# .bandit.yml
+---
+# Strict configuration for Bandit to enforce comprehensive security checks.
+
+# Indicate the targets to scan.
+targets:
+  - "piplicenses"
+  - "piplicenses/output"
+  - "piplicense/cli"
+  - "tests"
+
+# Define the directories to exclude from scanning.
+exclude_dirs:
+  - "docs"
+  - "docker"
+
+# define noisy bandit rules to skip
+skips:
+  - B101  # assert_used is fine except when relied upon for behavior e.g., in testing
