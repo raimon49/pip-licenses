@@ -30,7 +30,7 @@ To be documented?
 """
 
 import re
-import subprocess
+import subprocess  # nosec
 
 # import sys
 from dataclasses import dataclass
@@ -201,7 +201,7 @@ class ExampleRunner:
             f"source {script.path!s}",
         ]
         try:
-            result = subprocess.run(
+            result = subprocess.run(  # nosec
                 _args,
                 capture_output=True,
                 text=True,

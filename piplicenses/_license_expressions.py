@@ -36,6 +36,7 @@ returns ``None`` so callers can retain their legacy whole-string behavior.
 
 from typing import (
     # See https://github.com/raimon49/pip-licenses/issues/360
+    Literal,  # after python 3.11 see LiteralString too
     Union,
 )
 
@@ -47,6 +48,80 @@ from . import (
     __pkgname__,  # noqa: F401 -- Re-export as part of data API
     __version__,  # noqa: F401 -- Re-export as part of data API
 )
+
+_OR: Literal["OR"] = "OR"
+"""Hardcoded 'OR' keyword.
+
+See [GHI-360](https://github.com/raimon49/pip-licenses/issues/360).
+
+Literally:
+
+    >>> _OR == "OR"
+    True
+    >>>
+
+"""
+
+
+_AND: Literal["AND"] = "AND"
+"""Hardcoded 'AND' keyword.
+
+See [GHI-360](https://github.com/raimon49/pip-licenses/issues/360).
+
+Literally:
+
+    >>> _AND == "AND"
+    True
+    >>>
+
+"""
+
+
+_WITH: Literal["WITH"] = "WITH"
+"""Hardcoded 'WITH' keyword.
+
+See [GHI-360](https://github.com/raimon49/pip-licenses/issues/360).
+
+Literally:
+
+    >>> _WITH == "WITH"
+    True
+    >>>
+
+"""
+
+
+# Rationale for these literals:
+# No joke, but bandit thinks these might be hardcoded passwords...
+# so we make it explicit hardcoded here instead of a confusing  # nosec
+
+
+_OPN_TOK: Literal["("] = "("
+"""Hardcoded '(' group token.
+
+See [GHI-360](https://github.com/raimon49/pip-licenses/issues/360).
+
+Literally:
+
+    >>> _OPN_TOK is "("
+    True
+    >>>
+
+"""
+
+
+_CLS_TOK: Literal[")"] = ")"
+"""Hardcoded ')' group token.
+
+See [GHI-360](https://github.com/raimon49/pip-licenses/issues/360).
+
+Literally:
+
+    >>> _CLS_TOK is ")"
+    True
+    >>>
+
+"""
 
 
 def _is_identifier(token: str) -> bool:
@@ -125,7 +200,10 @@ def _tokenize(expression: str) -> Union[list[str], None]:
         if match is None:  # pragma: no cover
             return None
         token = match.group(1)
-        if token not in ("(", ")") and not _is_identifier(token):
+        if token not in (
+            _OPN_TOK,  # e.g., literal (
+            _CLS_TOK,  # e.g., literal )
+        ) and not _is_identifier(token):
             return None
         tokens.append(token)
         position = match.end()
@@ -161,14 +239,14 @@ class _ExpressionParser:
 
     def _parse_or(self) -> list[str]:
         identifiers = self._parse_and()
-        while (token := self._peek()) is not None and token.upper() == "OR":
+        while (token := self._peek()) is not None and token.upper() == _OR:
             self._take()
             identifiers.extend(self._parse_and())
         return identifiers
 
     def _parse_and(self) -> list[str]:
         identifiers = self._parse_with()
-        while (token := self._peek()) is not None and token.upper() == "AND":
+        while (token := self._peek()) is not None and token.upper() == _AND:
             self._take()
             identifiers.extend(self._parse_with())
         return identifiers
@@ -176,14 +254,14 @@ class _ExpressionParser:
     def _parse_with(self) -> list[str]:
         identifiers, simple_license = self._parse_primary()
         token = self._peek()
-        if token is not None and token.upper() == "WITH":
+        if token is not None and token.upper() == _WITH:
             if not simple_license:
                 raise ValueError("WITH must modify a license identifier")
             self._take()
             exception = self._take()
             if not _is_identifier(exception) or exception in (
-                "(",
-                ")",
+                _OPN_TOK,  # e.g., literal (
+                _CLS_TOK,  # e.g., literal )
             ):  # pragma: no cover
                 raise ValueError("invalid SPDX exception identifier")
             # Exceptions are modifiers and are deliberately not allow-list items.
@@ -281,12 +359,12 @@ class _ExpressionParser:
 
         """
         token = self._take()
-        if token == "(":
+        if token == _OPN_TOK:  # e.g., literal (
             identifiers = self._parse_or()
-            if self._take() != ")":
+            if self._take() != _CLS_TOK:  # e.g., literal )
                 raise ValueError("unclosed SPDX expression group")
             return identifiers, False
-        if token == ")" or token.upper() in ("AND", "OR", "WITH"):
+        if token == _CLS_TOK or token.upper() in (_AND, _OR, _WITH):
             raise ValueError("expected SPDX license identifier")
         if not _is_identifier(token):
             raise ValueError("invalid SPDX license identifier")

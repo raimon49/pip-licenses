@@ -151,5 +151,5 @@ unused-ignore-comment = "warn"
 redundant-cast = "warn"
 
 [tool.coverage.run]
-include = ["piplicenses/*.py"]
+include = ["piplicenses/*.py", "piplicenses/output/*.py"]
 
