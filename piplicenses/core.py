@@ -616,23 +616,70 @@ def _get_pkg_info(
 
 
 def _get_python_sys_path(executable: str) -> list[str]:
+    import json
     import os
-    import subprocess
+    from subprocess import DEVNULL as _subprocess_DEVNULL  # nosec
+    from subprocess import run as _subprocess_run  # nosec
 
-    script = "import sys; print(' '.join(filter(bool, sys.path)))"
-    output = subprocess.run(
-        [executable, "-c", script],
-        capture_output=True,
-        env={
-            **os.environ,
+    # Prevent Python environment settings in the caller from changing the
+    # child interpreter's startup behavior.
+    env = {
+        key: value
+        for key, value in os.environ.items()
+        if not key.upper().startswith("PYTHON")
+        and not key.upper().startswith("GITHUB_")
+        and not key.upper().startswith("SSH")
+        and key.upper() not in {"VIRTUAL_ENV", "VIRTUALENV_PROMPT"}
+    }
+    common_args: dict = {
+        "shell": False,
+        "stdin": _subprocess_DEVNULL,  # nosec
+        "capture_output": True,
+        "text": True,
+        "encoding": "utf-8",
+        "check": True,
+        "timeout": 10,
+        "env": {
+            **env,
             "PYTHONPATH": "",
             "VIRTUAL_ENV": "",
             "VIRTUALENV_PROMPT": "",  # further mitigate against: CVE-2026-102937
         },
-        check=False,
+        "close_fds": True,
+    }
+    version_probe = (
+        "import sys; print(f'{sys.version_info[0]}.{sys.version_info[1]}')"
     )
-    # TODO: add encoding="utf-8"
-    return output.stdout.decode().strip().split()
+    # rationale: ruff just forgets to follow the common_args
+    version_output = _subprocess_run(  # nosec  # noqa: PLW1510
+        [executable, "-E", "-c", version_probe],
+        **common_args,
+    )
+    try:
+        major, minor = map(int, version_output.stdout.strip().split("."))
+    except (
+        AttributeError,
+        TypeError,
+        ValueError,
+    ) as _cause:  # pragma: no cover
+        raise RuntimeError(
+            "Unable to determine the target Python version"
+        ) from _cause
+    interpreter_args = [executable, "-E"]
+    if (major, minor) >= (3, 11):
+        interpreter_args.append("-P")
+    script = "import json, sys; print(json.dumps(sys.path))"
+    # rationale: ruff just forgets to follow the common_args
+    output = _subprocess_run(  # nosec  # noqa: PLW1510
+        [*interpreter_args, "-c", script],
+        **common_args,
+    )
+    paths = json.loads(output.stdout)
+    if not isinstance(paths, list) or not all(
+        isinstance(path, str) for path in paths
+    ):  # pragma: no cover
+        raise ValueError("Python interpreter returned an invalid sys.path")
+    return [path for path in paths if path]
 
 
 def _filter_pkg_included_paths(
