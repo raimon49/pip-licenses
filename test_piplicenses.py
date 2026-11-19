@@ -1951,6 +1951,16 @@ class CommandLineSmokeTests(TestEdges):
             self.assertIn("check path: --output-file", err)
             self.assertFalse(bad_path.exists())
 
+    def test_legacy_string_value_is_preserved_for_dynamic_field(self) -> None:
+        """Keep a legacy string metadata value intact in plain output."""
+        args = create_parser().parse_args(["--format=plain"])
+        packages = [{"license_files": "LICENSE.txt"}]
+        with patch(
+            "piplicenses.output.tables.get_packages", return_value=packages
+        ):
+            table = create_licenses_table(args, ["LicenseFiles"])
+        self.assertEqual(table.rows, [["LICENSE.txt"]])
+
 
 class MockStdStream:
     def __init__(self) -> None:
