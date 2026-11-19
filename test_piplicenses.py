@@ -1422,6 +1422,14 @@ class TestUtilities(unittest.TestCase):
             ["Alice Example", "Bob Example"],
         )
 
+    def test_handle_legacy_value_field_plural_returns_list_still(self) -> None:
+        """regression check for v6.0.6 behavior given v5.5.5 input"""
+        self.assertEqual(
+            # need to test the actual runtime behavior, so ignore static type checks
+            _handle_multiple_value_field("authors", "Dale Example"),  # type: ignore[arg-type]
+            ["Dale Example"],
+        )
+
     def test_handle_multiple_value_field_plural_empty_returns_unknown_list(
         self,
     ) -> None:
@@ -1670,6 +1678,134 @@ class CoreHelperTestCase(unittest.TestCase):
             )  # test key-word form
 
 
+# load html_helper stuff
+from piplicenses.output._html_helpers import (
+    attrs_to_str,
+    escape_html,
+    generate_html_id,
+    wrap_pre,
+    wrap_tag,
+)
+
+
+class HTMLHelperTestCase(unittest.TestCase):
+    def test_None_encoded_as_empty_string(
+        self,
+    ) -> None:  # descriptive name WIP
+        """Tests that escape_html will return an empty string for None."""
+        _test_fixture_list = [None, ""]
+        for _test_fixture in _test_fixture_list:
+            self.assertEqual(
+                # ignore types in actual runtime behavior
+                escape_html(_test_fixture),  # type: ignore[arg-type]
+                "",
+                "expected escape_html to return an empty string.",
+            )
+
+    def test_attrs_work_at_all(self) -> None:
+        """Test that attributes work in html generation"""
+        # TODO: could try more than just foo bar
+        # e.g., in a loop of mapped [ (in, expect), ... ] cases
+        _test_sample = attrs_to_str({"id": "foo", "class": "bar"})
+        self.assertIn(' id="foo"', _test_sample, "expected ID attribute")
+        self.assertIn(' class="bar"', _test_sample, "expected Class attribute")
+
+    def test_attrs_work_given_default_arguments(self) -> None:
+        """test that attrs_to_str is transparent without a mapping."""
+        _test_fixture = wrap_tag("p")
+        self.assertEqual(_test_fixture, "<p>\n\n</p>")
+
+    def test_inline_with_content_and_attributes(self) -> None:
+        attrs = {"class": "note", "id": "example"}
+        _test_html = wrap_tag("span", "Hello", attrs, inline=True)
+        # note: check presence and then order
+        self.assertIn(' id="example"', _test_html, "expected ID attribute")
+        self.assertIn(' class="note"', _test_html, "expected Class attribute")
+        self.assertIn(
+            '<span class="note" id="example">Hello</span>',
+            _test_html,
+            "expected BOTH Class & ID attributes, AND in that order.",
+            # heuristic order: this may be flaky due to order of tags.
+        )
+
+    def test_block_with_content_and_attributes(self) -> None:
+        attrs = {"id": "example"}
+        _test_html = wrap_tag("div", "Content", attrs)
+        self.assertIn(
+            '<div id="example">\nContent\n</div>',
+            _test_html,
+        )
+
+    def test_block_with_empty_content(self) -> None:
+        _test_html = wrap_tag("section", "", None, inline=False)
+        self.assertIn(
+            "<section>\n\n</section>",
+            _test_html,
+        )
+
+    def test_pre_block_with_empty_contents(self) -> None:
+        _test_html = wrap_pre(
+            "",
+            None,
+        )
+        self.assertIn(
+            "<pre>\n\n</pre>",
+            _test_html,
+        )
+
+    def test_pre_block_with_some_contents(self) -> None:
+        _test_html = wrap_pre(
+            "Hello",
+            None,
+        )
+        self.assertIn(
+            "<pre>\nHello\n</pre>",
+            _test_html,
+        )
+
+    def test_preserves_safe_characters(self) -> None:
+        self.assertEqual(generate_html_id("Alpha_123-x"), "Alpha_123-x")
+
+    def test_replaces_unsafe_characters_with_dashes(self) -> None:
+        self.assertEqual(generate_html_id("hello world!"), "hello-world")
+        self.assertEqual(generate_html_id("hello!world!"), "hello-world")
+
+    def test_collapses_consecutive_dashes(self) -> None:
+        self.assertEqual(generate_html_id("a---b"), "a-b")
+
+    def test_trims_leading_and_trailing_dashes(self) -> None:
+        self.assertEqual(generate_html_id("--hello--"), "hello")
+
+    def test_combines_base_and_suffix(self) -> None:
+        self.assertEqual(generate_html_id("section", "title"), "section-title")
+
+    def test_sanitizes_base_and_suffix_together(self) -> None:
+        self.assertEqual(
+            generate_html_id("sec tion", "sub/title"), "sec-tion-sub-title"
+        )
+
+    def test_none_suffix_uses_base_only(self) -> None:
+        self.assertEqual(generate_html_id("section", None), "section")
+
+    def test_none_base_falls_back_to_id(self) -> None:
+        """actually test behavior of passing None"""
+        self.assertEqual(generate_html_id(None), "id")  # type: ignore[arg-type]
+
+    def test_empty_base_falls_back_to_id(self) -> None:
+        self.assertEqual(generate_html_id(""), "id")
+
+    def test_only_unsafe_characters_falls_back_to_id(self) -> None:
+        self.assertEqual(generate_html_id(" !!! "), "id")
+
+    def test_empty_result_after_suffix_combination_falls_back_to_id(
+        self,
+    ) -> None:
+        self.assertEqual(generate_html_id("", ""), "id")
+
+    def test_suffix_can_contain_underscores_and_hyphens(self) -> None:
+        self.assertEqual(generate_html_id("item", "part_2-x"), "item-part_2-x")
+
+
 INVALID_PATH_FIXTURE = "/var/some/unlikly/path/that/should/not/be"
 
 
@@ -1814,6 +1950,16 @@ class CommandLineSmokeTests(TestEdges):
             self.assertEqual(code, 1, msg=f"stdout={out!r} stderr={err!r}")
             self.assertIn("check path: --output-file", err)
             self.assertFalse(bad_path.exists())
+
+    def test_legacy_string_value_is_preserved_for_dynamic_field(self) -> None:
+        """Keep a legacy string metadata value intact in plain output."""
+        args = create_parser().parse_args(["--format=plain"])
+        packages = [{"license_files": "LICENSE.txt"}]
+        with patch(
+            "piplicenses.output.tables.get_packages", return_value=packages
+        ):
+            table = create_licenses_table(args, ["LicenseFiles"])
+        self.assertEqual(table.rows, [["LICENSE.txt"]])
 
 
 class MockStdStream:
