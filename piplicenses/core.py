@@ -96,7 +96,7 @@ SYSTEM_PACKAGES: list[str] = [
     "pip",
     "prettytable",
     "wcwidth",
-    "setuptools",
+    # "setuptools",  # REMOVED in v6.0.0rc24
     "wheel",
 ]
 if sys.version_info < (3, 11):
