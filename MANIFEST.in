@@ -2,9 +2,14 @@ prune .github
 prune docker
 exclude .gitignore
 exclude CONTRIBUTING.md
+exclude dev-requirements.txt
 exclude Dockerfile
-exclude docs/examples/*
-exclude docs/scripts/*
-exclude docs/**/*.sh
 exclude docs/*
+exclude docs/**/*.sh
+exclude docs/examples/*
+exclude docs/examples/examples-requirements.txt
+exclude docs/scripts/*
+exclude lint-requirements.txt
+exclude test-requirements.txt
+exclude tests/test-requirements.txt
 prune docs

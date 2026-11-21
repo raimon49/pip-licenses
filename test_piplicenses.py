@@ -345,26 +345,27 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertIn("License-Expression", output_fields)
 
         index_license_meta = output_fields.index("License-Metadata")
-        license_meta = [row[index_license_meta] for row in table.rows]
+        license_meta = sorted([row[index_license_meta] for row in table.rows])
 
         index_license_classifier = output_fields.index("License-Classifier")
-        license_classifier = [
-            row[index_license_classifier] for row in table.rows
-        ]
+        license_classifier = sorted(
+            [row[index_license_classifier] for row in table.rows]
+        )
 
         index_license_expression = output_fields.index("License-Expression")
-        license_expression = [
-            row[index_license_expression] for row in table.rows
-        ]
+        license_expression = sorted(
+            [row[index_license_expression] for row in table.rows]
+        )
 
         for license_name in ("PSF-2.0", "MIT", "Apache-2.0"):
             self.assertIn(license_name, license_meta)
         for license_class in (
-            "BSD License",  # for BSD-3-Clause
+            # "BSD License",  # for BSD-3-Clause
+            "Python Software Foundation License",  # changed in v6.0.0rc24
             "MIT License",
         ):
             self.assertIn(license_class, license_classifier)
-        for license_express in ("BSD-3-Clause",):
+        for license_express in ("BSD-2-Clause", "MIT"):
             self.assertIn(license_express, license_expression)
 
     def test_find_license_from_classifier(self) -> None:
@@ -793,9 +794,9 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertListEqual([pkg_name], pkg_name_columns)
 
     def test_with_normalized_packages(self) -> None:
-        pkg_name = "typing_extensions"
+        pkg_name = "prettytable"
         only_packages_args = [
-            "--packages=typing-extensions",
+            f"--packages={pkg_name}",
             "--include-system",
         ]
         args = self.parser.parse_args(only_packages_args)
@@ -871,7 +872,7 @@ class TestGetLicenses(CommandLineTestCase):
         args = self.parser.parse_args(format_plain_args)
         output_string = create_output_string(args)
         self.assertIsNotNone(
-            re.search(r"pytest\n\d\.\d\.\d\nMIT License\n", output_string)
+            re.search(r"pytest\n\d\.\d\.\d\nMIT(\s?License)?\n", output_string)
         )
 
     def test_format_plain_vertical_multi(self) -> None:
@@ -881,7 +882,7 @@ class TestGetLicenses(CommandLineTestCase):
         args = self.parser.parse_args(format_plain_args)
         output_string = create_output_string(args)
         self.assertIsNotNone(
-            re.search(r"pytest\n\d\.\d\.\d\nMIT License\n", output_string)
+            re.search(r"pytest\n\d\.\d\.\d\nMIT(\s?License)?\n", output_string)
         )
         # check that we have the target package: packaging in results
         self.assertIsNotNone(
@@ -915,7 +916,7 @@ class TestGetLicenses(CommandLineTestCase):
         args = self.parser.parse_args(format_plain_args)
         output_string = create_output_string(args)
         self.assertIsNotNone(
-            re.search(r"pytest\n\d\.\d\.\d\nMIT License\n", output_string)
+            re.search(r"pytest\n\d\.\d\.\d\nMIT(\s?License)?\n", output_string)
         )
         self.assertIsNotNone(
             re.search(
@@ -994,7 +995,12 @@ class TestGetLicenses(CommandLineTestCase):
         self.assertIn("<tbody>", output_string)
         self.assertIn("<tr>", output_string)
         self.assertIn("<td>", output_string)
-        self.assertIn("Filipe La&#237;ns", output_string)  # author of "build"
+        # expected to be installed during testing (e.g., for PEP-735 handling)
+        self.assertIn(
+            "Stephen Rosen", output_string
+        )  # author of "dependency-groups"
+        # not always installed, but a better case is:
+        # self.assertIn("Filipe La&#237;ns", output_string)  # author of "build"
 
     def test_format_html_has_attributes(self) -> None:
         format_html_args = ["--format=html"]

@@ -30,8 +30,17 @@ jobs:
           python-version: '3.14'
       - name: Install dependencies
         run: |
+          printf "%s\n" "::group::bootstrap-python-pip" ;
           python -m pip install --upgrade pip
+          printf "%s\n" "::endgroup::" ;
+          # PEP-735 tooling
+          printf "%s\n" "::group::bootstrap-python-groups" ;
+          python -m pip install "dependency-groups>=1.3.2"
+          printf "%s\n" "::endgroup::"
+          printf "%s\n" "::group::install-python-dev-deps" ;
+          python -m dependency_groups --pyproject-file pyproject.toml --output dev-requirements.txt dev ;
           if [ -f dev-requirements.txt ]; then pip install -r dev-requirements.txt; fi
+          printf "%s\n" "::endgroup::"
       - name: Lint and format with ruff
         run: |
           ruff check --diff
@@ -69,8 +78,17 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
         run: |
+          printf "%s\n" "::group::bootstrap-python-pip" ;
           python -m pip install --upgrade pip
+          printf "%s\n" "::endgroup::" ;
+          # PEP-735 tooling
+          printf "%s\n" "::group::bootstrap-python-groups" ;
+          python -m pip install "dependency-groups>=1.3.2"
+          printf "%s\n" "::endgroup::"
+          printf "%s\n" "::group::install-python-dev-deps" ;
+          python -m dependency_groups --pyproject-file pyproject.toml --output dev-requirements.txt dev ;
           if [ -f dev-requirements.txt ]; then pip install -r dev-requirements.txt; fi
+          printf "%s\n" "::endgroup::"
       - name: Test with pytest
         run: |
           pytest -v --cov --cov-report=xml
