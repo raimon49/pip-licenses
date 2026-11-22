@@ -72,6 +72,7 @@ set -euo pipefail
 
 # Source shared utilities
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC1091
 source "${SCRIPT_DIR}/../../examples/common.sh"
 
 # Verify prerequisites
@@ -80,6 +81,8 @@ check_required_packages || exit 1
 
 # Create temporary directory for output
 OUTPUT_DIR=$(mktemp -d) || { log_error "Failed to create temp dir"; exit 1; }
+# And expand and trap now before continuing (rather than expanding when signaled later)
+# shellcheck disable=SC2064
 trap "rm -rf ${OUTPUT_DIR} || :" EXIT
 
 # Verify ownership before cleanup

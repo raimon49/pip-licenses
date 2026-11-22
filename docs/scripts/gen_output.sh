@@ -86,6 +86,7 @@ esac
 DIR_STUB="${2:-basic}"
 
 # Example's Directory: any NN-*
+# shelcheck disable=SC2034
 EXAMPLE_DIR_HINT="${EXAMPLE_DIR_NUM}-${DIR_STUB:-}"
 
 # Example's name in the form: NN-*-*
@@ -99,18 +100,19 @@ EXAMPLE_NAME_HINT="${EXAMPLE_NUM:-}-${DIR_STUB:-}-${3:-*}"
 # Rest of variables
 #
 PREFIX_STUB_HINT=$(dirname "${0}")/../examples/"${EXAMPLE_DIR_HINT:-}" ;
-{ test -d ${PREFIX_STUB_HINT:-} ;} || { printf "%s\n" "Error: Given path '$PREFIX_STUB_HINT' is not found." >&2 ; exit 78 ; } ;
+{ test -d "${PREFIX_STUB_HINT:-}" ;} || { printf "%s\n" "Error: Given path '$PREFIX_STUB_HINT' is not found." >&2 ; exit 78 ; } ;
 # Automation script path
 # Full Regex: ^(?<dirname>(?<dirNum>[0-9]+)(?:[x0-9])?(?<prefix>\-[^\/]*))(?:\/)(?<filename>(?<fileNum>(?P=dirNum)(?:[0-9]?))(?:(?P=prefix)(?<baseName>[^\/]*)\.sh))$
+# shellcheck disable=SC2034
 EXAMPLE_CMD_HINT="${PREFIX_STUB_HINT:-.}/${EXAMPLE_NAME_HINT:-}.sh" ;
-EXAMPLE_CMD_PATH=$(find ${PREFIX_STUB_HINT:-} -type f -iname "$EXAMPLE_NAME_HINT.sh" -print 2>/dev/null) ;
+EXAMPLE_CMD_PATH=$(find "${PREFIX_STUB_HINT:-}" -type f -iname "$EXAMPLE_NAME_HINT.sh" -print 2>/dev/null) ;
 test -f "${EXAMPLE_CMD_PATH:-}" || { printf "%s\n" "Error: The path '${EXAMPLE_CMD_PATH:-}' is not found." >&2 ; exit 125 ; } ;
 #test -x "${EXAMPLE_CMD_PATH:-}" || { printf "%s\n" "Error: Bad path '${EXAMPLE_CMD_PATH:-}' is not executable." >&2 ; exit 125 ; } ;
 
 # Now, we can re-configure based on verified match
 #
 PREFIX_STUB=$(dirname "${EXAMPLE_CMD_PATH}") ;
-{ test -d ${PREFIX_STUB:-} ;} || { printf "%s\n" "Error: Expected directory '$PREFIX_STUB' is not found." >&2 ; exit 78 ; } ;
+{ test -d "${PREFIX_STUB:-}" ;} || { printf "%s\n" "Error: Expected directory '$PREFIX_STUB' is not found." >&2 ; exit 78 ; } ;
 EXAMPLE_DIR=$(basename "${PREFIX_STUB:-}") ;
 EXAMPLE_NAME=$(basename -s .sh "${EXAMPLE_CMD_PATH}") ;
 
@@ -119,7 +121,7 @@ TRANSCRIPT="${PREFIX_STUB:-.}/${EXAMPLE_NAME:-}.txt" ;
 FORMATTED_DOC="${PREFIX_STUB:-.}/${EXAMPLE_NAME:-}.md" ;
 test -f "Makefile" || { printf "%s\n" "Error: Required file './Makefile' is not found." >&2 ; exit 126 ; } ;
 # see-also Makefile
-REPO_NAME=$(basename `git rev-parse --show-toplevel`)
+REPO_NAME=$(basename "$(git rev-parse --show-toplevel)")
 VENV_NAME="venv/${REPO_NAME:-demo}"
 
 cleanup() {
@@ -150,9 +152,11 @@ printf '%s\n' "Activating example environment..."
 
 # subprocess isolation
 {
+    # shellcheck disable=SC1090
     source ./"${VENV_NAME}/bin/activate"
     printf '%s\n' "Running: ${EXAMPLE_CMD_PATH:-}" ;
     # run the example
+    # shellcheck disable=SC1090
     source "${EXAMPLE_CMD_PATH}" | tee "$TRANSCRIPT" ;
 } || {
     deactivate 2>/dev/null || true
@@ -167,9 +171,12 @@ printf '%s\n' "Preview it with: tail -n+1 $TRANSCRIPT"
 # format the example for docs
 printf '%s\n' "Formatting example..." ;
 
+
 printf '%s\n\n' "[Example ${EXAMPLE_NUM:-}](./docs/examples/${EXAMPLE_DIR:-}/${EXAMPLE_NAME:-}.md)" > "${FORMATTED_DOC}" ;
+# keep these redirects individual to ensure wrapping with fencing
+# shellcheck disable=SC2129
 printf '%sconsole\n' $'```' >> "${FORMATTED_DOC}" ;
-tail -n +1 $TRANSCRIPT | sed '1d;$d' >> "${FORMATTED_DOC}" ;
+tail -n +1 "${TRANSCRIPT:-}" | sed '1d;$d' >> "${FORMATTED_DOC}" ;
 printf '\n%s\n' $'```' >> "${FORMATTED_DOC}" ;
 
 printf "\n" ;

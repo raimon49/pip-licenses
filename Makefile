@@ -167,7 +167,9 @@ help:
 	$(QUIET)$(ECHO) ''
 	$(QUIET)$(ECHO) 'Subcommands:'
 	$(QUIET)$(ECHO) '    setup           Setup for development'
-	$(QUIET)$(ECHO) '    local-install   Install locally'
+	$(QUIET)$(ECHO) '      setup-testing Just setup for testing'
+	$(QUIET)$(ECHO) '      setup-linting Just setup for linting'
+	$(QUIET)$(ECHO) '    local-install   Install locally (editable mode)'
 	$(QUIET)$(ECHO) '    local-uninstall Uninstall locally'
 	$(QUIET)$(ECHO) '    local-ci-check  Run acceptance tests and linting checks locally'
 	$(QUIET)$(ECHO) '    update-style    Re-lint and auto-format with pyproject.toml'
@@ -175,6 +177,7 @@ help:
 	$(QUIET)$(ECHO) '    lint            Re-lint formatting and typing with pyproject.toml'
 	$(QUIET)$(ECHO) '    test            Run project tests'
 	$(QUIET)$(ECHO) '    clean           Clean directories (for building)'
+	$(QUIET)$(ECHO) '    un-setup        Reset from development'
 
 # utility for some developer environments
 venv:
@@ -222,18 +225,18 @@ setup-testing: $(VENV_NAME)/bin/python setup-venv setup-PEP-735 $(TEST_DEPENDS).
 	$(VENV_NAME)/bin/python -B -m pip $(PIP_PREFIX_FLAGS) install $(PIP_COMMON_FLAGS) -r $(TEST_DEPENDS).txt
 
 # full setup for development workflows (default isolation)
-setup: $(VENV_NAME) $(VENV_NAME)/bin/python setup-venv setup-PEP-735 $(DEV_DEPENDS).txt
+setup:: $(VENV_NAME) $(VENV_NAME)/bin/python setup-venv setup-PEP-735 $(DEV_DEPENDS).txt
 	$(VENV_NAME)/bin/python -B -m pip $(PIP_PREFIX_FLAGS) install $(PIP_COMMON_FLAGS) -r ./.github/gha-requirements.txt
 	$(VENV_NAME)/bin/python -B -m pip $(PIP_PREFIX_FLAGS) install $(PIP_COMMON_FLAGS) -r $(DEV_DEPENDS).txt
 
-local-install: setup-PEP-735
+local-install:: setup-PEP-735
 	$(VENV_NAME)/bin/python -m pip $(PIP_PREFIX_FLAGS) install $(PIP_COMMON_FLAGS) -e .
 
 local-uninstall:
 	$(QUIET){ test ! -e $(VENV_NAME)/bin/python && test ! -e $(VENV_NAME)/bin/pip ; } || \
 	$(VENV_NAME)/bin/python -B -m pip $(PIP_PREFIX_FLAGS) uninstall -y pip-licenses ;
 
-local-ci-check: build lint test
+local-ci-check: local-install lint test
 	$(QUIET)$(DO_FAIL)  # does nothing successfully (if reached)
 
 update-lockfiles: setup-PEP-735
@@ -255,21 +258,29 @@ build: clean
 	test -r dist/pip_licenses-*-py3-*.whl || exit 42; # fail if not readable
 	$(ZIPINFO) -1 dist/pip_licenses-*-py3-*.whl $(PIPL_REQ_WHEEL_PATHS) || exit 43;
 
-lint:
+lint:: local-install lint-ruff lint-mypy lint-bandit
+	$(QUIET)$(DO_FAIL)  # does nothing successfully (if reached)
+
+lint-ruff:: setup-linting
 	$(VENV_NAME)/bin/python -m ruff --config pyproject.toml check --output-format=github .
 	$(VENV_NAME)/bin/python -m ruff --config pyproject.toml format --check .
+
+lint-mypy:: setup-linting local-install lint-ruff
 	$(VENV_NAME)/bin/python -m mypy --install-types --non-interactive .
 
-update-style:
+lint-bandit:: setup-linting lint-ruff lint-mypy
+	$(VENV_NAME)/bin/python -m bandit -c .bandit.yml -r ./piplicenses/ ./tests/
+
+update-style: setup-linting
 	$(VENV_NAME)/bin/python -m ruff --config pyproject.toml check --output-format=github --fix .
 	$(VENV_NAME)/bin/python -m ruff --config pyproject.toml format .
 
-test:
+test:: setup-testing
 	$(VENV_NAME)/bin/python -m pytest
 
 # cleanup and reset
 
-clean:
+clean::
 	$(QUIET)$(RM) -r dist
 	$(QUIET)$(RMDIR) ./build 2>$(ERROR_LOG_PATH) || exit 66 ; # fail if unsuccessful
 

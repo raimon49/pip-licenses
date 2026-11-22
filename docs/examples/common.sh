@@ -140,13 +140,19 @@ get_python_interpreter() {
 get_python_pip() {
     local PYTHON_TOOL;
     PYTHON_TOOL=$(get_python_interpreter);
+    # allow globbing of individual elements
+    # shellcheck disable=SC2068
     ${PYTHON_TOOL} -B -m pip $@ ;
 }
 
 # Check if required packages are installed
 check_required_packages() {
     local required_packages=("cffi" "packaging")
-    log_info "Will use python interpreter at:"$(get_python_interpreter)"." ;
+    local _PATH_TO_PY_INTERP
+    _PATH_TO_PY_INTERP=$(get_python_interpreter);
+    log_info "Will use python interpreter at: ${_PATH_TO_PY_INTERP:-}." ;
+    # cleanup early
+    unset _PATH_TO_PY_INTERP 2>/dev/null || : ;
     for pkg in "${required_packages[@]}"; do
         if ! get_python_pip list 2>/dev/null | tail -n+3 2>/dev/null | grep -q -Ee "^${pkg} "; then
             log_warn "Package ${pkg} is not installed"

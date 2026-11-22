@@ -26,13 +26,9 @@
 """
 tests.TestDocumentationStatus
 
-To be documented?
+Trivial testing to ensure there are automated examples (at all).
 """
 
-# import os
-# import re
-# import subprocess
-# import sys
 from . import (
     unittest,
 )
@@ -45,20 +41,26 @@ class TestDocumentationStatus(unittest.TestCase):
     """Provide information about documentation test coverage."""
 
     def test_print_discovered_examples(self) -> None:
-        """Print all discovered examples (for CI/CD reporting)."""
-        discovered = discover_examples()
+        """Print all discovered examples (for CI/CD reporting).
 
-        print("\n" + "=" * 70)
+        Acceptance criteria: pass if more than 7 found, fail otherwise.
+        """
+        discovered = discover_examples()
+        _width_value: int = 70
+        print("\n" + "=" * _width_value)
         print("DISCOVERED DOCUMENTATION EXAMPLES")
-        print("=" * 70)
+        print("=" * _width_value)
 
         for ex in discovered:
             print(f"  {ex.number:2d}. {ex.name}")
 
         print(f"\nTotal: {len(discovered)} examples")
-        print("=" * 70)
-
+        print("=" * _width_value)
+        # pre-checks
         self.assertGreater(len(discovered), 0, "No examples discovered")
+        self.assertGreater(len(discovered), 1, "Expected multiple examples")
+        # Rationale: there are at-least 7 categories with 1 or more examples:
+        self.assertGreater(len(discovered), 7, "Expected multiple examples")
 
 
 if __name__ == "__main__":
