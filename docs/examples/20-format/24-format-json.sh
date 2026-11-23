@@ -84,7 +84,7 @@ check_required_packages || exit 1
 init_demo
 
 # Run the example - JSON format
-run_command "pip-licenses --format=json"
+run_command "pip-licenses --format=json --with-urls --with-authors"
 pause 2.2
 
 printf '\r\n'

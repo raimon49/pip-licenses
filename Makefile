@@ -192,6 +192,7 @@ setup-venv: $(VENV_NAME) $(VENV_NAME)/bin/python
 	$(QUIET)$(VENV_NAME)/bin/python -B -m ensurepip -vvv || exit 2 ;
 
 setup-PEP-735: $(VENV_NAME) $(VENV_NAME)/bin/python setup-venv
+	$(QUIET)$(VENV_NAME)/bin/python -B -m pip $(PIP_PREFIX_FLAGS) install $(PIP_COMMON_FLAGS) pip || exit 21 ;
 	$(QUIET)$(VENV_NAME)/bin/python -B -m pip $(PIP_PREFIX_FLAGS) install $(PIP_COMMON_FLAGS) "dependency-groups>=1.3.2" || exit 22 ;
 
 setup-examples: setup-venv setup-PEP-735 local-install

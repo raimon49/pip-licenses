@@ -85,10 +85,15 @@ check_required_packages || exit 1
 init_demo
 
 # take care with the nested quotes
-CMD_LINE_TEXT=$(printf 'pip-licenses %s' "--allow-only=\"MIT License;BSD License\"" ;)
+CMD_LINE_TEXT=$(printf 'pip-licenses %s' "--allow-only=\"MIT License;BSD License\" 2>&1" ;)
 
 # Run the example - allow only specific licenses
+#log_info "Running with --allow-only option (this will usually fail due to other licenses)"
+set +e
 run_command "${CMD_LINE_TEXT}"
+# shellcheck disable=SC2034
+EXIT_CODE=$?
+set -e
 pause 2.2
 
 printf '\r\n'

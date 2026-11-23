@@ -93,7 +93,7 @@ init_demo
 
 # Run the example - plain-vertical format with license file
 # Note: Using --packages to isolate pytest output, using --no-license-path for cleaner output
-run_command "pip-licenses --packages cffi --format=plain-vertical --with-license-file --no-license-path"
+run_command "pip-licenses --packages cffi --format=plain-vertical --with-license-files --no-license-path"
 pause 2.2
 
 printf '\r\n'

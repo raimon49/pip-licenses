@@ -100,12 +100,14 @@ EXAMPLE_NAME_HINT="${EXAMPLE_NUM:-}-${DIR_STUB:-}-${3:-*}"
 # Rest of variables
 #
 PREFIX_STUB_HINT=$(dirname "${0}")/../examples/"${EXAMPLE_DIR_HINT:-}" ;
-{ test -d "${PREFIX_STUB_HINT:-}" ;} || { printf "%s\n" "Error: Given path '$PREFIX_STUB_HINT' is not found." >&2 ; exit 78 ; } ;
+# shellcheck disable=SC2086
+{ test -d ${PREFIX_STUB_HINT:-} ;} || { printf "%s\n" "Error: Given path '$PREFIX_STUB_HINT' is not found." >&2 ; exit 78 ; } ;
 # Automation script path
 # Full Regex: ^(?<dirname>(?<dirNum>[0-9]+)(?:[x0-9])?(?<prefix>\-[^\/]*))(?:\/)(?<filename>(?<fileNum>(?P=dirNum)(?:[0-9]?))(?:(?P=prefix)(?<baseName>[^\/]*)\.sh))$
 # shellcheck disable=SC2034
 EXAMPLE_CMD_HINT="${PREFIX_STUB_HINT:-.}/${EXAMPLE_NAME_HINT:-}.sh" ;
-EXAMPLE_CMD_PATH=$(find "${PREFIX_STUB_HINT:-}" -type f -iname "$EXAMPLE_NAME_HINT.sh" -print 2>/dev/null) ;
+# shellcheck disable=SC2086
+EXAMPLE_CMD_PATH=$(find ${PREFIX_STUB_HINT:-} -type f -iname "$EXAMPLE_NAME_HINT.sh" -print 2>/dev/null) ;
 test -f "${EXAMPLE_CMD_PATH:-}" || { printf "%s\n" "Error: The path '${EXAMPLE_CMD_PATH:-}' is not found." >&2 ; exit 125 ; } ;
 #test -x "${EXAMPLE_CMD_PATH:-}" || { printf "%s\n" "Error: Bad path '${EXAMPLE_CMD_PATH:-}' is not executable." >&2 ; exit 125 ; } ;
 

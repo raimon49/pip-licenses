@@ -85,7 +85,7 @@ check_required_packages || exit 1
 init_demo
 
 # take care with the nested quotes
-CMD_LINE_TEXT_F=$(printf 'pip-licenses %s' "--fail-on=\"MIT License;BSD License\"" ;)
+CMD_LINE_TEXT_F=$(printf 'pip-licenses %s' "--fail-on=\"MIT License;BSD License\" 2>&1" ;)
 
 # Run the example - fail if specific licenses found
 #log_info "Running with --fail-on option (this will fail due to MIT/BSD licenses)"

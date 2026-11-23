@@ -1495,6 +1495,7 @@ class LoadConfigFromFileTests(unittest.TestCase):
             b"""
 [tool.pip-licenses]
 enabled = true
+include_from_system = true
 timeout = 30
 features = ["a", "b"]
 
@@ -1509,6 +1510,7 @@ value = "ignored"
             result,
             {
                 "enabled": True,
+                "include_from_system": True,
                 "timeout": 30,
                 "features": ["a", "b"],
             },
@@ -1590,10 +1592,11 @@ setting = "expected"
 
     def test_propagates_toml_decode_error(self) -> None:
         pyproject_path = self.tmp_path / "pyproject.toml"
+        # use True (PYTHON) instead of true (TOML) to test invalid toml
         pyproject_path.write_text(
             """
 [tool.pip-licenses
-invalid = true
+invalid = True
 """,
             encoding="utf-8",
         )
