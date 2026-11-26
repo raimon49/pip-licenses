@@ -71,7 +71,7 @@ from .pseudo_choices import (
     OrderArg,
 )
 
-if "6.1" in __version__:
+if "6.1" in __version__:  # pragma: no cover
     import warnings
 
 
@@ -94,6 +94,26 @@ DEFAULT_PYTHON: str = f"{sys.executable}"
 Should be the same as executable that imported piplicenses.cli.
 e.g., sys.executable
 """
+
+
+def _validate_token() -> None:
+    """Internal safety check helper.
+
+    Used to ensure LEGACY_TOKEN is loaded and not escaped.
+
+    Not part of the public API. Subject to sudden changes, or removal.
+
+    Raises ValueError -- if empty or contains backslashes
+    """
+    if not LEGACY_TOKEN:  # pragma: no cover
+        # Defensive code -- no really should never happen
+        raise ValueError("LEGACY_TOKEN must be non-empty")
+
+    if "\\" in LEGACY_TOKEN:  # pragma: no cover
+        # Defensive code
+        raise ValueError(
+            "LEGACY_TOKEN must not contain a backslash when using escaping"
+        )
 
 
 def _split_legacy_tokens(value: str) -> list[str]:
@@ -130,14 +150,7 @@ def _split_legacy_tokens(value: str) -> list[str]:
     >>>
 
     """
-    if not LEGACY_TOKEN:
-        raise ValueError("LEGACY_TOKEN must be non-empty")
-
-    if "\\" in LEGACY_TOKEN:
-        raise ValueError(
-            "LEGACY_TOKEN must not contain a backslash when using escaping"
-        )
-
+    _validate_token()
     parts: list[str] = []
     current: list[str] = []
     index = 0
@@ -179,7 +192,43 @@ def _split_legacy_tokens(value: str) -> list[str]:
 
 
 def _serialize_input_str(value: Union[str, bytes, None]) -> Optional[str]:
-    """Handle bytes and str uniformly."""
+    """Handle bytes and str uniformly.
+
+    Return a string unchanged, decode bytes as UTF-8, or return ``None``.
+
+    ``bytes`` inputs are decoded using UTF-8. ``str`` inputs are converted with
+    :class:`str` (so they are returned unchanged), and values that are neither
+    ``str`` nor ``bytes`` return ``None``.
+
+    E.g.,
+
+        >>> _serialize_input_str("MIT")
+        'MIT'
+        >>> _serialize_input_str("")
+        ''
+        >>> _serialize_input_str("café")
+        'café'
+        >>> _serialize_input_str(b"hello")
+        'hello'
+        >>> _serialize_input_str(b"caf\\xc3\\xa9")
+        'café'
+        >>> _serialize_input_str(b"")
+        ''
+        >>> _serialize_input_str(None) is None
+        True
+        >>> _serialize_input_str(123) is None
+        True
+        >>> _serialize_input_str(["hello"]) is None
+        True
+
+        Bytes that are not valid UTF-8 raise :class:`UnicodeDecodeError` in the
+        current implementation: its fallback decode uses the same encoding.
+
+        >>> _serialize_input_str(b"\\xff")
+        Traceback (most recent call last):
+        ...
+        UnicodeDecodeError: ...
+    """
     if isinstance(value, (str, bytes)):
         if isinstance(value, bytes):
             # decode bytes as UTF-8
@@ -191,12 +240,12 @@ def _serialize_input_str(value: Union[str, bytes, None]) -> Optional[str]:
                 value_str = str(
                     cast(str, value).encode("unicode_escape")  # type: ignore[arg-type]
                 )
-            except Exception:  # noqa: BLE001 -- blind catch-all
+            except Exception:  # pragma: no cover  # noqa: BLE001 -- blind catch-all
                 # helper function should not raise an exception
                 # fallback to dumb str(value) if decode fails
                 value_str = str(value)
         else:
-            value_str = value
+            value_str = str(value)
         return value_str
     return None
 
@@ -230,6 +279,7 @@ def _parse_serialized(value: str) -> set[str]:
     """
     if not value:
         return set()  # empty when falsey
+    _validate_token()
     if LEGACY_TOKEN in value:
         # hint: can assume also is not None
         parts = _split_legacy_tokens(value)
@@ -288,6 +338,24 @@ def _normalize_as_set(
     >>>
 
     >>> _normalize_as_set(["alpha", "beta\\;gamma", None, 42]) == {'alpha', 'beta;gamma', '42'}
+    True
+    >>>
+
+    >>> _normalize_as_set(["", ";"]) == set()
+    True
+    >>>
+
+    >>> _normalize_as_set([";;"]) == set()
+    True
+    >>>
+
+    >>> _normalize_as_set([["alpha", "beta;gamma"], {"delta"}]) == {
+    ...     "alpha", "beta", "gamma", "delta"
+    ... }
+    True
+    >>>
+
+    >>> _normalize_as_set(42) == {"42"}
     True
     >>>
 
@@ -373,14 +441,7 @@ def _serialize_to_semi_str(value: Iterable[str]) -> str:
     >>>
 
     """
-    if not LEGACY_TOKEN:
-        raise ValueError("LEGACY_TOKEN must be non-empty")
-
-    if "\\" in LEGACY_TOKEN:
-        raise ValueError(
-            "LEGACY_TOKEN must not contain a backslash when using escaping"
-        )
-
+    _validate_token()
     # TODO: probably should use an internal helper function to "normalize" the whitespace
     # but for now just use simple strip() (e.g., ignore the whitespace)
     members = (
@@ -412,6 +473,71 @@ class SetOfStr:
 
     Storage is kept in instance.__dict__ under a private name computed by
     __set_name__.
+
+    E.g.,
+
+    Construction with an explicit name:
+
+        >>> SetOfStr(name="something")._name
+        'something'
+        >>>
+
+    When bound to a class attribute, ``__set_name__`` replaces that name
+    with the storage key derived from the attribute name:
+
+        >>> class Example:
+        ...     tags = SetOfStr(name="initial")
+        >>> Example.tags is Example.__dict__["tags"]
+        True
+        >>> Example.tags._name
+        '_tags'
+        >>>
+
+    An unset value reads as an empty set, without adding a key to the instance:
+
+        >>> example = Example()
+        >>> example.tags
+        set()
+        >>> example.__dict__
+        {}
+        >>>
+
+    Assigning an iterable stores its normalized value on that instance:
+
+        >>> example.tags = ["python", "docs"]
+        >>> example.tags == {"python", "docs"}
+        True
+        >>> example.__dict__["_tags"] == {"python", "docs"}
+        True
+        >>>
+
+    Values are per-instance:
+
+        >>> other = Example()
+        >>> other.tags
+        set()
+        >>>
+
+    Assigning ``None`` stores an empty set:
+
+        >>> example.tags = None
+        >>> example.tags
+        set()
+        >>> "_tags" in example.__dict__
+        True
+        >>>
+
+    Deleting a stored value makes the descriptor read as unset again.
+    Deleting an already-unset value is also safe:
+
+        >>> del example.tags
+        >>> example.tags
+        set()
+        >>> del example.tags
+        >>> example.tags
+        set()
+        >>>
+
     """
 
     def __init__(self, name: Union[str, None] = None) -> None:
@@ -462,7 +588,7 @@ class Configuration(argparse.Namespace):
     with_urls: bool = False
     if "6.0" in __version__:
         with_description: bool = False  # DEPRECIATED in v6.1+
-    else:
+    else:  # pragma: no cover
         with_descriptions: bool = False
     if "6.0" in __version__:
         with_license_file: bool = False  # DEPRECIATED in v6.1+
@@ -475,7 +601,8 @@ class Configuration(argparse.Namespace):
     with_license_paths: Optional[bool] = (
         None  # added in v6.0  -- see also global_paths
     )
-    if "6.0" in __version__:
+    if "6.0." in __version__:
+        # migration step 600-C-24-1
         no_file_paths: bool = False  # DEPRECIATED in v6.1+
     with_notice_paths: Optional[bool] = bool(
         True
@@ -543,7 +670,7 @@ class Configuration(argparse.Namespace):
             self.allow_only, set
         ):
             self.allow_only = self._normalize_to_set(self.allow_only)
-        if not isinstance(self.allow_packages, set):
+        if not isinstance(self.allow_packages, set):  # pragma: no cover
             self.allow_packages = self._normalize_to_set(self.allow_packages)
         if (self.warn_on is not None) and not isinstance(self.warn_on, set):
             self.warn_on = self._normalize_to_set(self.warn_on)
@@ -551,12 +678,53 @@ class Configuration(argparse.Namespace):
 
     @staticmethod
     def _normalize_to_set(value: Union[Iterable[str], str, None]) -> set[str]:
+        """Internal helper to normalize input as a set.
+
+        E.g.,
+
+        >>> _config_instance = Configuration()
+        >>> _some_input = "foo; bar"
+        >>> _norm_input = set({"foo", "bar"})
+        >>> _config_instance._normalize_to_set(None) == set()
+        True
+        >>> _some_input != _norm_input
+        True
+        >>> _config_instance._normalize_to_set(_some_input) == _norm_input
+        True
+        >>>
+
+        """
         if value is None:
             return set()
         return _normalize_as_set(value)
 
     @staticmethod
     def _serialize_to_semi_str(value: Union[Iterable[str], None]) -> str:
+        """Internal helper to serialize a set as a semicolon delimited str.
+
+        E.g.,
+
+        >>> _config_instance = Configuration()
+        >>> _norm_input = set({"foo", "bar"})
+        >>> _semi_input = "foo; bar"  # unsorted
+        >>> _semi_expected = "bar;foo"  # serialized (sorted)
+        >>> _config_instance._serialize_to_semi_str(None) == ""
+        True
+        >>> _semi_input != _norm_input
+        True
+        >>> _semi_input != _semi_expected
+        True
+        >>> _config_instance._serialize_to_semi_str(_norm_input) == _semi_expected
+        True
+        >>> _config_instance._serialize_to_semi_str(_norm_input) != _semi_input
+        True
+        >>> _semi_expected == _config_instance._serialize_to_semi_str(
+        ...     _config_instance._normalize_to_set(_semi_input)
+        ... )
+        True
+        >>>
+
+        """
         if value is None:
             return ""
         return _serialize_to_semi_str(value)
@@ -566,6 +734,65 @@ class Configuration(argparse.Namespace):
         """
         Safely construct a Configuration from an argparse.Namespace (or
         anything compatible with vars()).
+
+        E.g.,
+
+        >>> from argparse import Namespace as Namespace
+        >>> import piplicenses.cli.pseudo_choices
+        >>> from piplicenses.cli.pseudo_choices import (
+        ...     FormatArg,
+        ...     FromArg,
+        ...     OrderArg,
+        ... )
+        >>> _base_namespace = Namespace(from_=FromArg.MIXED,
+        ...     allow_only=set(),
+        ...     allow_packages=set(),
+        ...     fail_on=set(),
+        ...     filter_code_page=None,
+        ...     filter_strings=False,
+        ...     format_=FormatArg.PLAIN,
+        ...     global_files=None,
+        ...     global_paths=None,
+        ...     ignore_packages=set(),
+        ...     include_from_system=False,
+        ...     no_file_paths=False,
+        ...     order=OrderArg.NAME,
+        ...     output_file=None,
+        ...     packages=set(),
+        ...     partial_match=False,
+        ...     python=None,
+        ...     summary=False,
+        ...     warn_on=set(),
+        ...     with_attribution_files=False,
+        ...     with_attribution_paths=None,
+        ...     with_authors_files=False,
+        ...     with_authors_paths=None,
+        ...     with_authors=False,
+        ...     with_description=False,
+        ...     with_legacy_files=True,
+        ...     with_legacy_paths=None,
+        ...     with_license_file=False,
+        ...     with_license_files=False,
+        ...     with_license_paths=None,
+        ...     with_licenses=True,
+        ...     with_maintainers=False,
+        ...     with_notice_file=False,
+        ...     with_notice_files=False,
+        ...     with_notice_paths=None,
+        ...     with_notices=False,
+        ...     with_other_files=False,
+        ...     with_other_paths=None,
+        ...     with_others=False,
+        ...     with_urls=False,
+        ...     without_versions=False,
+        ... )
+        >>> _base_namespace is not None
+        True
+        >>> _base_config = Configuration.from_namespace(_base_namespace)
+        >>> _base_config is not None
+        True
+        >>>
+
         """
         # vars(ns) will contain all attributes argparse set.
         # We pass them into the dataclass constructor. Extra keys are expected to
@@ -576,6 +803,63 @@ class Configuration(argparse.Namespace):
         """
         Convert back to a plain argparse.Namespace (useful if some APIs still
         expect Namespace instances).
+
+        E.g.,
+
+        >>> import piplicenses.cli.pseudo_choices
+        >>> from piplicenses.cli.pseudo_choices import (
+        ...     FormatArg,
+        ...     FromArg,
+        ...     OrderArg,
+        ... )
+        >>> _base_config = Configuration(from_=FromArg.MIXED,
+        ...     order=OrderArg.NAME,
+        ...     format_=FormatArg.PLAIN,
+        ...     summary=False,
+        ...     include_from_system=False,
+        ...     with_urls=False,
+        ...     with_description=False,
+        ...     with_license_file=False,
+        ...     with_license_files=False,
+        ...     with_authors=False,
+        ...     with_maintainers=False,
+        ...     with_notice_file=False,
+        ...     with_license_paths=None,
+        ...     no_file_paths=False,
+        ...     with_notice_paths=None,
+        ...     without_versions=False,
+        ...     filter_strings=False,
+        ...     partial_match=False,
+        ...     output_file=None,
+        ...     filter_code_page=None,
+        ...     with_licenses=True,
+        ...     with_others=False,
+        ...     with_notices=False,
+        ...     with_notice_files=False,
+        ...     with_other_files=False,
+        ...     with_other_paths=None,
+        ...     with_authors_files=False,
+        ...     with_authors_paths=None,
+        ...     with_attribution_files=False,
+        ...     with_attribution_paths=None,
+        ...     with_legacy_files=True,
+        ...     with_legacy_paths=None,
+        ...     global_files=None,
+        ...     global_paths=None,
+        ...     fail_on=set(),
+        ...     allow_only=set(),
+        ...     ignore_packages=set(),
+        ...     packages=set(),
+        ...     warn_on=set(),
+        ...     allow_packages=set(),
+        ... )
+        >>> _base_config is not None
+        True
+        >>>
+        >>> _base_config.to_namespace() is not None
+        True
+        >>>
+
         """
         ns = argparse.Namespace()
         for k, v in vars(self).items():
@@ -852,7 +1136,43 @@ class Configuration(argparse.Namespace):
     def without_other_paths(self, value: Union[bool, None]) -> None:
         self.with_other_paths = value is False
 
-    if "6.1" in __version__:
+    # added in v6.0
+    @property  # type: ignore[no-redef]
+    def without_file_paths(self) -> bool:
+        """ADDED in v6.0; Same as no_file_paths.
+
+        Previous to v6.0 there was no standardization of what are now:
+        with/without prefixes.
+
+        Convenience inverse of global_paths.
+        """
+        _result: bool
+        if self.global_paths is False:
+            _result = True
+        elif self.global_paths is None:
+            _result = False
+        else:
+            _result = False
+        return _result
+
+    # added in v6.0
+    @without_file_paths.setter
+    def without_file_paths(self, value: Union[bool, None]) -> None:
+        """ADDED in v6.0; Same as no_file_paths.
+
+        Previous to v6.0 there was no standardization of what are now:
+        with/without prefixes.
+
+        Convenience inverse of global_paths.
+        """
+        if value is True:
+            self.global_paths = False
+        elif value is None:
+            self.global_paths = None
+        else:
+            self.global_paths = True
+
+    if "6.1" in __version__:  # pragma: no cover
         # DEPRECIATED in v6.0; use without_* instead.
         @property  # type: ignore[no-redef]
         def no_version(self) -> bool:
@@ -1007,7 +1327,7 @@ class Configuration(argparse.Namespace):
             import warnings
 
             warnings.warn(
-                "WILL BE DEPRECIATED in v6.1; use without_versions instead."
+                "WILL BE DEPRECIATED in v6.1; use without_versions instead. "
                 "This will be an error in the future."
                 "See https://github.com/raimon49/pip-licenses/issues/349",
                 stacklevel=2,
@@ -1021,7 +1341,7 @@ class Configuration(argparse.Namespace):
             import warnings
 
             warnings.warn(
-                "WILL BE DEPRECIATED in v6.1; use without_versions instead."
+                "WILL BE DEPRECIATED in v6.1; use without_versions instead. "
                 "This will be an error in the future."
                 "See https://github.com/raimon49/pip-licenses/issues/349",
                 stacklevel=2,
@@ -1035,7 +1355,7 @@ class Configuration(argparse.Namespace):
             import warnings
 
             warnings.warn(
-                "DEPRECIATED in v6.0; use include_from_system instead."
+                "DEPRECIATED in v6.0; use include_from_system instead. "
                 "This will be an error in the future.",
                 stacklevel=2,
             )
@@ -1048,32 +1368,39 @@ class Configuration(argparse.Namespace):
             import warnings
 
             warnings.warn(
-                "DEPRECIATED in v6.0; use include_from_system instead."
-                "This will be an error in the future."
+                "DEPRECIATED in v6.0; use include_from_system instead. "
+                "This will be an error in the future. "
                 "See https://github.com/raimon49/pip-licenses/issues/349",
                 stacklevel=2,
             )
             self.include_from_system = value is True
 
-        # added in v6.0
         @property  # type: ignore[no-redef]
-        def without_file_paths(self) -> bool:
-            """ADDED in v6.0; Same as no_file_paths.
+        def no_file_paths(self) -> bool:
+            """DEPRECIATED in v6.1; use without_versions instead."""
+            import warnings
 
-            Previous to v6.0 there was no standardization of what are now:
-            with/without prefixes.
-            """
-            return self.no_file_paths
+            warnings.warn(
+                "WILL BE DEPRECIATED in v6.1; use without_file_paths instead. "
+                "This will be an error in the future. "
+                "See https://github.com/raimon49/pip-licenses/issues/349",
+                stacklevel=2,
+            )
+            return self.without_file_paths
 
-        # added in v6.0
-        @without_file_paths.setter
-        def without_file_paths(self, value: Union[bool, None]) -> None:
-            """ADDED in v6.0; Same as no_file_paths.
+        # DEPRECIATED in v6.0; use without_file_paths instead.
+        @no_file_paths.setter
+        def no_file_paths(self, value: Union[bool, None]) -> None:
+            """DEPRECIATED in v6.1; use without_versions instead."""
+            import warnings
 
-            Previous to v6.0 there was no standardization of what are now:
-            with/without prefixes.
-            """
-            self.no_file_paths = value is True
+            warnings.warn(
+                "WILL BE DEPRECIATED in v6.1; use without_file_paths instead. "
+                "This will be an error in the future. "
+                "See https://github.com/raimon49/pip-licenses/issues/349",
+                stacklevel=2,
+            )
+            self.without_file_paths = value is True
 
         # changed in v6.0
         @property  # type: ignore[no-redef]

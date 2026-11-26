@@ -22,18 +22,18 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import argparse
-import io
+import io  # noqa: I001 -- order matters
 from contextlib import redirect_stderr, redirect_stdout
 from types import SimpleNamespace
 from typing import Any, Union
 
-# import of patch must follow import of unittest
-from unittest.mock import patch
-
 import piplicenses.__main__ as mainmod
 
+from . import argparse
 from . import unittest
+
+# import of patch must follow import of unittest
+from unittest.mock import patch
 
 
 class DummyConfig:

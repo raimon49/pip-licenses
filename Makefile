@@ -81,7 +81,7 @@ ifndef PIP_COMMON_FLAGS
 		PIP_PREFIX_FLAGS := --no-input
 	endif
 	# Define common pip install flags
-	PIP_COMMON_FLAGS := --exists-action s --upgrade --upgrade-strategy eager
+	PIP_COMMON_FLAGS := --exists-action s --upgrade --upgrade-strategy only-if-needed
 endif
 
 ifeq "$(DEV_PAT)" ""
@@ -193,7 +193,7 @@ setup-venv: $(VENV_NAME) $(VENV_NAME)/bin/python
 
 setup-PEP-735: $(VENV_NAME) $(VENV_NAME)/bin/python setup-venv
 	$(QUIET)$(VENV_NAME)/bin/python -B -m pip $(PIP_PREFIX_FLAGS) install $(PIP_COMMON_FLAGS) pip || exit 21 ;
-	$(QUIET)$(VENV_NAME)/bin/python -B -m pip $(PIP_PREFIX_FLAGS) install $(PIP_COMMON_FLAGS) "dependency-groups>=1.3.2" || exit 22 ;
+	$(QUIET)$(VENV_NAME)/bin/python -B -m pip $(PIP_PREFIX_FLAGS) install $(PIP_COMMON_FLAGS) "dependency-groups>=1.3.2" "packaging==26.3" || exit 22 ;
 
 setup-examples: setup-venv setup-PEP-735 local-install
 	$(QUIET)test -d docs/examples || exit 31 ;

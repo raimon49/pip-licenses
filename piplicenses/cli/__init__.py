@@ -480,7 +480,7 @@ def _add_verification_arguments_to_parser(
             "licenses that have complex conditions (e.g., attribution,\n"
             "user notices, etc.). May be used multiple times.",
         )
-        if "6.1" in __version__:
+        if "6.1" in __version__:  # pragma: no cover
             verify_group.add_argument(
                 "--allow-packages",
                 action="extend",

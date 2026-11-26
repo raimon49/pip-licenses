@@ -26,9 +26,7 @@ from unittest.mock import (
 import docutils.frontend
 import docutils.parsers.rst
 import docutils.utils
-import pytest
 import tomli_w
-from _pytest.capture import CaptureFixture
 from prettytable import HRuleStyle
 
 import piplicenses
@@ -717,7 +715,7 @@ class TestGetLicenses(CommandLineTestCase):
             "--with-license-file",
             "--with-notice-file",
             "--with-other-files",
-            "--no-file-paths",
+            "--without-paths",
         ]
         args = self.parser.parse_args(with_license_file_args)
 
@@ -1819,16 +1817,73 @@ INVALID_PATH_FIXTURE = "/var/some/unlikly/path/that/should/not/be"
 
 
 class TestEdges(unittest.TestCase):
+    """Misc tests of otherwise uncovered areas of the codebase.
+
+    1. helpers of configuration.
+    2. Skippable test for the edge-case of non-exsistant files or paths.
+    """
+
+    def test_config_helper_input_becomes_a_set(self) -> None:
+        _config_instance = Configuration()
+        _some_input = "foo; bar"
+        _norm_input = set({"foo", "bar"})
+        self.assertEqual(_config_instance._normalize_to_set(None), set())
+        self.assertNotEqual(_some_input, _norm_input)
+        self.assertEqual(
+            _config_instance._normalize_to_set(_some_input),
+            _norm_input,
+        )
+
+    def test_config_helper_set_becomes_a_semi_str(self) -> None:
+        _config_instance = Configuration()
+        _norm_input = set({"foo", "bar"})
+        _semi_input = "foo; bar"  # unsorted
+        _semi_expected = "bar;foo"  # serialized (sorted)
+        self.assertIsNotNone(_config_instance._serialize_to_semi_str(None))
+        self.assertEqual(_config_instance._serialize_to_semi_str(None), "")
+        self.assertNotEqual(_semi_input, _norm_input)
+        self.assertNotEqual(_semi_input, _semi_expected)
+        self.assertEqual(
+            _config_instance._serialize_to_semi_str(_norm_input),
+            _semi_expected,
+        )
+        self.assertNotEqual(
+            _config_instance._serialize_to_semi_str(_norm_input),
+            _semi_input,
+        )
+        self.assertEqual(
+            _semi_expected,
+            _config_instance._serialize_to_semi_str(
+                _config_instance._normalize_to_set(_semi_input)
+            ),
+        )
+
     @unittest.skipIf(
         Path(INVALID_PATH_FIXTURE).exists(),
-        "Invalid path Actually exists",
+        "Invalid test, b/c path Actually exists",
     )
-    def test_handle_invalid_config_load(self) -> None:
+    def test_handle_invalid_config_path_load(self) -> None:
         self.assertFalse(
             Path(INVALID_PATH_FIXTURE).exists(),
         )
         self.assertEqual(
             load_config_from_file(INVALID_PATH_FIXTURE),
+            {},
+        )
+
+    @unittest.skipIf(
+        Path(INVALID_PATH_FIXTURE).exists(),
+        "Invalid test, b/c path Actually exists",
+    )
+    def test_handle_invalid_config_file_load(self) -> None:
+        _test_config_file_fixture = f"{INVALID_PATH_FIXTURE}/pyproject.toml"
+        self.assertFalse(
+            Path(_test_config_file_fixture).exists(),
+        )
+        _test_fixture_res = load_config_from_file(_test_config_file_fixture)
+        self.assertIsNotNone(_test_fixture_res, "Expected {}, but got None!")
+        self.assertEqual(
+            _test_fixture_res,
             {},
         )
 
@@ -1969,6 +2024,16 @@ class CommandLineSmokeTests(TestEdges):
         ):
             table = create_licenses_table(args, ["LicenseFiles"])
         self.assertEqual(table.rows, [["LICENSE.txt"]])
+
+
+# MARK: Legacy style tests
+
+import pytest
+from _pytest.capture import CaptureFixture
+
+# TODO: The rest of the tests are to-be refactored around unittest eventually
+# This is considered technical debt as the test cases are still relevant,
+# so care must be taken when migrating the tests.
 
 
 class MockStdStream:
@@ -2556,6 +2621,19 @@ def test_verify_args(
         parser.parse_args(["--filter-strings", "--filter-code-page=XX"])
     capture = capsys.readouterr().err
     for arg in ("invalid code", "--filter-code-page"):
+        assert arg in capture
+
+    # partial and simple options depend on verification flags
+    with pytest.raises(SystemExit) as ex:
+        parser.parse_args(["--partial-match"])
+    capture = capsys.readouterr().err
+    for arg in (
+        "--allow-on",
+        "--fail-on",
+        "--partial-match",
+        "--simple-match",
+        "--warn-on",
+    ):
         assert arg in capture
 
 

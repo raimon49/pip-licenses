@@ -104,7 +104,7 @@ def _is_valid_argument_container(value: object) -> bool:
         raise TypeError(
             f"parser is of the wrong type: {type(value)}"
         ) from None
-    else:
+    else:  # pragma: no cover
         return True
 
 
@@ -141,7 +141,10 @@ def add_mutually_exclusive_flag_pair(
     Not part of the public API.
     """
     if not _is_valid_argument_container(parser):
-        raise ValueError(f"Invalid parser: {parser!r}.") from None
+        # defensive code
+        raise ValueError(
+            f"Invalid parser: {parser!r}."
+        ) from None  # pragma: no cover
     some_mutually_exclusive_group = parser.add_mutually_exclusive_group()
     try:
         some_mutually_exclusive_group.add_argument(

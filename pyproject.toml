@@ -52,11 +52,11 @@ scripts = { "pip-licenses" = "piplicenses.__main__:main" }
 utils = [
 	"wheel",
 	"tomli-w",
-	"virtualenv>=21.14.13",
+	"virtualenv==21.14.13",
 ]
 packaging = [
 	"dependency-groups>=1.3.2",
-	"packaging>=26.3",
+	"packaging==26.3",  # v26.3 is the last to still support python 3.9
 ]
 lockfiles = [
 	"pip-tools", # no-longer used as of v6.0.0rc24
@@ -185,7 +185,7 @@ unused-ignore-comment = "warn"
 redundant-cast = "warn"
 
 [tool.coverage.run]
-include = ["piplicenses/*.py", "piplicenses/output/*.py"]
+include = ["piplicenses/*.py", "piplicenses/output/*.py", "piplicenses/cli/*.py"]
 
 # no-longer used as of v6.0.0rc24
 [tool.pip-tools.compile]

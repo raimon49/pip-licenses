@@ -152,7 +152,7 @@ def get_output_fields(args: Configuration) -> list[str]:
         args.with_license_paths = False
     # WILL CHANGE BEHAVIOR IN v6.1
     if (
-        "6.0" in __version__ and args.no_file_paths
+        "6.0" in __version__ and args.without_file_paths
         # TODO: or args.global_paths is False  # not just None
     ):  # migration step 600-B-14-1
         args.with_license_paths = False
@@ -190,7 +190,7 @@ def get_output_fields(args: Configuration) -> list[str]:
         if args.with_license_paths or (
             # WILL CHANGE BEHAVIOR IN v6.1
             "6.0" in __version__
-            and (not args.no_license_path and not args.no_file_paths)
+            and (not args.no_license_path and not args.without_file_paths)
         ):
             output_fields.append(
                 "LicenseFiles" if args.with_license_files else "LicenseFile"
@@ -203,7 +203,7 @@ def get_output_fields(args: Configuration) -> list[str]:
         if args.with_notice_file or args.with_notice_files:
             if args.with_notice_paths or (
                 # WILL CHANGE BEHAVIOR IN v6.1
-                "6.0" in __version__ and not args.no_file_paths
+                "6.0" in __version__ and not args.without_file_paths
             ):
                 output_fields.append(
                     "NoticeFiles" if args.with_notice_files else "NoticeFile"
@@ -214,7 +214,7 @@ def get_output_fields(args: Configuration) -> list[str]:
         if args.with_other_files:
             if args.with_other_paths or (
                 # WILL CHANGE BEHAVIOR IN v6.1
-                "6.0" in __version__ and not args.no_file_paths
+                "6.0" in __version__ and not args.without_file_paths
             ):
                 output_fields.append("OtherFiles")
             if _format_supports_file_text_data:

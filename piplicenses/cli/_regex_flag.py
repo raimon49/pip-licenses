@@ -74,7 +74,10 @@ class RegexFlags(Flag):
         pattern: re.Pattern,
     ) -> "RegexFlags":
         if not _is_pattern(pattern):
-            raise TypeError("pattern must be an instance of type re.Pattern")
+            # defensive code
+            raise TypeError(
+                "pattern must be an instance of type re.Pattern"
+            )  # pragma: no cover
         obj = object.__new__(cls)  # see PYI034
         obj._value_ = value
         return obj
