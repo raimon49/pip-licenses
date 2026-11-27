@@ -25,6 +25,8 @@
 
 """Unit tests for file-format configuration and precedence rules."""
 
+import sys
+
 # These need to be placed AFTER _argparse_bridge to guide linters
 # ... rather than as an absolute import anywhere.
 from argparse import (
@@ -180,8 +182,13 @@ class TestFormatConfig(unittest.TestCase):
             _format_config._category_files_prefix(
                 _format_config.FileCategory(0)
             )
-
-        with self.assertRaisesRegex(ValueError, "invalid value"):
+        # Rationale: error message behavior differs if <=3.10;
+        with self.assertRaisesRegex(
+            ValueError,
+            "is not a valid"
+            if sys.version_info < (3, 11)
+            else "invalid value",
+        ):
             _format_config._category_files_prefix(
                 _format_config.FileCategory(128)
             )
@@ -544,7 +551,13 @@ class TestFormatConfig(unittest.TestCase):
                     category=category,
                 )
 
-        with self.assertRaisesRegex(ValueError, "invalid value"):
+        # Rationale: error message behavior differs if <=3.10;
+        with self.assertRaisesRegex(
+            ValueError,
+            "is not a valid"
+            if sys.version_info < (3, 11)
+            else "invalid value",
+        ):
             _format_config._resolve_category_format(
                 Namespace(),
                 category=_format_config.FileCategory(128),
@@ -617,7 +630,13 @@ class TestFormatConfig(unittest.TestCase):
                 Namespace(),
                 category=_format_config.FileCategory(0),
             )
-        with self.assertRaisesRegex(ValueError, "invalid value"):
+        # Rationale: error message behavior differs if <=3.10;
+        with self.assertRaisesRegex(
+            ValueError,
+            "is not a valid"
+            if sys.version_info < (3, 11)
+            else "invalid value",
+        ):
             _format_config.resolve_file_format_legacy(
                 Namespace(),
                 category=_format_config.FileCategory(128),

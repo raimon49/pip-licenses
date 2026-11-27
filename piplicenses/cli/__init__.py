@@ -493,6 +493,7 @@ def _add_verification_arguments_to_parser(
                 "May be used multiple times.",
             )
         verify_group.add_argument(
+            "-F",
             "--fail-on",
             action="extend",
             dest="fail_on",
@@ -503,6 +504,7 @@ def _add_verification_arguments_to_parser(
             "of the licenses of the list (may use semicolon-separated)",
         )
         verify_group.add_argument(
+            "-A",
             "--allow-only",
             action="extend",
             dest="allow_only",
@@ -676,13 +678,15 @@ def _add_format_arguments_to_parser(
             dest="without_versions",
             default=hide_version_default,
             help="dump without package version. "
-            "DEPRECATED; use --without-versions.",
+            "DEPRECATED; use --without-versions. "
+            "This option form may be removed in the future.",
         )
         format_group.add_argument(
             "--filter-strings",
             action="store_true",
             default=filter_string_default,
-            help="filter input according to code page.",
+            help="filter input according to code page. "
+            "Does not filter input if omitted.",
         )
         format_group.add_argument(
             "--filter-code-page",
@@ -690,7 +694,8 @@ def _add_format_arguments_to_parser(
             type=str,
             default=filter_code_default,
             metavar="CODE",
-            help="I|specify code page for filtering.",
+            help="I|specify code page for filtering. "
+            "If used more than once, the last one takes precedence.",
         )
     return parser
 
@@ -801,7 +806,7 @@ def create_parser(
     )
 
     license_file_options.add_argument(
-        "-l",
+        "-l",  # will change in v6.1+ to new behavior
         "--with-license-file",
         action="store_true",
         default=config_from_file.get("with-license-file", False),
