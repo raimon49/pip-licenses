@@ -79,6 +79,7 @@ from ._license_expressions import parse_spdx_expression
 from .cli import (
     Configuration,
     FromArg,
+    # TODO: should import getRegexForExtraFiles (from .cli._search_config)
 )
 from .sorting import (
     SetLike,
@@ -402,6 +403,11 @@ def _get_pkg_included_file(
     """
     Attempt to find the package's included file on disk and return the
     tuple (included_file_path, included_file_contents).
+
+    Dev note: This helper is intended to only take values from
+    `piplicenses.cli._search_config.getRegexForExtraFiles` going forward.
+
+    [GHI-401] The file is decoded as utf-8 atm. See-also GHI #401
     """
     included_file = None
     included_text = LICENSE_UNKNOWN
@@ -621,14 +627,50 @@ def _get_python_sys_path(executable: str) -> list[str]:
     from subprocess import DEVNULL as _subprocess_DEVNULL  # nosec
     from subprocess import run as _subprocess_run  # nosec
 
+    # env helper workaround:
+    def _starts_with_prohibited(input: str) -> bool:
+        """Not part of any kind of API."""
+        if not input:
+            return False
+        # otherwise
+        _key: str = input.upper()
+        return (
+            bool(
+                not _key.startswith("GITHUB_")
+                and not _key.startswith("SSH")
+                and not _key.startswith("AWS_")
+                and not _key.startswith("AZURE_")
+                and not _key.startswith("GOOGLE_")
+                and not _key.startswith("GCP_")
+                and not _key.startswith("GH_")
+                and not _key.startswith("GITLAB_")
+                and not _key.startswith("NPM_")
+                # and not _key.startswith("PIP_")  # do we still want this?
+                and not _key.startswith("POETRY_")
+                and not _key.startswith("DOCKER_")
+                and not _key.startswith("KUBECONFIG")
+                and not _key.startswith("GIT_")
+                and not _key.startswith("DATABASE_")
+                and not _key.startswith("REDIS_")
+                and not _key.startswith("POSTGRES_")
+                and not _key.startswith("MYSQL_")
+                and not _key.startswith("HTTP_PROXY")
+                and not _key.startswith("HTTPS_PROXY")
+                and not _key.startswith("ALL_PROXY")
+                and not _key.startswith("NO_PROXY")
+                and not _key.startswith("LD_")
+                and not _key.startswith("DYLD_")
+            )
+            or False  # pragma: no cover
+        )
+
     # Prevent Python environment settings in the caller from changing the
     # child interpreter's startup behavior.
     env = {
         key: value
         for key, value in os.environ.items()
         if not key.upper().startswith("PYTHON")
-        and not key.upper().startswith("GITHUB_")
-        and not key.upper().startswith("SSH")
+        and _starts_with_prohibited(input=key)
         and key.upper() not in {"VIRTUAL_ENV", "VIRTUALENV_PROMPT"}
     }
     common_args: dict = {
@@ -775,13 +817,15 @@ def select_license_by_source(
         return {license_meta} if license_meta else {LICENSE_UNKNOWN}
 
 
-# TODO: Prototype fix for GHI-309 (DO NOT RELEASE YET)
+# Note: fix for GHI-309 (COMPATIBILITY SHIM; DO NOT CHANGE)
 def fallback_license_retrieval(
     pkg: Distribution,
 ) -> dict[str, Union[str, None]]:
     """
     Fallback logic for retrieving licenses and other metadata files.
 
+    This behavior is deprecated as of version 6.0+ and should not
+    be relied upon in new code.
     See also https://github.com/raimon49/pip-licenses/issues/309
 
     Parameters:

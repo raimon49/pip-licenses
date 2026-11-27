@@ -37,7 +37,6 @@ import re
 
 # See https://github.com/raimon49/pip-licenses/issues/360
 # should just bridge this import
-from collections.abc import Iterable
 from enum import (
     Flag,
 )
@@ -87,7 +86,15 @@ class RegexFlags(Flag):
 
     @property
     def regex(self) -> re.Pattern:
-        members: Iterable = tuple(self)  # type: ignore[arg-type]
+        # Flag instances became iterable in Python 3.11. Iterate over the
+        # enum class instead, then keep the active atomic (single-bit) flags.
+        members = tuple(
+            member
+            for member in type(self)
+            if member.value != 0
+            and member.value & (member.value - 1) == 0
+            and self.value & member.value
+        )
 
         if not members:
             return _RESERVED_INVALID_PATTERN
