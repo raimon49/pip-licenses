@@ -42,9 +42,9 @@ from . import unittest
 
 
 class ExampleRegexFlags(RegexFlags):
-    ZERO = 0, re.compile("zero")
-    ALPHA = 1, re.compile("alpha")
-    DIGIT = 2, re.compile("digit")
+    ZERO = (0, re.compile("zero"))
+    ALPHA = (1, re.compile("alpha"))
+    DIGIT = (2, re.compile("digit"))
     BOTH = (
         3,
         RegexFlags._any_regex_helper(
