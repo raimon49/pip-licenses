@@ -215,7 +215,7 @@ def extract_homepage(metadata: Message) -> Union[str, None]:
     ) -> Union[str, None]:
         """Selects a up to a single string from the given input.
 
-        Utility; Not part of exposed API. Helps by handling the
+        Utility; Not part of the public API. Helps by handling the
         zero-one-infinity principle.
 
         Pseudo-logic:
@@ -627,10 +627,10 @@ def _get_python_sys_path(executable: str) -> list[str]:
     from subprocess import DEVNULL as _subprocess_DEVNULL  # nosec
     from subprocess import run as _subprocess_run  # nosec
 
-    # env helper workaround:
+    # env helper workaround (defense-in-depth):
     def _starts_with_prohibited(input: str) -> bool:
-        """Not part of any kind of API."""
-        if not input:
+        """Not part of the public API."""
+        if not input:  # pragma: no cover
             return False
         # otherwise
         _key: str = input.upper()

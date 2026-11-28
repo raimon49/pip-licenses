@@ -189,13 +189,13 @@ def getRegexForExtraFiles(args: Configuration) -> ExtraFilesRegex:
     decide whether matching file contents or paths are included in output;
     those are separate format choices. In particular, the category toggles
     select licenses, legacy files, notices, authors, or attributions, while
-    ``with_others``, ``with_other_files``, and ``with_other_paths`` enable
-    the catch-all extra-file search. The ``without_*`` overrides remove
+    `with_others`, `with_other_files`, and `with_other_paths` enable
+    the catch-all extra-file search. The `without_*` overrides remove
     categories from that catch-all or from the individually selected set.
 
     This reflects the v6 flag design discussed in
-    `GHI-375 <https://github.com/raimon49/pip-licenses/issues/375>`_:
-    file contents and paths are independently configurable, and “other files”
+    [GHI-375](https://github.com/raimon49/pip-licenses/issues/375):
+    file contents and paths are independently configurable, and 'other files'
     refers to heuristic discovery beyond metadata-listed files.
 
     Args:
@@ -203,8 +203,8 @@ def getRegexForExtraFiles(args: Configuration) -> ExtraFilesRegex:
             consulted by this helper. A falsey value selects no extra files.
 
     Returns:
-        The ``ExtraFilesRegex`` flag whose combined regular expression matches
-        the selected filename categories. ``WITHOUT_FILES`` has no matches.
+        The `ExtraFilesRegex` flag whose combined regular expression matches
+        the selected filename categories. `WITHOUT_FILES` has no matches.
 
     Examples:
         >>> from types import SimpleNamespace
@@ -479,7 +479,8 @@ def getRegexForExtraFiles(args: Configuration) -> ExtraFilesRegex:
             _regex &= ~ExtraFilesRegex.EXTRA_FILES
             _regex &= ~ExtraFilesRegex.EXTRA_LICENSES
         return _regex
-    return ExtraFilesRegex.WITHOUT_FILES
+    # should not ever reach this point, but defensively return something anyway:
+    return ExtraFilesRegex.WITHOUT_FILES  # pragma: no cover
 
 
 __all__ = [

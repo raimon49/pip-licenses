@@ -101,7 +101,7 @@ def _validate_token() -> None:
 
     Used to ensure LEGACY_TOKEN is loaded and not escaped.
 
-    Not part of the public API. Subject to sudden changes, or removal.
+    Utility; Not part of the public API. Subject to sudden changes, or removal.
 
     Raises ValueError -- if empty or contains backslashes
     """
@@ -390,7 +390,7 @@ def _normalize_as_set(
                 if _parsed_item:
                     normalized.update(_parsed_item)
                 else:
-                    continue
+                    continue  # pragma: no cover
             elif isinstance(item, (list, set)):
                 normalized.update(
                     _normalize_as_set([e for e in item if e is not None])
