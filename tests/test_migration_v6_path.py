@@ -117,12 +117,18 @@ class TestParserAliasesAndOutputFields(unittest.TestCase):
     def test_combination_with_notice_and_other_paths(self) -> None:
         # Ensure notice and other file toggles parse and affect output fields (basic smoke)
         # Both singular and plural forms should set the canonical flag
-        conf1 = _parse_to_conf(
-            ["-l", "--with-notice-files", "--with-notice-paths"]
-        )
-        conf2 = _parse_to_conf(
-            ["-l", "--with-notice-file", "--with-notice-paths"]
-        )
+        conf1 = None
+        conf2 = None
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            conf1 = _parse_to_conf(
+                ["-l", "--with-notice-files", "--with-notice-paths"]
+            )
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            conf2 = _parse_to_conf(
+                ["-l", "--with-notice-file", "--with-notice-paths"]
+            )
         self.assertTrue(
             bool(getattr(conf1, "with_notice_files", False)),
             f"Expected 'with_notice_files' to be set to True in: {conf1}",

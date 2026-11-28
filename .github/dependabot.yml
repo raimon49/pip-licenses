@@ -124,16 +124,6 @@ updates:
       - "docker/*"
     patterns: ["prettytable", "tomli"]
     multi-ecosystem-group: "direct-dependencies"
-  - package-ecosystem: "pip"  # pip-compile stuff (for development and CI, rather than for release)
-    directory: "/"  # Location of package manifests
-    # target-branch: "next" # different to allow dependabot to work
-    versioning-strategy: lockfile-only
-    patterns: ["*"]
-    multi-ecosystem-group: "indirect-dependencies"  # different to allow dependabot to work
-    exclude-paths:
-      - "pyproject.toml"
-      - ".github/*"
-      - "docker/*"
   - package-ecosystem: "pip"  # for CI/CD (rather than for pip-licenses)
     directory: ".github/"  # different to allow dependabot to work
     patterns: ["build", "pip", "setuptools", "wheel"]

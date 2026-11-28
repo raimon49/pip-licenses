@@ -87,7 +87,26 @@ _scope_primitives: list[
 # See https://github.com/raimon49/pip-licenses/issues/360
 # see typing.TypeIs
 def _is_scope(value: object) -> bool:
-    """Return whether value is exactly a compiled regular expression."""
+    """Return whether value is exactly a compiled regular expression.
+
+    E.g.,
+
+        >>> _is_scope(None)
+        False
+
+        >>> _is_scope("Not a Scope")
+        False
+
+        >>> _is_scope("files")
+        True
+
+        >>> _is_scope("paths, files")
+        True
+
+        >>> _is_scope("files, Nope")
+        False
+
+    """
     if isinstance(value, str):
         _delim = ", "
         if _delim in value:

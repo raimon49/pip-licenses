@@ -49,8 +49,8 @@ block-beta
 2. Create a branch to represent changes.
     * Branch name does **NOT** need `feature/` prefix. Because git-flow is configured differently for maintainers.
 3. Create a new venv environment and Install package for development via `make setup` .
-    * Dependencies are managed by [pip-tools](https://pypi.org/project/pip-tools/).
-    * If you want to add dependency packages for development, edit [the dev entry in pyproject.toml](https://github.com/raimon49/pip-licenses/blob/master/pyproject.toml) file and run `make update-depends` .
+    * Dependencies are managed by [PEP-735 groups](https://packaging.python.org/en/latest/specifications/dependency-groups/#dependency-groups).
+    * If you want to add dependency packages for development, edit [the correct entry in pyproject.toml](https://github.com/raimon49/pip-licenses/blob/next/pyproject.toml) file and re-run `make un-setup; make setup` .
     * If you want to install the code under development, run `make local-install` .
     * If you want to test the code under development before pushing, run `make local-ci-check`
 

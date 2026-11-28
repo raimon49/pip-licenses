@@ -24,7 +24,7 @@ authors = [
 maintainers = [
 	{"name" = "Mr. Walls", "email" = "reactive-firewall@users.noreply.github.com"},
 ]
-keywords = ["pip", "pypi", "package", "license", "check", "audit"]
+keywords = ["pip", "pypi", "package", "license", "check", "audit", "providence"]
 classifiers = [
 	"Development Status :: 5 - Production/Stable",
 	"Intended Audience :: Developers",
@@ -47,27 +47,60 @@ dependencies = [
 ]
 scripts = { "pip-licenses" = "piplicenses.__main__:main" }
 
-[project.optional-dependencies]
-dev = [
-	"docutils>=0.19", # frontend.get_default_settings()
+# PEP-735
+[dependency-groups]
+utils = [
 	"wheel",
+	"tomli-w",
+	"virtualenv==21.14.13",
+]
+packaging = [
+	"dependency-groups>=1.3.2",
+	"packaging==26.3",  # v26.3 is the last to still support python 3.9
+]
+lockfiles = [
+	"pip-tools", # no-longer used as of v6.0.0rc24
+	{include-group = "packaging"},
+	{include-group = "utils"},
+]
+linting = [
+	"types-docutils",
 	"mypy==1.19.1", # v1.19.1 is needed for python 3.9 support
-	"pip-tools",
+	"pytest==8.4.2",  # 8.4.2 is the last to support 3.9
 	"pypandoc",
+	"ruff",
+	"bandit>=1.8.6", # v1.8.6 is the last to still support python 3.9
+	{include-group = "utils"},
+]
+testing = [
+	"docutils>=0.19", # frontend.get_default_settings()
+	"pytest>=8.4.2",  # 8.4.2 is the last to support 3.9
 	"pytest-cov",
 	"pytest-runner",
-	"ruff",
-	"bandit",  # v1.8.6 is the last to still support python 3.9
-	"tomli-w",
-	"virtualenv>=21.14.13",
+	{include-group = "utils"},
 ]
-
-[tool.pip-tools.compile]
-dry-run = false
-extra = ["dev"]
-no-strip-extras = true
-upgrade = true
-output-file = "dev-requirements.in"
+# Examples Fixtures
+# These are arbitrary (historically picked from top 20 PyPi lists) packages,
+# used only for generating demonstrative examples (e.g., typically by
+# maintainers), and are NOT considered pip-license dependencies in any
+# form (On the rationale: it is trivial to configure to use other packages).
+examples = [
+	# Historical circa v6.0.0
+	# https://pypi.org/project/cffi/2.1.1/
+	"cffi==2.1.1",
+	# Historical circa v6.0.0
+	# https://pypi.org/project/packaging/26.3/
+	"packaging==26.3",
+	# GHI-327
+	# https://pypi.org/project/aniso8601/
+	"aniso8601==10.0.1",
+]
+dev = [
+	{include-group = "linting"},
+	{include-group = "packaging"},
+	{include-group = "testing"},
+	{include-group = "utils"},
+]
 
 [project.urls]
 homepage = "https://github.com/raimon49/pip-licenses"
@@ -152,5 +185,12 @@ unused-ignore-comment = "warn"
 redundant-cast = "warn"
 
 [tool.coverage.run]
-include = ["piplicenses/*.py", "piplicenses/output/*.py"]
+include = ["piplicenses/*.py", "piplicenses/output/*.py", "piplicenses/cli/*.py"]
 
+# no-longer used as of v6.0.0rc24
+[tool.pip-tools.compile]
+dry-run = false
+# extra = ["dev"] # no-longer used as of v6.0.0rc24
+no-strip-extras = true
+upgrade = true
+#output-file = "dev-requirements.in" # no-longer used as of v6.0.0rc24

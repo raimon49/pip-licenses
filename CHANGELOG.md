@@ -1,7 +1,9 @@
 ## CHANGELOG
 
-### 6.0.0rc23 (WIP)
+### 6.0.0rc24 (WIP)
 
+* Aligned project with PEP-735 (no-longer mislabels groups as extras)
+* Bumped automated examples
 * Fix for regression bug around zealously strict matching of `--allow-only`, resolving GHI #364
 * Improved release providence log transparency
 * Fixed `normalize_version` dropping implicit post-release numbers, closing GHI #439

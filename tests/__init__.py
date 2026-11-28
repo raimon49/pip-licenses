@@ -1,6 +1,7 @@
 """Tests package for pip-licenses."""
 
 # ruff: file-ignore[F401,]
+import argparse
 import unittest
 
 from ._examples import (

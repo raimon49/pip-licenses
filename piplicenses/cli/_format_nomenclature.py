@@ -51,7 +51,7 @@ and a base `dest` (e.g., "")
 See [GHI-375](https://github.com/raimon49/pip-licenses/issues/375).
 
 [GHI-81](https://github.com/raimon49/pip-licenses/issues/81):
-Not part of the _public_ API. Subject to sudden changes, or removal.
+Not part of the public API. Subject to sudden changes, or removal.
 """
 
 # These may be used to add localizations eventually.

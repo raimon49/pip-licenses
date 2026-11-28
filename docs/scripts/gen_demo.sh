@@ -67,7 +67,7 @@ set -euo pipefail
 RECORDING=$(dirname "${0}")/../examples/00-demo/00-example-demo.tty ;
 DEMO_CMD_PATH=$(dirname "${0}")/../examples/00-demo/00-example-demo.sh ;
 # see-also Makefile
-REPO_NAME=$(basename `git rev-parse --show-toplevel`)
+REPO_NAME=$(basename "$(git rev-parse --show-toplevel)")
 VENV_NAME="venv/${REPO_NAME:-demo}"
 
 cleanup() {
@@ -80,7 +80,7 @@ cleanup() {
 trap cleanup EXIT
 
 # trivial checks
-test -x `command -v ttyrec` || exit 126 ;  # skip if tool missing
+test -x "$(command -v ttyrec)" || exit 126 ;  # skip if tool missing
 test -f "${DEMO_CMD_PATH}" || exit 126 ;  # skip if demo missing
 
 printf '%s\n' "Setting up demo environment..." ;
@@ -96,9 +96,10 @@ printf '%s\n' "Setting up demo environment..." ;
     exit $?
 }
 
-printf '%s\n' "Activating demo environment..."
+printf '%s\n' "Activating demo environment..." ;
 
 export PIPL_TTYREC_MODE=1;
+# shellcheck disable=SC1090
 source ./"${VENV_NAME}/bin/activate"
 
 printf '%s\n' "Starting recording: $RECORDING"
@@ -109,5 +110,5 @@ ttyrec -e "${DEMO_CMD_PATH}" "$RECORDING" ;
 
 make un-setup >/dev/null ;
 
-printf '%s\n' "Recording complete: $RECORDING"
-printf '%s\n' "Play it with: ttyplay $RECORDING"
+printf '%s\n' "Recording complete: $RECORDING" ;
+printf '%s\n' "Play it with: ttyplay $RECORDING" ;

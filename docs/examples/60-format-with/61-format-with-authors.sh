@@ -72,6 +72,7 @@ set -euo pipefail
 
 # Source shared utilities
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC1091
 source "${SCRIPT_DIR}/../../examples/common.sh"
 
 # Verify prerequisites
@@ -81,7 +82,7 @@ check_required_packages || exit 1
 init_demo
 
 # Run the example - include author information
-runcommand "pip-licenses --with-authors"
+run_command "pip-licenses --with-authors"
 pause 2.2
 
 printf '\r\n'

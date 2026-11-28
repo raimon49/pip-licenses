@@ -75,6 +75,7 @@ set -euo pipefail
 
 # Source shared utilities
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC1091
 source "${SCRIPT_DIR}/../../examples/common.sh"
 
 # Verify prerequisites
@@ -84,12 +85,13 @@ check_required_packages || exit 1
 init_demo
 
 # take care with the nested quotes
-CMD_LINE_TEXT_F=$(printf 'pip-licenses %s' "--fail-on=\"MIT License;BSD License\"" ;)
+CMD_LINE_TEXT_F=$(printf 'pip-licenses %s' "--fail-on=\"MIT License;BSD License\" 2>&1" ;)
 
 # Run the example - fail if specific licenses found
 #log_info "Running with --fail-on option (this will fail due to MIT/BSD licenses)"
 set +e
 run_command "${CMD_LINE_TEXT_F}"
+# shellcheck disable=SC2034
 EXIT_CODE=$?
 set -e
 pause 2.2

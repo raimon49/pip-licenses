@@ -272,9 +272,23 @@ Not part of the public API.
 
 
 def _split_categories_into_list(value: FileCategory) -> list[FileCategory]:
-    """Use to convert to a list of zero or more FileCategorys.
+    """Use to convert to a list of zero or more `FileCategory`s.
 
     Not part of the public API.
+
+    E.g.,
+
+        >>> _split_categories_into_list(None) == []
+        True
+
+        >>> _split_categories_into_list(FileCategory.OTHERS) == [FileCategory.OTHERS]
+        True
+
+        >>> _fixture = _split_categories_into_list(FileCategory.ATTRIBUTION | FileCategory.OTHERS)
+        >>> _fixture == [FileCategory.ATTRIBUTION, FileCategory.OTHERS]
+        True
+        >>>
+
     """
     _value_categories: list[FileCategory] = []
     if value:
@@ -342,7 +356,7 @@ def _category_files_prefix(category: FileCategory) -> str:
     """
     if not category:
         raise ValueError("category must be non-empty")
-    if not category.name:
+    if not category.name or "|" in category.name:
         raise AttributeError(f"Unknown category or categories: {category!r}")
     _lowercase_category_name: str = category.name.lower()
     return (
@@ -512,8 +526,8 @@ def resolve_file_format_legacy(
         # If summary is active, everything is off.
         if summary_state:
             formatted = FileFormat.SHOW_NONE
-        # The category itself is the primary gate.
-        if category_state is False:
+        # The category itself might be the primary gate.
+        if category_state is False:  # pragma: no cover
             formatted = FileFormat.SHOW_NONE
             # TODO: actually still need to check conflicts before done
         if category_state is True:
