@@ -405,8 +405,9 @@ def getRegexForExtraFiles(args: Configuration) -> ExtraFilesRegex:
         >>>
 
     """
+    _regex = ExtraFilesRegex.WITHOUT_FILES
     if not args:
-        return ExtraFilesRegex.WITHOUT_FILES
+        return _regex
     # first check if others is enabled:
     if args.with_others or (args.with_other_files or args.with_other_paths):
         # default to Others
@@ -429,7 +430,6 @@ def getRegexForExtraFiles(args: Configuration) -> ExtraFilesRegex:
         if args.without_legacy_files and args.without_legacy_paths:
             # then omit legacy
             _regex &= ~ExtraFilesRegex.RESERVED_LEGACY
-        return _regex
     else:
         # default to Others
         _regex = ExtraFilesRegex.WITHOUT_FILES
@@ -478,9 +478,7 @@ def getRegexForExtraFiles(args: Configuration) -> ExtraFilesRegex:
             # ... but omit licenses files if overridden
             _regex &= ~ExtraFilesRegex.EXTRA_FILES
             _regex &= ~ExtraFilesRegex.EXTRA_LICENSES
-        return _regex
-    # should not ever reach this point, but defensively return something anyway:
-    return ExtraFilesRegex.WITHOUT_FILES  # pragma: no cover
+    return _regex
 
 
 __all__ = [

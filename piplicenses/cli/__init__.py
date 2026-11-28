@@ -50,6 +50,7 @@ from .. import (
     __pkgname__,
     __summary__,
     __version__,
+    _real_io_open,
     cast,
 )
 
@@ -266,10 +267,9 @@ from ..tomli_bridge import (
 )
 
 
-# TODO: this probably goes in utils (and SHOULD NOT BE vulnerable to 'open' MOCKING)
 def load_config_from_file(pyproject_path: str) -> dict:
-    if Path(pyproject_path).exists():
-        with open(pyproject_path, "rb") as f:
+    if pyproject_path and Path(pyproject_path).exists():
+        with _real_io_open(pyproject_path, "rb") as f:
             return tomllib.load(f).get("tool", {}).get(__pkgname__, {})
         # always has implicit f.close() from 'with' so no need to re-close
     return {}  # universal fallback to simple empty load

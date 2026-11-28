@@ -34,9 +34,7 @@ from collections.abc import (
     Sequence,  # noqa: F401 -- Re-export as part of internal typing API
 )
 from io import open as _real_io_open
-
-# TODO: or could use import builtins and builtins.io
-from pathlib import Path
+from pathlib import Path  # noqa: F401  -- used by load_config_from_file
 
 # PEP 649 does not support annotations that are conditionally defined in the body of a module
 from typing import (
@@ -51,7 +49,7 @@ from prettytable import (
 
 # From our own stuff (pip-licenses)
 # start with "bridges" (e.g., shims)
-from .tomli_bridge import tomllib
+from .tomli_bridge import tomllib  # noqa: F401  -- used by load_config_from_file
 
 # Must declare this ASAP as most other component will re-import it
 __pkgname__ = "pip-licenses"  # expose package name with a dash (but canonicalized will ignore dash)
@@ -211,6 +209,7 @@ from .cli import (
     # if not for regressions in testing,
     # perhaps, this should go in sorting (only used by piplicenses.output.create_output_string())
     get_sortby,  # noqa: F401  # DEPRECIATED in v6.0+
+    load_config_from_file,  # noqa: F401 -- Re-export as part of API
 )
 from .core import (
     SYSTEM_PACKAGES,  # noqa: F401 -- Re-export as part of API? (for v6.0.x; deprecate in 6.1.x)
@@ -218,14 +217,6 @@ from .core import (
     get_packages,  # noqa: F401 -- Re-export as part of API
     select_license_by_source,  # noqa: F401 -- Re-export as part of API
 )
-
-
-def load_config_from_file(pyproject_path: str) -> dict:
-    if Path(pyproject_path).exists():
-        with _real_io_open(pyproject_path, "rb") as f:  # noqa: UP020 (use io.open)
-            return tomllib.load(f).get("tool", {}).get(__pkgname__, {})
-    return {}
-
 
 open = _real_io_open  # set to _real_io_open (before monkey patching)
 

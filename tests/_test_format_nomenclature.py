@@ -35,9 +35,8 @@ from piplicenses.cli import (  # noqa: I001 -- order matters
     _format_nomenclature,
     _mutually_exclusive_toggle,
 )
-from . import argparse  # noqa: F401 -- used by next import group
 
-# These need to be placed AFTER _argparse_bridge to guide linters
+# These need to be placed AFTER users of _argparse_bridge to guide linters
 # ... rather than as an absolute import anywhere.
 from argparse import (
     ArgumentParser,

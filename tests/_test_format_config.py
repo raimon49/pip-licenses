@@ -26,9 +26,6 @@
 """Unit tests for file-format configuration and precedence rules."""
 
 import sys
-
-# These need to be placed AFTER _argparse_bridge to guide linters
-# ... rather than as an absolute import anywhere.
 from argparse import (
     ArgumentParser,
     Namespace,
@@ -39,10 +36,7 @@ from unittest.mock import Mock
 
 from piplicenses.cli import _format_config
 
-from . import (
-    argparse,  # noqa: F401 -- used by next import group
-    unittest,
-)
+from . import unittest
 
 CATEGORIES = (
     _format_config.FileCategory.ATTRIBUTION,
